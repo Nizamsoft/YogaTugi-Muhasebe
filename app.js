@@ -1239,20 +1239,51 @@ function onayModal(baslik, mesaj, onaylandi) {
 async function uygulamayiBaslat() {
   $('#girisEkrani').classList.add('gizli');
   $('#uygulama').classList.remove('gizli');
-  if (DB.mod === 'demo') { $('#demoBand').classList.remove('gizli'); await demoTohum(); }
+  if (DB.mod === 'demo') $('#demoBand').classList.remove('gizli');
   // Kullanıcı bilgisi
-  const ep = State.kullanici?.email || 'demo@yogatugi.com';
+  const ep = State.kullanici?.email || 'yerel@yogatugi.com';
   $('#kullaniciAd').textContent = State.kullanici?.ad || ep.split('@')[0];
-  $('#kullaniciRol').textContent = DB.mod === 'demo' ? 'Demo Kullanıcı' : 'Yönetici';
+  $('#kullaniciRol').textContent = DB.mod === 'demo' ? 'Yerel Kullanıcı' : 'Yönetici';
   $('#kullaniciRozet').textContent = (ep[0] || '?').toUpperCase();
   await veriYukle();
   menuCiz();
   git('dashboard');
+  // Yerel modda, henüz veri yoksa ve başlangıç seçilmemişse hoş geldin ekranı
+  if (DB.mod === 'demo' && State.hesaplar.length === 0 && !localStorage.getItem('yt_baslangic')) {
+    hosgeldinModal();
+  }
 }
 
-/* Demo modunda ilk açılışta örnek veri oluştur */
-async function demoTohum() {
-  if (localStorage.getItem('yt_tohumlandi')) return;
+/* İlk açılış: örnek verilerle mi boş mu başlansın? */
+function hosgeldinModal() {
+  modalAc('Yoga Tugi\'ye Hoş Geldiniz 👋', `
+    <p style="line-height:1.6">Uygulama şu an <b>yerel depolama</b> modunda çalışıyor
+    (veriler bu tarayıcıda saklanır). Nasıl başlamak istersiniz?</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:18px">
+      <button class="btn btn-ana" id="hgBos" style="justify-content:center;padding:14px">
+        📄 Boş başla — kendi verilerimi gireceğim</button>
+      <button class="btn" id="hgOrnek" style="justify-content:center;padding:14px">
+        🎯 Örnek verilerle keşfet <span class="soluk" style="margin-left:6px">(deneme amaçlı)</span></button>
+    </div>
+    <div class="bilgi-kutu" style="margin-top:16px"><span class="ikon">💡</span>
+      <div>Örnek verileri sonradan 💾 (Yedekle) menüsünden <b>sıfırlayabilirsiniz</b>.</div></div>`, '');
+  $('#hgBos').onclick = () => {
+    localStorage.setItem('yt_baslangic', 'bos');
+    modalKapat();
+    bildir('Boş başlandı. Hesaplar ve ortakları ekleyerek başlayın.', 'basari');
+  };
+  $('#hgOrnek').onclick = async () => {
+    await ornekVeriYukle();
+    localStorage.setItem('yt_baslangic', 'ornek');
+    modalKapat();
+    await veriYukle();
+    git('dashboard');
+    bildir('Örnek veriler yüklendi.', 'basari');
+  };
+}
+
+/* Örnek (deneme) veri oluştur */
+async function ornekVeriYukle() {
   const hesaplar = [
     { ad: 'Ziraat Bankası', tip: 'banka', acilisBakiye: 15000, aktif: true, banka: 'Ziraat' },
     { ad: 'Merkez Kasa', tip: 'kasa', acilisBakiye: 2000, aktif: true },
@@ -1284,7 +1315,6 @@ async function demoTohum() {
   ]);
   await DB.ekle('komisyonlar', { ad: 'Kredi Kartı POS', oran: 1.5, aktif: true });
   await DB.ekle('kullanicilar', { eposta: 'yonetici@yogatugi.com', ad: 'Yönetici', rol: 'admin', aktif: true });
-  localStorage.setItem('yt_tohumlandi', '1');
 }
 
 /* Giriş formu */
@@ -1305,13 +1335,13 @@ function girisKur() {
       }
     } else {
       // Demo modunda basit giriş
-      State.kullanici = { email: eposta || 'demo@yogatugi.com', ad: 'Demo Kullanıcı' };
+      State.kullanici = { email: eposta || 'yerel@yogatugi.com', ad: 'Yerel Kullanıcı' };
       await uygulamayiBaslat();
     }
   };
   $('#demoBtn').onclick = async () => {
     DB.mod = 'demo';
-    State.kullanici = { email: 'demo@yogatugi.com', ad: 'Demo Kullanıcı' };
+    State.kullanici = { email: 'yerel@yogatugi.com', ad: 'Yerel Kullanıcı' };
     await uygulamayiBaslat();
   };
 }
@@ -1347,6 +1377,88 @@ function ustCubukKur() {
   if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); $('#temaBtn').textContent = '☀️'; }
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
+  $('#yedekBtn').onclick = yedekModal;
+}
+
+/* ==========================================================
+   YEDEKLEME — Dışa aktar / İçe aktar / Sıfırla
+   ========================================================== */
+function yedekModal() {
+  const adet = State.hesaplar.length + State.islemler.length + State.ortaklar.length;
+  modalAc('Yedekleme & Veri Yönetimi', `
+    <div class="bilgi-kutu"><span class="ikon">💾</span><div>Yerel veriler yalnızca bu tarayıcıda saklanır.
+      Düzenli <b>yedek alın</b>; başka cihaza taşımak veya Firebase'e geçmek için de bu yedeği kullanabilirsiniz.</div></div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <button class="btn btn-ana" id="ydDisa" style="justify-content:center;padding:13px">
+        ⤓ Yedeği İndir (.json) <span class="soluk" style="margin-left:6px">${adet} kayıt</span></button>
+      <button class="btn" id="ydIce" style="justify-content:center;padding:13px">⤒ Yedekten Geri Yükle</button>
+      <input type="file" id="ydDosya" accept=".json" hidden>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--kenar);margin:18px 0">
+    <div class="bilgi-kutu uyari"><span class="ikon">⚠️</span><div><b>Tehlikeli bölge:</b> Tüm yerel verileri kalıcı olarak siler.</div></div>
+    <button class="btn btn-kirmizi" id="ydSifirla" style="width:100%;justify-content:center;padding:12px">🗑️ Tüm Verileri Sıfırla</button>
+  `, `<button class="btn" id="ydKapat">Kapat</button>`);
+  $('#ydKapat').onclick = modalKapat;
+  $('#ydDisa').onclick = yedekIndir;
+  $('#ydIce').onclick = () => $('#ydDosya').click();
+  $('#ydDosya').onchange = (e) => { if (e.target.files[0]) yedekGeriYukle(e.target.files[0]); };
+  $('#ydSifirla').onclick = () => onayModal('Tüm veriler silinsin mi?',
+    'Bu işlem geri alınamaz. Önce yedek almanız önerilir.', verileriSifirla);
+}
+
+function yedekIndir() {
+  const veri = {
+    _uygulama: 'YogaTugi-Muhasebe', _surum: 1, _tarih: new Date().toISOString(),
+    hesaplar: State.hesaplar, islemler: State.islemler, ortaklar: State.ortaklar,
+    komisyonlar: State.komisyonlar, karPayi: State.karPayi, kullanicilar: State.kullanicilar,
+  };
+  const blob = new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `yogatugi-yedek-${bugunISO()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+  bildir('Yedek indirildi.', 'basari');
+}
+
+function yedekGeriYukle(dosya) {
+  const fr = new FileReader();
+  fr.onload = async () => {
+    let veri;
+    try { veri = JSON.parse(fr.result); } catch { return bildir('Geçersiz dosya (JSON okunamadı).', 'hata'); }
+    if (!veri || typeof veri !== 'object' || !Array.isArray(veri.hesaplar)) {
+      return bildir('Bu bir Yoga Tugi yedek dosyası değil.', 'hata');
+    }
+    if (DB.mod === 'demo') {
+      KOLEKSIYONLAR.forEach(k => { if (Array.isArray(veri[k])) DB._demoYaz(k, veri[k]); });
+    } else {
+      for (const k of KOLEKSIYONLAR) {
+        if (!Array.isArray(veri[k])) continue;
+        for (const kayit of veri[k]) { const { id, ...rest } = kayit; await DB.ekle(k, rest); }
+      }
+    }
+    localStorage.setItem('yt_baslangic', 'yedek');
+    await veriYukle();
+    modalKapat(); git('dashboard');
+    bildir('Yedek geri yüklendi.', 'basari');
+  };
+  fr.readAsText(dosya);
+}
+
+async function verileriSifirla() {
+  if (DB.mod === 'demo') {
+    KOLEKSIYONLAR.forEach(k => localStorage.removeItem(DB._demoAnahtar(k)));
+    localStorage.removeItem('yt_baslangic');
+  } else {
+    for (const k of KOLEKSIYONLAR) {
+      const kayitlar = await DB.listele(k);
+      for (const x of kayitlar) await DB.sil(k, x.id);
+    }
+  }
+  await veriYukle();
+  git('dashboard');
+  bildir('Tüm veriler sıfırlandı.', 'basari');
+  if (DB.mod === 'demo') setTimeout(hosgeldinModal, 400);
 }
 
 /* Logo (varsa) yükle */

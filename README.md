@@ -24,15 +24,20 @@ Pilates stüdyosu **Yoga Tugi** için basit, sade ve kolay kullanılan bir ön m
 
 ---
 
-## 🚀 Hızlı Başlangıç (Firebase olmadan — Demo)
+## 🚀 Hızlı Başlangıç (Yerel Depolama — Firebase'siz)
 
-Firebase'i henüz kurmadıysanız uygulama **otomatik olarak Demo Modunda** çalışır ve veriyi tarayıcınızda saklar:
+Firebase kurmadan da uygulama **tam çalışır**; verileri tarayıcınızda (localStorage) saklar:
 
 1. `index.html` dosyasını bir tarayıcıda açın (veya GitHub Pages ile yayınlayın).
-2. Giriş ekranında **"demo modunda dene"** bağlantısına tıklayın.
-3. Örnek verilerle tüm modülleri (dashboard, gelir/gider, kar payı, raporlar) inceleyin.
+2. Giriş ekranında **"Yerel modda gir →"** bağlantısına tıklayın.
+3. Açılışta **"Boş başla"** (kendi verilerinizi girin) veya **"Örnek verilerle keşfet"** seçin.
 
-> ⚠️ Demo modunda veriler yalnızca o tarayıcıda kalır, kalıcı ve paylaşımlı değildir. Gerçek kullanım için aşağıdaki Firebase kurulumunu yapın.
+### 💾 Yedekleme (önemli)
+Yerel modda veriler yalnızca o tarayıcıda kalır; tarayıcı verisi silinirse kaybolur. Bu yüzden:
+- Üst çubuktaki **💾** simgesine tıklayın → **"Yedeği İndir (.json)"** ile düzenli yedek alın.
+- Başka cihaza taşımak veya ileride **Firebase'e geçmek** için aynı yedeği **"Yedekten Geri Yükle"** ile kullanabilirsiniz.
+
+> ℹ️ Kalıcı, çok kullanıcılı ve merkezi kullanım için hazır olduğunuzda aşağıdaki Firebase kurulumunu yapın. Firebase bağlandığında kod otomatik olarak ona geçer; hiçbir şeyi yeniden yazmanız gerekmez.
 
 ---
 
