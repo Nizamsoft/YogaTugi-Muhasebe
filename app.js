@@ -1,7 +1,7 @@
 /* ============================================================
    Yoga Tugi — Ön Muhasebe · app.js
-   Saf vanilla JS. Backend: Firebase (Firestore + Auth)
-   Firebase kurulmadıysa otomatik "Demo Modu" (localStorage).
+   Saf vanilla JS. Veriler tarayıcıda (localStorage) saklanır.
+   Sunucu/Firebase yok — tamamen yerel çalışır.
    ============================================================ */
 (function () {
 'use strict';
@@ -83,67 +83,38 @@ function modalAc(baslik, govdeHTML, altHTML) {
 function modalKapat() { $('#modalKap').innerHTML = ''; }
 
 /* ==========================================================
-   2) VERİ KATMANI (Firebase VEYA Demo/localStorage)
+   2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
 const KOLEKSIYONLAR = ['hesaplar', 'islemler', 'ortaklar', 'komisyonlar', 'karPayi', 'kullanicilar'];
-let fb = { app: null, auth: null, db: null };
 
+/* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
 const DB = {
-  mod: 'demo', // 'firebase' | 'demo'
+  mod: 'yerel',
 
-  firebaseVarMi() {
-    const c = window.FIREBASE_CONFIG || {};
-    return typeof firebase !== 'undefined'
-      && c.apiKey && !String(c.apiKey).startsWith('BURAYA')
-      && c.projectId && !String(c.projectId).startsWith('BURAYA');
-  },
+  baslat() { this.mod = 'yerel'; },
 
-  baslat() {
-    if (this.firebaseVarMi()) {
-      this.mod = 'firebase';
-      fb.app = firebase.initializeApp(window.FIREBASE_CONFIG);
-      fb.auth = firebase.auth();
-      fb.db = firebase.firestore();
-    } else {
-      this.mod = 'demo';
-    }
-  },
+  _anahtar(kol) { return 'yt_' + kol; },
+  _oku(kol) { try { return JSON.parse(localStorage.getItem(this._anahtar(kol))) || []; } catch { return []; } },
+  _yaz(kol, dizi) { localStorage.setItem(this._anahtar(kol), JSON.stringify(dizi)); },
 
-  // ---- Demo (localStorage) ----
-  _demoAnahtar(kol) { return 'yt_' + kol; },
-  _demoOku(kol) { try { return JSON.parse(localStorage.getItem(this._demoAnahtar(kol))) || []; } catch { return []; } },
-  _demoYaz(kol, dizi) { localStorage.setItem(this._demoAnahtar(kol), JSON.stringify(dizi)); },
-
-  async listele(kol) {
-    if (this.mod === 'firebase') {
-      const snap = await fb.db.collection(kol).get();
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-    return this._demoOku(kol);
-  },
+  async listele(kol) { return this._oku(kol); },
 
   async ekle(kol, veri) {
     veri = { ...veri, olusturma: new Date().toISOString() };
-    if (this.mod === 'firebase') {
-      const ref = await fb.db.collection(kol).add(veri);
-      return { id: ref.id, ...veri };
-    }
-    const dizi = this._demoOku(kol);
+    const dizi = this._oku(kol);
     const kayit = { id: yeniId(), ...veri };
-    dizi.push(kayit); this._demoYaz(kol, dizi);
+    dizi.push(kayit); this._yaz(kol, dizi);
     return kayit;
   },
 
   async guncelle(kol, id, veri) {
-    if (this.mod === 'firebase') { await fb.db.collection(kol).doc(id).update(veri); return; }
-    const dizi = this._demoOku(kol);
+    const dizi = this._oku(kol);
     const i = dizi.findIndex(x => x.id === id);
-    if (i >= 0) { dizi[i] = { ...dizi[i], ...veri }; this._demoYaz(kol, dizi); }
+    if (i >= 0) { dizi[i] = { ...dizi[i], ...veri }; this._yaz(kol, dizi); }
   },
 
   async sil(kol, id) {
-    if (this.mod === 'firebase') { await fb.db.collection(kol).doc(id).delete(); return; }
-    this._demoYaz(kol, this._demoOku(kol).filter(x => x.id !== id));
+    this._yaz(kol, this._oku(kol).filter(x => x.id !== id));
   },
 
   async topluEkle(kol, kayitlar) {
@@ -1182,7 +1153,7 @@ SAYFALAR['ayar-kullanici'] = function () {
   const list = State.kullanicilar;
   ic().innerHTML = `
     <div class="bilgi-kutu"><span class="ikon">👤</span><div>Kullanıcıları ve yetki seviyelerini buradan yönetin.
-      ${DB.mod==='demo'?'<b>Demo modunda</b> kullanıcılar sadece listelenir; gerçek giriş için Firebase Authentication gereklidir.':'Kullanıcı ekledikten sonra ilgili kişi Firebase Authentication üzerinden bu e-posta ile giriş yapabilir.'}</div></div>
+      Bu liste, yetki planlaması ve kayıt amaçlıdır (yerel modda kullanıcı bazlı giriş kısıtı uygulanmaz).</div></div>
     <div class="kart-baslik" style="margin-bottom:14px"><h3>Kullanıcılar</h3><button class="btn btn-ana" id="yeniKul">＋ Yeni Kullanıcı</button></div>
     <div class="kart">
       ${list.length === 0 ? bosBlok('Kullanıcı tanımlı değil.') : `
@@ -1212,7 +1183,7 @@ function kullaniciFormu(roller, mevcut) {
       <div class="form-alan"><label>Rol</label><select id="uRol">${Object.entries(roller).map(([k,v])=>`<option value="${k}" ${mevcut&&mevcut.rol===k?'selected':''}>${v}</option>`).join('')}</select></div>
       <div class="form-alan"><label>Durum</label><select id="uAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
     </div>
-    <div class="bilgi-kutu uyari"><span class="ikon">🔑</span><div>Şifre belirleme ve gerçek giriş, Firebase Authentication panelinden veya kullanıcı ilk girişinde yapılır.</div></div>`;
+    <div class="bilgi-kutu"><span class="ikon">🔑</span><div>Bu kayıt yetki planlaması içindir. Yerel modda ayrı bir şifre/giriş kısıtı uygulanmaz.</div></div>`;
   modalAc(mevcut ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı', govde, `<button class="btn" id="uiIptal">İptal</button><button class="btn btn-ana" id="uiKaydet">💾 Kaydet</button>`);
   $('#uiIptal').onclick = modalKapat;
   $('#uiKaydet').onclick = async () => {
@@ -1239,17 +1210,17 @@ function onayModal(baslik, mesaj, onaylandi) {
 async function uygulamayiBaslat() {
   $('#girisEkrani').classList.add('gizli');
   $('#uygulama').classList.remove('gizli');
-  if (DB.mod === 'demo') $('#demoBand').classList.remove('gizli');
+  $('#demoBand').classList.remove('gizli');
   // Kullanıcı bilgisi
   const ep = State.kullanici?.email || 'yerel@yogatugi.com';
   $('#kullaniciAd').textContent = State.kullanici?.ad || ep.split('@')[0];
-  $('#kullaniciRol').textContent = DB.mod === 'demo' ? 'Yerel Kullanıcı' : 'Yönetici';
+  $('#kullaniciRol').textContent = 'Yerel Kullanıcı';
   $('#kullaniciRozet').textContent = (ep[0] || '?').toUpperCase();
   await veriYukle();
   menuCiz();
   git('dashboard');
-  // Yerel modda, henüz veri yoksa ve başlangıç seçilmemişse hoş geldin ekranı
-  if (DB.mod === 'demo' && State.hesaplar.length === 0 && !localStorage.getItem('yt_baslangic')) {
+  // Henüz veri yoksa ve başlangıç seçilmemişse hoş geldin ekranı
+  if (State.hesaplar.length === 0 && !localStorage.getItem('yt_baslangic')) {
     hosgeldinModal();
   }
 }
@@ -1317,56 +1288,25 @@ async function ornekVeriYukle() {
   await DB.ekle('kullanicilar', { eposta: 'yonetici@yogatugi.com', ad: 'Yönetici', rol: 'admin', aktif: true });
 }
 
-/* Giriş formu */
+/* Giriş — yerel uygulama (sunucu/şifre yok) */
 function girisKur() {
-  $('#girisForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const eposta = $('#gEposta').value.trim(), sifre = $('#gSifre').value;
-    $('#girisHata').textContent = '';
-    if (DB.mod === 'firebase') {
-      try {
-        $('#girisBtn').disabled = true; $('#girisBtn').textContent = 'Giriş yapılıyor…';
-        const cred = await fb.auth.signInWithEmailAndPassword(eposta, sifre);
-        State.kullanici = { email: cred.user.email, uid: cred.user.uid };
-        await uygulamayiBaslat();
-      } catch (err) {
-        $('#girisHata').textContent = firebaseHata(err.code);
-        $('#girisBtn').disabled = false; $('#girisBtn').textContent = 'Giriş Yap';
-      }
-    } else {
-      // Demo modunda basit giriş
-      State.kullanici = { email: eposta || 'yerel@yogatugi.com', ad: 'Yerel Kullanıcı' };
-      await uygulamayiBaslat();
-    }
-  };
-  $('#demoBtn').onclick = async () => {
-    DB.mod = 'demo';
+  const gir = async () => {
     State.kullanici = { email: 'yerel@yogatugi.com', ad: 'Yerel Kullanıcı' };
+    localStorage.setItem('yt_girisYapildi', '1');
     await uygulamayiBaslat();
   };
-}
-
-function firebaseHata(kod) {
-  const m = {
-    'auth/invalid-email': 'Geçersiz e-posta adresi.',
-    'auth/user-not-found': 'Kullanıcı bulunamadı.',
-    'auth/wrong-password': 'Hatalı şifre.',
-    'auth/invalid-credential': 'E-posta veya şifre hatalı.',
-    'auth/too-many-requests': 'Çok fazla deneme. Lütfen bekleyin.',
-    'auth/network-request-failed': 'Ağ hatası. Bağlantınızı kontrol edin.',
-  };
-  return m[kod] || 'Giriş başarısız. Bilgilerinizi kontrol edin.';
+  $('#demoBtn').onclick = gir;
+  // Daha önce girildiyse doğrudan aç (tekrar giriş gerektirmez)
+  if (localStorage.getItem('yt_girisYapildi')) gir();
 }
 
 /* Çıkış, tema, mobil menü */
 function ustCubukKur() {
-  $('#cikisBtn').onclick = async () => {
-    if (DB.mod === 'firebase' && fb.auth) await fb.auth.signOut();
+  $('#cikisBtn').onclick = () => {
+    localStorage.removeItem('yt_girisYapildi');
     State.kullanici = null;
     $('#uygulama').classList.add('gizli');
     $('#girisEkrani').classList.remove('gizli');
-    $('#girisBtn').disabled = false; $('#girisBtn').textContent = 'Giriş Yap';
-    $('#gSifre').value = '';
   };
   $('#temaBtn').onclick = () => {
     document.body.classList.toggle('tema-koyu');
@@ -1387,7 +1327,7 @@ function yedekModal() {
   const adet = State.hesaplar.length + State.islemler.length + State.ortaklar.length;
   modalAc('Yedekleme & Veri Yönetimi', `
     <div class="bilgi-kutu"><span class="ikon">💾</span><div>Yerel veriler yalnızca bu tarayıcıda saklanır.
-      Düzenli <b>yedek alın</b>; başka cihaza taşımak veya Firebase'e geçmek için de bu yedeği kullanabilirsiniz.</div></div>
+      Düzenli <b>yedek alın</b>; başka cihaza taşımak veya güvenli saklamak için bu yedeği kullanabilirsiniz.</div></div>
     <div style="display:flex;flex-direction:column;gap:11px">
       <button class="btn btn-ana" id="ydDisa" style="justify-content:center;padding:13px">
         ⤓ Yedeği İndir (.json) <span class="soluk" style="margin-left:6px">${adet} kayıt</span></button>
@@ -1429,14 +1369,7 @@ function yedekGeriYukle(dosya) {
     if (!veri || typeof veri !== 'object' || !Array.isArray(veri.hesaplar)) {
       return bildir('Bu bir Yoga Tugi yedek dosyası değil.', 'hata');
     }
-    if (DB.mod === 'demo') {
-      KOLEKSIYONLAR.forEach(k => { if (Array.isArray(veri[k])) DB._demoYaz(k, veri[k]); });
-    } else {
-      for (const k of KOLEKSIYONLAR) {
-        if (!Array.isArray(veri[k])) continue;
-        for (const kayit of veri[k]) { const { id, ...rest } = kayit; await DB.ekle(k, rest); }
-      }
-    }
+    KOLEKSIYONLAR.forEach(k => { if (Array.isArray(veri[k])) DB._yaz(k, veri[k]); });
     localStorage.setItem('yt_baslangic', 'yedek');
     await veriYukle();
     modalKapat(); git('dashboard');
@@ -1446,30 +1379,28 @@ function yedekGeriYukle(dosya) {
 }
 
 async function verileriSifirla() {
-  if (DB.mod === 'demo') {
-    KOLEKSIYONLAR.forEach(k => localStorage.removeItem(DB._demoAnahtar(k)));
-    localStorage.removeItem('yt_baslangic');
-  } else {
-    for (const k of KOLEKSIYONLAR) {
-      const kayitlar = await DB.listele(k);
-      for (const x of kayitlar) await DB.sil(k, x.id);
-    }
-  }
+  KOLEKSIYONLAR.forEach(k => localStorage.removeItem(DB._anahtar(k)));
+  localStorage.removeItem('yt_baslangic');
   await veriYukle();
   git('dashboard');
   bildir('Tüm veriler sıfırlandı.', 'basari');
-  if (DB.mod === 'demo') setTimeout(hosgeldinModal, 400);
+  setTimeout(hosgeldinModal, 400);
 }
 
-/* Logo (varsa) yükle */
-function logoYukle() {
-  const yol = 'logos/yogatugi-logo.jpeg';
+/* Logo (varsa) yükle — logos/yogatugi-logo.* (jpeg/jpg/png/webp/svg) otomatik denenir */
+function logoYukle(adaylar) {
+  adaylar = adaylar || [
+    'logos/yogatugi-logo.jpeg', 'logos/yogatugi-logo.jpg',
+    'logos/yogatugi-logo.png', 'logos/yogatugi-logo.webp', 'logos/yogatugi-logo.svg',
+  ];
+  if (!adaylar.length) return; // logo yoksa "YT" yer tutucu kalır
+  const yol = adaylar[0];
   const test = new Image();
   test.onload = () => {
     $('#girisLogo').innerHTML = `<img src="${yol}" alt="Yoga Tugi">`;
     $('#menuLogo').innerHTML = `<img src="${yol}" alt="Yoga Tugi">`;
   };
-  test.onerror = () => {}; // logo yoksa yer tutucu kalır
+  test.onerror = () => logoYukle(adaylar.slice(1)); // sıradaki uzantıyı dene
   test.src = yol;
 }
 
@@ -1479,14 +1410,8 @@ function logoYukle() {
 document.addEventListener('DOMContentLoaded', () => {
   DB.baslat();
   logoYukle();
-  girisKur();
   ustCubukKur();
-  // Firebase varsa oturum durumunu izle (otomatik giriş)
-  if (DB.mod === 'firebase') {
-    fb.auth.onAuthStateChanged(async (user) => {
-      if (user) { State.kullanici = { email: user.email, uid: user.uid }; await uygulamayiBaslat(); }
-    });
-  }
+  girisKur();
 });
 
 })();

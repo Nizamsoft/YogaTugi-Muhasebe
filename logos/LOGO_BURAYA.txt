@@ -2,8 +2,13 @@ Firma logosunu bu klasöre şu adla koyun:
 
     yogatugi-logo.jpeg
 
-Uygulama açılışta bu dosyayı otomatik algılar ve giriş ekranı ile menüde gösterir.
-Logo eklendiğinde tema renklerini logoya uygun şekilde güncelleyebiliriz
-(örn. logo mor/pastel tonlardaysa temayı ona göre ayarlarız).
+(Uzantı .jpg, .png, .webp veya .svg de olabilir — uygulama hepsini otomatik dener.)
 
+Uygulama açılışta bu dosyayı otomatik algılar ve giriş ekranı ile menüde gösterir.
 Logo yoksa geçici olarak "YT" yazılı yeşil bir yer tutucu görünür.
+
+--- GitHub üzerinden nasıl yüklenir ---
+1. Repo sayfasında bu "logos" klasörünü açın.
+2. Sağ üstte "Add file" > "Upload files" deyin.
+3. Logo dosyanızı sürükleyip bırakın (adı yogatugi-logo.jpeg olsun).
+4. Aşağıdan "Commit changes" deyin. Birkaç dakika içinde sitede görünür.

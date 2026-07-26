@@ -18,18 +18,8 @@
     </div>
     <h1>Yoga Tugi</h1>
     <div class="alt">Ön Muhasebe · Pilates Stüdyosu</div>
-    <form id="girisForm" autocomplete="on">
-      <label for="gEposta">E-posta</label>
-      <input type="email" id="gEposta" placeholder="ornek@yogatugi.com" required>
-      <label for="gSifre">Şifre</label>
-      <input type="password" id="gSifre" placeholder="••••••••" required>
-      <div class="giris-hata" id="girisHata"></div>
-      <button type="submit" class="btn-giris" id="girisBtn">Giriş Yap</button>
-    </form>
-    <div class="giris-demo">
-      Şu an <b>yerel depolama</b> modunda çalışıyor.<br>
-      <button type="button" id="demoBtn">Yerel modda gir →</button>
-    </div>
+    <button type="button" class="btn-giris" id="demoBtn" style="margin-top:26px">Uygulamaya Gir →</button>
+    <div class="giris-demo">💾 Veriler bu tarayıcıda (yerel) güvenle saklanır.</div>
   </div>
 </div>
 
@@ -48,7 +38,7 @@
 
   <!-- Ana alan -->
   <main class="ana">
-    <div class="demo-band gizli" id="demoBand">💾 YEREL DEPOLAMA — Veriler bu tarayıcıda saklanıyor. Düzenli <b>yedek alın</b> (💾 simgesi). Firebase'e daha sonra bağlanabilir.</div>
+    <div class="demo-band gizli" id="demoBand">💾 YEREL DEPOLAMA — Veriler bu tarayıcıda saklanıyor. Düzenli <b>yedek alın</b> (üstteki 💾 simgesi).</div>
     <header class="ust-cubuk">
       <button class="menu-ac" id="menuAcBtn">☰</button>
       <h2 id="sayfaBaslik">Gösterge Paneli</h2>
@@ -72,18 +62,9 @@
 <div id="bildirimler"></div>
 <div id="modalKap"></div>
 
-<!-- Firebase (compat SDK — modülsüz, saf script) -->
-<!-- Firebase kurulunca aşağıdaki 3 satırın yorumunu kaldırın (README'ye bakın) -->
-<!--
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
--->
-
 <!-- Excel (.xlsx) okuma kütüphanesi -->
 <script src="xlsx.full.min.js"></script>
 
-<script src="firebase-config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
