@@ -140,6 +140,13 @@ async function sifreHash(metin) {
   }
 }
 
+/* Sabit yönetici girişi — kod içinde tanımlı, uygulamadan değiştirilemez/kaldırılamaz.
+   Kullanıcı: Admin · Şifre: 22075934  (özet olarak saklanır) */
+const SABIT_ADMIN = {
+  kullanici: 'Admin',
+  hashler: ['833b0b5def5616ae555d81040563c19594b7500aaf4dee277b926bbf048b00d0', 'ycc397796'],
+};
+
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
   const [hesaplar, islemler, ortaklar, komisyonlar, karPayi, kullanicilar] = await Promise.all(
@@ -1301,47 +1308,23 @@ function logoDosyaIsle(dosya) {
   fr.readAsDataURL(dosya);
 }
 
-/* -------- AYARLAR: Giriş / Güvenlik (admin + şifre) -------- */
+/* -------- AYARLAR: Giriş / Güvenlik (sabit yönetici girişi) -------- */
 SAYFALAR['ayar-guvenlik'] = function () {
-  const a = State.ayarlar || {};
-  const kurulu = !!a.adminSifreHash;
   ic().innerHTML = `
     <div class="bilgi-kutu uyari"><span class="ikon">🔒</span><div>Bu giriş, temel bir <b>erişim kilididir</b>. Veriler tarayıcıda saklandığından, cihaza erişimi olan teknik biri kilidi aşabilir. Hassas veriler için cihazınızı da (ekran kilidi vb.) koruyun.</div></div>
     <div class="kart" style="max-width:580px">
-      <div class="kart-baslik"><h3>Giriş / Güvenlik</h3>${kurulu ? '<span class="rozet-etk rz-gelir">Şifre tanımlı</span>' : '<span class="rozet-etk rz-notr">Şifre yok</span>'}</div>
-      <div class="form-alan"><label>Girişte kullanıcı adı + şifre iste</label>
-        <select id="gvAktif">
-          <option value="1" ${a.girisAktif ? 'selected' : ''}>Açık — giriş kilidi aktif</option>
-          <option value="0" ${a.girisAktif ? '' : 'selected'}>Kapalı — tek tıkla gir</option>
-        </select>
+      <div class="kart-baslik"><h3>Giriş / Güvenlik</h3><span class="rozet-etk rz-gelir">Sabit giriş aktif</span></div>
+      <table class="tablo"><tbody>
+        <tr><td>Giriş kilidi</td><td class="sag"><b>Açık</b> (her zaman)</td></tr>
+        <tr><td>Yönetici Kullanıcı Adı</td><td class="sag"><b>${kacar(SABIT_ADMIN.kullanici)}</b></td></tr>
+        <tr><td>Şifre</td><td class="sag">•••••••• <span class="soluk">(kod ile tanımlı)</span></td></tr>
+      </tbody></table>
+      <div class="bilgi-kutu" style="margin-top:16px"><span class="ikon">ℹ️</span><div>Yönetici girişi <b>uygulama kodunda sabittir</b>; buradan kaldırılamaz veya değiştirilemez. Değişiklik gerekirse yazılım güncellemesi yapılır (geliştiriciye iletin).</div></div>
+      <div style="margin-top:14px">
+        <button class="btn" id="gvCikis">⏻ Oturumu Kapat</button>
       </div>
-      <div class="form-alan"><label>Yönetici Kullanıcı Adı</label>
-        <input type="text" id="gvKul" value="${kacar(a.adminKullanici || 'admin')}" placeholder="admin"></div>
-      <div class="form-satir">
-        <div class="form-alan"><label>${kurulu ? 'Yeni Şifre' : 'Şifre'}</label>
-          <input type="password" id="gvSif" placeholder="${kurulu ? '(değiştirmek için doldurun)' : 'en az 4 karakter'}" autocomplete="new-password"></div>
-        <div class="form-alan"><label>Şifre (Tekrar)</label>
-          <input type="password" id="gvSif2" autocomplete="new-password"></div>
-      </div>
-      <div style="text-align:right;margin-top:6px"><button class="btn btn-ana" id="gvKaydet">💾 Kaydet</button></div>
     </div>`;
-
-  $('#gvKaydet').onclick = async () => {
-    const aktif = $('#gvAktif').value === '1';
-    const kul = $('#gvKul').value.trim() || 'admin';
-    const s1 = $('#gvSif').value, s2 = $('#gvSif2').value;
-    if (s1 || s2) {
-      if (s1 !== s2) return bildir('Şifreler uyuşmuyor.', 'hata');
-      if (s1.length < 4) return bildir('Şifre en az 4 karakter olmalı.', 'hata');
-    }
-    if (aktif && !kurulu && !s1) return bildir('Giriş kilidi için önce bir şifre belirleyin.', 'hata');
-    const yeni = { ...State.ayarlar, girisAktif: aktif, adminKullanici: kul };
-    if (s1) yeni.adminSifreHash = await sifreHash(s1);
-    if (aktif && !yeni.adminSifreHash) return bildir('Giriş kilidi için önce bir şifre belirleyin.', 'hata');
-    DB.ayarYaz(yeni);
-    bildir('Güvenlik ayarları kaydedildi.', 'basari');
-    git('ayar-guvenlik');
-  };
+  $('#gvCikis').onclick = () => $('#cikisBtn').click();
 };
 
 /* Onay modalı */
@@ -1362,7 +1345,7 @@ async function uygulamayiBaslat() {
   // Kullanıcı bilgisi
   const ep = State.kullanici?.email || 'yerel@yogatugi.com';
   $('#kullaniciAd').textContent = State.kullanici?.ad || ep.split('@')[0];
-  $('#kullaniciRol').textContent = (State.ayarlar && State.ayarlar.girisAktif) ? 'Yönetici' : 'Yerel Kullanıcı';
+  $('#kullaniciRol').textContent = 'Yönetici';
   $('#kullaniciRozet').textContent = (ep[0] || '?').toUpperCase();
   await veriYukle();
   menuCiz();
@@ -1440,44 +1423,35 @@ async function ornekVeriYukle() {
 function girisKur() { girisGovdeCiz(); }
 
 function girisGovdeCiz() {
-  const a = State.ayarlar || {};
   const govde = $('#girisGovde');
-  const kilitli = a.girisAktif && a.adminSifreHash;
-  if (kilitli) {
-    govde.innerHTML = `
-      <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Kullanıcı Adı</label>
-      <input type="text" id="gKul" placeholder="admin" autocomplete="username">
-      <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Şifre</label>
-      <input type="password" id="gSif" placeholder="••••••••" autocomplete="current-password">
-      <div class="giris-hata" id="girisHata"></div>
-      <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>`;
-    $('#girisBtn').onclick = girisDogrula;
-    govde.querySelectorAll('input').forEach(inp =>
-      inp.addEventListener('keydown', e => { if (e.key === 'Enter') girisDogrula(); }));
-  } else {
-    govde.innerHTML = `
-      <button type="button" class="btn-giris" id="demoBtn" style="margin-top:26px">Uygulamaya Gir →</button>
-      <div class="giris-demo">💾 Veriler bu tarayıcıda (yerel) güvenle saklanır.</div>`;
-    $('#demoBtn').onclick = () => girisYap('Yerel Kullanıcı');
-    if (localStorage.getItem('yt_girisYapildi')) girisYap('Yerel Kullanıcı');
-  }
+  // Daha önce girildiyse doğrudan aç (oturum hatırlanır)
+  if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }
+  govde.innerHTML = `
+    <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Kullanıcı Adı</label>
+    <input type="text" id="gKul" placeholder="Admin" autocomplete="username">
+    <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Şifre</label>
+    <input type="password" id="gSif" placeholder="••••••••" autocomplete="current-password">
+    <div class="giris-hata" id="girisHata"></div>
+    <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>`;
+  $('#girisBtn').onclick = girisDogrula;
+  govde.querySelectorAll('input').forEach(inp =>
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') girisDogrula(); }));
 }
 
 async function girisDogrula() {
-  const a = State.ayarlar || {};
   const kul = ($('#gKul').value || '').trim();
   const sif = $('#gSif').value || '';
   const hata = $('#girisHata');
-  if (kul.toLocaleLowerCase('tr') !== (a.adminKullanici || 'admin').toLocaleLowerCase('tr')) {
+  if (kul.toLocaleLowerCase('tr') !== SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) {
     hata.textContent = 'Kullanıcı adı hatalı.'; return;
   }
   const h = await sifreHash(sif);
-  if (h !== a.adminSifreHash) { hata.textContent = 'Şifre hatalı.'; return; }
-  girisYap(a.adminKullanici || 'admin');
+  if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
+  girisYap(SABIT_ADMIN.kullanici);
 }
 
 async function girisYap(ad) {
-  State.kullanici = { email: (ad || 'yerel') + '@yogatugi', ad };
+  State.kullanici = { email: (ad || 'admin') + '@yogatugi', ad: ad || SABIT_ADMIN.kullanici };
   localStorage.setItem('yt_girisYapildi', '1');
   await uygulamayiBaslat();
 }
