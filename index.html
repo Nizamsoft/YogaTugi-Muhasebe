@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yoga Tugi — Ön Muhasebe</title>
+<meta name="theme-color" content="#2c352f">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiM2ZjlhNzIiLz48dGV4dCB4PSIzMiIgeT0iNDQiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSxBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjI4IiBmb250LXdlaWdodD0iODAwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ZVDwvdGV4dD48L3N2Zz4=">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= GİRİŞ EKRANI ================= -->
+<div id="girisEkrani">
+  <div class="giris-kart">
+    <div class="giris-logo" id="girisLogo">
+      <span class="yer-tutucu">YT</span>
+    </div>
+    <h1>Yoga Tugi</h1>
+    <div class="alt">Ön Muhasebe · Pilates Stüdyosu</div>
+    <form id="girisForm" autocomplete="on">
+      <label for="gEposta">E-posta</label>
+      <input type="email" id="gEposta" placeholder="ornek@yogatugi.com" required>
+      <label for="gSifre">Şifre</label>
+      <input type="password" id="gSifre" placeholder="••••••••" required>
+      <div class="giris-hata" id="girisHata"></div>
+      <button type="submit" class="btn-giris" id="girisBtn">Giriş Yap</button>
+    </form>
+    <div class="giris-demo">
+      Firebase henüz kurulmadıysa
+      <button type="button" id="demoBtn">demo modunda dene</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= UYGULAMA ================= -->
+<div class="uygulama gizli" id="uygulama">
+  <div class="menu-perde" id="menuPerde"></div>
+
+  <!-- Kenar menü -->
+  <aside class="kenar" id="kenar">
+    <div class="kenar-logo">
+      <div class="kutu" id="menuLogo">YT</div>
+      <div class="ad">Yoga Tugi<small>Ön Muhasebe</small></div>
+    </div>
+    <nav class="kenar-menu" id="anaMenu"><!-- app.js dolduracak --></nav>
+  </aside>
+
+  <!-- Ana alan -->
+  <main class="ana">
+    <div class="demo-band gizli" id="demoBand">⚠ DEMO MODU — Veriler yalnızca bu tarayıcıda saklanıyor. Kalıcı kullanım için Firebase'i kurun.</div>
+    <header class="ust-cubuk">
+      <button class="menu-ac" id="menuAcBtn">☰</button>
+      <h2 id="sayfaBaslik">Gösterge Paneli</h2>
+      <button class="arac-btn" id="temaBtn" title="Tema değiştir">🌙</button>
+      <div class="kullanici">
+        <div class="rozet" id="kullaniciRozet">?</div>
+        <div>
+          <div id="kullaniciAd" style="font-weight:600">—</div>
+          <div class="soluk" id="kullaniciRol" style="font-size:11.5px">—</div>
+        </div>
+        <button class="arac-btn" id="cikisBtn" title="Çıkış" style="margin-left:6px">⏻</button>
+      </div>
+    </header>
+    <div class="icerik" id="icerik">
+      <div class="yukleniyor"><div class="spinner"></div>Yükleniyor…</div>
+    </div>
+  </main>
+</div>
+
+<div id="bildirimler"></div>
+<div id="modalKap"></div>
+
+<!-- Firebase (compat SDK — modülsüz, saf script) -->
+<!-- Firebase kurulunca aşağıdaki 3 satırın yorumunu kaldırın (README'ye bakın) -->
+<!--
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+-->
+
+<!-- Excel (.xlsx) okuma kütüphanesi -->
+<script src="xlsx.full.min.js"></script>
+
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

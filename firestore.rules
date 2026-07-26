@@ -1,0 +1,28 @@
+rules_version = '2';
+// ============================================================
+// Yoga Tugi — Firestore Güvenlik Kuralları
+// Firebase Console > Firestore Database > Kurallar (Rules)
+// sekmesine BU içeriği yapıştırıp "Yayınla" deyin.
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Yalnızca giriş yapmış (Authentication) kullanıcılar okuyup yazabilir.
+    // Böylece veriler herkese açık olmaz; sadece tanımlı kullanıcılar erişir.
+    function girisYapti() {
+      return request.auth != null;
+    }
+
+    match /hesaplar/{id}     { allow read, write: if girisYapti(); }
+    match /islemler/{id}     { allow read, write: if girisYapti(); }
+    match /ortaklar/{id}     { allow read, write: if girisYapti(); }
+    match /komisyonlar/{id}  { allow read, write: if girisYapti(); }
+    match /karPayi/{id}      { allow read, write: if girisYapti(); }
+    match /kullanicilar/{id} { allow read, write: if girisYapti(); }
+
+    // Diğer her şey varsayılan olarak KAPALI.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

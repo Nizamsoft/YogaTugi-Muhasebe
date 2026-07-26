@@ -1,0 +1,328 @@
+/* ============================================================
+   Yoga Tugi — Ön Muhasebe
+   Pilates Stüdyosu · Sakin/kurumsal tema
+   Palet: Adaçayı yeşili / Kum-bej / Antrasit / Krem / Beyaz
+   ============================================================ */
+
+:root{
+  --yesil:#6f9a72;
+  --yesil-koyu:#557a58;
+  --yesil-acik:#e7f0e6;
+  --kum:#d8c7a2;
+  --kum-acik:#f3ecdd;
+  --antrasit:#2c352f;
+  --antrasit-acik:#3a463e;
+  --krem:#f7f4ec;
+  --kart:#ffffff;
+  --metin:#2c352f;
+  --metin-soluk:#6b7770;
+  --kenar:#e5e1d6;
+  --kenar-koyu:#cfc9ba;
+  --gri:#f1eee5;
+  --kirmizi:#c0483f;
+  --kirmizi-acik:#fbeceb;
+  --yesil-para:#2f8f5b;
+  --mavi:#4a72a8;
+  --sari:#c99a2e;
+  --golge:0 2px 10px rgba(44,53,47,.07);
+  --golge-buyuk:0 14px 40px rgba(44,53,47,.20);
+  --radius:14px;
+  --radius-kucuk:9px;
+  --menu:248px;
+}
+/* Koyu tema */
+body.tema-koyu{
+  --krem:#161a17;
+  --kart:#1e2420;
+  --metin:#e7ede9;
+  --metin-soluk:#9aa89f;
+  --kenar:#2c342e;
+  --kenar-koyu:#38423a;
+  --gri:#232a25;
+  --yesil-acik:#233026;
+  --kum-acik:#2b2a22;
+  --antrasit:#e7ede9;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
+  background:var(--krem);
+  color:var(--metin);
+  font-size:15px;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--yesil-koyu);text-decoration:none}
+h1,h2,h3,h4{line-height:1.25}
+
+/* --------- Yardımcılar --------- */
+.gizli{display:none !important}
+.sag{text-align:right}
+.orta{text-align:center}
+.pozitif{color:var(--yesil-para);font-weight:600}
+.negatif{color:var(--kirmizi);font-weight:600}
+.soluk{color:var(--metin-soluk)}
+.mono{font-variant-numeric:tabular-nums}
+
+/* ============ GİRİŞ EKRANI ============ */
+#girisEkrani{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#5a7a58 0%,#2c352f 100%);
+  padding:20px;
+}
+.giris-kart{
+  background:var(--kart);width:100%;max-width:400px;
+  border-radius:20px;box-shadow:var(--golge-buyuk);
+  padding:38px 34px;text-align:center;
+}
+.giris-logo{
+  width:84px;height:84px;border-radius:22px;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--yesil-acik);overflow:hidden;
+}
+.giris-logo img{width:100%;height:100%;object-fit:cover}
+.giris-logo .yer-tutucu{font-size:30px;font-weight:800;color:var(--yesil-koyu);letter-spacing:1px}
+.giris-kart h1{font-size:22px;margin-bottom:2px}
+.giris-kart .alt{color:var(--metin-soluk);font-size:13px;margin-bottom:26px}
+.giris-kart label{display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px}
+.giris-kart input{
+  width:100%;padding:12px 14px;border:1px solid var(--kenar-koyu);
+  border-radius:var(--radius-kucuk);background:var(--kart);
+}
+.giris-kart input:focus{outline:none;border-color:var(--yesil);box-shadow:0 0 0 3px var(--yesil-acik)}
+.giris-hata{color:var(--kirmizi);font-size:13px;margin-top:12px;min-height:18px}
+.btn-giris{
+  width:100%;margin-top:22px;padding:13px;border:none;border-radius:var(--radius-kucuk);
+  background:var(--yesil);color:#fff;font-weight:700;cursor:pointer;font-size:15px;
+  transition:background .15s;
+}
+.btn-giris:hover{background:var(--yesil-koyu)}
+.giris-demo{margin-top:16px;font-size:12.5px;color:var(--metin-soluk)}
+.giris-demo button{background:none;border:none;color:var(--yesil-koyu);cursor:pointer;font-weight:600;text-decoration:underline}
+
+/* ============ UYGULAMA İSKELETİ ============ */
+.uygulama{display:flex;min-height:100vh}
+
+/* --------- Kenar menü --------- */
+.kenar{
+  width:var(--menu);flex-shrink:0;background:var(--antrasit);color:#e7ede9;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+}
+.kenar-logo{
+  display:flex;align-items:center;gap:11px;padding:18px 18px 16px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.kenar-logo .kutu{
+  width:40px;height:40px;border-radius:11px;background:var(--yesil);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+  font-weight:800;color:#fff;
+}
+.kenar-logo .kutu img{width:100%;height:100%;object-fit:cover}
+.kenar-logo .ad{font-weight:700;font-size:15.5px;line-height:1.1}
+.kenar-logo .ad small{display:block;font-weight:400;font-size:11px;color:#9db3a2;margin-top:2px}
+.kenar-menu{flex:1;overflow-y:auto;padding:10px 10px 20px}
+.kenar-menu::-webkit-scrollbar{width:6px}
+.kenar-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.menu-grup{margin-top:6px}
+.menu-baslik{
+  font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:#7e9384;
+  padding:12px 12px 5px;font-weight:700;
+}
+.menu-oge{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;
+  cursor:pointer;color:#c8d4cc;font-size:14px;transition:background .12s,color .12s;
+  border:none;background:none;width:100%;text-align:left;
+}
+.menu-oge:hover{background:rgba(255,255,255,.06);color:#fff}
+.menu-oge.aktif{background:var(--yesil);color:#fff;font-weight:600}
+.menu-oge .ikon{width:19px;text-align:center;font-size:15px;flex-shrink:0}
+.menu-alt{padding-left:8px}
+.menu-alt .menu-oge{padding-left:34px;font-size:13.5px}
+
+/* --------- Ana alan --------- */
+.ana{flex:1;min-width:0;display:flex;flex-direction:column}
+.ust-cubuk{
+  display:flex;align-items:center;gap:14px;padding:13px 24px;
+  background:var(--kart);border-bottom:1px solid var(--kenar);position:sticky;top:0;z-index:20;
+}
+.ust-cubuk .menu-ac{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--metin)}
+.ust-cubuk h2{font-size:18px;flex:1}
+.ust-cubuk .kullanici{display:flex;align-items:center;gap:10px;font-size:13px}
+.ust-cubuk .kullanici .rozet{
+  width:34px;height:34px;border-radius:50%;background:var(--yesil-acik);color:var(--yesil-koyu);
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+}
+.ust-cubuk .arac-btn{
+  background:none;border:1px solid var(--kenar);border-radius:8px;padding:7px 10px;
+  cursor:pointer;color:var(--metin-soluk);font-size:14px;
+}
+.ust-cubuk .arac-btn:hover{border-color:var(--yesil);color:var(--yesil-koyu)}
+.icerik{padding:24px;flex:1}
+@media(max-width:1100px){ .icerik{padding:18px} }
+
+/* --------- Kart & ızgara --------- */
+.izgara{display:grid;gap:18px}
+.izgara-4{grid-template-columns:repeat(4,1fr)}
+.izgara-3{grid-template-columns:repeat(3,1fr)}
+.izgara-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1200px){.izgara-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.izgara-3,.izgara-2{grid-template-columns:1fr}}
+@media(max-width:640px){.izgara-4{grid-template-columns:1fr}}
+
+.kart{
+  background:var(--kart);border:1px solid var(--kenar);border-radius:var(--radius);
+  box-shadow:var(--golge);padding:20px;
+}
+.kart-baslik{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.kart-baslik h3{font-size:16px}
+.kart-baslik .araclar{display:flex;gap:8px;align-items:center}
+
+/* Özet kutuları */
+.ozet{position:relative;overflow:hidden}
+.ozet .etiket{font-size:12.5px;color:var(--metin-soluk);font-weight:600;display:flex;align-items:center;gap:7px}
+.ozet .deger{font-size:26px;font-weight:800;margin-top:8px;letter-spacing:-.5px}
+.ozet .alt-bilgi{font-size:12px;color:var(--metin-soluk);margin-top:5px}
+.ozet .ikon-daire{
+  position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+}
+.ozet.gelir .ikon-daire{background:#e6f4ec;color:var(--yesil-para)}
+.ozet.gider .ikon-daire{background:var(--kirmizi-acik);color:var(--kirmizi)}
+.ozet.kar .ikon-daire{background:var(--yesil-acik);color:var(--yesil-koyu)}
+.ozet.pay .ikon-daire{background:#eef2f9;color:var(--mavi)}
+
+/* --------- Tablolar --------- */
+.tablo-sar{overflow-x:auto;border-radius:var(--radius-kucuk)}
+table.tablo{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tablo th,table.tablo td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--kenar)}
+table.tablo th{
+  background:var(--gri);font-weight:700;color:var(--metin-soluk);font-size:12px;
+  text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;position:sticky;top:0;
+}
+table.tablo tbody tr:hover{background:var(--yesil-acik)}
+table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabular-nums}
+.bos-tablo{padding:36px;text-align:center;color:var(--metin-soluk)}
+.bos-tablo .ikon{font-size:34px;display:block;margin-bottom:8px;opacity:.5}
+
+/* Rozet/etiketler */
+.rozet-etk{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600}
+.rz-gelir{background:#e6f4ec;color:var(--yesil-para)}
+.rz-gider{background:var(--kirmizi-acik);color:var(--kirmizi)}
+.rz-transfer{background:#eef2f9;color:var(--mavi)}
+.rz-banka{background:#eaf1fa;color:var(--mavi)}
+.rz-kasa{background:var(--kum-acik);color:var(--sari)}
+.rz-kk{background:#f3eafa;color:#8b5cc7}
+.rz-notr{background:var(--gri);color:var(--metin-soluk)}
+
+/* --------- Butonlar --------- */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:9px;
+  border:1px solid var(--kenar-koyu);background:var(--kart);color:var(--metin);
+  cursor:pointer;font-weight:600;font-size:13.5px;transition:.13s;white-space:nowrap;
+}
+.btn:hover{border-color:var(--yesil);color:var(--yesil-koyu)}
+.btn-ana{background:var(--yesil);border-color:var(--yesil);color:#fff}
+.btn-ana:hover{background:var(--yesil-koyu);border-color:var(--yesil-koyu);color:#fff}
+.btn-kirmizi{background:var(--kirmizi);border-color:var(--kirmizi);color:#fff}
+.btn-kirmizi:hover{opacity:.9;color:#fff}
+.btn-kucuk{padding:6px 10px;font-size:12.5px}
+.btn-ikon{padding:7px 9px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* --------- Formlar --------- */
+.form-alan{margin-bottom:14px}
+.form-alan label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.form-alan input,.form-alan select,.form-alan textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--kenar-koyu);border-radius:var(--radius-kucuk);
+  background:var(--kart);
+}
+.form-alan input:focus,.form-alan select:focus,.form-alan textarea:focus{
+  outline:none;border-color:var(--yesil);box-shadow:0 0 0 3px var(--yesil-acik)
+}
+.form-satir{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.form-satir{grid-template-columns:1fr}}
+
+/* --------- Modal --------- */
+.modal-perde{
+  position:fixed;inset:0;background:rgba(20,26,22,.55);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal{
+  background:var(--kart);border-radius:16px;box-shadow:var(--golge-buyuk);
+  width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+}
+.modal-ust{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--kenar)}
+.modal-ust h3{font-size:17px}
+.modal-kapat{background:none;border:none;font-size:22px;cursor:pointer;color:var(--metin-soluk);line-height:1}
+.modal-govde{padding:22px}
+.modal-alt{padding:16px 22px;border-top:1px solid var(--kenar);display:flex;justify-content:flex-end;gap:10px}
+
+/* --------- Sekmeler (alt gezinme) --------- */
+.sekmeler{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--kenar);padding-bottom:0}
+.sekme{
+  padding:9px 15px;border:none;background:none;cursor:pointer;font-weight:600;font-size:14px;
+  color:var(--metin-soluk);border-bottom:2.5px solid transparent;margin-bottom:-1px;
+}
+.sekme.aktif{color:var(--yesil-koyu);border-bottom-color:var(--yesil)}
+
+/* --------- Bilgi kutusu --------- */
+.bilgi-kutu{
+  background:var(--yesil-acik);border:1px solid #c9dfc7;border-radius:var(--radius-kucuk);
+  padding:14px 16px;font-size:13.5px;color:var(--antrasit-acik);margin-bottom:18px;
+  display:flex;gap:11px;align-items:flex-start;
+}
+.bilgi-kutu.uyari{background:var(--kum-acik);border-color:var(--kum)}
+.bilgi-kutu .ikon{font-size:18px;flex-shrink:0}
+
+/* Dosya bırakma alanı */
+.birak-alani{
+  border:2px dashed var(--kenar-koyu);border-radius:var(--radius);padding:34px 20px;
+  text-align:center;color:var(--metin-soluk);cursor:pointer;transition:.15s;background:var(--gri);
+}
+.birak-alani:hover,.birak-alani.uzerinde{border-color:var(--yesil);background:var(--yesil-acik);color:var(--yesil-koyu)}
+.birak-alani .ikon{font-size:38px;display:block;margin-bottom:10px}
+
+/* Filtre çubuğu */
+.filtre-cubuk{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px}
+.filtre-cubuk .form-alan{margin-bottom:0}
+.filtre-cubuk label{font-size:12px;color:var(--metin-soluk)}
+
+/* Pay oranı çubuğu */
+.pay-cubuk{height:9px;border-radius:6px;background:var(--gri);overflow:hidden;display:flex;margin-top:8px}
+.pay-cubuk span{display:block;height:100%}
+
+/* Demo bandı */
+.demo-band{
+  background:var(--sari);color:#3a2e05;text-align:center;font-size:12.5px;font-weight:600;
+  padding:5px 10px;
+}
+
+/* Bildirim (toast) */
+#bildirimler{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:10px}
+.bildirim{
+  background:var(--antrasit);color:#fff;padding:12px 18px;border-radius:10px;box-shadow:var(--golge-buyuk);
+  font-size:13.5px;min-width:220px;animation:gir .25s;display:flex;align-items:center;gap:9px;
+}
+.bildirim.basari{background:var(--yesil)}
+.bildirim.hata{background:var(--kirmizi)}
+@keyframes gir{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Yükleniyor */
+.yukleniyor{display:flex;align-items:center;justify-content:center;padding:50px;color:var(--metin-soluk)}
+.spinner{
+  width:34px;height:34px;border:3px solid var(--kenar);border-top-color:var(--yesil);
+  border-radius:50%;animation:don .8s linear infinite;margin-right:12px;
+}
+@keyframes don{to{transform:rotate(360deg)}}
+
+/* --------- Duyarlı (mobil) --------- */
+@media(max-width:860px){
+  .kenar{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .22s;box-shadow:var(--golge-buyuk)}
+  body.menu-acik .kenar{transform:translateX(0)}
+  .ust-cubuk .menu-ac{display:block}
+  .menu-perde{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55;display:none}
+  body.menu-acik .menu-perde{display:block}
+}

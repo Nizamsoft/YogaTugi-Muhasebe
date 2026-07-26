@@ -1,0 +1,9 @@
+Firma logosunu bu klasöre şu adla koyun:
+
+    yogatugi-logo.jpeg
+
+Uygulama açılışta bu dosyayı otomatik algılar ve giriş ekranı ile menüde gösterir.
+Logo eklendiğinde tema renklerini logoya uygun şekilde güncelleyebiliriz
+(örn. logo mor/pastel tonlardaysa temayı ona göre ayarlarız).
+
+Logo yoksa geçici olarak "YT" yazılı yeşil bir yer tutucu görünür.
