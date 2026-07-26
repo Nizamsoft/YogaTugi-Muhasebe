@@ -122,7 +122,23 @@ const DB = {
     for (const k of kayitlar) sonuc.push(await this.ekle(kol, k));
     return sonuc;
   },
+
+  // ---- Ayarlar (firma bilgileri, logo, güvenlik) — tekil nesne ----
+  ayarOku() { try { return JSON.parse(localStorage.getItem('yt_ayarlar')) || {}; } catch { return {}; } },
+  ayarYaz(obj) { State.ayarlar = obj; localStorage.setItem('yt_ayarlar', JSON.stringify(obj)); },
 };
+
+/* Şifre özeti (SHA-256; yoksa basit yedek). Not: yerel kilit, tam güvenlik değildir. */
+async function sifreHash(metin) {
+  const girdi = 'yt$' + metin;
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(girdi));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    let h = 5381; for (const c of girdi) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0;
+    return 'y' + h.toString(16);
+  }
+}
 
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
@@ -236,6 +252,8 @@ const MENU = [
     { id: 'rapor-resmi',    ad: 'Resmi Muhasebe',        ikon: '🧾', baslik: 'Resmi Muhasebe Raporu' },
   ]},
   { grup: 'Ayarlar', ogeler: [
+    { id: 'ayar-firma',     ad: 'Firma Bilgileri',   ikon: '🏢', baslik: 'Firma Bilgileri & Logo' },
+    { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik' },
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
     { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı' },
@@ -1196,6 +1214,136 @@ function kullaniciFormu(roller, mevcut) {
   };
 }
 
+/* -------- AYARLAR: Firma Bilgileri & Logo -------- */
+SAYFALAR['ayar-firma'] = function () {
+  const a = State.ayarlar || {};
+  const v = (x) => kacar(a[x] || '');
+  const logoVar = !!a.logoData;
+  ic().innerHTML = `
+    <div class="bilgi-kutu"><span class="ikon">🏢</span><div>Firma bilgileri ve logo; giriş ekranında, menüde ve raporlarda kullanılır. Bilgiler bu tarayıcıda saklanır.</div></div>
+    <div class="izgara izgara-2">
+      <div class="kart">
+        <div class="kart-baslik"><h3>Firma Bilgileri</h3></div>
+        <div class="form-alan"><label>Firma Adı</label><input type="text" id="fAd" value="${v('firmaAd')}" placeholder="Yoga Tugi"></div>
+        <div class="form-alan"><label>Slogan / Alt Başlık</label><input type="text" id="fSlogan" value="${v('slogan')}" placeholder="Ön Muhasebe · Pilates Stüdyosu"></div>
+        <div class="form-satir">
+          <div class="form-alan"><label>Telefon</label><input type="text" id="fTel" value="${v('telefon')}"></div>
+          <div class="form-alan"><label>E-posta</label><input type="email" id="fEposta" value="${v('eposta')}"></div>
+        </div>
+        <div class="form-alan"><label>Adres</label><textarea id="fAdres" rows="2">${v('adres')}</textarea></div>
+        <div class="form-satir">
+          <div class="form-alan"><label>Vergi Dairesi</label><input type="text" id="fVd" value="${v('vergiDairesi')}"></div>
+          <div class="form-alan"><label>Vergi No</label><input type="text" id="fVn" value="${v('vergiNo')}"></div>
+        </div>
+        <div style="text-align:right;margin-top:6px"><button class="btn btn-ana" id="fKaydet">💾 Kaydet</button></div>
+      </div>
+
+      <div class="kart">
+        <div class="kart-baslik"><h3>Logo</h3></div>
+        <div style="text-align:center;margin-bottom:14px">
+          <div id="logoOnizleme" style="width:120px;height:120px;border-radius:22px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:var(--yesil-acik);overflow:hidden;border:1px solid var(--kenar)">
+            ${logoVar ? `<img src="${a.logoData}" alt="logo" style="width:100%;height:100%;object-fit:cover">`
+                      : `<span style="font-size:40px;font-weight:800;color:var(--yesil-koyu)">YT</span>`}
+          </div>
+        </div>
+        <div class="birak-alani" id="logoBirak">
+          <span class="ikon">🖼️</span><b>Logo seç</b> veya sürükle<br>
+          <span class="soluk">.jpeg · .jpg · .png · .webp · .svg</span>
+          <input type="file" id="logoDosya" accept="image/*" hidden>
+        </div>
+        ${logoVar ? `<button class="btn btn-kucuk" id="logoSil" style="margin-top:12px">🗑️ Logoyu Kaldır</button>` : ''}
+        <div class="bilgi-kutu" style="margin-top:14px"><span class="ikon">ℹ️</span><div>Logo tarayıcıya kaydedilir; ayrıca dosya olarak eklemek isterseniz repodaki <b>logos/</b> klasörünü de kullanabilirsiniz.</div></div>
+      </div>
+    </div>`;
+
+  $('#fKaydet').onclick = () => {
+    const yeni = { ...State.ayarlar,
+      firmaAd: $('#fAd').value.trim(), slogan: $('#fSlogan').value.trim(),
+      telefon: $('#fTel').value.trim(), eposta: $('#fEposta').value.trim(),
+      adres: $('#fAdres').value.trim(), vergiDairesi: $('#fVd').value.trim(), vergiNo: $('#fVn').value.trim(),
+    };
+    DB.ayarYaz(yeni); firmaBilgileriUygula();
+    bildir('Firma bilgileri kaydedildi.', 'basari');
+  };
+
+  const birak = $('#logoBirak'), dosya = $('#logoDosya');
+  birak.onclick = () => dosya.click();
+  ['dragover', 'dragenter'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.add('uzerinde'); }));
+  ['dragleave', 'drop'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.remove('uzerinde'); }));
+  birak.addEventListener('drop', e => { if (e.dataTransfer.files[0]) logoDosyaIsle(e.dataTransfer.files[0]); });
+  dosya.onchange = () => { if (dosya.files[0]) logoDosyaIsle(dosya.files[0]); };
+  if ($('#logoSil')) $('#logoSil').onclick = () => {
+    const yeni = { ...State.ayarlar }; delete yeni.logoData;
+    DB.ayarYaz(yeni); firmaBilgileriUygula(); git('ayar-firma'); bildir('Logo kaldırıldı.', 'basari');
+  };
+};
+
+/* Yüklenen logoyu küçült (max 240px) ve ayarlara kaydet */
+function logoDosyaIsle(dosya) {
+  if (!/^image\//.test(dosya.type) && !/\.svg$/i.test(dosya.name)) return bildir('Lütfen bir görsel dosyası seçin.', 'hata');
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 240;
+      let w = img.width || max, h = img.height || max;
+      const oran = Math.min(1, max / Math.max(w, h));
+      w = Math.max(1, Math.round(w * oran)); h = Math.max(1, Math.round(h * oran));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      let veri; try { veri = c.toDataURL('image/png'); } catch { veri = fr.result; }
+      DB.ayarYaz({ ...State.ayarlar, logoData: veri });
+      firmaBilgileriUygula(); git('ayar-firma'); bildir('Logo kaydedildi.', 'basari');
+    };
+    img.onerror = () => bildir('Görsel okunamadı.', 'hata');
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(dosya);
+}
+
+/* -------- AYARLAR: Giriş / Güvenlik (admin + şifre) -------- */
+SAYFALAR['ayar-guvenlik'] = function () {
+  const a = State.ayarlar || {};
+  const kurulu = !!a.adminSifreHash;
+  ic().innerHTML = `
+    <div class="bilgi-kutu uyari"><span class="ikon">🔒</span><div>Bu giriş, temel bir <b>erişim kilididir</b>. Veriler tarayıcıda saklandığından, cihaza erişimi olan teknik biri kilidi aşabilir. Hassas veriler için cihazınızı da (ekran kilidi vb.) koruyun.</div></div>
+    <div class="kart" style="max-width:580px">
+      <div class="kart-baslik"><h3>Giriş / Güvenlik</h3>${kurulu ? '<span class="rozet-etk rz-gelir">Şifre tanımlı</span>' : '<span class="rozet-etk rz-notr">Şifre yok</span>'}</div>
+      <div class="form-alan"><label>Girişte kullanıcı adı + şifre iste</label>
+        <select id="gvAktif">
+          <option value="1" ${a.girisAktif ? 'selected' : ''}>Açık — giriş kilidi aktif</option>
+          <option value="0" ${a.girisAktif ? '' : 'selected'}>Kapalı — tek tıkla gir</option>
+        </select>
+      </div>
+      <div class="form-alan"><label>Yönetici Kullanıcı Adı</label>
+        <input type="text" id="gvKul" value="${kacar(a.adminKullanici || 'admin')}" placeholder="admin"></div>
+      <div class="form-satir">
+        <div class="form-alan"><label>${kurulu ? 'Yeni Şifre' : 'Şifre'}</label>
+          <input type="password" id="gvSif" placeholder="${kurulu ? '(değiştirmek için doldurun)' : 'en az 4 karakter'}" autocomplete="new-password"></div>
+        <div class="form-alan"><label>Şifre (Tekrar)</label>
+          <input type="password" id="gvSif2" autocomplete="new-password"></div>
+      </div>
+      <div style="text-align:right;margin-top:6px"><button class="btn btn-ana" id="gvKaydet">💾 Kaydet</button></div>
+    </div>`;
+
+  $('#gvKaydet').onclick = async () => {
+    const aktif = $('#gvAktif').value === '1';
+    const kul = $('#gvKul').value.trim() || 'admin';
+    const s1 = $('#gvSif').value, s2 = $('#gvSif2').value;
+    if (s1 || s2) {
+      if (s1 !== s2) return bildir('Şifreler uyuşmuyor.', 'hata');
+      if (s1.length < 4) return bildir('Şifre en az 4 karakter olmalı.', 'hata');
+    }
+    if (aktif && !kurulu && !s1) return bildir('Giriş kilidi için önce bir şifre belirleyin.', 'hata');
+    const yeni = { ...State.ayarlar, girisAktif: aktif, adminKullanici: kul };
+    if (s1) yeni.adminSifreHash = await sifreHash(s1);
+    if (aktif && !yeni.adminSifreHash) return bildir('Giriş kilidi için önce bir şifre belirleyin.', 'hata');
+    DB.ayarYaz(yeni);
+    bildir('Güvenlik ayarları kaydedildi.', 'basari');
+    git('ayar-guvenlik');
+  };
+};
+
 /* Onay modalı */
 function onayModal(baslik, mesaj, onaylandi) {
   modalAc(baslik, `<p style="font-size:14px;line-height:1.6">${mesaj || 'Emin misiniz?'}</p>`,
@@ -1214,7 +1362,7 @@ async function uygulamayiBaslat() {
   // Kullanıcı bilgisi
   const ep = State.kullanici?.email || 'yerel@yogatugi.com';
   $('#kullaniciAd').textContent = State.kullanici?.ad || ep.split('@')[0];
-  $('#kullaniciRol').textContent = 'Yerel Kullanıcı';
+  $('#kullaniciRol').textContent = (State.ayarlar && State.ayarlar.girisAktif) ? 'Yönetici' : 'Yerel Kullanıcı';
   $('#kullaniciRozet').textContent = (ep[0] || '?').toUpperCase();
   await veriYukle();
   menuCiz();
@@ -1288,16 +1436,50 @@ async function ornekVeriYukle() {
   await DB.ekle('kullanicilar', { eposta: 'yonetici@yogatugi.com', ad: 'Yönetici', rol: 'admin', aktif: true });
 }
 
-/* Giriş — yerel uygulama (sunucu/şifre yok) */
-function girisKur() {
-  const gir = async () => {
-    State.kullanici = { email: 'yerel@yogatugi.com', ad: 'Yerel Kullanıcı' };
-    localStorage.setItem('yt_girisYapildi', '1');
-    await uygulamayiBaslat();
-  };
-  $('#demoBtn').onclick = gir;
-  // Daha önce girildiyse doğrudan aç (tekrar giriş gerektirmez)
-  if (localStorage.getItem('yt_girisYapildi')) gir();
+/* Giriş — ayarlarda şifre tanımlıysa admin+şifre, değilse tek düğme */
+function girisKur() { girisGovdeCiz(); }
+
+function girisGovdeCiz() {
+  const a = State.ayarlar || {};
+  const govde = $('#girisGovde');
+  const kilitli = a.girisAktif && a.adminSifreHash;
+  if (kilitli) {
+    govde.innerHTML = `
+      <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Kullanıcı Adı</label>
+      <input type="text" id="gKul" placeholder="admin" autocomplete="username">
+      <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Şifre</label>
+      <input type="password" id="gSif" placeholder="••••••••" autocomplete="current-password">
+      <div class="giris-hata" id="girisHata"></div>
+      <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>`;
+    $('#girisBtn').onclick = girisDogrula;
+    govde.querySelectorAll('input').forEach(inp =>
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') girisDogrula(); }));
+  } else {
+    govde.innerHTML = `
+      <button type="button" class="btn-giris" id="demoBtn" style="margin-top:26px">Uygulamaya Gir →</button>
+      <div class="giris-demo">💾 Veriler bu tarayıcıda (yerel) güvenle saklanır.</div>`;
+    $('#demoBtn').onclick = () => girisYap('Yerel Kullanıcı');
+    if (localStorage.getItem('yt_girisYapildi')) girisYap('Yerel Kullanıcı');
+  }
+}
+
+async function girisDogrula() {
+  const a = State.ayarlar || {};
+  const kul = ($('#gKul').value || '').trim();
+  const sif = $('#gSif').value || '';
+  const hata = $('#girisHata');
+  if (kul.toLocaleLowerCase('tr') !== (a.adminKullanici || 'admin').toLocaleLowerCase('tr')) {
+    hata.textContent = 'Kullanıcı adı hatalı.'; return;
+  }
+  const h = await sifreHash(sif);
+  if (h !== a.adminSifreHash) { hata.textContent = 'Şifre hatalı.'; return; }
+  girisYap(a.adminKullanici || 'admin');
+}
+
+async function girisYap(ad) {
+  State.kullanici = { email: (ad || 'yerel') + '@yogatugi', ad };
+  localStorage.setItem('yt_girisYapildi', '1');
+  await uygulamayiBaslat();
 }
 
 /* Çıkış, tema, mobil menü */
@@ -1307,6 +1489,7 @@ function ustCubukKur() {
     State.kullanici = null;
     $('#uygulama').classList.add('gizli');
     $('#girisEkrani').classList.remove('gizli');
+    girisGovdeCiz();
   };
   $('#temaBtn').onclick = () => {
     document.body.classList.toggle('tema-koyu');
@@ -1387,20 +1570,42 @@ async function verileriSifirla() {
   setTimeout(hosgeldinModal, 400);
 }
 
-/* Logo (varsa) yükle — logos/yogatugi-logo.* (jpeg/jpg/png/webp/svg) otomatik denenir */
-function logoYukle(adaylar) {
-  adaylar = adaylar || [
+/* Firma bilgilerini arayüze uygula (ad, slogan, logo, başlık) */
+function firmaBilgileriUygula() {
+  const a = State.ayarlar || {};
+  const ad = (a.firmaAd || '').trim() || 'Yoga Tugi';
+  const slogan = (a.slogan || '').trim() || 'Ön Muhasebe · Pilates Stüdyosu';
+  if ($('#girisBaslik')) $('#girisBaslik').textContent = ad;
+  if ($('#girisAlt')) $('#girisAlt').textContent = slogan;
+  if ($('#menuFirmaAdMetin')) $('#menuFirmaAdMetin').textContent = ad;
+  document.title = ad + ' — Ön Muhasebe';
+  logoUygula();
+}
+
+function logoAta(src) {
+  if ($('#girisLogo')) $('#girisLogo').innerHTML = `<img src="${src}" alt="logo">`;
+  if ($('#menuLogo')) $('#menuLogo').innerHTML = `<img src="${src}" alt="logo">`;
+}
+function logoYerTutucu() {
+  if ($('#girisLogo')) $('#girisLogo').innerHTML = `<span class="yer-tutucu">YT</span>`;
+  if ($('#menuLogo')) $('#menuLogo').textContent = 'YT';
+}
+
+/* Logo uygula: önce ayarlardaki yüklenen logo, yoksa logos/ klasöründeki dosya */
+function logoUygula() {
+  const a = State.ayarlar || {};
+  if (a.logoData) { logoAta(a.logoData); return; }
+  logoDosyadanYukle([
     'logos/yogatugi-logo.jpeg', 'logos/yogatugi-logo.jpg',
     'logos/yogatugi-logo.png', 'logos/yogatugi-logo.webp', 'logos/yogatugi-logo.svg',
-  ];
-  if (!adaylar.length) return; // logo yoksa "YT" yer tutucu kalır
+  ]);
+}
+function logoDosyadanYukle(adaylar) {
+  if (!adaylar.length) { logoYerTutucu(); return; }
   const yol = adaylar[0];
   const test = new Image();
-  test.onload = () => {
-    $('#girisLogo').innerHTML = `<img src="${yol}" alt="Yoga Tugi">`;
-    $('#menuLogo').innerHTML = `<img src="${yol}" alt="Yoga Tugi">`;
-  };
-  test.onerror = () => logoYukle(adaylar.slice(1)); // sıradaki uzantıyı dene
+  test.onload = () => logoAta(yol);
+  test.onerror = () => logoDosyadanYukle(adaylar.slice(1));
   test.src = yol;
 }
 
@@ -1409,7 +1614,8 @@ function logoYukle(adaylar) {
    ========================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   DB.baslat();
-  logoYukle();
+  State.ayarlar = DB.ayarOku();
+  firmaBilgileriUygula();
   ustCubukKur();
   girisKur();
 });
