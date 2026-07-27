@@ -347,6 +347,8 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
     padding-top:env(safe-area-inset-top, 0px)}
   body.menu-acik .kenar{transform:translateX(0)}
   .ust-cubuk .menu-ac{display:block}
+  /* Çentik güvencesi: env desteklenmese bile her zaman en az 46px üst boşluk */
+  .ust-cubuk{padding-top:max(46px, calc(env(safe-area-inset-top, 0px) + 13px))}
   .menu-perde{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55;display:none}
   body.menu-acik .menu-perde{display:block}
 }
