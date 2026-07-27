@@ -544,3 +544,82 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 @media(prefers-reduced-motion:reduce){
   .hkart .visual,.hkart .visual::before{animation:none}
 }
+
+/* ============================================================
+   BANKALAR — logo şeridi + Kayıt No tablosu + Banka Ayarları
+   ============================================================ */
+.banka-serit{display:flex;gap:16px;flex-wrap:wrap;padding:4px 2px 18px;margin-bottom:18px;
+  border-bottom:1px dashed var(--kenar);perspective:800px}
+.blogo{width:106px;flex:0 0 auto;text-align:center;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:8px;transition:transform .25s ease}
+.banka-tile{border-radius:20px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:22px;
+  box-shadow:0 8px 16px rgba(0,0,0,.18);position:relative;overflow:hidden;transform-style:preserve-3d;
+  transition:transform .3s ease, box-shadow .3s ease, filter .3s ease}
+.banka-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.blogo .ad{font-size:12.5px;font-weight:700;color:var(--metin-soluk);transition:color .2s;line-height:1.2}
+.blogo:not(.sec) .banka-tile{filter:saturate(.55) opacity(.7);transform:scale(.9)}
+.blogo:hover .banka-tile{transform:scale(.97) translateY(-2px)}
+.blogo.sec .banka-tile{filter:none;box-shadow:0 16px 26px rgba(0,0,0,.26);animation:banka-suz 3s ease-in-out infinite}
+.blogo.sec .ad{color:var(--metin)}
+.blogo.sec::after{content:"";display:block;width:34px;height:4px;border-radius:3px;background:var(--yesil);margin-top:-2px}
+@keyframes banka-suz{0%,100%{transform:translateY(0) rotateY(-9deg) rotateX(0)}50%{transform:translateY(-6px) rotateY(9deg) rotateX(7deg)}}
+
+.banka-bos{padding:46px 20px;text-align:center;color:var(--metin-soluk)}
+.banka-bos .el{font-size:42px;opacity:.55;margin-bottom:8px}
+.banka-bos p{margin:0;font-size:15px}
+
+.banka-arac{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.banka-arac h3{flex:1;margin:0;font-size:17px;display:flex;align-items:center;gap:9px}
+.banka-arac h3 .banka-tile{font-size:12px;border-radius:8px;flex:0 0 auto}
+
+table.banka-tablo{min-width:720px}
+table.banka-tablo .kno{font-family:ui-monospace,Menlo,monospace;font-weight:700;background:var(--krem);
+  border:1px solid var(--kenar);border-radius:7px;padding:3px 8px;font-size:12px;color:var(--yesil-koyu);white-space:nowrap}
+table.banka-tablo td .num{font-variant-numeric:tabular-nums;font-weight:700}
+table.banka-tablo .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:800}
+.kat-etk{display:inline-block;background:var(--krem);border:1px solid var(--kenar);border-radius:999px;
+  padding:2px 10px;font-size:12px;color:var(--metin-soluk);white-space:nowrap}
+.banka-not{font-size:12.5px;color:var(--metin-soluk);margin:12px 2px 0;line-height:1.5}
+
+/* Hareket formu — yön seçimi (Para Girdi / Para Çıktı) */
+.yon-secim{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.yon-btn{border:2px solid var(--kenar);background:var(--kart);border-radius:14px;padding:14px 10px;cursor:pointer;
+  font-family:inherit;font-size:14.5px;font-weight:700;color:var(--metin);display:flex;flex-direction:column;gap:3px;align-items:center;transition:.15s}
+.yon-btn small{font-size:11.5px;font-weight:500;color:var(--metin-soluk)}
+.yon-btn:hover{border-color:var(--yesil-koyu)}
+.yon-btn[data-yon="giris"].sec{border-color:var(--yesil-para);background:#e6f4ec;color:var(--yesil-para)}
+.yon-btn[data-yon="giris"].sec small{color:var(--yesil-para)}
+.yon-btn[data-yon="cikis"].sec{border-color:var(--kirmizi);background:var(--kirmizi-acik);color:var(--kirmizi)}
+.yon-btn[data-yon="cikis"].sec small{color:var(--kirmizi)}
+
+/* Banka hareketleri — mobil kart görünümü (masaüstünde gizli) */
+.banka-kartlar{display:none;flex-direction:column;gap:10px}
+.hareket-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:13px;padding:12px 13px;box-shadow:var(--golge);cursor:pointer}
+.hareket-kart .hk-ust{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.hareket-kart .kno{font-family:ui-monospace,Menlo,monospace;font-weight:700;background:var(--krem);border:1px solid var(--kenar);border-radius:7px;padding:2px 7px;font-size:11.5px;color:var(--yesil-koyu)}
+.hareket-kart .hk-ack{flex:1;font-weight:700;font-size:14px}
+.hareket-kart .hk-alt{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:4px}
+.hareket-kart .hk-kat{color:var(--metin-soluk)}
+.hareket-kart .num{font-variant-numeric:tabular-nums;font-weight:700}
+.hareket-kart .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:800}
+.hareket-kart.hk-toplam{background:var(--krem);cursor:default}
+
+/* Banka Ayarları listesi */
+.banka-liste{display:flex;flex-direction:column;gap:10px}
+.banka-satir{display:flex;align-items:center;gap:12px;padding:11px;border:1px solid var(--kenar);border-radius:13px;background:var(--kart)}
+.banka-satir .banka-tile{border-radius:12px;font-size:15px;flex:0 0 auto}
+.banka-satir-ad{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.banka-satir-ad b{font-size:14.5px}
+.banka-satir-ad small{font-size:12px;color:var(--metin-soluk)}
+
+@media(max-width:640px){
+  .banka-serit{gap:12px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:14px}
+  .blogo{width:74px}
+  .banka-serit .banka-tile{width:56px !important;height:56px !important;font-size:16px;border-radius:16px}
+  .blogo .ad{font-size:11px}
+  /* Mobilde tablo yerine kart */
+  .banka-tablo-kart{display:none}
+  .banka-kartlar{display:flex}
+  .banka-arac h3{font-size:15.5px}
+}
+@media(prefers-reduced-motion:reduce){.blogo.sec .banka-tile{animation:none}}

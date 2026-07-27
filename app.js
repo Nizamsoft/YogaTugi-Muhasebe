@@ -158,6 +158,25 @@ async function veriYukle() {
   State.komisyonlar = komisyonlar;
   State.karPayi = karPayi;
   State.kullanicilar = kullanicilar;
+  await kayitNoMigrasyon();
+}
+
+/* Kayıt No — her işleme benzersiz sıralı numara. Eski kayıtlar için tek seferlik doldurulur. */
+function sonrakiKayitNo() {
+  let enBuyuk = 0;
+  for (const i of State.islemler) { const n = Number(i.kayitNo) || 0; if (n > enBuyuk) enBuyuk = n; }
+  return enBuyuk + 1;
+}
+async function kayitNoMigrasyon() {
+  const eksik = State.islemler.filter(i => !(Number(i.kayitNo) > 0));
+  if (!eksik.length) return;
+  // Kronolojik sıraya göre numara ver (en eski = en küçük numara)
+  eksik.sort((a, b) => (a.olusturma || a.tarih || '').localeCompare(b.olusturma || b.tarih || ''));
+  let no = sonrakiKayitNo();
+  for (const i of eksik) {
+    i.kayitNo = no++;
+    await DB.guncelle('islemler', i.id, { kayitNo: i.kayitNo });
+  }
 }
 
 /* ==========================================================
@@ -253,6 +272,7 @@ const MENU = [
   ]},
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',     ad: 'Firma Bilgileri',   ikon: '🏢', baslik: 'Firma Bilgileri & Logo' },
+    { id: 'ayar-banka',     ad: 'Banka Ayarları',    ikon: '🏦', baslik: 'Banka Ayarları' },
     { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik', gizli: true },
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
@@ -928,7 +948,221 @@ function hesapGeriHTML() {
   return `<button type="button" class="hesap-geri" onclick="git('hesaplar')">‹ Hesaplar</button>`;
 }
 
-SAYFALAR['hesap-banka'] = (m) => hesapListesi('banka');
+/* ===================== BANKALAR (logo şeridi + Kayıt No tablosu) ===================== */
+let _bankaSecili = null;   // seçili banka hesabının id'si (açılışta boş)
+
+// İsimden istikrarlı bir renk tonu üret (logo yoksa monogram karesi için)
+function renkTon(s) { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 360; }
+function bankaTileHTML(h, boyut) {
+  const b = boyut || 76;
+  const stil = `width:${b}px;height:${b}px`;
+  if (h.logoData) return `<div class="banka-tile" style="${stil}"><img src="${h.logoData}" alt="${kacar(h.ad)}"></div>`;
+  const t = renkTon(h.ad);
+  return `<div class="banka-tile" style="${stil};background:linear-gradient(135deg,hsl(${t} 52% 55%),hsl(${t} 52% 38%))">${kacar(monogram(h.ad))}</div>`;
+}
+
+SAYFALAR['hesap-banka'] = () => { _bankaSecili = null; bankalarSayfasi(); };
+
+function bankalarSayfasi() {
+  const bankalar = State.hesaplar.filter(h => h.tip === 'banka');
+  // Seçili banka artık yoksa seçimi temizle
+  if (_bankaSecili && !bankalar.some(b => b.id === _bankaSecili)) _bankaSecili = null;
+
+  if (!bankalar.length) {
+    ic().innerHTML = `
+      <div class="bilgi-kutu"><span class="ikon">🏦</span><div>Banka hareketlerini görmek için önce banka eklemelisiniz.</div></div>
+      <div class="kart"><div class="banka-bos">
+        <div class="el">🏦</div>
+        <p>Henüz banka yok.</p>
+        <button class="btn btn-ana" id="bankaAyarGit" style="margin-top:12px">⚙️ Banka Ayarları'na git</button>
+      </div></div>`;
+    $('#bankaAyarGit').onclick = () => git('ayar-banka');
+    return;
+  }
+
+  const serit = bankalar.map(h => `
+    <button type="button" class="blogo ${h.id === _bankaSecili ? 'sec' : ''}" data-banka="${h.id}">
+      ${bankaTileHTML(h)}
+      <span class="ad">${kacar(h.ad)}</span>
+    </button>`).join('');
+
+  const secili = bankalar.find(b => b.id === _bankaSecili);
+  let govde;
+  if (!secili) {
+    govde = `<div class="banka-bos">
+      <div class="el">👆</div>
+      <p>Hareketleri görmek için yukarıdan bir <b>banka seçin</b>.</p>
+    </div>`;
+  } else {
+    // Bu bankaya ait hareketler — kronolojik (eski → yeni), yürüyen bakiye için
+    const hareketler = State.islemler
+      .filter(i => i.odemeHesabiId === secili.id || i.karsiHesapId === secili.id)
+      .slice()
+      .sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || (Number(a.kayitNo) || 0) - (Number(b.kayitNo) || 0));
+
+    let bakiye = Number(secili.acilisBakiye) || 0;
+    let topGiren = 0, topCikan = 0;
+    // Her hareket için satır verisini bir kez hesapla (tablo + mobil kart aynı veriden)
+    const rows = hareketler.map(i => {
+      const girenMi = (i.tip === 'gelir') || (i.tip === 'transfer' && i.karsiHesapId === secili.id);
+      const tutar = Number(i.tutar) || 0;
+      let giren = 0, cikan = 0;
+      if (girenMi) { giren = tutar; bakiye += tutar; topGiren += tutar; }
+      else { cikan = tutar; bakiye -= tutar; topCikan += tutar; }
+      const kat = State.hesaplar.find(h => h.id === i.kategoriId);
+      const gelirAd = i.tip === 'gelir' ? (kat ? kacar(kat.ad) : '—') : (i.tip === 'transfer' && girenMi ? 'Transfer (gelen)' : '');
+      const giderAd = i.tip === 'gider' ? (kat ? kacar(kat.ad) : '—') : (i.tip === 'ortakOdeme' ? 'Ortak Ödeme' : (i.tip === 'transfer' && !girenMi ? 'Transfer (giden)' : ''));
+      const katEtk = girenMi ? (gelirAd || '—') : (giderAd || '—');
+      return { i, girenMi, giren, cikan, gelirAd, giderAd, katEtk, bakiye };
+    });
+
+    const satirlar = rows.map(r => `
+      <tr data-hareket="${r.i.id}" style="cursor:pointer">
+        <td><span class="kno">#${r.i.kayitNo || '—'}</span></td>
+        <td>${kacar(r.i.aciklama || '—')}</td>
+        <td>${r.gelirAd ? `<span class="kat-etk">${r.gelirAd}</span>` : '<span class="soluk">—</span>'}</td>
+        <td>${r.giderAd ? `<span class="kat-etk">${r.giderAd}</span>` : '<span class="soluk">—</span>'}</td>
+        <td class="sag num ${r.giren ? 'pozitif' : 'soluk'}">${r.giren ? '+' + TL(r.giren) : '—'}</td>
+        <td class="sag num ${r.cikan ? 'negatif' : 'soluk'}">${r.cikan ? '−' + TL(r.cikan) : '—'}</td>
+        <td class="sag bakiye-hucre">${TL(r.bakiye)}</td>
+      </tr>`).join('');
+
+    const kartlar = rows.map(r => `
+      <div class="hareket-kart" data-hareket="${r.i.id}">
+        <div class="hk-ust"><span class="kno">#${r.i.kayitNo || '—'}</span><span class="hk-ack">${kacar(r.i.aciklama || '—')}</span></div>
+        <div class="hk-alt"><span class="hk-kat">${r.girenMi ? 'Gelir' : 'Gider'} · ${r.katEtk}</span>
+          <span class="num ${r.girenMi ? 'pozitif' : 'negatif'}">${r.girenMi ? '+' : '−'}${TL(r.girenMi ? r.giren : r.cikan)}</span></div>
+        <div class="hk-alt"><span class="hk-kat">Güncel Bakiye</span><span class="bakiye-hucre">${TL(r.bakiye)}</span></div>
+      </div>`).join('');
+
+    govde = `
+      <div class="banka-arac">
+        <h3>${bankaTileHTML(secili, 30)} <span>${kacar(secili.ad)} — Hareketler</span></h3>
+        <button class="btn btn-ana" id="yeniHareket">＋ Yeni Hareket</button>
+      </div>
+      ${hareketler.length === 0
+        ? `<div class="kart">${bosBlok('Bu bankada henüz hareket yok. “＋ Yeni Hareket” ile ekleyin.')}</div>`
+        : `<div class="kart banka-tablo-kart" style="padding:0;overflow:hidden">
+            <div class="tablo-sar"><table class="tablo banka-tablo">
+              <thead><tr>
+                <th>Kayıt No</th><th>Açıklama</th><th>Gelir Adı</th><th>Gider Adı</th>
+                <th class="sag">Giren Tutar</th><th class="sag">Çıkan Tutar</th><th class="sag">Güncel Bakiye</th>
+              </tr></thead>
+              <tbody>${satirlar}</tbody>
+              <tfoot><tr>
+                <td colspan="4">TOPLAM</td>
+                <td class="sag pozitif">+${TL(topGiren)}</td>
+                <td class="sag negatif">−${TL(topCikan)}</td>
+                <td class="sag"><b>${TL(bakiye)}</b></td>
+              </tr></tfoot>
+            </table></div>
+          </div>
+          <div class="banka-kartlar">${kartlar}
+            <div class="hareket-kart hk-toplam">
+              <div class="hk-alt"><span class="hk-kat">Giren</span><span class="pozitif">+${TL(topGiren)}</span></div>
+              <div class="hk-alt"><span class="hk-kat">Çıkan</span><span class="negatif">−${TL(topCikan)}</span></div>
+              <div class="hk-alt"><span class="hk-kat"><b>Güncel Bakiye</b></span><span class="bakiye-hucre">${TL(bakiye)}</span></div>
+            </div>
+          </div>`}
+      <p class="banka-not">💡 <b>Kayıt No</b> her harekette benzersizdir ve tüm hesaplarda ortaktır. Bir hareketi buradan düzenleyince ilgili gelir/gider hesabında da güncellenir.</p>`;
+  }
+
+  ic().innerHTML = `<div class="banka-serit">${serit}</div>${govde}`;
+
+  $$('[data-banka]').forEach(b => b.onclick = () => { _bankaSecili = b.dataset.banka; bankalarSayfasi(); });
+  if ($('#yeniHareket')) $('#yeniHareket').onclick = () => bankaHareketFormu(_bankaSecili);
+  $$('[data-hareket]').forEach(r => r.onclick = () => bankaHareketFormu(_bankaSecili, State.islemler.find(i => i.id === r.dataset.hareket)));
+}
+
+/* Banka hareketi ekle / düzenle — muhasebe bilmeyen için basit: Giriş mi Çıkış mı */
+function bankaHareketFormu(bankaId, mevcut) {
+  const banka = State.hesaplar.find(h => h.id === bankaId);
+  if (!banka) return;
+  const gelirKalem = State.hesaplar.filter(h => h.tip === 'gelir');
+  const giderKalem = State.hesaplar.filter(h => h.tip === 'gider');
+  // Düzenlemede yön: gelir → giriş, diğer (gider/ortakOdeme) → çıkış
+  const baslangicYon = mevcut ? (mevcut.tip === 'gelir' ? 'giris' : 'cikis') : 'giris';
+
+  const kalemSecenek = (liste, secili) =>
+    liste.map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${kacar(h.ad)}</option>`).join('')
+    + `<option value="__yeni">➕ Yeni kalem ekle…</option>`;
+
+  const govde = `
+    <div class="bilgi-kutu"><span class="ikon">🏦</span><div><b>${kacar(banka.ad)}</b> için hareket. ${mevcut ? `Kayıt No: <b>#${mevcut.kayitNo || '—'}</b>` : 'Kaydedince otomatik <b>Kayıt No</b> verilir.'}</div></div>
+    <div class="yon-secim">
+      <button type="button" class="yon-btn ${baslangicYon === 'giris' ? 'sec' : ''}" data-yon="giris">⬇️ Para Girdi<small>Gelir / Tahsilat</small></button>
+      <button type="button" class="yon-btn ${baslangicYon === 'cikis' ? 'sec' : ''}" data-yon="cikis">⬆️ Para Çıktı<small>Gider / Ödeme</small></button>
+    </div>
+    <div class="form-satir">
+      <div class="form-alan"><label>Tarih</label><input type="date" id="hrTarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
+      <div class="form-alan"><label>Tutar (₺)</label><input type="number" id="hrTutar" step="0.01" min="0" value="${mevcut ? mevcut.tutar : ''}" placeholder="0,00"></div>
+    </div>
+    <div class="form-alan" id="hrKalemKap">
+      <label id="hrKalemEt">Gelir Adı</label>
+      <select id="hrKalem"></select>
+      <input type="text" id="hrYeniKalem" placeholder="Yeni kalem adı (örn. Kira)" style="display:none;margin-top:8px">
+    </div>
+    <div class="form-alan"><label>Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Ocak ders geliri"></div>`;
+
+  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
+    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana" id="hrKaydet">💾 Kaydet</button>`;
+  modalAc(mevcut ? 'Hareketi Düzenle' : 'Yeni Hareket', govde, alt);
+
+  let yon = baslangicYon;
+  const kalemDoldur = () => {
+    const et = $('#hrKalemEt'), sel = $('#hrKalem'), yeni = $('#hrYeniKalem');
+    const liste = yon === 'giris' ? gelirKalem : giderKalem;
+    et.textContent = yon === 'giris' ? 'Gelir Adı' : 'Gider Adı';
+    const seciliKat = mevcut && ((yon === 'giris') === (mevcut.tip === 'gelir')) ? mevcut.kategoriId : null;
+    sel.innerHTML = kalemSecenek(liste, seciliKat);
+    if (!liste.length) sel.value = '__yeni';
+    yeni.style.display = sel.value === '__yeni' ? 'block' : 'none';
+  };
+  const yonSec = (y) => { yon = y; $$('.yon-btn').forEach(b => b.classList.toggle('sec', b.dataset.yon === y)); kalemDoldur(); };
+  $$('.yon-btn').forEach(b => b.onclick = () => yonSec(b.dataset.yon));
+  $('#hrKalem').onchange = () => { $('#hrYeniKalem').style.display = $('#hrKalem').value === '__yeni' ? 'block' : 'none'; };
+  kalemDoldur();
+
+  $('#hrIptal').onclick = modalKapat;
+  if ($('#hrSil')) $('#hrSil').onclick = () => {
+    modalKapat();
+    onayModal('Hareket silinsin mi?', `Kayıt No <b>#${mevcut.kayitNo || '—'}</b> — “${kacar(mevcut.aciklama || '')}” silinecek.`, async () => {
+      await DB.sil('islemler', mevcut.id);
+      State.islemler = State.islemler.filter(x => x.id !== mevcut.id);
+      bildir('Hareket silindi.', 'basari'); bankalarSayfasi();
+    });
+  };
+  $('#hrKaydet').onclick = async () => {
+    const tutar = parseFloat($('#hrTutar').value);
+    if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
+    let katId = $('#hrKalem').value;
+    if (katId === '__yeni') {
+      const ad = $('#hrYeniKalem').value.trim();
+      if (!ad) return bildir(yon === 'giris' ? 'Gelir adı girin.' : 'Gider adı girin.', 'hata');
+      const yk = await DB.ekle('hesaplar', { ad, tip: yon === 'giris' ? 'gelir' : 'gider', aktif: true });
+      State.hesaplar.push(yk); katId = yk.id;
+    }
+    if (!katId) return bildir('Bir kalem seçin.', 'hata');
+    const veri = {
+      tarih: $('#hrTarih').value, tutar,
+      tip: yon === 'giris' ? 'gelir' : 'gider',
+      odemeHesabiId: banka.id, kategoriId: katId,
+      aciklama: $('#hrAciklama').value.trim(), kaynak: 'banka',
+    };
+    if (mevcut) {
+      await DB.guncelle('islemler', mevcut.id, veri);
+      Object.assign(mevcut, veri);
+      bildir('Hareket güncellendi.', 'basari');
+    } else {
+      veri.kayitNo = sonrakiKayitNo();
+      const y = await DB.ekle('islemler', veri);
+      State.islemler.unshift(y);
+      bildir('Hareket eklendi.', 'basari');
+    }
+    modalKapat(); bankalarSayfasi();
+  };
+}
+
 SAYFALAR['hesap-kasa']  = (m) => hesapListesi('kasa');
 SAYFALAR['hesap-kk']    = (m) => hesapListesi('krediKarti');
 SAYFALAR['hesap-gider'] = (m) => hesapListesi('gider');
@@ -1451,6 +1685,104 @@ function kullaniciFormu(roller, mevcut) {
     else { const y = await DB.ekle('kullanicilar', { ...veri, eposta }); State.kullanicilar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); git('ayar-kullanici');
   };
+}
+
+/* -------- AYARLAR: Banka Ayarları (banka ekle/çıkar/logo) -------- */
+let _yeniBankaLogo = null;   // ekleme formunda seçilen geçici logo verisi
+SAYFALAR['ayar-banka'] = function () {
+  _yeniBankaLogo = null;
+  const bankalar = State.hesaplar.filter(h => h.tip === 'banka');
+  const satir = (h) => `
+    <div class="banka-satir">
+      ${bankaTileHTML(h, 46)}
+      <div class="banka-satir-ad"><b>${kacar(h.ad)}</b><small>Bakiye: ${TL(Hesapla.paraHesapBakiye(h.id))}</small></div>
+      <button class="btn btn-kucuk" data-logo="${h.id}">🖼️ Logo</button>
+      <button class="btn btn-kucuk btn-kirmizi" data-sil="${h.id}">🗑️</button>
+    </div>`;
+  ic().innerHTML = `
+    <div class="bilgi-kutu"><span class="ikon">🏦</span><div>Bankalarınızı buradan ekleyin, logolarını yükleyin veya silin. Bu bankalar “Bankalar” hesabının üstünde logo şeridi olarak görünür.</div></div>
+    <div class="izgara izgara-2">
+      <div class="kart">
+        <div class="kart-baslik"><h3>Bankalarım</h3><span class="soluk">${bankalar.length} banka</span></div>
+        <div class="banka-liste">${bankalar.length ? bankalar.map(satir).join('') : bosBlok('Henüz banka yok. Sağdan ekleyin.')}</div>
+      </div>
+      <div class="kart">
+        <div class="kart-baslik"><h3>Yeni Banka Ekle</h3></div>
+        <div class="form-alan"><label>Banka Adı</label><input type="text" id="ybAd" placeholder="Örn. Ziraat Bankası"></div>
+        <div class="form-alan"><label>Açılış Bakiyesi (₺)</label><input type="number" id="ybBakiye" step="0.01" value="0"></div>
+        <div class="form-alan"><label>Banka Logosu (opsiyonel)</label>
+          <div class="birak-alani" id="ybLogoBirak">
+            <span class="ikon">🖼️</span><b>Logo seç</b> veya sürükle<br>
+            <span class="soluk">.png · .jpg · .webp · .svg</span>
+            <input type="file" id="ybLogoDosya" accept="image/*" hidden>
+          </div>
+          <div id="ybLogoOnizleme" style="margin-top:12px"></div>
+        </div>
+        <button class="btn btn-ana" id="ybEkle" style="width:100%;justify-content:center;padding:12px">＋ Bankayı Ekle</button>
+      </div>
+    </div>
+    <input type="file" id="bankaLogoDosya" accept="image/*" hidden>`;
+
+  // Mevcut banka logolarını değiştir
+  let _logoHedef = null;
+  const gizliDosya = $('#bankaLogoDosya');
+  $$('[data-logo]').forEach(b => b.onclick = () => { _logoHedef = b.dataset.logo; gizliDosya.click(); });
+  gizliDosya.onchange = () => {
+    if (gizliDosya.files[0] && _logoHedef) bankaLogoIsle(gizliDosya.files[0], async (veri) => {
+      const h = State.hesaplar.find(x => x.id === _logoHedef);
+      await DB.guncelle('hesaplar', h.id, { logoData: veri }); h.logoData = veri;
+      bildir('Logo güncellendi.', 'basari'); git('ayar-banka');
+    });
+  };
+  $$('[data-sil]').forEach(b => b.onclick = () => {
+    const h = State.hesaplar.find(x => x.id === b.dataset.sil);
+    hesapSil(h.id);
+  });
+
+  // Yeni banka logo seçimi (geçici)
+  const birak = $('#ybLogoBirak'), dosya = $('#ybLogoDosya');
+  birak.onclick = () => dosya.click();
+  ['dragover', 'dragenter'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.add('uzerinde'); }));
+  ['dragleave', 'drop'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.remove('uzerinde'); }));
+  birak.addEventListener('drop', e => { if (e.dataTransfer.files[0]) yeniBankaLogoSec(e.dataTransfer.files[0]); });
+  dosya.onchange = () => { if (dosya.files[0]) yeniBankaLogoSec(dosya.files[0]); };
+
+  $('#ybEkle').onclick = async () => {
+    const ad = $('#ybAd').value.trim();
+    if (!ad) return bildir('Banka adı girin.', 'hata');
+    const veri = { ad, tip: 'banka', aktif: true, acilisBakiye: parseFloat($('#ybBakiye').value) || 0 };
+    if (_yeniBankaLogo) veri.logoData = _yeniBankaLogo;
+    const y = await DB.ekle('hesaplar', veri); State.hesaplar.push(y);
+    _yeniBankaLogo = null;
+    bildir('Banka eklendi.', 'basari'); git('ayar-banka');
+  };
+};
+function yeniBankaLogoSec(dosya) {
+  bankaLogoIsle(dosya, (veri) => {
+    _yeniBankaLogo = veri;
+    $('#ybLogoOnizleme').innerHTML = `<div class="banka-tile" style="width:60px;height:60px"><img src="${veri}" alt="logo"></div>`;
+  });
+}
+/* Banka logosunu küçült (max 200px) ve callback'e data-uri ver */
+function bankaLogoIsle(dosya, tamam) {
+  if (!/^image\//.test(dosya.type) && !/\.svg$/i.test(dosya.name)) return bildir('Lütfen bir görsel dosyası seçin.', 'hata');
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 200;
+      let w = img.width || max, h = img.height || max;
+      const oran = Math.min(1, max / Math.max(w, h));
+      w = Math.max(1, Math.round(w * oran)); h = Math.max(1, Math.round(h * oran));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      let veri; try { veri = c.toDataURL('image/png'); } catch { veri = fr.result; }
+      tamam(veri);
+    };
+    img.onerror = () => bildir('Görsel okunamadı.', 'hata');
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(dosya);
 }
 
 /* -------- AYARLAR: Firma Bilgileri & Logo -------- */
