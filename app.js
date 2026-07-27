@@ -237,13 +237,13 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
-  { grup: 'Veri Girişleri', ogeler: [
+  { grup: 'Veri Girişleri', ikon: '📥', ogeler: [
     { id: 'banka-aktarim', ad: 'Banka Aktarımı',       ikon: '🏦', baslik: 'Banka Aktarımı' },
     { id: 'plan4me',       ad: 'Plan4Me Aktarımı',     ikon: '📅', baslik: 'Plan4Me Aktarımı' },
     { id: 'kk-aktarim',    ad: 'Kredi Kartı Aktarımı', ikon: '💳', baslik: 'Kredi Kartı Aktarımı' },
     { id: 'kasa-giris',    ad: 'Kasa Girişleri',       ikon: '💵', baslik: 'Kasa Girişleri' },
   ]},
-  { grup: 'Hesaplar', ogeler: [
+  { grup: 'Hesaplar', ikon: '🗂️', ogeler: [
     { id: 'hesap-banka', ad: 'Bankalar',        ikon: '🏦', baslik: 'Bankalar', tip: 'banka' },
     { id: 'hesap-kasa',  ad: 'Kasa',            ikon: '💵', baslik: 'Kasa', tip: 'kasa' },
     { id: 'hesap-kk',    ad: 'Kredi Kartı',     ikon: '💳', baslik: 'Kredi Kartı Hesapları', tip: 'krediKarti' },
@@ -251,14 +251,14 @@ const MENU = [
     { id: 'hesap-gider', ad: 'Giderler Hesabı', ikon: '📉', baslik: 'Giderler Hesabı', tip: 'gider' },
     { id: 'hesap-gelir', ad: 'Gelirler Hesabı', ikon: '📈', baslik: 'Gelirler Hesabı', tip: 'gelir' },
   ]},
-  { grup: 'Raporlar', ogeler: [
+  { grup: 'Raporlar', ikon: '📊', ogeler: [
     { id: 'rapor-karzarar', ad: 'Kar / Zarar Raporu',    ikon: '⚖️', baslik: 'Kar / Zarar Raporu' },
     { id: 'rapor-hakedis',  ad: 'Ortak Hak Ediş',        ikon: '🥧', baslik: 'Ortak Hak Ediş Raporu' },
     { id: 'rapor-gelir',    ad: 'Gelirler Raporu',       ikon: '📈', baslik: 'Gelirler Raporu' },
     { id: 'rapor-gider',    ad: 'Giderler Raporu',       ikon: '📉', baslik: 'Giderler Raporu' },
     { id: 'rapor-resmi',    ad: 'Resmi Muhasebe',        ikon: '🧾', baslik: 'Resmi Muhasebe Raporu' },
   ]},
-  { grup: 'Ayarlar', ogeler: [
+  { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',     ad: 'Firma Bilgileri',   ikon: '🏢', baslik: 'Firma Bilgileri & Logo' },
     { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik' },
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
@@ -272,16 +272,28 @@ function menuCiz() {
   let html = '';
   for (const m of MENU) {
     if (m.grup) {
-      html += `<div class="menu-grup"><div class="menu-baslik">${kacar(m.grup)}</div><div class="menu-alt">`;
-      for (const o of m.ogeler) {
-        html += `<button class="menu-oge" data-sayfa="${o.id}"><span class="ikon">${o.ikon}</span>${kacar(o.ad)}</button>`;
-      }
-      html += `</div></div>`;
+      html += `<div class="menu-grup">
+        <button type="button" class="grup-baslik">
+          <span class="ikon">${m.ikon || '📁'}</span>
+          <span class="gad">${kacar(m.grup)}</span>
+          <span class="ok">▸</span>
+        </button>
+        <div class="menu-alt"><div class="ic">
+          ${m.ogeler.map(o => `<button class="menu-oge" data-sayfa="${o.id}"><span class="ikon">${o.ikon}</span>${kacar(o.ad)}</button>`).join('')}
+        </div></div>
+      </div>`;
     } else {
-      html += `<button class="menu-oge" data-sayfa="${m.id}"><span class="ikon">${m.ikon}</span>${kacar(m.ad)}</button>`;
+      html += `<button class="menu-oge tekil" data-sayfa="${m.id}"><span class="ikon">${m.ikon}</span>${kacar(m.ad)}</button>`;
     }
   }
   nav.innerHTML = html;
+  // Akordeon: grup başlığına basınca aç/kapa; biri açılınca diğerleri kapanır
+  $$('.grup-baslik', nav).forEach(b => b.onclick = () => {
+    const grup = b.parentElement;
+    const acikti = grup.classList.contains('acik');
+    $$('.menu-grup', nav).forEach(g => g.classList.remove('acik'));
+    if (!acikti) grup.classList.add('acik');
+  });
   $$('.menu-oge', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa));
 }
 
@@ -298,6 +310,11 @@ function git(sayfa) {
   const m = menuBul(sayfa) || { baslik: '—' };
   $('#sayfaBaslik').textContent = m.baslik;
   $$('.menu-oge').forEach(b => b.classList.toggle('aktif', b.dataset.sayfa === sayfa));
+  // Aktif alt sayfanın grubunu aç, diğerlerini kapat (akordeon)
+  $$('.menu-grup').forEach(g => {
+    const icerir = Array.from(g.querySelectorAll('.menu-oge')).some(b => b.dataset.sayfa === sayfa);
+    g.classList.toggle('acik', icerir);
+  });
   document.body.classList.remove('menu-acik');
   const render = SAYFALAR[sayfa] || SAYFALAR.dashboard;
   render(m);
