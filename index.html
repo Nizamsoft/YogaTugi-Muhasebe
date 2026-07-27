@@ -6,7 +6,7 @@
 <title>Green Village Pilates — Ön Muhasebe</title>
 <meta name="theme-color" content="#e7ddca">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiM2ZjlhNzIiLz48dGV4dCB4PSIzMiIgeT0iNDMiIGZvbnQtZmFtaWx5PSJTZWdvZSBVSSxBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIzIiBmb250LXdlaWdodD0iODAwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HVjwvdGV4dD48L3N2Zz4=">
-<link rel="stylesheet" href="style.css?v=23">
+<link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -39,22 +39,38 @@
   <main class="ana">
     <header class="ust-cubuk">
       <button class="menu-ac" id="menuAcBtn">☰</button>
+      <div class="ust-firma" id="ustFirma">
+        <div class="lg" id="ustFirmaLogo">GV</div>
+        <div class="ad"><span id="ustFirmaAd">Green Village Pilates</span><small>Ön Muhasebe</small></div>
+      </div>
       <h2 id="sayfaBaslik">Gösterge Paneli</h2>
-      <button class="arac-btn" id="yedekBtn" title="Yedekle / Geri Yükle">💾</button>
-      <button class="arac-btn" id="temaBtn" title="Tema değiştir">🌙</button>
-      <div class="kullanici">
-        <div class="rozet" id="kullaniciRozet">?</div>
-        <div>
+      <button class="arac-btn masaustu" id="yedekBtn" title="Yedekle / Geri Yükle">💾</button>
+      <button class="arac-btn masaustu" id="temaBtn" title="Tema değiştir">🌙</button>
+      <div class="kullanici" id="kullaniciBlok" role="button" tabindex="0">
+        <div class="k-isim">
           <div id="kullaniciAd" style="font-weight:600">—</div>
           <div class="soluk" id="kullaniciRol" style="font-size:11.5px">—</div>
         </div>
-        <button class="arac-btn" id="cikisBtn" title="Çıkış" style="margin-left:6px">⏻</button>
+        <div class="rozet" id="kullaniciRozet">?</div>
+      </div>
+      <button class="arac-btn masaustu" id="cikisBtn" title="Çıkış" style="margin-left:6px">⏻</button>
+      <div class="kul-menu gizli" id="kulMenu">
+        <button type="button" id="kmYedek">💾 <span>Yedekle / Geri Yükle</span></button>
+        <button type="button" id="kmTema">🌙 <span>Tema değiştir</span></button>
+        <div class="ay"></div>
+        <button type="button" id="kmCikis" class="cik">⏻ <span>Çıkış Yap</span></button>
       </div>
     </header>
     <div class="icerik" id="icerik">
       <div class="yukleniyor"><div class="spinner"></div>Yükleniyor…</div>
     </div>
   </main>
+
+  <!-- Mobil alt menü (logolu sekme çubuğu) -->
+  <nav class="alt-menu" id="altMenu"></nav>
+  <!-- Grup sekmesi alt listesi (sheet) -->
+  <div class="sheet-perde" id="sheetPerde"></div>
+  <div class="alt-sheet" id="altSheet"></div>
 </div>
 
 <div id="bildirimler"></div>
@@ -63,6 +79,6 @@
 <!-- Excel (.xlsx) okuma kütüphanesi -->
 <script src="xlsx.full.min.js"></script>
 
-<script src="app.js?v=23"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>

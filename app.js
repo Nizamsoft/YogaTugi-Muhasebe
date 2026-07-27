@@ -348,6 +348,7 @@ function git(sayfa) {
     g.classList.toggle('acik', icerir);
   });
   document.body.classList.remove('menu-acik');
+  if (typeof altMenuGuncelle === 'function') altMenuGuncelle();
   const render = SAYFALAR[sayfa] || SAYFALAR.dashboard;
   render(m);
 }
@@ -2317,25 +2318,100 @@ async function girisYap(ad) {
 }
 
 /* Çıkış, tema, mobil menü */
+function cikisYap() {
+  localStorage.removeItem('yt_girisYapildi');
+  State.kullanici = null;
+  $('#uygulama').classList.add('gizli');
+  $('#girisEkrani').classList.remove('gizli');
+  girisGovdeCiz();
+}
+function temaDegistir() {
+  document.body.classList.toggle('tema-koyu');
+  const koyu = document.body.classList.contains('tema-koyu');
+  const ikon = koyu ? '☀️' : '🌙';
+  if ($('#temaBtn')) $('#temaBtn').textContent = ikon;
+  localStorage.setItem('yt_tema', koyu ? 'koyu' : 'acik');
+}
+function kulMenuKapat() { $('#kulMenu').classList.add('gizli'); }
+
 function ustCubukKur() {
-  $('#cikisBtn').onclick = () => {
-    localStorage.removeItem('yt_girisYapildi');
-    State.kullanici = null;
-    $('#uygulama').classList.add('gizli');
-    $('#girisEkrani').classList.remove('gizli');
-    girisGovdeCiz();
-  };
-  $('#temaBtn').onclick = () => {
-    document.body.classList.toggle('tema-koyu');
-    const koyu = document.body.classList.contains('tema-koyu');
-    $('#temaBtn').textContent = koyu ? '☀️' : '🌙';
-    localStorage.setItem('yt_tema', koyu ? 'koyu' : 'acik');
-  };
-  if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); $('#temaBtn').textContent = '☀️'; }
+  $('#cikisBtn').onclick = cikisYap;
+  $('#temaBtn').onclick = temaDegistir;
+  if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); if ($('#temaBtn')) $('#temaBtn').textContent = '☀️'; }
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
   $('#yedekBtn').onclick = yedekModal;
+
+  // Mobil: kullanıcıya dokununca açılan menü (Yedek / Tema / Çıkış)
+  const km = $('#kulMenu');
+  $('#kullaniciBlok').onclick = (e) => { e.stopPropagation(); km.classList.toggle('gizli'); };
+  $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
+  $('#kmTema').onclick = () => { temaDegistir(); };
+  $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
+  document.addEventListener('click', (e) => {
+    if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
+  });
+
+  // Mobil alt menü + grup sheet
+  altMenuCiz();
+  $('#sheetPerde').onclick = sheetKapat;
 }
+
+/* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
+const ALT_MENU = [
+  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊' },
+  { tip: 'grup',  grup: 'Veri Girişleri', ad: 'Girişler', ikon: '📥' },
+  { tip: 'sayfa', id: 'hesaplar',  ad: 'Hesaplar', ikon: '🗂️' },
+  { tip: 'grup',  grup: 'Raporlar', ad: 'Raporlar', ikon: '📈' },
+  { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
+];
+// Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
+function altMenuAktifId(sayfa) {
+  if (sayfa === 'dashboard') return 'dashboard';
+  if (sayfa === 'hesaplar' || HESAP_KARTLARI.some(k => k.id === sayfa)) return 'hesaplar';
+  for (const m of ALT_MENU) {
+    if (m.tip !== 'grup') continue;
+    const grup = MENU.find(g => g.grup === m.grup);
+    if (grup && grup.ogeler.some(o => o.id === sayfa)) return m.grup;
+  }
+  return 'dashboard';
+}
+function altMenuCiz() {
+  const nav = $('#altMenu');
+  nav.innerHTML = ALT_MENU.map(m => {
+    const anahtar = m.tip === 'grup' ? m.grup : m.id;
+    return `<button type="button" class="alt-oge" data-alt="${kacar(anahtar)}">
+      <span class="ic">${m.ikon}</span><span class="tx">${kacar(m.ad)}</span></button>`;
+  }).join('');
+  $$('.alt-oge', nav).forEach(b => b.onclick = () => {
+    const anahtar = b.dataset.alt;
+    const m = ALT_MENU.find(x => (x.tip === 'grup' ? x.grup : x.id) === anahtar);
+    if (m.tip === 'sayfa') { sheetKapat(); git(m.id); }
+    else grupSheet(m.grup);
+  });
+  altMenuGuncelle();
+}
+function altMenuGuncelle() {
+  const aktif = altMenuAktifId(State.aktifSayfa);
+  $$('.alt-oge').forEach(b => b.classList.toggle('aktif', b.dataset.alt === aktif));
+}
+
+/* Grup sekmesine basınca alttan açılan alt sayfa listesi */
+function grupSheet(grupAd) {
+  const m = MENU.find(g => g.grup === grupAd);
+  if (!m) return;
+  const ogeler = m.ogeler.filter(o => !o.gizli);
+  $('#altSheet').innerHTML = `
+    <div class="cizgi"></div>
+    <h4>${m.ikon} ${kacar(grupAd)}</h4>
+    <div class="sheet-liste">
+      ${ogeler.map(o => `<button type="button" class="sheet-oge ${o.id === State.aktifSayfa ? 'aktif' : ''}" data-sayfa="${o.id}">
+        <span class="oi">${o.ikon}</span><b>${kacar(o.ad)}</b><span class="ok">›</span></button>`).join('')}
+    </div>`;
+  document.body.classList.add('sheet-acik');
+  $$('#altSheet .sheet-oge').forEach(b => b.onclick = () => { sheetKapat(); git(b.dataset.sayfa); });
+}
+function sheetKapat() { document.body.classList.remove('sheet-acik'); }
 
 /* ==========================================================
    YEDEKLEME — Dışa aktar / İçe aktar / Sıfırla
@@ -2417,6 +2493,12 @@ function firmaBilgileriUygula() {
   if ($('#girisAlt')) $('#girisAlt').textContent = slogan;
   if ($('#menuFirmaAdMetin')) $('#menuFirmaAdMetin').textContent = ad;
   if ($('#menuLogo')) $('#menuLogo').textContent = monogram(ad);   // kenar menüde monogram
+  // Mobil üst çubuk: sol firma adı + logo
+  if ($('#ustFirmaAd')) $('#ustFirmaAd').textContent = ad;
+  if ($('#ustFirmaLogo')) {
+    if (a.logoData) $('#ustFirmaLogo').innerHTML = `<img src="${a.logoData}" alt="logo">`;
+    else $('#ustFirmaLogo').textContent = monogram(ad);
+  }
   document.title = ad + ' — Ön Muhasebe';
   logoUygula();
 }
