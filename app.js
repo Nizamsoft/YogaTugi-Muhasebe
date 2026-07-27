@@ -738,10 +738,161 @@ SAYFALAR['kk-aktarim'] = () => aktarimSayfasi({
   baslik: 'Kredi Kartı Aktarımı', hedefTip: 'krediKarti', kaynak: 'krediKarti',
   aciklama: 'Kredi kartı ekstre dosyanızı yükleyin. Harcamalar gider, iadeler/tahsilatlar gelir olarak işlenir.',
 });
-SAYFALAR['kasa-giris'] = () => aktarimSayfasi({
-  baslik: 'Kasa Girişleri', hedefTip: 'kasa', kaynak: 'kasa',
-  aciklama: 'Nakit yapılan tahsilat ve ödemeleri buradan işleyin. Genelde manuel giriş kullanılır.',
-});
+/* -------- KASA GİRİŞİ — yönlendirmeli sihirbaz (dokunmatik, basit) -------- */
+SAYFALAR['kasa-giris'] = function () { kasaSihirbaz(); };
+
+function kasaSihirbaz() {
+  const AYK = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const S = { adim: 1, yon: null, kurus: 0, kategoriId: null, kategoriAd: '', ortakId: null, ortakAd: '', tarih: bugunISO(), kasaId: null };
+  const kasalar = () => State.hesaplar.filter(h => h.tip === 'kasa');
+  const tutar = () => S.kurus / 100;
+  const tutarYazi = () => tutar().toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const trTarih = (iso) => { const [y, m, g] = iso.split('-'); return `${parseInt(g, 10)} ${AYK[parseInt(m, 10) - 1]}`; };
+  const bugunMu = () => S.tarih === bugunISO();
+
+  const basHarf = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const avSinif = ['', 'g', 'b', 'p'];
+
+  function baslik(no, ust, alt) {
+    const geri = no === 1 ? '✕' : '←';
+    return `<div class="k-head">
+      <button class="k-geri" data-eylem="geri">${geri}</button>
+      <h2>${ust}</h2><div class="k-alt">${alt}</div>
+      <div class="k-prog">${[1,2,3,4,5].map(i => `<i class="${i <= no ? 'on' : ''}"></i>`).join('')}</div>
+    </div>`;
+  }
+
+  function ciz() {
+    const kap = ic();
+    let g = '';
+    if (S.adim === 1) {
+      g = baslik(1, 'Kasaya ne oldu?', 'Nakit para giriş mi çıkış mı?') + `
+        <div class="k-body"><div class="k-yon">
+          <button class="k-ybtn gir" data-yon="gelir"><span class="ic">💵</span><span class="tx"><b>Para GİRDİ</b><small>Tahsilat, nakit gelir</small></span></button>
+          <button class="k-ybtn cik" data-yon="gider"><span class="ic">💸</span><span class="tx"><b>Para ÇIKTI</b><small>Ödeme, harcama</small></span></button>
+        </div></div>`;
+    } else if (S.adim === 2) {
+      g = baslik(2, 'Ne kadar?', `${S.yon === 'gelir' ? '💵 Para Girdi' : '💸 Para Çıktı'} · tutarı yazın`) + `
+        <div class="k-body">
+          <div class="k-tutar ${S.yon}">${S.yon === 'gelir' ? '+' : '−'} ${tutarYazi()} <small>₺</small></div>
+          <div class="k-pad">
+            ${[1,2,3,4,5,6,7,8,9].map(n => `<button data-tus="${n}">${n}</button>`).join('')}
+            <button data-tus="00">00</button><button data-tus="0">0</button>
+            <button class="sil" data-eylem="sil">⌫</button>
+          </div>
+        </div>
+        <div class="k-foot"><button class="k-ana" data-eylem="ileri" ${S.kurus > 0 ? '' : 'disabled'}>Devam →</button></div>`;
+    } else if (S.adim === 3) {
+      const liste = State.hesaplar.filter(h => h.tip === S.yon);
+      g = baslik(3, 'Ne için?', 'Kategori seçin (isteğe bağlı)') + `
+        <div class="k-body"><div class="k-kat">
+          ${liste.map(h => `<button class="k-kbtn ${S.kategoriId === h.id ? 'sec' : ''}" data-kat="${h.id}">
+            <span class="ic">${S.yon === 'gelir' ? '📈' : '📉'}</span><span class="n">${kacar(h.ad)}</span></button>`).join('')}
+          <button class="k-kbtn" data-eylem="yeniKat"><span class="ic">➕</span><span class="n">Yeni</span></button>
+        </div></div>
+        <div class="k-foot">
+          <button class="k-ikincil" data-eylem="atlaKat">Kategorisiz devam</button>
+          <button class="k-ana" data-eylem="ileri" ${S.kategoriId ? '' : 'disabled'}>Devam →</button>
+        </div>`;
+    } else if (S.adim === 4) {
+      const ortaklar = State.ortaklar.filter(o => o.aktif !== false);
+      g = baslik(4, 'Hangi ortak?', 'Bu işlem kime ait?') + `
+        <div class="k-body"><div class="k-ortak">
+          ${ortaklar.map((o, i) => `<button class="k-obtn ${S.ortakId === o.id ? 'sec' : ''}" data-ortak="${o.id}" data-ad="${kacar(o.ad)}">
+            ${o.foto ? `<span class="av"><img src="${o.foto}" alt=""></span>` : `<span class="av ${avSinif[i % 4]}">${kacar(basHarf(o.ad))}</span>`}
+            <span class="n">${kacar(o.ad)}</span></button>`).join('')}
+          <button class="k-obtn ${S.ortakId === '' ? 'sec' : ''}" data-ortak="" data-ad="Genel"><span class="av genel">🏢</span><span class="n">Genel<br>(ortak yok)</span></button>
+        </div></div>`;
+    } else {
+      const kaslar = kasalar();
+      const kAd = S.kategoriAd || 'Kategorisiz';
+      const oAd = S.ortakId === '' ? 'Genel' : (S.ortakAd || '—');
+      g = baslik(5, 'Onayla', 'Her şey doğru mu?') + `
+        <div class="k-body">
+          <div class="k-ozet ${S.yon}">
+            <div class="ust">Kasaya</div>
+            <div class="big">${S.yon === 'gelir' ? '+' : '−'} ${tutarYazi()} ₺</div>
+            <div class="sat"><span>İşlem</span><b class="${S.yon === 'gelir' ? 'pozitif' : 'negatif'}">${S.yon === 'gelir' ? 'Para Girdi' : 'Para Çıktı'}</b></div>
+            <div class="sat"><span>Ne için</span><b>${kacar(kAd)}</b></div>
+            <div class="sat"><span>Ortak</span><b>${kacar(oAd)}</b></div>
+            <div class="sat"><span>Tarih</span><b>${bugunMu() ? 'Bugün · ' : ''}${trTarih(S.tarih)}</b></div>
+            ${kaslar.length > 1 ? `<div class="sat"><span>Kasa</span><b><select id="kKasa">${kaslar.map(k => `<option value="${k.id}" ${S.kasaId === k.id ? 'selected' : ''}>${kacar(k.ad)}</option>`).join('')}</select></b></div>` : ''}
+          </div>
+          <button class="k-tarih" data-eylem="tarih">📅 Tarihi değiştir</button>
+        </div>
+        <div class="k-foot"><button class="k-ana kaydet" data-eylem="kaydet">✓ Kaydet</button></div>`;
+    }
+    kap.innerHTML = `<div class="ksihirbaz">${g}</div>`;
+    wire();
+  }
+
+  function wire() {
+    const kap = ic();
+    $$('[data-yon]', kap).forEach(b => b.onclick = () => { S.yon = b.dataset.yon; S.kategoriId = null; S.kategoriAd = ''; S.adim = 2; ciz(); });
+    $$('[data-tus]', kap).forEach(b => b.onclick = () => { const t = b.dataset.tus; if (t === '00') S.kurus = Math.min(S.kurus * 100, 9999999999); else S.kurus = Math.min(S.kurus * 10 + parseInt(t, 10), 9999999999); ciz(); });
+    $$('[data-kat]', kap).forEach(b => b.onclick = () => { S.kategoriId = b.dataset.kat; const h = State.hesaplar.find(x => x.id === b.dataset.kat); S.kategoriAd = h ? h.ad : ''; S.adim = 4; ciz(); });
+    $$('[data-ortak]', kap).forEach(b => b.onclick = () => { S.ortakId = b.dataset.ortak; S.ortakAd = b.dataset.ad; S.adim = 5; ciz(); });
+    const el = (s) => $(s, kap);
+    const eylem = (ad, fn) => { const b = $(`[data-eylem="${ad}"]`, kap); if (b) b.onclick = fn; };
+    eylem('geri', () => { if (S.adim === 1) { git('dashboard'); return; } S.adim--; ciz(); });
+    eylem('sil', () => { S.kurus = Math.floor(S.kurus / 10); ciz(); });
+    eylem('ileri', () => { if (S.adim === 2 && S.kurus <= 0) return; S.adim++; ciz(); });
+    eylem('atlaKat', () => { S.kategoriId = null; S.kategoriAd = ''; S.adim = 4; ciz(); });
+    eylem('yeniKat', () => yeniKategori());
+    eylem('tarih', () => tarihDegistir());
+    eylem('kaydet', () => kaydet());
+  }
+
+  function yeniKategori() {
+    modalAc(S.yon === 'gelir' ? 'Yeni Gelir Kategorisi' : 'Yeni Gider Kategorisi',
+      `<div class="form-alan"><label>Kategori Adı</label><input type="text" id="ykAd" placeholder="${S.yon === 'gelir' ? 'Örn. Ders Ücreti' : 'Örn. Malzeme'}" autofocus></div>`,
+      `<button class="btn" id="ykIptal">İptal</button><button class="btn btn-ana" id="ykKaydet">Ekle</button>`);
+    $('#ykIptal').onclick = modalKapat;
+    $('#ykKaydet').onclick = async () => {
+      const ad = $('#ykAd').value.trim(); if (!ad) return bildir('Ad girin.', 'hata');
+      const y = await DB.ekle('hesaplar', { ad, tip: S.yon, aktif: true });
+      State.hesaplar.push(y); S.kategoriId = y.id; S.kategoriAd = ad;
+      modalKapat(); S.adim = 4; ciz();
+    };
+  }
+
+  function tarihDegistir() {
+    modalAc('Tarih Seç', `<div class="form-alan"><label>İşlem Tarihi</label><input type="date" id="tdTarih" value="${S.tarih}"></div>`,
+      `<button class="btn" id="tdIptal">İptal</button><button class="btn btn-ana" id="tdOk">Tamam</button>`);
+    $('#tdIptal').onclick = modalKapat;
+    $('#tdOk').onclick = () => { S.tarih = $('#tdTarih').value || bugunISO(); modalKapat(); ciz(); };
+  }
+
+  async function kaydet() {
+    if (S.kurus <= 0) return bildir('Tutar girin.', 'hata');
+    let kasaId = S.kasaId;
+    const kaslar = kasalar();
+    const secili = $('#kKasa'); if (secili) kasaId = secili.value;
+    if (!kasaId) kasaId = kaslar[0] && kaslar[0].id;
+    if (!kasaId) { const yk = await DB.ekle('hesaplar', { ad: 'Kasa', tip: 'kasa', acilisBakiye: 0, aktif: true }); State.hesaplar.push(yk); kasaId = yk.id; }
+    const kayit = { tarih: S.tarih, tutar: tutar(), tip: S.yon, odemeHesabiId: kasaId, kaynak: 'kasa' };
+    if (S.kategoriId) kayit.kategoriId = S.kategoriId;
+    if (S.ortakId) kayit.ortakId = S.ortakId;
+    const y = await DB.ekle('islemler', kayit); State.islemler.unshift(y);
+    basari();
+  }
+
+  function basari() {
+    ic().innerHTML = `<div class="ksihirbaz"><div class="k-basari">
+      <div class="tik">✓</div>
+      <h2>Kaydedildi!</h2>
+      <p>Kasaya <b class="${S.yon === 'gelir' ? 'pozitif' : 'negatif'}">${S.yon === 'gelir' ? '+' : '−'} ${tutarYazi()} ₺</b> işlendi.</p>
+      <div class="k-basari-btn">
+        <button class="k-ana" data-eylem="yeni">➕ Yeni Giriş</button>
+        <button class="k-ikincil" data-eylem="bitir">Bitir</button>
+      </div>
+    </div></div>`;
+    $('[data-eylem="yeni"]').onclick = () => kasaSihirbaz();
+    $('[data-eylem="bitir"]').onclick = () => git('dashboard');
+  }
+
+  ciz();
+}
 
 /* ==========================================================
    7) HESAPLAR

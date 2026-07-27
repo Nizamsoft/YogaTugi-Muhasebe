@@ -402,6 +402,60 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   .ortakkart .he .v{font-size:16.5px}
 }
 
+/* --------- Kasa Girişi Sihirbazı (dokunmatik) --------- */
+.ksihirbaz{max-width:460px;margin:0 auto;background:var(--kart);border:1px solid var(--kenar);border-radius:var(--radius);box-shadow:var(--golge);overflow:hidden;display:flex;flex-direction:column;min-height:66vh}
+.k-head{padding:14px 20px 16px;border-bottom:1px solid var(--kenar)}
+.k-geri{background:none;border:none;font-size:18px;color:var(--metin-soluk);cursor:pointer;padding:2px 0;line-height:1}
+.k-head h2{font-size:21px;margin:8px 0 3px}
+.k-alt{font-size:13px;color:var(--metin-soluk)}
+.k-prog{display:flex;gap:5px;margin-top:12px}
+.k-prog i{height:5px;flex:1;border-radius:3px;background:var(--kenar);transition:background .25s}
+.k-prog i.on{background:var(--yesil)}
+.k-body{padding:20px;flex:1}
+.k-foot{padding:14px 20px 20px;border-top:1px solid var(--kenar);display:flex;gap:10px}
+.k-ana{flex:1;padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#7ba97e,#5c8760);box-shadow:0 8px 18px rgba(79,116,82,.32)}
+.k-ana:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.k-ana.kaydet{background:linear-gradient(180deg,#3aa564,#2f8f5b)}
+.k-ikincil{padding:15px 16px;border:1px solid var(--kenar-koyu);border-radius:14px;background:var(--kart);color:var(--metin-soluk);font-weight:600;cursor:pointer}
+.k-yon{display:flex;flex-direction:column;gap:14px}
+.k-ybtn{display:flex;align-items:center;gap:14px;padding:20px 18px;border-radius:18px;border:2px solid;cursor:pointer;background:none;text-align:left;width:100%}
+.k-ybtn .ic{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;font-size:27px;flex-shrink:0}
+.k-ybtn .tx b{font-size:18px;display:block}.k-ybtn .tx small{font-size:12.5px;color:var(--metin-soluk)}
+.k-ybtn.gir{border-color:#bfe0c8;background:#e6f4ec}.k-ybtn.gir .ic{background:#cdeed7}.k-ybtn.gir b{color:var(--yesil-para)}
+.k-ybtn.cik{border-color:#f2cfcc;background:#fbeceb}.k-ybtn.cik .ic{background:#f8dcd9}.k-ybtn.cik b{color:var(--kirmizi)}
+.k-tutar{text-align:center;font-size:40px;font-weight:800;margin:4px 0 18px;letter-spacing:-1px}
+.k-tutar.gelir{color:var(--yesil-para)}.k-tutar.gider{color:var(--kirmizi)}
+.k-tutar small{font-size:22px;font-weight:700}
+.k-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.k-pad button{padding:17px 0;border-radius:14px;border:1px solid var(--kenar);background:var(--kart);font-size:21px;font-weight:700;cursor:pointer;color:var(--metin)}
+.k-pad button:active{background:var(--gri)}
+.k-pad button.sil{color:var(--kirmizi);background:var(--gri)}
+.k-kat,.k-ortak{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.k-kbtn{border:1.5px solid var(--kenar);border-radius:16px;padding:18px 8px;text-align:center;cursor:pointer;background:var(--kart)}
+.k-kbtn .ic{font-size:26px}.k-kbtn .n{font-size:13.5px;font-weight:700;margin-top:6px}
+.k-kbtn.sec{border-color:var(--yesil);background:var(--yesil-acik)}
+.k-obtn{border:1.5px solid var(--kenar);border-radius:16px;padding:14px 8px;cursor:pointer;background:var(--kart);display:flex;flex-direction:column;align-items:center;gap:8px}
+.k-obtn.sec{border-color:var(--yesil);background:var(--yesil-acik)}
+.k-obtn .av{width:48px;height:48px;border-radius:50%;overflow:hidden;color:#fff;font-weight:700;font-size:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--yesil),var(--yesil-koyu))}
+.k-obtn .av img{width:100%;height:100%;object-fit:cover}
+.k-obtn .av.g{background:linear-gradient(135deg,#c69a4c,#a8792f)}.k-obtn .av.b{background:linear-gradient(135deg,#4a72a8,#355488)}.k-obtn .av.p{background:linear-gradient(135deg,#8b5cc7,#6b3fa0)}
+.k-obtn .av.genel{background:var(--gri);color:var(--metin-soluk)}
+.k-obtn .n{font-size:13px;font-weight:700;line-height:1.2;text-align:center}
+.k-ozet{border-radius:18px;padding:18px;text-align:center;border:1px solid}
+.k-ozet.gelir{background:#e6f4ec;border-color:#bfe0c8}.k-ozet.gider{background:#fbeceb;border-color:#f2cfcc}
+.k-ozet .ust{font-size:13px;color:var(--metin-soluk)}
+.k-ozet .big{font-size:32px;font-weight:800;margin:4px 0 8px}
+.k-ozet.gelir .big{color:var(--yesil-para)}.k-ozet.gider .big{color:var(--kirmizi)}
+.k-ozet .sat{display:flex;justify-content:space-between;font-size:13.5px;padding:8px 0;border-top:1px dashed var(--kenar-koyu)}
+.k-ozet .sat b{font-weight:700}
+.k-ozet select{border:none;background:none;font-weight:700;color:var(--metin);font-size:13.5px}
+.k-tarih{display:block;margin:14px auto 0;background:none;border:none;color:var(--yesil-koyu);font-weight:600;font-size:13.5px;cursor:pointer}
+.k-basari{text-align:center;padding:44px 24px}
+.k-basari .tik{width:76px;height:76px;border-radius:50%;background:var(--yesil);color:#fff;font-size:40px;display:grid;place-items:center;margin:0 auto 16px}
+.k-basari h2{font-size:24px;margin:0 0 6px}
+.k-basari p{color:var(--metin-soluk);font-size:15px}
+.k-basari-btn{display:flex;flex-direction:column;gap:10px;max-width:280px;margin:24px auto 0}
+
 /* iPhone çentiği (safe-area) — giriş ekranı da güvenli alanı korur */
 #girisEkrani{
   padding-top:max(20px, env(safe-area-inset-top, 0px));
