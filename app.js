@@ -260,10 +260,10 @@ const MENU = [
   ]},
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',     ad: 'Firma Bilgileri',   ikon: '🏢', baslik: 'Firma Bilgileri & Logo' },
-    { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik' },
+    { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik', gizli: true },
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
-    { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı' },
+    { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı', gizli: true },
   ]},
 ];
 
@@ -271,7 +271,10 @@ function menuCiz() {
   const nav = $('#anaMenu');
   let html = '';
   for (const m of MENU) {
+    if (m.gizli) continue;
     if (m.grup) {
+      const ogeler = m.ogeler.filter(o => !o.gizli);
+      if (!ogeler.length) continue;
       html += `<div class="menu-grup">
         <button type="button" class="grup-baslik">
           <span class="ikon">${m.ikon || '📁'}</span>
@@ -279,7 +282,7 @@ function menuCiz() {
           <span class="ok">▸</span>
         </button>
         <div class="menu-alt"><div class="ic">
-          ${m.ogeler.map(o => `<button class="menu-oge" data-sayfa="${o.id}"><span class="ikon">${o.ikon}</span>${kacar(o.ad)}</button>`).join('')}
+          ${ogeler.map(o => `<button class="menu-oge" data-sayfa="${o.id}"><span class="ikon">${o.ikon}</span>${kacar(o.ad)}</button>`).join('')}
         </div></div>
       </div>`;
     } else {
