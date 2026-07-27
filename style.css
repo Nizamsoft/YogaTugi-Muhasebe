@@ -7,41 +7,43 @@
 :root{
   --yesil:#6f9a72;
   --yesil-koyu:#557a58;
-  --yesil-acik:#e7f0e6;
+  --yesil-acik:#e6efe4;
   --kum:#d8c7a2;
-  --kum-acik:#f3ecdd;
-  --antrasit:#2c352f;
-  --antrasit-acik:#3a463e;
-  --krem:#f7f4ec;
-  --kart:#ffffff;
-  --metin:#2c352f;
-  --metin-soluk:#6b7770;
-  --kenar:#e5e1d6;
-  --kenar-koyu:#cfc9ba;
-  --gri:#f1eee5;
+  --kum-acik:#f2ead8;
+  --gold:#c69a4c;
+  --antrasit:#2b2f26;       /* sıcak koyu zeytin — kenar menü */
+  --antrasit-acik:#3a4034;
+  --krem:#ece3d1;           /* sıcak kum sayfa zemini */
+  --kart:#fffdf7;           /* sıcak beyaz kart */
+  --metin:#332f27;
+  --metin-soluk:#7a7160;
+  --kenar:#e4dbc7;
+  --kenar-koyu:#d6cbb1;
+  --gri:#efe6d3;
   --kirmizi:#c0483f;
   --kirmizi-acik:#fbeceb;
   --yesil-para:#2f8f5b;
   --mavi:#4a72a8;
   --sari:#c99a2e;
-  --golge:0 2px 10px rgba(44,53,47,.07);
-  --golge-buyuk:0 14px 40px rgba(44,53,47,.20);
-  --radius:14px;
-  --radius-kucuk:9px;
+  --golge:0 2px 12px rgba(96,78,42,.09);
+  --golge-buyuk:0 16px 44px rgba(74,58,28,.20);
+  --radius:16px;
+  --radius-kucuk:10px;
   --menu:248px;
 }
-/* Koyu tema */
+/* Koyu tema (sıcak) */
 body.tema-koyu{
-  --krem:#161a17;
-  --kart:#1e2420;
-  --metin:#e7ede9;
-  --metin-soluk:#9aa89f;
-  --kenar:#2c342e;
-  --kenar-koyu:#38423a;
-  --gri:#232a25;
-  --yesil-acik:#233026;
-  --kum-acik:#2b2a22;
-  --antrasit:#e7ede9;
+  --krem:#1b1913;
+  --kart:#242118;
+  --metin:#ece4d3;
+  --metin-soluk:#a89c84;
+  --kenar:#332e22;
+  --kenar-koyu:#3d3729;
+  --gri:#221f17;
+  --yesil-acik:#243026;
+  --kum-acik:#2a271d;
+  --antrasit:#141710;       /* menü koyu kalsın */
+  --antrasit-acik:#d9e0d3;  /* bilgi kutusu metni açık */
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
