@@ -88,18 +88,14 @@ body.tema-koyu #girisEkrani{
 }
 /* Logo A — Altın Çerçeve: kabartma kare + ince altın hat */
 .giris-logo{
-  position:relative;width:104px;height:104px;margin:0 auto 16px;
-  border-radius:26px;background:var(--nk);padding:9px;
-  box-shadow:9px 9px 18px var(--nsd), -9px -9px 18px var(--nsl);
+  position:relative;max-width:270px;min-height:56px;margin:2px auto 16px;
+  display:flex;align-items:center;justify-content:center;
 }
-.giris-logo::after{
-  content:"";position:absolute;inset:5px;border-radius:22px;
-  border:1.5px solid rgba(198,154,76,.65);pointer-events:none;
-}
-.giris-logo img{width:100%;height:100%;border-radius:19px;object-fit:cover;display:block}
+.giris-logo img{max-width:100%;max-height:128px;object-fit:contain;display:block}
 .giris-logo .yer-tutucu{
-  display:flex;width:100%;height:100%;align-items:center;justify-content:center;
-  font-size:30px;font-weight:800;color:#9a7b3e;letter-spacing:1px;
+  width:88px;height:88px;border-radius:24px;display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:800;color:var(--yesil-koyu);letter-spacing:1px;background:var(--nk);
+  box-shadow:8px 8px 16px var(--nsd), -8px -8px 16px var(--nsl);
 }
 .giris-kart h1{font-family:Georgia,"Times New Roman",serif;font-size:24px;margin-bottom:3px;color:var(--nink);letter-spacing:-.3px}
 .giris-kart .alt{color:var(--nink-soft);font-size:12.5px;margin-bottom:24px}

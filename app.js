@@ -1429,7 +1429,7 @@ SAYFALAR['ayar-firma'] = function () {
     <div class="izgara izgara-2">
       <div class="kart">
         <div class="kart-baslik"><h3>Firma Bilgileri</h3></div>
-        <div class="form-alan"><label>Firma Adı</label><input type="text" id="fAd" value="${v('firmaAd')}" placeholder="Yoga Tugi"></div>
+        <div class="form-alan"><label>Firma Adı</label><input type="text" id="fAd" value="${v('firmaAd')}" placeholder="Green Village Pilates"></div>
         <div class="form-alan"><label>Slogan / Alt Başlık</label><input type="text" id="fSlogan" value="${v('slogan')}" placeholder="Ön Muhasebe · Pilates Stüdyosu"></div>
         <div class="form-satir">
           <div class="form-alan"><label>Telefon</label><input type="text" id="fTel" value="${v('telefon')}"></div>
@@ -1448,7 +1448,7 @@ SAYFALAR['ayar-firma'] = function () {
         <div style="text-align:center;margin-bottom:14px">
           <div id="logoOnizleme" style="width:120px;height:120px;border-radius:22px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:var(--yesil-acik);overflow:hidden;border:1px solid var(--kenar)">
             ${logoVar ? `<img src="${a.logoData}" alt="logo" style="width:100%;height:100%;object-fit:cover">`
-                      : `<span style="font-size:40px;font-weight:800;color:var(--yesil-koyu)">YT</span>`}
+                      : `<span style="font-size:34px;font-weight:800;color:var(--yesil-koyu)">${kacar(monogram((State.ayarlar && State.ayarlar.firmaAd) || 'Green Village Pilates'))}</span>`}
           </div>
         </div>
         <div class="birak-alani" id="logoBirak">
@@ -1742,40 +1742,48 @@ async function verileriSifirla() {
 }
 
 /* Firma bilgilerini arayüze uygula (ad, slogan, logo, başlık) */
+function monogram(ad) {
+  return ((ad || '').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr')) || 'GV';
+}
+
 function firmaBilgileriUygula() {
   const a = State.ayarlar || {};
-  const ad = (a.firmaAd || '').trim() || 'Yoga Tugi';
+  const ad = (a.firmaAd || '').trim() || 'Green Village Pilates';
   const slogan = (a.slogan || '').trim() || 'Ön Muhasebe · Pilates Stüdyosu';
   if ($('#girisBaslik')) $('#girisBaslik').textContent = ad;
   if ($('#girisAlt')) $('#girisAlt').textContent = slogan;
   if ($('#menuFirmaAdMetin')) $('#menuFirmaAdMetin').textContent = ad;
+  if ($('#menuLogo')) $('#menuLogo').textContent = monogram(ad);   // kenar menüde monogram
   document.title = ad + ' — Ön Muhasebe';
   logoUygula();
 }
 
-function logoAta(src) {
+/* Giriş ekranı markası: logo (wordmark/yüklenen) varsa göster ve metin başlığı gizle */
+function girisLogoAta(src) {
   if ($('#girisLogo')) $('#girisLogo').innerHTML = `<img src="${src}" alt="logo">`;
-  if ($('#menuLogo')) $('#menuLogo').innerHTML = `<img src="${src}" alt="logo">`;
+  if ($('#girisBaslik')) $('#girisBaslik').style.display = 'none';
 }
-function logoYerTutucu() {
-  if ($('#girisLogo')) $('#girisLogo').innerHTML = `<span class="yer-tutucu">YT</span>`;
-  if ($('#menuLogo')) $('#menuLogo').textContent = 'YT';
+function girisLogoYer() {
+  const ad = (State.ayarlar && State.ayarlar.firmaAd) || 'Green Village Pilates';
+  if ($('#girisLogo')) $('#girisLogo').innerHTML = `<span class="yer-tutucu">${kacar(monogram(ad))}</span>`;
+  if ($('#girisBaslik')) $('#girisBaslik').style.display = '';
 }
 
-/* Logo uygula: önce ayarlardaki yüklenen logo, yoksa logos/ klasöründeki dosya */
+/* Logo uygula: önce ayarlardaki yüklenen logo, yoksa logos/ klasöründeki dosya (önce GV wordmark) */
 function logoUygula() {
   const a = State.ayarlar || {};
-  if (a.logoData) { logoAta(a.logoData); return; }
+  if (a.logoData) { girisLogoAta(a.logoData); return; }
   logoDosyadanYukle([
-    'logos/yogatugi-logo.jpeg', 'logos/yogatugi-logo.jpg',
-    'logos/yogatugi-logo.png', 'logos/yogatugi-logo.webp', 'logos/yogatugi-logo.svg',
+    'logos/gv-logo.png',
+    'logos/yogatugi-logo.png', 'logos/yogatugi-logo.jpeg', 'logos/yogatugi-logo.jpg',
+    'logos/yogatugi-logo.webp', 'logos/yogatugi-logo.svg',
   ]);
 }
 function logoDosyadanYukle(adaylar) {
-  if (!adaylar.length) { logoYerTutucu(); return; }
+  if (!adaylar.length) { girisLogoYer(); return; }
   const yol = adaylar[0];
   const test = new Image();
-  test.onload = () => logoAta(yol);
+  test.onload = () => girisLogoAta(yol);
   test.onerror = () => logoDosyadanYukle(adaylar.slice(1));
   test.src = yol;
 }
