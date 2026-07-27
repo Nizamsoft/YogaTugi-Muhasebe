@@ -1427,9 +1427,9 @@ function girisGovdeCiz() {
   // Daha önce girildiyse doğrudan aç (oturum hatırlanır)
   if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }
   govde.innerHTML = `
-    <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Kullanıcı Adı</label>
+    <label for="gKul">Kullanıcı Adı</label>
     <input type="text" id="gKul" placeholder="Admin" autocomplete="username">
-    <label style="display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px">Şifre</label>
+    <label for="gSif">Şifre</label>
     <input type="password" id="gSif" placeholder="••••••••" autocomplete="current-password">
     <div class="giris-hata" id="girisHata"></div>
     <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>`;

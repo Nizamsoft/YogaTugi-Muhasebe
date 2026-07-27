@@ -67,41 +67,59 @@ h1,h2,h3,h4{line-height:1.25}
 .mono{font-variant-numeric:tabular-nums}
 
 /* ============ GİRİŞ EKRANI ============ */
+/* ---- Sıcak Neomorfizm teması (giriş) ---- */
 #girisEkrani{
   position:fixed;inset:0;z-index:100;
   display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#5a7a58 0%,#2c352f 100%);
-  padding:20px;
+  background:#e7ddca;padding:20px;
+  --nk:#e7ddca; --nsd:#c2b79f; --nsl:#fdf6e6; --nink:#3f3a30; --nink-soft:#8a8069;
+}
+body.tema-koyu #girisEkrani{
+  background:#232019;
+  --nk:#232019; --nsd:#161310; --nsl:#302b21; --nink:#ece4d3; --nink-soft:#a89c84;
 }
 .giris-kart{
-  background:var(--kart);width:100%;max-width:400px;
-  border-radius:20px;box-shadow:var(--golge-buyuk);
-  padding:38px 34px;text-align:center;
+  background:var(--nk);width:100%;max-width:380px;
+  border-radius:30px;
+  box-shadow:16px 16px 34px var(--nsd), -16px -16px 34px var(--nsl);
+  padding:34px 28px 30px;text-align:center;
 }
+/* Logo A — Altın Çerçeve: kabartma kare + ince altın hat */
 .giris-logo{
-  width:84px;height:84px;border-radius:22px;margin:0 auto 16px;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--yesil-acik);overflow:hidden;
+  position:relative;width:104px;height:104px;margin:0 auto 16px;
+  border-radius:26px;background:var(--nk);padding:9px;
+  box-shadow:9px 9px 18px var(--nsd), -9px -9px 18px var(--nsl);
 }
-.giris-logo img{width:100%;height:100%;object-fit:cover}
-.giris-logo .yer-tutucu{font-size:30px;font-weight:800;color:var(--yesil-koyu);letter-spacing:1px}
-.giris-kart h1{font-size:22px;margin-bottom:2px}
-.giris-kart .alt{color:var(--metin-soluk);font-size:13px;margin-bottom:26px}
-.giris-kart label{display:block;text-align:left;font-size:13px;font-weight:600;margin:14px 0 6px}
+.giris-logo::after{
+  content:"";position:absolute;inset:5px;border-radius:22px;
+  border:1.5px solid rgba(198,154,76,.65);pointer-events:none;
+}
+.giris-logo img{width:100%;height:100%;border-radius:19px;object-fit:cover;display:block}
+.giris-logo .yer-tutucu{
+  display:flex;width:100%;height:100%;align-items:center;justify-content:center;
+  font-size:30px;font-weight:800;color:#9a7b3e;letter-spacing:1px;
+}
+.giris-kart h1{font-family:Georgia,"Times New Roman",serif;font-size:24px;margin-bottom:3px;color:var(--nink);letter-spacing:-.3px}
+.giris-kart .alt{color:var(--nink-soft);font-size:12.5px;margin-bottom:24px}
+.giris-kart label{display:block;text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--nink-soft);margin:14px 0 7px}
 .giris-kart input{
-  width:100%;padding:12px 14px;border:1px solid var(--kenar-koyu);
-  border-radius:var(--radius-kucuk);background:var(--kart);
+  width:100%;padding:13px 15px;border:none;border-radius:13px;
+  background:var(--nk);color:var(--nink);font-size:14.5px;
+  box-shadow:inset 5px 5px 10px var(--nsd), inset -5px -5px 10px var(--nsl);
 }
-.giris-kart input:focus{outline:none;border-color:var(--yesil);box-shadow:0 0 0 3px var(--yesil-acik)}
+.giris-kart input::placeholder{color:var(--nink-soft);opacity:.7}
+.giris-kart input:focus{outline:none;
+  box-shadow:inset 5px 5px 10px var(--nsd), inset -5px -5px 10px var(--nsl), 0 0 0 2px rgba(111,154,114,.55);}
 .giris-hata{color:var(--kirmizi);font-size:13px;margin-top:12px;min-height:18px}
 .btn-giris{
-  width:100%;margin-top:22px;padding:13px;border:none;border-radius:var(--radius-kucuk);
-  background:var(--yesil);color:#fff;font-weight:700;cursor:pointer;font-size:15px;
-  transition:background .15s;
+  width:100%;margin-top:22px;padding:14px;border:none;border-radius:15px;
+  background:linear-gradient(180deg,#7ba97e,#5c8760);color:#fff;font-weight:700;cursor:pointer;font-size:15px;
+  box-shadow:6px 6px 14px var(--nsd), -4px -4px 12px var(--nsl);
+  transition:transform .12s,filter .15s;
 }
-.btn-giris:hover{background:var(--yesil-koyu)}
-.giris-demo{margin-top:16px;font-size:12.5px;color:var(--metin-soluk)}
-.giris-demo button{background:none;border:none;color:var(--yesil-koyu);cursor:pointer;font-weight:600;text-decoration:underline}
+.btn-giris:hover{filter:brightness(1.06)}
+.btn-giris:active{transform:translateY(1px)}
+.giris-demo{margin-top:18px;font-size:12px;color:var(--nink-soft)}
 
 /* ============ UYGULAMA İSKELETİ ============ */
 .uygulama{display:flex;min-height:100vh}
