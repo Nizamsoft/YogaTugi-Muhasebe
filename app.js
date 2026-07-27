@@ -332,7 +332,7 @@ SAYFALAR.dashboard = function () {
   const giderTop = giderKalem.reduce((s, x) => s + x.tutar, 0) || 1;
 
   ic().innerHTML = `
-    <div class="izgara izgara-4" style="margin-bottom:18px">
+    <div class="izgara izgara-4 dash-ozet" style="margin-bottom:18px">
       <div class="kart ozet gelir">
         <div class="ikon-daire">📈</div>
         <div class="etiket">Bu Ay Gelir</div>
@@ -1341,7 +1341,6 @@ function onayModal(baslik, mesaj, onaylandi) {
 async function uygulamayiBaslat() {
   $('#girisEkrani').classList.add('gizli');
   $('#uygulama').classList.remove('gizli');
-  $('#demoBand').classList.remove('gizli');
   // Kullanıcı bilgisi
   const ep = State.kullanici?.email || 'yerel@yogatugi.com';
   $('#kullaniciAd').textContent = State.kullanici?.ad || ep.split('@')[0];

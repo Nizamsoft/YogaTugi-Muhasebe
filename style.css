@@ -166,6 +166,9 @@ body.tema-koyu #girisEkrani{
 .ana{flex:1;min-width:0;display:flex;flex-direction:column}
 .ust-cubuk{
   display:flex;align-items:center;gap:14px;padding:13px 24px;
+  padding-top:calc(13px + env(safe-area-inset-top, 0px));
+  padding-left:max(24px, env(safe-area-inset-left, 0px));
+  padding-right:max(24px, env(safe-area-inset-right, 0px));
   background:var(--kart);border-bottom:1px solid var(--kenar);position:sticky;top:0;z-index:20;
 }
 .ust-cubuk .menu-ac{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--metin)}
@@ -340,9 +343,38 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 
 /* --------- Duyarlı (mobil) --------- */
 @media(max-width:860px){
-  .kenar{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .22s;box-shadow:var(--golge-buyuk)}
+  .kenar{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .22s;box-shadow:var(--golge-buyuk);
+    padding-top:env(safe-area-inset-top, 0px)}
   body.menu-acik .kenar{transform:translateX(0)}
   .ust-cubuk .menu-ac{display:block}
   .menu-perde{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55;display:none}
   body.menu-acik .menu-perde{display:block}
+}
+
+/* iPhone çentiği (safe-area) — giriş ekranı da güvenli alanı korur */
+#girisEkrani{
+  padding-top:max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom:max(20px, env(safe-area-inset-bottom, 0px));
+}
+
+/* --------- Mobil Dashboard — Öneri 2: Öne Çıkan Net Kâr --------- */
+@media(max-width:640px){
+  .icerik{padding-left:max(18px, env(safe-area-inset-left,0px));padding-right:max(18px, env(safe-area-inset-right,0px))}
+  .dash-ozet{grid-template-columns:1fr 1fr 1fr !important;gap:9px}
+  .dash-ozet .ozet{padding:12px 8px 11px;text-align:center;border-radius:14px}
+  .dash-ozet .ozet .ikon-daire{display:none}
+  .dash-ozet .ozet .etiket{font-size:10px;justify-content:center;line-height:1.2}
+  .dash-ozet .ozet .deger{font-size:15px;margin-top:5px}
+  .dash-ozet .ozet .alt-bilgi{display:none}
+  /* Net Kâr — büyük hero kart, tam satır ve en üstte */
+  .dash-ozet .ozet.kar{
+    order:-1;grid-column:1 / -1;text-align:left;
+    background:linear-gradient(135deg,#7ba97e,#4f7452);
+    border:none;color:#fff;padding:18px 18px 16px;
+    box-shadow:0 12px 26px rgba(79,116,82,.4);position:relative;overflow:hidden;
+  }
+  .dash-ozet .ozet.kar::before{content:"";position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.13);top:-45px;right:-30px}
+  .dash-ozet .ozet.kar .etiket{color:rgba(255,255,255,.9);font-size:12px;justify-content:flex-start}
+  .dash-ozet .ozet.kar .deger{color:#fff !important;font-size:28px;margin-top:6px;letter-spacing:-.5px}
+  .dash-ozet .ozet.kar .alt-bilgi{display:block;color:rgba(255,255,255,.85);font-size:11px}
 }
