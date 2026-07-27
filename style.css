@@ -479,3 +479,68 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   .dash-ozet .ozet.kar .deger{color:#fff !important;font-size:28px;margin-top:6px;letter-spacing:-.5px}
   .dash-ozet .ozet.kar .alt-bilgi{display:block;color:rgba(255,255,255,.85);font-size:11px}
 }
+
+/* ============================================================
+   HESAPLAR — Kart Sayfası (akordeon yerine 6 kart)
+   ============================================================ */
+.hesap-kartlar{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  max-width:920px;margin:6px auto 0;
+}
+.hkart{
+  background:var(--kart);border:1px solid var(--kenar);border-radius:20px;
+  padding:26px 16px 22px;text-align:center;cursor:pointer;
+  box-shadow:var(--golge);transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  display:flex;flex-direction:column;align-items:center;gap:0;font-family:inherit;color:var(--metin);
+}
+.hkart:hover{transform:translateY(-4px);box-shadow:var(--golge-buyuk);border-color:var(--yesil)}
+.hkart:focus-visible{outline:3px solid var(--yesil);outline-offset:2px}
+.hkart .visual{
+  width:74px;height:74px;margin-bottom:14px;border-radius:21px;
+  display:grid;place-items:center;font-size:35px;position:relative;
+  transform-style:preserve-3d;animation:hkYuz 3.6s ease-in-out infinite;
+}
+.hkart .visual::after{
+  content:"";position:absolute;inset:0;border-radius:21px;
+  background:linear-gradient(150deg,rgba(255,255,255,.55),transparent 55%);pointer-events:none;
+}
+.hkart .visual::before{
+  content:"";position:absolute;left:12%;right:12%;bottom:-11px;height:13px;border-radius:50%;
+  background:rgba(0,0,0,.18);filter:blur(5px);z-index:-1;animation:hkGolge 3.6s ease-in-out infinite;
+}
+@keyframes hkYuz{0%,100%{transform:translateY(0) rotateX(0deg) rotateY(-10deg)}50%{transform:translateY(-7px) rotateX(8deg) rotateY(10deg)}}
+@keyframes hkGolge{0%,100%{transform:scale(1);opacity:.35}50%{transform:scale(.8);opacity:.2}}
+.hkart:nth-child(1) .visual,.hkart:nth-child(1) .visual::before{animation-delay:0s}
+.hkart:nth-child(2) .visual,.hkart:nth-child(2) .visual::before{animation-delay:.3s}
+.hkart:nth-child(3) .visual,.hkart:nth-child(3) .visual::before{animation-delay:.6s}
+.hkart:nth-child(4) .visual,.hkart:nth-child(4) .visual::before{animation-delay:.9s}
+.hkart:nth-child(5) .visual,.hkart:nth-child(5) .visual::before{animation-delay:1.2s}
+.hkart:nth-child(6) .visual,.hkart:nth-child(6) .visual::before{animation-delay:1.5s}
+.hkart .visual.v-banka{background:linear-gradient(135deg,#5b86c4,#33568c);box-shadow:0 12px 20px rgba(51,86,140,.4)}
+.hkart .visual.v-kart {background:linear-gradient(135deg,#9a6dd4,#6b3fa0);box-shadow:0 12px 20px rgba(107,63,160,.4)}
+.hkart .visual.v-kasa {background:linear-gradient(135deg,#49b978,#2f8f5b);box-shadow:0 12px 20px rgba(47,143,91,.4)}
+.hkart .visual.v-ortak{background:linear-gradient(135deg,#d6a851,#a8792f);box-shadow:0 12px 20px rgba(168,121,47,.4)}
+.hkart .visual.v-gider{background:linear-gradient(135deg,#d15a51,#98362f);box-shadow:0 12px 20px rgba(152,54,47,.4)}
+.hkart .visual.v-gelir{background:linear-gradient(135deg,#6bbf8f,#3f7a58);box-shadow:0 12px 20px rgba(63,122,88,.4)}
+.hkart .t{font-size:16px;font-weight:800;line-height:1.2}
+.hkart .d{font-size:12px;color:var(--metin-soluk);margin-top:6px;line-height:1.35;max-width:22ch}
+
+/* Alt hesap sayfalarındaki "‹ Hesaplar" dön bağlantısı */
+.hesap-geri{
+  display:inline-flex;align-items:center;gap:4px;margin-bottom:14px;
+  background:var(--kart);border:1px solid var(--kenar);color:var(--yesil-koyu);
+  font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;
+  padding:7px 14px;border-radius:999px;transition:border-color .15s, background .15s;
+}
+.hesap-geri:hover{border-color:var(--yesil);background:var(--yesil-acik)}
+
+@media(max-width:640px){
+  .hesap-kartlar{grid-template-columns:repeat(3,1fr);gap:10px}
+  .hkart{padding:15px 7px 13px;border-radius:16px}
+  .hkart .visual{width:56px;height:56px;font-size:26px;border-radius:17px;margin-bottom:10px}
+  .hkart .t{font-size:12.5px}
+  .hkart .d{font-size:9.5px;margin-top:5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .hkart .visual,.hkart .visual::before{animation:none}
+}

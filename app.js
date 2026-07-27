@@ -243,14 +243,7 @@ const MENU = [
     { id: 'kk-aktarim',    ad: 'Kredi Kartı Aktarımı', ikon: '💳', baslik: 'Kredi Kartı Aktarımı' },
     { id: 'kasa-giris',    ad: 'Kasa Girişleri',       ikon: '💵', baslik: 'Kasa Girişleri' },
   ]},
-  { grup: 'Hesaplar', ikon: '🗂️', ogeler: [
-    { id: 'hesap-banka', ad: 'Bankalar',        ikon: '🏦', baslik: 'Bankalar', tip: 'banka' },
-    { id: 'hesap-kasa',  ad: 'Kasa',            ikon: '💵', baslik: 'Kasa', tip: 'kasa' },
-    { id: 'hesap-kk',    ad: 'Kredi Kartı',     ikon: '💳', baslik: 'Kredi Kartı Hesapları', tip: 'krediKarti' },
-    { id: 'hesap-ortak', ad: 'Ortaklar Hesabı', ikon: '🤝', baslik: 'Ortaklar Hesabı', tip: 'ortak' },
-    { id: 'hesap-gider', ad: 'Giderler Hesabı', ikon: '📉', baslik: 'Giderler Hesabı', tip: 'gider' },
-    { id: 'hesap-gelir', ad: 'Gelirler Hesabı', ikon: '📈', baslik: 'Gelirler Hesabı', tip: 'gelir' },
-  ]},
+  { id: 'hesaplar', ad: 'Hesaplar', ikon: '🗂️', baslik: 'Hesaplar' },
   { grup: 'Raporlar', ikon: '📊', ogeler: [
     { id: 'rapor-karzarar', ad: 'Kar / Zarar Raporu',    ikon: '⚖️', baslik: 'Kar / Zarar Raporu' },
     { id: 'rapor-hakedis',  ad: 'Ortak Hak Ediş',        ikon: '🥧', baslik: 'Ortak Hak Ediş Raporu' },
@@ -265,6 +258,16 @@ const MENU = [
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
     { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı', gizli: true },
   ]},
+];
+
+// Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
+const HESAP_KARTLARI = [
+  { id: 'hesap-banka', ad: 'Banka Hesabı',     baslik: 'Bankalar',                ikon: '🏦', renk: 'v-banka', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
+  { id: 'hesap-kk',    ad: 'Kredi Kartı',      baslik: 'Kredi Kartı Hesapları',   ikon: '💳', renk: 'v-kart',  aciklama: 'kart harcama ve ödemelerinizi izleyin' },
+  { id: 'hesap-kasa',  ad: 'Kasa',             baslik: 'Kasa',                    ikon: '💵', renk: 'v-kasa',  aciklama: 'nakit giriş ve çıkışlarını takip edin' },
+  { id: 'hesap-ortak', ad: 'Ortaklar Hesabı',  baslik: 'Ortaklar Hesabı',         ikon: '🤝', renk: 'v-ortak', aciklama: 'ortak hak ediş ve ödemelerini görün' },
+  { id: 'hesap-gider', ad: 'Giderler Hesabı',  baslik: 'Giderler Hesabı',         ikon: '📉', renk: 'v-gider', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
+  { id: 'hesap-gelir', ad: 'Gelirler Hesabı',  baslik: 'Gelirler Hesabı',         ikon: '📈', renk: 'v-gelir', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
 ];
 
 function menuCiz() {
@@ -305,6 +308,8 @@ function menuBul(id) {
     if (m.id === id) return m;
     if (m.ogeler) { const o = m.ogeler.find(x => x.id === id); if (o) return o; }
   }
+  const k = HESAP_KARTLARI.find(x => x.id === id);
+  if (k) return k;
   return null;
 }
 
@@ -312,7 +317,10 @@ function git(sayfa) {
   State.aktifSayfa = sayfa;
   const m = menuBul(sayfa) || { baslik: '—' };
   $('#sayfaBaslik').textContent = m.baslik;
-  $$('.menu-oge').forEach(b => b.classList.toggle('aktif', b.dataset.sayfa === sayfa));
+  // Hesap kart sayfaları menüde tekil "Hesaplar" öğesini aktif tutar
+  const hesapKartMi = HESAP_KARTLARI.some(k => k.id === sayfa);
+  const vurgulanan = hesapKartMi ? 'hesaplar' : sayfa;
+  $$('.menu-oge').forEach(b => b.classList.toggle('aktif', b.dataset.sayfa === vurgulanan));
   // Aktif alt sayfanın grubunu aç, diğerlerini kapat (akordeon)
   $$('.menu-grup').forEach(g => {
     const icerir = Array.from(g.querySelectorAll('.menu-oge')).some(b => b.dataset.sayfa === sayfa);
@@ -322,6 +330,7 @@ function git(sayfa) {
   const render = SAYFALAR[sayfa] || SAYFALAR.dashboard;
   render(m);
 }
+window.git = git;
 
 /* ==========================================================
    5) SAYFALAR
@@ -900,6 +909,25 @@ function kasaSihirbaz() {
 /* ==========================================================
    7) HESAPLAR
    ========================================================== */
+/* -------- HESAPLAR (kart sayfası) -------- */
+SAYFALAR.hesaplar = function () {
+  ic().innerHTML = `
+    <div class="hesap-kartlar">
+      ${HESAP_KARTLARI.map(k => `
+        <button type="button" class="hkart" data-git="${k.id}">
+          <span class="visual ${k.renk}">${k.ikon}</span>
+          <span class="t">${kacar(k.ad)}</span>
+          <span class="d">${kacar(k.aciklama)}</span>
+        </button>`).join('')}
+    </div>`;
+  $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
+};
+
+// Alt hesap sayfalarının üstünde "Hesaplar'a dön" bağlantısı
+function hesapGeriHTML() {
+  return `<button type="button" class="hesap-geri" onclick="git('hesaplar')">‹ Hesaplar</button>`;
+}
+
 SAYFALAR['hesap-banka'] = (m) => hesapListesi('banka');
 SAYFALAR['hesap-kasa']  = (m) => hesapListesi('kasa');
 SAYFALAR['hesap-kk']    = (m) => hesapListesi('krediKarti');
@@ -934,6 +962,7 @@ function hesapListesi(tip) {
     : hesaplar.reduce((s, h) => s + Hesapla.kategoriToplam(h.id, null), 0);
 
   ic().innerHTML = `
+    ${hesapGeriHTML()}
     <div class="kart-baslik" style="margin-bottom:16px">
       <div class="bilgi-kutu" style="margin:0;flex:1">
         <span class="ikon">${bilgi.ikon}</span>
@@ -1055,6 +1084,7 @@ function ortakHesabiSayfasi() {
   }).join('');
 
   ic().innerHTML = `
+    ${hesapGeriHTML()}
     <div class="bilgi-kutu"><span class="ikon">🤝</span><div>Ortaklara ait <b>hak ediş</b> (net kâr × pay oranı) ile yapılan <b>ödemeler</b> ve kalan bakiye burada izlenir.</div></div>
     <div class="kart">
       <div class="kart-baslik"><h3>Ortaklar Hesabı</h3><span class="soluk">Genel net kâr: <b class="${genelKar>=0?'pozitif':'negatif'}">${TL(genelKar)}</b></span></div>
