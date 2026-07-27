@@ -592,10 +592,12 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 .hkart:nth-child(4) .visual{animation-delay:.75s}
 .hkart:nth-child(5) .visual{animation-delay:1s}
 .hkart:nth-child(6) .visual{animation-delay:1.25s}
-.hkart .t{font-size:16px;font-weight:800;line-height:1.2}
-/* Açıklama — gömük (inset) 3D alan */
-.hkart .d{align-self:stretch;font-size:11.5px;font-weight:600;color:var(--metin-soluk);line-height:1.35;
-  margin-top:11px;padding:8px 9px;border-radius:11px;
+/* Başlık — 2 satırlık hizalı alan (kartlar dizili) */
+.hkart .t{font-size:16px;font-weight:800;line-height:1.2;text-align:center;
+  min-height:2.4em;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+/* Açıklama — hepsi aynı boyda, ortalı, gömük (inset) 3D alan */
+.hkart .d{align-self:stretch;height:46px;display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:11.5px;font-weight:600;color:var(--metin-soluk);line-height:1.3;padding:4px 8px;border-radius:11px;
   background:color-mix(in srgb, var(--krem) 55%, var(--kart));
   box-shadow:inset 0 2px 5px rgba(96,78,42,.16), inset 0 -1px 0 rgba(255,255,255,.5)}
 
@@ -616,8 +618,8 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
   .hgrup-baslik:first-child{margin-top:2px}
   .hkart{padding:16px 7px 14px;border-radius:16px}
   .hkart .visual{width:56px;height:56px;margin-bottom:10px;font-size:27px}
-  .hkart .t{font-size:13px}
-  .hkart .d{font-size:10px;margin-top:9px;padding:6px 7px;border-radius:9px}
+  .hkart .t{font-size:13px;margin-bottom:9px}
+  .hkart .d{height:40px;font-size:10px;padding:4px 7px;border-radius:9px}
 }
 @media(prefers-reduced-motion:reduce){
   .hkart .visual{animation:none}
