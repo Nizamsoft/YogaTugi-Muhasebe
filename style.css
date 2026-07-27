@@ -392,7 +392,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   .ust-cubuk .masaustu{display:none}
   .ust-firma{display:flex}
   /* --- Güzelleştirilmiş üst panel (harman: gradyan zemin + serif isim + kullanıcı çipi) --- */
-  .ust-cubuk{gap:9px;position:relative;border-bottom:none;
+  .ust-cubuk{gap:9px;position:sticky;top:0;z-index:30;border-bottom:none;
     background:radial-gradient(circle at 93% -30%, rgba(111,154,114,.13), transparent 55%), linear-gradient(180deg, var(--kart), var(--krem));
     padding-top:max(46px, calc(env(safe-area-inset-top, 0px) + 15px));padding-bottom:15px;
     padding-left:max(15px, env(safe-area-inset-left, 0px));padding-right:max(15px, env(safe-area-inset-right, 0px))}
