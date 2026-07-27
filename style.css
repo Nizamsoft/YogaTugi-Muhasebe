@@ -351,6 +351,42 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   body.menu-acik .menu-perde{display:block}
 }
 
+/* --------- Ortak Hak Edişleri kartı (dashboard) --------- */
+.ortakkart{background:var(--kart);border:1px solid var(--kenar);border-radius:var(--radius);box-shadow:var(--golge);overflow:hidden;margin-top:18px}
+.ortakkart .ok-head{padding:16px 20px 14px;border-bottom:1px solid var(--kenar);display:flex;align-items:center;justify-content:space-between}
+.ortakkart .ok-head h3{font-size:17px;margin:0}
+.ortakkart .ok-head .dn{font-size:12.5px;color:var(--metin-soluk);font-weight:600}
+.ortakkart .bolme{display:flex;align-items:center;gap:15px;padding:17px 20px;border-bottom:1px solid var(--kenar)}
+.ortakkart .bolme:nth-child(even){background:rgba(111,154,114,.05)}
+.ortakkart .av{width:54px;height:54px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(135deg,var(--yesil),var(--yesil-koyu));color:#fff;font-weight:700;font-size:18px;
+  display:grid;place-items:center}
+.ortakkart .av img{width:100%;height:100%;object-fit:cover}
+.ortakkart .av.g{background:linear-gradient(135deg,#c69a4c,#a8792f)}
+.ortakkart .av.b{background:linear-gradient(135deg,#4a72a8,#355488)}
+.ortakkart .av.p{background:linear-gradient(135deg,#8b5cc7,#6b3fa0)}
+.ortakkart .mid{flex:1;min-width:0}
+.ortakkart .mid .ad{font-weight:700;font-size:15.5px}
+.ortakkart .mid .sub{font-size:13px;color:var(--metin-soluk);margin-top:4px;line-height:1.45}
+.ortakkart .mid .sub b{color:var(--metin);font-weight:700}
+.ortakkart .ders-duzenle{background:none;border:none;cursor:pointer;color:var(--yesil-koyu);font-size:12px;padding:0 3px;opacity:.8}
+.ortakkart .ders-duzenle:hover{opacity:1}
+.ortakkart .he{text-align:right;flex-shrink:0}
+.ortakkart .he .k{font-size:9.5px;color:var(--metin-soluk);font-weight:700;letter-spacing:.3px}
+.ortakkart .he .v{font-size:19px;font-weight:800;color:var(--yesil-koyu);margin-top:2px;white-space:nowrap}
+.ortakkart .ok-foot{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;
+  background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff}
+.ortakkart .ok-foot .k{font-size:13.5px;font-weight:600;opacity:.92}
+.ortakkart .ok-foot .v{font-size:20px;font-weight:800;white-space:nowrap}
+.ortakkart .bos-tablo{border:none}
+@media(max-width:520px){
+  .ortakkart .bolme{gap:11px;padding:14px 14px}
+  .ortakkart .av{width:46px;height:46px;font-size:16px}
+  .ortakkart .mid .ad{font-size:14.5px}
+  .ortakkart .mid .sub{font-size:12px}
+  .ortakkart .he .v{font-size:16.5px}
+}
+
 /* iPhone çentiği (safe-area) — giriş ekranı da güvenli alanı korur */
 #girisEkrani{
   padding-top:max(20px, env(safe-area-inset-top, 0px));

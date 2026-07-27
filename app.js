@@ -314,22 +314,10 @@ SAYFALAR.dashboard = function () {
   const donem = buAy();
   const ay = Hesapla.donemOzet(donem);
   const gun = Hesapla.gunOzet(bugunISO());
-  const dagitim = Hesapla.karPayiDagitimi(ay.netKar);
 
   const paraHesaplar = State.hesaplar.filter(h => HESAP_TIPLERI[h.tip]?.para);
   const toplamVarlik = paraHesaplar.filter(h => h.tip !== 'krediKarti')
     .reduce((s, h) => s + Hesapla.paraHesapBakiye(h.id), 0);
-
-  // Son 6 ay gelir/gider
-  const aylar = sonAylar(6);
-  const seri = aylar.map(d => ({ d, ...Hesapla.donemOzet(d) }));
-  const enBuyuk = Math.max(1, ...seri.map(s => Math.max(s.gelir, s.gider)));
-
-  // Kategori kırılımı (gider)
-  const giderKalem = State.hesaplar.filter(h => h.tip === 'gider')
-    .map(h => ({ ad: h.ad, tutar: Hesapla.kategoriToplam(h.id, donem) }))
-    .filter(x => x.tutar > 0).sort((a, b) => b.tutar - a.tutar).slice(0, 6);
-  const giderTop = giderKalem.reduce((s, x) => s + x.tutar, 0) || 1;
 
   ic().innerHTML = `
     <div class="izgara izgara-4 dash-ozet" style="margin-bottom:18px">
@@ -359,67 +347,76 @@ SAYFALAR.dashboard = function () {
       </div>
     </div>
 
-    <div class="izgara izgara-2">
-      <div class="kart">
-        <div class="kart-baslik"><h3>Son 6 Ay · Gelir / Gider</h3></div>
-        ${seri.every(s => s.gelir === 0 && s.gider === 0)
-          ? bosBlok('Henüz veri yok. “Veri Girişleri”nden başlayın.')
-          : `<div style="display:flex;gap:14px;align-items:flex-end;height:180px;padding-top:10px">
-              ${seri.map(s => `
-                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%">
-                  <div style="flex:1;display:flex;align-items:flex-end;gap:3px;width:100%;justify-content:center">
-                    <div title="Gelir ${TL(s.gelir)}" style="width:40%;background:var(--yesil-para);border-radius:4px 4px 0 0;height:${(s.gelir/enBuyuk*100)}%;min-height:2px"></div>
-                    <div title="Gider ${TL(s.gider)}" style="width:40%;background:var(--kirmizi);border-radius:4px 4px 0 0;height:${(s.gider/enBuyuk*100)}%;min-height:2px"></div>
-                  </div>
-                  <div class="soluk" style="font-size:11px">${donemAdi(s.d).split(' ')[0].slice(0,3)}</div>
-                </div>`).join('')}
-            </div>
-            <div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:12px">
-              <span><span style="display:inline-block;width:10px;height:10px;background:var(--yesil-para);border-radius:2px"></span> Gelir</span>
-              <span><span style="display:inline-block;width:10px;height:10px;background:var(--kirmizi);border-radius:2px"></span> Gider</span>
-            </div>`}
-      </div>
-
-      <div class="kart">
-        <div class="kart-baslik"><h3>Kar Payı Özeti · ${donemAdi(donem)}</h3></div>
-        <div class="bilgi-kutu"><span class="ikon">💡</span><div>Ay sonuna kadar biriken <b>net kar</b> üzerinden ortak pay oranlarına göre otomatik dağıtım.</div></div>
-        ${dagitim.length === 0
-          ? bosBlok('Henüz ortak tanımlı değil. “Ortak Pay Oranı”ndan ekleyin.')
-          : `<div class="tablo-sar"><table class="tablo">
-              <thead><tr><th>Ortak</th><th class="sag">Oran</th><th class="sag">Hak Ediş</th></tr></thead>
-              <tbody>${dagitim.map(d => `
-                <tr><td>${kacar(d.ad)}</td><td class="sag">%${sayi(d.oran)}</td>
-                <td class="sag ${d.tutar>=0?'pozitif':'negatif'}">${TL(d.tutar)}</td></tr>`).join('')}
-              </tbody>
-              <tfoot><tr style="font-weight:700"><td>Toplam</td><td class="sag"></td>
-                <td class="sag ${ay.netKar>=0?'pozitif':'negatif'}">${TL(ay.netKar)}</td></tr></tfoot>
-            </table></div>`}
-      </div>
-    </div>
-
-    <div class="izgara izgara-2" style="margin-top:18px">
-      <div class="kart">
-        <div class="kart-baslik"><h3>Nakit Hesaplar</h3><button class="btn btn-kucuk" data-git="hesap-banka">Tümü →</button></div>
-        ${paraHesaplar.length === 0 ? bosBlok('Hesap yok.') : `<div class="tablo-sar"><table class="tablo">
-          <tbody>${paraHesaplar.map(h => {
-            const b = Hesapla.paraHesapBakiye(h.id);
-            return `<tr><td>${HESAP_TIPLERI[h.tip].ikon} ${kacar(h.ad)}</td>
-              <td class="sag ${b>=0?'':'negatif'}">${TL(b)}</td></tr>`;
-          }).join('')}</tbody></table></div>`}
-      </div>
-      <div class="kart">
-        <div class="kart-baslik"><h3>En Büyük Gider Kalemleri · ${donemAdi(donem)}</h3></div>
-        ${giderKalem.length === 0 ? bosBlok('Gider kaydı yok.') : giderKalem.map(g => `
-          <div style="margin-bottom:11px">
-            <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px">
-              <span>${kacar(g.ad)}</span><span class="negatif">${TL(g.tutar)}</span></div>
-            <div class="pay-cubuk"><span style="width:${(g.tutar/giderTop*100)}%;background:var(--kirmizi)"></span></div>
-          </div>`).join('')}
-      </div>
-    </div>
+    ${ortakKartHTML(donem)}
   `;
   $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
+  $$('[data-ders]').forEach(b => b.onclick = () => dersSayisiDuzenle(b.dataset.ders, donem));
 };
+
+/* Ortak başına hesaplama: ders geliri, eşit gider payı, hak ediş */
+function ortakHesapla(donem) {
+  const aktif = State.ortaklar.filter(o => o.aktif !== false);
+  const toplamGider = Hesapla.donemOzet(donem).gider;
+  const giderPayi = aktif.length ? toplamGider / aktif.length : 0;
+  return aktif.map(o => {
+    const adet = (o.dersAdet && o.dersAdet[donem]) || 0;
+    const ucret = Number(o.dersUcreti) || 0;
+    const dersGeliri = adet * ucret;
+    return { o, adet, ucret, dersGeliri, giderPayi, hakEdis: dersGeliri - giderPayi };
+  });
+}
+
+/* Dashboard: tek büyük "Ortak Hak Edişleri" kartı (4 dikey bölme) */
+function ortakKartHTML(donem) {
+  const rows = ortakHesapla(donem);
+  const toplamHE = rows.reduce((s, r) => s + r.hakEdis, 0);
+  const avSinif = ['', 'g', 'b', 'p'];
+  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  return `
+  <div class="ortakkart">
+    <div class="ok-head"><h3>🤝 Ortak Hak Edişleri</h3><span class="dn">${donemAdi(donem)}</span></div>
+    ${rows.length === 0
+      ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Pay Oranı”ndan ekleyin.')
+      : rows.map((r, i) => {
+          const av = r.o.foto
+            ? `<div class="av"><img src="${r.o.foto}" alt="${kacar(r.o.ad)}"></div>`
+            : `<div class="av ${avSinif[i % 4]}">${kacar(bas(r.o.ad))}</div>`;
+          return `<div class="bolme">
+            ${av}
+            <div class="mid">
+              <div class="ad">${kacar(r.o.ad)}</div>
+              <div class="sub"><b>${r.adet} ders</b> · ${TL(r.dersGeliri)}
+                <button class="ders-duzenle" data-ders="${r.o.id}" title="Bu ay ders sayısını düzenle">✎</button><br>
+                Gider payı: <span class="negatif">−${TL(r.giderPayi)}</span></div>
+            </div>
+            <div class="he"><div class="k">HAK EDİŞ</div>
+              <div class="v"${r.hakEdis < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.hakEdis)}</div></div>
+          </div>`;
+        }).join('')
+        + `<div class="ok-foot"><span class="k">Toplam Hak Ediş</span><span class="v">${TL(toplamHE)}</span></div>`
+    }
+  </div>`;
+}
+
+/* Bir ortağın seçili dönemdeki ders sayısını düzenle */
+function dersSayisiDuzenle(ortakId, donem) {
+  const o = State.ortaklar.find(x => x.id === ortakId);
+  if (!o) return;
+  const mevcut = (o.dersAdet && o.dersAdet[donem]) || 0;
+  modalAc(`${o.ad} — Ders Sayısı`, `
+    <div class="bilgi-kutu"><span class="ikon">📅</span><div><b>${donemAdi(donem)}</b> için verilen ders sayısı. Ders ücreti: <b>${TL(o.dersUcreti || 0)}</b>/ders.
+      ${!o.dersUcreti ? '<br>⚠️ Bu ortağın ders ücreti tanımlı değil (Ayarlar → Ortak Pay Oranı).' : ''}</div></div>
+    <div class="form-alan"><label>Ders Sayısı</label><input type="number" id="dsAdet" min="0" step="1" value="${mevcut}" autofocus></div>
+  `, `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana" id="dsKaydet">💾 Kaydet</button>`);
+  $('#dsIptal').onclick = modalKapat;
+  $('#dsKaydet').onclick = async () => {
+    const adet = Math.max(0, parseInt($('#dsAdet').value, 10) || 0);
+    const dersAdet = { ...(o.dersAdet || {}), [donem]: adet };
+    await DB.guncelle('ortaklar', ortakId, { dersAdet });
+    o.dersAdet = dersAdet;
+    modalKapat(); bildir('Ders sayısı kaydedildi.', 'basari'); git('dashboard');
+  };
+}
 
 function sonAylar(n) {
   const arr = [], d = new Date();
@@ -1107,23 +1104,56 @@ SAYFALAR['ayar-pay'] = function () {
 };
 
 function ortakFormu(mevcut) {
+  let fotoData = (mevcut && mevcut.foto) || null;
+  const avatarIc = () => fotoData
+    ? `<img src="${fotoData}" alt="" style="width:100%;height:100%;object-fit:cover">`
+    : `<span style="font-size:26px">📷</span>`;
   const govde = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div id="oFotoOnizle" title="Fotoğraf seç"
+        style="width:88px;height:88px;border-radius:50%;margin:0 auto 9px;overflow:hidden;background:var(--yesil-acik);display:grid;place-items:center;color:var(--yesil-koyu);cursor:pointer;border:1px solid var(--kenar)">${avatarIc()}</div>
+      <button type="button" class="btn btn-kucuk" id="oFotoBtn">📷 Fotoğraf Seç</button>
+      <button type="button" class="btn btn-kucuk" id="oFotoSil" ${fotoData?'':'style="display:none"'}>Kaldır</button>
+      <input type="file" id="oFotoDosya" accept="image/*" hidden>
+    </div>
     <div class="form-alan"><label>Ad Soyad</label><input type="text" id="oAd" value="${mevcut?kacar(mevcut.ad):''}" placeholder="Örn. Ayşe Yılmaz"></div>
     <div class="form-satir">
+      <div class="form-alan"><label>Ders Ücreti (₺ / ders)</label><input type="number" id="oUcret" step="0.01" min="0" value="${mevcut&&mevcut.dersUcreti?mevcut.dersUcreti:''}" placeholder="Örn. 300"></div>
       <div class="form-alan"><label>Pay Oranı (%)</label><input type="number" id="oPay" step="0.01" min="0" max="100" value="${mevcut?mevcut.payOrani:''}"></div>
-      <div class="form-alan"><label>Telefon</label><input type="text" id="oTel" value="${mevcut?kacar(mevcut.telefon||''):''}"></div>
     </div>
     <div class="form-satir">
-      <div class="form-alan"><label>E-posta</label><input type="email" id="oEp" value="${mevcut?kacar(mevcut.eposta||''):''}"></div>
+      <div class="form-alan"><label>Telefon</label><input type="text" id="oTel" value="${mevcut?kacar(mevcut.telefon||''):''}"></div>
       <div class="form-alan"><label>Durum</label><select id="oAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
-    </div>`;
+    </div>
+    <div class="form-alan"><label>E-posta</label><input type="email" id="oEp" value="${mevcut?kacar(mevcut.eposta||''):''}"></div>`;
   modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde, `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana" id="oiKaydet">💾 Kaydet</button>`);
+  const sec = () => $('#oFotoDosya').click();
+  $('#oFotoBtn').onclick = sec; $('#oFotoOnizle').onclick = sec;
+  $('#oFotoSil').onclick = () => { fotoData = null; $('#oFotoOnizle').innerHTML = avatarIc(); $('#oFotoSil').style.display = 'none'; };
+  $('#oFotoDosya').onchange = () => {
+    const f = $('#oFotoDosya').files[0]; if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 160, c = document.createElement('canvas'); c.width = S; c.height = S;
+        const m = Math.min(img.width, img.height), sx = (img.width - m) / 2, sy = (img.height - m) / 2;
+        c.getContext('2d').drawImage(img, sx, sy, m, m, 0, 0, S, S);
+        try { fotoData = c.toDataURL('image/jpeg', 0.85); } catch { fotoData = fr.result; }
+        $('#oFotoOnizle').innerHTML = `<img src="${fotoData}" style="width:100%;height:100%;object-fit:cover">`;
+        $('#oFotoSil').style.display = '';
+      };
+      img.onerror = () => bildir('Görsel okunamadı.', 'hata');
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(f);
+  };
   $('#oiIptal').onclick = modalKapat;
   $('#oiKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const veri = { ad, payOrani: parseFloat($('#oPay').value) || 0, telefon: $('#oTel').value.trim(),
-      eposta: $('#oEp').value.trim(), aktif: $('#oAktif').value === '1' };
+    const veri = { ad, dersUcreti: parseFloat($('#oUcret').value) || 0, payOrani: parseFloat($('#oPay').value) || 0,
+      telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif: $('#oAktif').value === '1', foto: fotoData || null };
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); git('ayar-pay');
