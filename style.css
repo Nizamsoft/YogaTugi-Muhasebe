@@ -593,7 +593,11 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 .hkart:nth-child(5) .visual{animation-delay:1s}
 .hkart:nth-child(6) .visual{animation-delay:1.25s}
 .hkart .t{font-size:16px;font-weight:800;line-height:1.2}
-.hkart .d{font-size:12px;color:var(--metin-soluk);margin-top:8px;line-height:1.4;max-width:22ch}
+/* Açıklama — gömük (inset) 3D alan */
+.hkart .d{align-self:stretch;font-size:11.5px;font-weight:600;color:var(--metin-soluk);line-height:1.35;
+  margin-top:11px;padding:8px 9px;border-radius:11px;
+  background:color-mix(in srgb, var(--krem) 55%, var(--kart));
+  box-shadow:inset 0 2px 5px rgba(96,78,42,.16), inset 0 -1px 0 rgba(255,255,255,.5)}
 
 /* Alt hesap sayfalarındaki "‹ Hesaplar" dön bağlantısı */
 .hesap-geri{
@@ -613,7 +617,7 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
   .hkart{padding:16px 7px 14px;border-radius:16px}
   .hkart .visual{width:56px;height:56px;margin-bottom:10px;font-size:27px}
   .hkart .t{font-size:13px}
-  .hkart .d{font-size:10px;margin-top:7px}
+  .hkart .d{font-size:10px;margin-top:9px;padding:6px 7px;border-radius:9px}
 }
 @media(prefers-reduced-motion:reduce){
   .hkart .visual{animation:none}
