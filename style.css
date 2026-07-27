@@ -556,7 +556,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .hkart.gc-ortak::before{border-color:#c69a4c}.hkart.gc-gider::before{border-color:#c0483f}.hkart.gc-gelir::before{border-color:#2f9e8f}
 .hkart .visual{
   position:relative;z-index:1;width:60px;height:60px;margin-bottom:13px;border-radius:17px;
-  display:grid;place-items:center;color:#fff;transform-style:preserve-3d;
+  display:grid;place-items:center;color:#fff;font-size:31px;line-height:1;transform-style:preserve-3d;
   animation:hkYuz 3.4s ease-in-out infinite;
 }
 .hkart .visual svg{width:31px;height:31px}
@@ -592,7 +592,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
     min-height:calc(100dvh - 300px);grid-auto-rows:1fr}
   .hkart{padding:14px 7px;border-radius:18px}
   .hkart::before{inset:5px;border-radius:14px}
-  .hkart .visual{width:56px;height:56px;margin-bottom:11px;border-radius:16px}
+  .hkart .visual{width:56px;height:56px;margin-bottom:11px;border-radius:16px;font-size:28px}
   .hkart .visual svg{width:29px;height:29px}
   .hkart .t{font-size:13px}
   .hkart .d{font-size:10px;margin-top:7px}

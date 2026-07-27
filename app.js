@@ -283,12 +283,12 @@ const MENU = [
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_KARTLARI = [
-  { id: 'hesap-banka', ad: 'Banka Hesabı',     baslik: 'Bankalar',                renk: 'banka', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
-  { id: 'hesap-kk',    ad: 'Kredi Kartı',      baslik: 'Kredi Kartı Hesapları',   renk: 'kart',  aciklama: 'kart harcama ve ödemelerinizi izleyin' },
-  { id: 'hesap-kasa',  ad: 'Kasa',             baslik: 'Kasa',                    renk: 'kasa',  aciklama: 'nakit giriş ve çıkışlarını takip edin' },
-  { id: 'hesap-ortak', ad: 'Ortaklar Hesabı',  baslik: 'Ortaklar Hesabı',         renk: 'ortak', aciklama: 'ortak hak ediş ve ödemelerini görün' },
-  { id: 'hesap-gider', ad: 'Giderler Hesabı',  baslik: 'Giderler Hesabı',         renk: 'gider', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
-  { id: 'hesap-gelir', ad: 'Gelirler Hesabı',  baslik: 'Gelirler Hesabı',         renk: 'gelir', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
+  { id: 'hesap-banka', ad: 'Banka Hesabı',     baslik: 'Bankalar',                renk: 'banka', ikon: '🏦', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
+  { id: 'hesap-kk',    ad: 'Kredi Kartı',      baslik: 'Kredi Kartı Hesapları',   renk: 'kart',  ikon: '💳', aciklama: 'kart harcama ve ödemelerinizi izleyin' },
+  { id: 'hesap-kasa',  ad: 'Kasa',             baslik: 'Kasa',                    renk: 'kasa',  ikon: '💵', aciklama: 'nakit giriş ve çıkışlarını takip edin' },
+  { id: 'hesap-ortak', ad: 'Ortaklar Hesabı',  baslik: 'Ortaklar Hesabı',         renk: 'ortak', ikon: '🤝', aciklama: 'ortak hak ediş ve ödemelerini görün' },
+  { id: 'hesap-gider', ad: 'Giderler Hesabı',  baslik: 'Giderler Hesabı',         renk: 'gider', ikon: '📉', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
+  { id: 'hesap-gelir', ad: 'Gelirler Hesabı',  baslik: 'Gelirler Hesabı',         renk: 'gelir', ikon: '📈', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
 ];
 // Hesap kartları için şık çizim (line/duotone) ikonlar
 const HESAP_IKON = {
@@ -949,7 +949,7 @@ SAYFALAR.hesaplar = function () {
     <div class="hesap-kartlar">
       ${HESAP_KARTLARI.map(k => `
         <button type="button" class="hkart gc-${k.renk}" data-git="${k.id}">
-          <span class="visual r-${k.renk}">${hesapIkonSVG(k.renk)}</span>
+          <span class="visual r-${k.renk}">${k.ikon}</span>
           <span class="t">${kacar(k.ad)}</span>
           <span class="d">${kacar(k.aciklama)}</span>
         </button>`).join('')}
