@@ -17,6 +17,7 @@ const State = {
   komisyonlar: [],   // {id, ad, oran, aktif}
   karPayi: [],       // {id, donem, toplamGelir, toplamGider, netKar, dagitim[], olusturma}
   kullanicilar: [],  // {id, eposta, ad, rol, aktif}
+  potansiyel: [],    // {id, ad, telefon, not, durum}
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -85,7 +86,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['hesaplar', 'islemler', 'ortaklar', 'komisyonlar', 'karPayi', 'kullanicilar'];
+const KOLEKSIYONLAR = ['hesaplar', 'islemler', 'ortaklar', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
 const DB = {
@@ -149,7 +150,7 @@ const SABIT_ADMIN = {
 
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
-  const [hesaplar, islemler, ortaklar, komisyonlar, karPayi, kullanicilar] = await Promise.all(
+  const [hesaplar, islemler, ortaklar, komisyonlar, karPayi, kullanicilar, potansiyel] = await Promise.all(
     KOLEKSIYONLAR.map(k => DB.listele(k))
   );
   State.hesaplar = hesaplar;
@@ -158,6 +159,7 @@ async function veriYukle() {
   State.komisyonlar = komisyonlar;
   State.karPayi = karPayi;
   State.kullanicilar = kullanicilar;
+  State.potansiyel = potansiyel || [];
   await kayitNoMigrasyon();
 }
 
@@ -282,13 +284,16 @@ const MENU = [
 ];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
+const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak', 'Müşteri & Planlama'];
 const HESAP_KARTLARI = [
-  { id: 'hesap-banka', ad: 'Banka Hesabı',     baslik: 'Bankalar',                renk: 'banka', ikon: '🏦', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
-  { id: 'hesap-kk',    ad: 'Kredi Kartı',      baslik: 'Kredi Kartı Hesapları',   renk: 'kart',  ikon: '💳', aciklama: 'kart harcama ve ödemelerinizi izleyin' },
-  { id: 'hesap-kasa',  ad: 'Kasa',             baslik: 'Kasa',                    renk: 'kasa',  ikon: '💵', aciklama: 'nakit giriş ve çıkışlarını takip edin' },
-  { id: 'hesap-ortak', ad: 'Ortaklar Hesabı',  baslik: 'Ortaklar Hesabı',         renk: 'ortak', ikon: '🤝', aciklama: 'ortak hak ediş ve ödemelerini görün' },
-  { id: 'hesap-gider', ad: 'Giderler Hesabı',  baslik: 'Giderler Hesabı',         renk: 'gider', ikon: '📉', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
-  { id: 'hesap-gelir', ad: 'Gelirler Hesabı',  baslik: 'Gelirler Hesabı',         renk: 'gelir', ikon: '📈', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
+  { id: 'hesap-banka', grup: 'Para Hesapları',        ad: 'Banka Hesabı',    baslik: 'Bankalar',              ikon: '🏦', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
+  { id: 'hesap-kk',    grup: 'Para Hesapları',        ad: 'Kredi Kartı',     baslik: 'Kredi Kartı Hesapları', ikon: '💳', aciklama: 'kart harcama ve ödemelerinizi izleyin' },
+  { id: 'hesap-kasa',  grup: 'Para Hesapları',        ad: 'Kasa',            baslik: 'Kasa',                  ikon: '💵', aciklama: 'nakit giriş ve çıkışlarını takip edin' },
+  { id: 'hesap-gider', grup: 'Gelir · Gider · Ortak', ad: 'Giderler Hesabı', baslik: 'Giderler Hesabı',       ikon: '📉', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
+  { id: 'hesap-gelir', grup: 'Gelir · Gider · Ortak', ad: 'Gelirler Hesabı', baslik: 'Gelirler Hesabı',       ikon: '📈', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
+  { id: 'hesap-ortak', grup: 'Gelir · Gider · Ortak', ad: 'Ortaklar Hesabı', baslik: 'Ortaklar Hesabı',       ikon: '🤝', aciklama: 'ortak hak ediş ve ödemelerini görün' },
+  { id: 'plan4me',     grup: 'Müşteri & Planlama',    ad: 'Plan4Me',         baslik: 'Plan4Me Aktarımı',      ikon: '🧘', aciklama: 'ders planı ve üye katılımı' },
+  { id: 'potansiyel',  grup: 'Müşteri & Planlama',    ad: 'Potansiyel Müşteriler', baslik: 'Potansiyel Müşteriler', ikon: '🌱', aciklama: 'ilgilenen kişileri takip edin' },
 ];
 // Hesap kartları için şık çizim (line/duotone) ikonlar
 const HESAP_IKON = {
@@ -945,21 +950,75 @@ function kasaSihirbaz() {
    ========================================================== */
 /* -------- HESAPLAR (kart sayfası) -------- */
 SAYFALAR.hesaplar = function () {
-  ic().innerHTML = `
-    <div class="hesap-kartlar">
-      ${HESAP_KARTLARI.map(k => `
-        <button type="button" class="hkart" data-git="${k.id}">
-          <span class="visual"><span class="hk-emoji">${k.ikon}</span></span>
-          <span class="t">${kacar(k.ad)}</span>
-          <span class="d">${kacar(k.aciklama)}</span>
-        </button>`).join('')}
-    </div>`;
+  const kartHTML = (k) => `
+    <button type="button" class="hkart" data-git="${k.id}">
+      <span class="visual"><span class="hk-emoji">${k.ikon}</span></span>
+      <span class="t">${kacar(k.ad)}</span>
+      <span class="d">${kacar(k.aciklama)}</span>
+    </button>`;
+  ic().innerHTML = HESAP_GRUP_SIRA.map(grup => {
+    const kartlar = HESAP_KARTLARI.filter(k => k.grup === grup);
+    if (!kartlar.length) return '';
+    return `<div class="hgrup-baslik">🌿 ${kacar(grup)}</div>
+      <div class="hesap-kartlar${kartlar.length <= 2 ? ' iki' : ''}">${kartlar.map(kartHTML).join('')}</div>`;
+  }).join('');
   $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
 };
 
 // Alt hesap sayfalarının üstünde "Hesaplar'a dön" bağlantısı
 function hesapGeriHTML() {
   return `<button type="button" class="hesap-geri" onclick="git('hesaplar')">‹ Hesaplar</button>`;
+}
+
+/* -------- POTANSİYEL MÜŞTERİLER (basit takip listesi) -------- */
+SAYFALAR['potansiyel'] = function () {
+  const list = State.potansiyel;
+  ic().innerHTML = `
+    ${hesapGeriHTML()}
+    <div class="kart-baslik" style="margin-bottom:16px">
+      <div class="bilgi-kutu" style="margin:0;flex:1"><span class="ikon">🌱</span><div>Stüdyoyla ilgilenen <b>potansiyel müşterileri</b> buradan takip edin; üye olduklarında güncelleyin.</div></div>
+      <button class="btn btn-ana" id="yeniPot" style="margin-left:14px">＋ Yeni Kişi</button>
+    </div>
+    <div class="kart">
+      ${list.length === 0 ? bosBlok('Henüz potansiyel müşteri yok. “＋ Yeni Kişi” ile ekleyin.') : `
+      <div class="tablo-sar"><table class="tablo">
+        <thead><tr><th>Ad Soyad</th><th>Telefon</th><th>Not</th><th class="sag">İşlem</th></tr></thead>
+        <tbody>${list.map(p => `<tr>
+          <td>🌱 ${kacar(p.ad)}</td>
+          <td>${p.telefon ? `<a href="tel:${kacar(p.telefon)}">${kacar(p.telefon)}</a>` : '<span class="soluk">—</span>'}</td>
+          <td class="soluk">${kacar(p.not || '—')}</td>
+          <td class="sag">
+            <button class="btn btn-kucuk btn-ikon" data-duzenle="${p.id}" title="Düzenle">✏️</button>
+            <button class="btn btn-kucuk btn-ikon" data-sil="${p.id}" title="Sil">🗑️</button>
+          </td></tr>`).join('')}</tbody>
+      </table></div>`}
+    </div>`;
+  $('#yeniPot').onclick = () => potansiyelFormu();
+  $$('[data-duzenle]').forEach(b => b.onclick = () => potansiyelFormu(list.find(p => p.id === b.dataset.duzenle)));
+  $$('[data-sil]').forEach(b => b.onclick = () => {
+    const p = list.find(x => x.id === b.dataset.sil);
+    onayModal('Kişi silinsin mi?', `“${kacar(p.ad)}” silinecek.`, async () => {
+      await DB.sil('potansiyel', p.id);
+      State.potansiyel = State.potansiyel.filter(x => x.id !== p.id);
+      bildir('Silindi.', 'basari'); git('potansiyel');
+    });
+  });
+};
+function potansiyelFormu(mevcut) {
+  const govde = `
+    <div class="form-alan"><label>Ad Soyad</label><input type="text" id="pAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Ayşe Demir"></div>
+    <div class="form-alan"><label>Telefon</label><input type="tel" id="pTel" value="${mevcut ? kacar(mevcut.telefon || '') : ''}" placeholder="05__ ___ __ __"></div>
+    <div class="form-alan"><label>Not</label><textarea id="pNot" rows="2" placeholder="Örn. Deneme dersine geldi, Pazartesi tekrar arayacak">${mevcut ? kacar(mevcut.not || '') : ''}</textarea></div>`;
+  modalAc(mevcut ? 'Kişi Düzenle' : 'Yeni Potansiyel Müşteri', govde, `<button class="btn" id="pIptal">İptal</button><button class="btn btn-ana" id="pKaydet">💾 Kaydet</button>`);
+  $('#pIptal').onclick = modalKapat;
+  $('#pKaydet').onclick = async () => {
+    const ad = $('#pAd').value.trim();
+    if (!ad) return bildir('Ad girin.', 'hata');
+    const veri = { ad, telefon: $('#pTel').value.trim(), not: $('#pNot').value.trim() };
+    if (mevcut) { await DB.guncelle('potansiyel', mevcut.id, veri); Object.assign(mevcut, veri); }
+    else { const y = await DB.ekle('potansiyel', veri); State.potansiyel.push(y); }
+    modalKapat(); bildir('Kaydedildi.', 'basari'); git('potansiyel');
+  };
 }
 
 /* ===================== BANKALAR (logo şeridi + Kayıt No tablosu) ===================== */
@@ -2380,7 +2439,8 @@ const ALT_MENU = [
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
   if (sayfa === 'dashboard') return 'dashboard';
-  if (sayfa === 'hesaplar' || HESAP_KARTLARI.some(k => k.id === sayfa)) return 'hesaplar';
+  // Hesaplar sekmesi: kart sayfası, hesap-* ve Potansiyel Müşteriler (Plan4Me hariç — o Girişler'de)
+  if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa.startsWith('hesap-')) return 'hesaplar';
   for (const m of ALT_MENU) {
     if (m.tip !== 'grup') continue;
     const grup = MENU.find(g => g.grup === m.grup);
@@ -2456,6 +2516,7 @@ function yedekIndir() {
     _uygulama: 'YogaTugi-Muhasebe', _surum: 1, _tarih: new Date().toISOString(),
     hesaplar: State.hesaplar, islemler: State.islemler, ortaklar: State.ortaklar,
     komisyonlar: State.komisyonlar, karPayi: State.karPayi, kullanicilar: State.kullanicilar,
+    potansiyel: State.potansiyel,
   };
   const blob = new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');

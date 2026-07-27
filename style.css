@@ -551,10 +551,20 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 /* ============================================================
    HESAPLAR — Kart Sayfası (akordeon yerine 6 kart)
    ============================================================ */
+/* Grup başlığı — Yaprak + büyük harf (yeşil) */
+.hgrup-baslik{
+  display:flex;align-items:center;gap:7px;max-width:940px;margin:22px auto 11px;padding:0 2px;
+  font-size:12.5px;font-weight:800;color:var(--yesil-koyu);text-transform:uppercase;letter-spacing:1.5px;
+}
+.hgrup-baslik:first-child{margin-top:6px}
+body.tema-koyu .hgrup-baslik{color:#8fbf93}
 .hesap-kartlar{
   display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
-  max-width:940px;margin:6px auto 0;
+  max-width:940px;margin:0 auto 0;
 }
+/* İki kartlı grup — ortalı, kart genişliği 3'lü grid ile aynı */
+.hesap-kartlar.iki{display:flex;justify-content:center}
+.hesap-kartlar.iki .hkart{flex:0 0 calc((100% - 32px) / 3)}
 .hkart{
   position:relative;
   background:linear-gradient(180deg, var(--kart), color-mix(in srgb, var(--krem) 45%, var(--kart)));
@@ -597,6 +607,9 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 @media(max-width:640px){
   /* Kompakt kartlar (onaylanan tasarım: doğal yükseklik) */
   .hesap-kartlar{grid-template-columns:repeat(3,1fr);gap:11px}
+  .hesap-kartlar.iki .hkart{flex-basis:calc((100% - 22px) / 3)}
+  .hgrup-baslik{margin:18px 4px 9px;font-size:11.5px;letter-spacing:1.3px}
+  .hgrup-baslik:first-child{margin-top:2px}
   .hkart{padding:16px 7px 14px;border-radius:16px}
   .hkart .visual{width:56px;height:56px;margin-bottom:10px;font-size:27px}
   .hkart .t{font-size:13px}
