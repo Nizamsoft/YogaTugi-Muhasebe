@@ -1382,7 +1382,7 @@ SAYFALAR['ayar-kullanici'] = function () {
       ${list.length === 0 ? bosBlok('Kullanıcı tanımlı değil.') : `
       <div class="tablo-sar"><table class="tablo">
         <thead><tr><th>Ad</th><th>E-posta</th><th>Rol</th><th class="sag">Durum</th><th class="sag">İşlem</th></tr></thead>
-        <tbody>${list.map(u=>`<tr><td>${kacar(u.ad||'—')}</td><td>${kacar(u.eposta)}</td>
+        <tbody>${list.map(u=>`<tr><td>${kacar(u.ad||'—')}</td><td>${kacar(u.eposta||'—')}</td>
           <td><span class="rozet-etk ${u.rol==='admin'?'rz-gider':u.rol==='editor'?'rz-banka':'rz-notr'}">${kacar(roller[u.rol]||u.rol)}</span></td>
           <td class="sag">${u.aktif!==false?'<span class="rozet-etk rz-gelir">Aktif</span>':'<span class="rozet-etk rz-notr">Pasif</span>'}</td>
           <td class="sag"><button class="btn btn-kucuk btn-ikon" data-duzenle="${u.id}">✏️</button>
@@ -1401,7 +1401,7 @@ SAYFALAR['ayar-kullanici'] = function () {
 function kullaniciFormu(roller, mevcut) {
   const govde = `
     <div class="form-alan"><label>Ad Soyad</label><input type="text" id="uAd" value="${mevcut?kacar(mevcut.ad||''):''}"></div>
-    <div class="form-alan"><label>E-posta</label><input type="email" id="uEp" value="${mevcut?kacar(mevcut.eposta):''}" ${mevcut?'disabled':''}></div>
+    <div class="form-alan"><label>E-posta <span class="soluk">(isteğe bağlı)</span></label><input type="email" id="uEp" value="${mevcut?kacar(mevcut.eposta||''):''}" placeholder="—" ${mevcut?'disabled':''}></div>
     <div class="form-satir">
       <div class="form-alan"><label>Rol</label><select id="uRol">${Object.entries(roller).map(([k,v])=>`<option value="${k}" ${mevcut&&mevcut.rol===k?'selected':''}>${v}</option>`).join('')}</select></div>
       <div class="form-alan"><label>Durum</label><select id="uAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
@@ -1410,9 +1410,10 @@ function kullaniciFormu(roller, mevcut) {
   modalAc(mevcut ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı', govde, `<button class="btn" id="uiIptal">İptal</button><button class="btn btn-ana" id="uiKaydet">💾 Kaydet</button>`);
   $('#uiIptal').onclick = modalKapat;
   $('#uiKaydet').onclick = async () => {
+    const ad = $('#uAd').value.trim();
     const eposta = $('#uEp').value.trim();
-    if (!eposta) return bildir('E-posta girin.', 'hata');
-    const veri = { ad: $('#uAd').value.trim(), rol: $('#uRol').value, aktif: $('#uAktif').value === '1' };
+    if (!ad) return bildir('Ad girin.', 'hata');
+    const veri = { ad, rol: $('#uRol').value, aktif: $('#uAktif').value === '1' };
     if (mevcut) { await DB.guncelle('kullanicilar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('kullanicilar', { ...veri, eposta }); State.kullanicilar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); git('ayar-kullanici');
