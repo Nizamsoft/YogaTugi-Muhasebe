@@ -950,7 +950,7 @@ SAYFALAR.hesaplar = function () {
       ${HESAP_KARTLARI.map(k => `
         <button type="button" class="hkart gc-${k.renk}" data-git="${k.id}">
           <span class="visual r-${k.renk}">${hesapIkonSVG(k.renk)}</span>
-          <span class="t"><span>${kacar(k.ad)}</span></span>
+          <span class="t">${kacar(k.ad)}</span>
           <span class="d">${kacar(k.aciklama)}</span>
         </button>`).join('')}
     </div>`;
