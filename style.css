@@ -556,40 +556,34 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   max-width:940px;margin:6px auto 0;
 }
 .hkart{
-  position:relative;overflow:hidden;
-  background:var(--kart);border:1px solid var(--kenar);border-radius:20px;
-  padding:22px 14px 18px;text-align:center;cursor:pointer;
-  box-shadow:0 9px 20px -7px rgba(96,78,42,.26);transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  position:relative;
+  background:linear-gradient(180deg, var(--kart), color-mix(in srgb, var(--krem) 45%, var(--kart)));
+  border:1px solid var(--kenar);border-radius:18px;
+  padding:17px 9px 15px;text-align:center;cursor:pointer;
+  box-shadow:0 9px 20px -8px rgba(96,78,42,.28);transition:transform .16s ease, box-shadow .16s ease;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-family:inherit;color:var(--metin);
 }
 .hkart:hover{transform:translateY(-4px);box-shadow:var(--golge-buyuk)}
 .hkart:focus-visible{outline:3px solid var(--yesil);outline-offset:2px}
-/* Konsept 3 — kesikli renk çerçeve + 3D cam ikon */
-.hkart::before{content:"";position:absolute;inset:6px;border-radius:15px;border:1.5px dashed;opacity:.42;pointer-events:none}
-.hkart.gc-banka::before{border-color:#4a72a8}.hkart.gc-kart::before{border-color:#7a4fb0}.hkart.gc-kasa::before{border-color:#2f9e6b}
-.hkart.gc-ortak::before{border-color:#c69a4c}.hkart.gc-gider::before{border-color:#c0483f}.hkart.gc-gelir::before{border-color:#2f9e8f}
+/* Emoji, Dashboard yeşili 3D dairenin içinde (süzülür) */
 .hkart .visual{
-  position:relative;z-index:1;width:60px;height:60px;margin-bottom:13px;border-radius:17px;
-  display:grid;place-items:center;color:#fff;font-size:31px;line-height:1;transform-style:preserve-3d;
-  animation:hkYuz 3.4s ease-in-out infinite;
+  position:relative;width:60px;height:60px;margin-bottom:11px;border-radius:50%;
+  display:grid;place-items:center;font-size:29px;line-height:1;
+  background:linear-gradient(145deg,#7ba97e,#4f7452);
+  box-shadow:0 11px 18px -5px rgba(79,116,82,.6), inset 0 1px 0 rgba(255,255,255,.45);
+  transform-style:preserve-3d;animation:hkYuz 3.4s ease-in-out infinite;
 }
-.hkart .visual svg{width:31px;height:31px}
-.hkart .visual::after{content:"";position:absolute;inset:0;border-radius:17px;background:linear-gradient(155deg,rgba(255,255,255,.55),transparent 52%);pointer-events:none}
+.hkart .visual::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.5),transparent 55%);pointer-events:none}
+.hkart .hk-emoji{position:relative;z-index:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
 @keyframes hkYuz{0%,100%{transform:translateY(0) rotateX(0deg) rotateY(-9deg)}50%{transform:translateY(-5px) rotateX(7deg) rotateY(9deg)}}
 .hkart:nth-child(1) .visual{animation-delay:0s}
-.hkart:nth-child(2) .visual{animation-delay:.3s}
-.hkart:nth-child(3) .visual{animation-delay:.6s}
-.hkart:nth-child(4) .visual{animation-delay:.9s}
-.hkart:nth-child(5) .visual{animation-delay:1.2s}
-.hkart:nth-child(6) .visual{animation-delay:1.5s}
-.hkart .visual.r-banka{background:linear-gradient(145deg,#5b86c4,#33568c);box-shadow:0 11px 18px -5px rgba(74,114,168,.6)}
-.hkart .visual.r-kart {background:linear-gradient(145deg,#9a6dd4,#5e3a91);box-shadow:0 11px 18px -5px rgba(122,79,176,.6)}
-.hkart .visual.r-kasa {background:linear-gradient(145deg,#49b978,#237a52);box-shadow:0 11px 18px -5px rgba(47,158,107,.6)}
-.hkart .visual.r-ortak{background:linear-gradient(145deg,#d6a851,#a8792f);box-shadow:0 11px 18px -5px rgba(198,154,76,.6)}
-.hkart .visual.r-gider{background:linear-gradient(145deg,#d15a51,#98362f);box-shadow:0 11px 18px -5px rgba(192,72,63,.6)}
-.hkart .visual.r-gelir{background:linear-gradient(145deg,#3fbfab,#227d70);box-shadow:0 11px 18px -5px rgba(47,158,143,.6)}
-.hkart .t{position:relative;z-index:1;font-size:16px;font-weight:800;line-height:1.2}
-.hkart .d{position:relative;z-index:1;font-size:12px;color:var(--metin-soluk);margin-top:8px;line-height:1.4;max-width:22ch}
+.hkart:nth-child(2) .visual{animation-delay:.25s}
+.hkart:nth-child(3) .visual{animation-delay:.5s}
+.hkart:nth-child(4) .visual{animation-delay:.75s}
+.hkart:nth-child(5) .visual{animation-delay:1s}
+.hkart:nth-child(6) .visual{animation-delay:1.25s}
+.hkart .t{font-size:16px;font-weight:800;line-height:1.2}
+.hkart .d{font-size:12px;color:var(--metin-soluk);margin-top:8px;line-height:1.4;max-width:22ch}
 
 /* Alt hesap sayfalarındaki "‹ Hesaplar" dön bağlantısı */
 .hesap-geri{
@@ -601,13 +595,10 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .hesap-geri:hover{border-color:var(--yesil);background:var(--yesil-acik)}
 
 @media(max-width:640px){
-  /* Kartlar boş alanı doldurur ama biraz daha kısa (2 satır eşit yükseklik) */
-  .hesap-kartlar{grid-template-columns:repeat(3,1fr);gap:11px;
-    min-height:calc(100dvh - 300px);grid-auto-rows:1fr}
-  .hkart{padding:14px 7px;border-radius:18px}
-  .hkart::before{inset:5px;border-radius:14px}
-  .hkart .visual{width:56px;height:56px;margin-bottom:11px;border-radius:16px;font-size:28px}
-  .hkart .visual svg{width:29px;height:29px}
+  /* Kompakt kartlar (onaylanan tasarım: doğal yükseklik) */
+  .hesap-kartlar{grid-template-columns:repeat(3,1fr);gap:11px}
+  .hkart{padding:16px 7px 14px;border-radius:16px}
+  .hkart .visual{width:56px;height:56px;margin-bottom:10px;font-size:27px}
   .hkart .t{font-size:13px}
   .hkart .d{font-size:10px;margin-top:7px}
 }

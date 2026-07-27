@@ -948,8 +948,8 @@ SAYFALAR.hesaplar = function () {
   ic().innerHTML = `
     <div class="hesap-kartlar">
       ${HESAP_KARTLARI.map(k => `
-        <button type="button" class="hkart gc-${k.renk}" data-git="${k.id}">
-          <span class="visual r-${k.renk}">${k.ikon}</span>
+        <button type="button" class="hkart" data-git="${k.id}">
+          <span class="visual"><span class="hk-emoji">${k.ikon}</span></span>
           <span class="t">${kacar(k.ad)}</span>
           <span class="d">${kacar(k.aciklama)}</span>
         </button>`).join('')}
