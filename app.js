@@ -273,6 +273,7 @@ const MENU = [
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',     ad: 'Firma Bilgileri',   ikon: '🏢', baslik: 'Firma Bilgileri & Logo' },
     { id: 'ayar-banka',     ad: 'Banka Ayarları',    ikon: '🏦', baslik: 'Banka Ayarları' },
+    { id: 'ayar-kk',        ad: 'Kredi Kartı Ayarları', ikon: '💳', baslik: 'Kredi Kartı Ayarları' },
     { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik', gizli: true },
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
@@ -1164,7 +1165,228 @@ function bankaHareketFormu(bankaId, mevcut) {
 }
 
 SAYFALAR['hesap-kasa']  = (m) => hesapListesi('kasa');
-SAYFALAR['hesap-kk']    = (m) => hesapListesi('krediKarti');
+/* ===================== KREDİ KARTLARI (kart şeridi + harcama/borç ödeme) ===================== */
+let _kartSecili = null;
+
+function sonOdemeMetni(gun) {
+  gun = parseInt(gun, 10);
+  return (gun >= 1 && gun <= 31) ? `her ayın ${gun}. günü` : 'belirtilmedi';
+}
+function kartBorc(id) { return -Hesapla.paraHesapBakiye(id); }   // bakiye negatif = borç
+
+function kartTileHTML(h, mini) {
+  if (h.logoData) return `<div class="kart-tile ${mini ? 'mini' : ''}"><img src="${h.logoData}" alt="${kacar(h.ad)}"></div>`;
+  const t = renkTon(h.ad);
+  return `<div class="kart-tile ${mini ? 'mini' : ''}" style="background:linear-gradient(135deg,hsl(${t} 42% 50%),hsl(${t} 45% 32%))">
+    <span class="chip"></span>${mini ? '' : `<span class="n">${kacar(h.ad)}</span>`}</div>`;
+}
+
+SAYFALAR['hesap-kk'] = () => { _kartSecili = null; krediKartlariSayfasi(); };
+
+function krediKartlariSayfasi() {
+  const kartlar = State.hesaplar.filter(h => h.tip === 'krediKarti');
+  if (_kartSecili && !kartlar.some(k => k.id === _kartSecili)) _kartSecili = null;
+
+  if (!kartlar.length) {
+    ic().innerHTML = `
+      <div class="bilgi-kutu"><span class="ikon">💳</span><div>Kart hareketlerini görmek için önce kredi kartı eklemelisiniz.</div></div>
+      <div class="kart"><div class="banka-bos">
+        <div class="el">💳</div><p>Henüz kredi kartı yok.</p>
+        <button class="btn btn-ana" id="kkAyarGit" style="margin-top:12px">⚙️ Kredi Kartı Ayarları'na git</button>
+      </div></div>`;
+    $('#kkAyarGit').onclick = () => git('ayar-kk');
+    return;
+  }
+
+  const serit = kartlar.map(h => `
+    <button type="button" class="klogo ${h.id === _kartSecili ? 'sec' : ''}" data-kart="${h.id}">
+      ${kartTileHTML(h)}
+      <span class="ad">${kacar(h.ad)}</span>
+      <span class="sd">${sonOdemeMetni(h.sonOdemeGunu)}</span>
+    </button>`).join('');
+
+  const secili = kartlar.find(k => k.id === _kartSecili);
+  let govde;
+  if (!secili) {
+    govde = `<div class="banka-bos"><div class="el">👆</div><p>Hareketleri görmek için yukarıdan bir <b>kart seçin</b>.</p></div>`;
+  } else {
+    const hareketler = State.islemler
+      .filter(i => i.odemeHesabiId === secili.id || i.karsiHesapId === secili.id)
+      .slice()
+      .sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || (Number(a.kayitNo) || 0) - (Number(b.kayitNo) || 0));
+
+    let borc = 0, topHarc = 0, topOde = 0;
+    const rows = hareketler.map(i => {
+      const odemeMi = (i.tip === 'transfer' && i.karsiHesapId === secili.id);   // borç ödeme
+      const tutar = Number(i.tutar) || 0;
+      let harc = 0, ode = 0, tarihGoster = '';
+      if (odemeMi) { ode = tutar; borc -= tutar; topOde += tutar; tarihGoster = fmtTarih(i.tarih); }
+      else { harc = tutar; borc += tutar; topHarc += tutar; }   // harcama (gider)
+      const kat = State.hesaplar.find(h => h.id === i.kategoriId);
+      const giderAd = odemeMi ? '' : (kat ? kacar(kat.ad) : '—');
+      return { i, odemeMi, harc, ode, giderAd, borc, tarihGoster };
+    });
+
+    const satirlar = rows.map(r => `
+      <tr data-hareket="${r.i.id}" style="cursor:pointer">
+        <td><span class="kno">#${r.i.kayitNo || '—'}</span></td>
+        <td>${kacar(r.i.aciklama || '—')}</td>
+        <td>${r.giderAd ? `<span class="kat-etk">${r.giderAd}</span>` : '<span class="soluk">—</span>'}</td>
+        <td class="sag num ${r.harc ? 'negatif' : 'soluk'}">${r.harc ? '−' + TL(r.harc) : '—'}</td>
+        <td class="sag num ${r.ode ? 'pozitif' : 'soluk'}">${r.ode ? '+' + TL(r.ode) : '—'}</td>
+        <td class="sag borc-hucre ${r.borc <= 0 ? 'sifir' : ''}">${TL(r.borc)}</td>
+        <td class="tar">${r.tarihGoster || '<span class="soluk">—</span>'}</td>
+      </tr>`).join('');
+
+    const kartlarHTML = rows.map(r => `
+      <div class="hareket-kart" data-hareket="${r.i.id}">
+        <div class="hk-ust"><span class="kno">#${r.i.kayitNo || '—'}</span><span class="hk-ack">${kacar(r.i.aciklama || '—')}</span></div>
+        <div class="hk-alt"><span class="hk-kat">${r.odemeMi ? 'Ödeme · ' + r.tarihGoster : 'Harcama · ' + (r.giderAd || '—')}</span>
+          <span class="num ${r.odemeMi ? 'pozitif' : 'negatif'}">${r.odemeMi ? '+' + TL(r.ode) : '−' + TL(r.harc)}</span></div>
+        <div class="hk-alt"><span class="hk-kat">Güncel Borç</span><span class="borc-hucre ${r.borc <= 0 ? 'sifir' : ''}">${TL(r.borc)}</span></div>
+      </div>`).join('');
+
+    govde = `
+      <div class="banka-arac">
+        <h3>${kartTileHTML(secili, true)} <span>${kacar(secili.ad)} — Hareketler</span></h3>
+        <button class="btn btn-ana" id="yeniHareket">＋ Yeni Hareket</button>
+      </div>
+      <p class="banka-not" style="margin:-6px 2px 14px">Son ödeme günü: <b>${sonOdemeMetni(secili.sonOdemeGunu)}</b> · Güncel borç: <b class="${borc>0?'negatif':'pozitif'}">${TL(borc)}</b></p>
+      ${hareketler.length === 0
+        ? `<div class="kart">${bosBlok('Bu kartta henüz hareket yok. “＋ Yeni Hareket” ile ekleyin.')}</div>`
+        : `<div class="kart banka-tablo-kart" style="padding:0;overflow:hidden">
+            <div class="tablo-sar"><table class="tablo banka-tablo">
+              <thead><tr>
+                <th>Kayıt No</th><th>Açıklama</th><th>Gider Adı</th>
+                <th class="sag">Harcama Tutarı</th><th class="sag">Ödeme Tutarı</th><th class="sag">Güncel Borç</th><th>Borç Ödeme Tarihi</th>
+              </tr></thead>
+              <tbody>${satirlar}</tbody>
+              <tfoot><tr>
+                <td colspan="3">TOPLAM</td>
+                <td class="sag negatif">−${TL(topHarc)}</td>
+                <td class="sag pozitif">+${TL(topOde)}</td>
+                <td class="sag borc-hucre ${borc<=0?'sifir':''}"><b>${TL(borc)}</b></td><td></td>
+              </tr></tfoot>
+            </table></div>
+          </div>
+          <div class="banka-kartlar">${kartlarHTML}
+            <div class="hareket-kart hk-toplam">
+              <div class="hk-alt"><span class="hk-kat">Harcama</span><span class="negatif">−${TL(topHarc)}</span></div>
+              <div class="hk-alt"><span class="hk-kat">Ödeme</span><span class="pozitif">+${TL(topOde)}</span></div>
+              <div class="hk-alt"><span class="hk-kat"><b>Güncel Borç</b></span><span class="borc-hucre ${borc<=0?'sifir':''}">${TL(borc)}</span></div>
+            </div>
+          </div>`}
+      <p class="banka-not">💡 <b>Güncel Borç</b> = harcamalar − ödemeler. Harcamalar aynı anda ilgili <b>gider hesabında</b> da görünür; borç ödemesi seçtiğin banka/kasadan düşer.</p>`;
+  }
+
+  ic().innerHTML = `<div class="banka-serit kart-serit">${serit}</div>${govde}`;
+  $$('[data-kart]').forEach(b => b.onclick = () => { _kartSecili = b.dataset.kart; krediKartlariSayfasi(); });
+  if ($('#yeniHareket')) $('#yeniHareket').onclick = () => kartHareketFormu(_kartSecili);
+  $$('[data-hareket]').forEach(r => r.onclick = () => kartHareketFormu(_kartSecili, State.islemler.find(i => i.id === r.dataset.hareket)));
+}
+
+/* Kredi kartı hareketi ekle/düzenle — Harcama (gider) veya Borç Ödeme (banka/kasadan transfer) */
+function kartHareketFormu(kartId, mevcut) {
+  const kart = State.hesaplar.find(h => h.id === kartId);
+  if (!kart) return;
+  const giderKalem = State.hesaplar.filter(h => h.tip === 'gider');
+  const kaynakHesaplar = State.hesaplar.filter(h => (h.tip === 'banka' || h.tip === 'kasa'));
+  const baslangicMod = mevcut ? (mevcut.tip === 'transfer' ? 'odeme' : 'harcama') : 'harcama';
+
+  const kalemSecenek = (secili) =>
+    giderKalem.map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${kacar(h.ad)}</option>`).join('')
+    + `<option value="__yeni">➕ Yeni gider kalemi ekle…</option>`;
+  const kaynakSecenek = (secili) => kaynakHesaplar.length
+    ? kaynakHesaplar.map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${HESAP_TIPLERI[h.tip].ikon} ${kacar(h.ad)}</option>`).join('')
+    : `<option value="">— banka/kasa yok, önce ekleyin —</option>`;
+
+  const govde = `
+    <div class="bilgi-kutu"><span class="ikon">💳</span><div><b>${kacar(kart.ad)}</b> için hareket. ${mevcut ? `Kayıt No: <b>#${mevcut.kayitNo || '—'}</b>` : 'Kaydedince otomatik <b>Kayıt No</b> verilir.'}</div></div>
+    <div class="yon-secim">
+      <button type="button" class="yon-btn kart-harc ${baslangicMod === 'harcama' ? 'sec' : ''}" data-mod="harcama">🛒 Kart Harcaması<small>borcu artırır</small></button>
+      <button type="button" class="yon-btn kart-ode ${baslangicMod === 'odeme' ? 'sec' : ''}" data-mod="odeme">💳 Borç Ödeme<small>borcu azaltır</small></button>
+    </div>
+    <div class="form-alan" id="hrGiderKap">
+      <label>Gider Adı</label>
+      <select id="hrGider"></select>
+      <input type="text" id="hrYeniGider" placeholder="Yeni gider adı (örn. Malzeme)" style="display:none;margin-top:8px">
+    </div>
+    <div class="form-alan" id="hrKaynakKap" style="display:none">
+      <label>Ödeme Kaynağı (nereden ödendi)</label>
+      <select id="hrKaynak">${kaynakSecenek(mevcut && mevcut.tip === 'transfer' ? mevcut.odemeHesabiId : null)}</select>
+    </div>
+    <div class="form-satir">
+      <div class="form-alan"><label id="hrTarihEt">Tarih</label><input type="date" id="hrTarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
+      <div class="form-alan"><label>Tutar (₺)</label><input type="number" id="hrTutar" step="0.01" min="0" value="${mevcut ? mevcut.tutar : ''}" placeholder="0,00"></div>
+    </div>
+    <div class="form-alan"><label>Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Mat ve ekipman"></div>`;
+
+  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
+    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana" id="hrKaydet">💾 Kaydet</button>`;
+  modalAc(mevcut ? 'Kart Hareketi Düzenle' : 'Yeni Kart Hareketi', govde, alt);
+
+  let mod = baslangicMod;
+  const modUygula = () => {
+    $$('.yon-btn').forEach(b => b.classList.toggle('sec', b.dataset.mod === mod));
+    $('#hrGiderKap').style.display = mod === 'harcama' ? '' : 'none';
+    $('#hrKaynakKap').style.display = mod === 'odeme' ? '' : 'none';
+    $('#hrTarihEt').textContent = mod === 'odeme' ? 'Borç Ödeme Tarihi' : 'Tarih';
+    if (mod === 'harcama') {
+      const sel = $('#hrGider');
+      sel.innerHTML = kalemSecenek(mevcut && mevcut.tip !== 'transfer' ? mevcut.kategoriId : null);
+      if (!giderKalem.length) sel.value = '__yeni';
+      $('#hrYeniGider').style.display = sel.value === '__yeni' ? 'block' : 'none';
+    }
+  };
+  $$('.yon-btn').forEach(b => b.onclick = () => { mod = b.dataset.mod; modUygula(); });
+  $('#hrGider').onchange = () => { $('#hrYeniGider').style.display = $('#hrGider').value === '__yeni' ? 'block' : 'none'; };
+  modUygula();
+
+  $('#hrIptal').onclick = modalKapat;
+  if ($('#hrSil')) $('#hrSil').onclick = () => {
+    modalKapat();
+    onayModal('Hareket silinsin mi?', `Kayıt No <b>#${mevcut.kayitNo || '—'}</b> — “${kacar(mevcut.aciklama || '')}” silinecek.`, async () => {
+      await DB.sil('islemler', mevcut.id);
+      State.islemler = State.islemler.filter(x => x.id !== mevcut.id);
+      bildir('Hareket silindi.', 'basari'); krediKartlariSayfasi();
+    });
+  };
+  $('#hrKaydet').onclick = async () => {
+    const tutar = parseFloat($('#hrTutar').value);
+    if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
+    const tarih = $('#hrTarih').value;
+    const aciklama = $('#hrAciklama').value.trim();
+    let veri;
+    if (mod === 'harcama') {
+      let katId = $('#hrGider').value;
+      if (katId === '__yeni') {
+        const ad = $('#hrYeniGider').value.trim();
+        if (!ad) return bildir('Gider adı girin.', 'hata');
+        const yk = await DB.ekle('hesaplar', { ad, tip: 'gider', aktif: true });
+        State.hesaplar.push(yk); katId = yk.id;
+      }
+      if (!katId) return bildir('Bir gider kalemi seçin.', 'hata');
+      veri = { tarih, tutar, tip: 'gider', odemeHesabiId: kart.id, kategoriId: katId, aciklama, kaynak: 'krediKarti' };
+    } else {
+      const kaynakId = $('#hrKaynak').value;
+      if (!kaynakId) return bildir('Ödeme kaynağı (banka/kasa) seçin.', 'hata');
+      veri = { tarih, tutar, tip: 'transfer', odemeHesabiId: kaynakId, karsiHesapId: kart.id, aciklama: aciklama || 'Kart borcu ödemesi', kaynak: 'krediKarti' };
+    }
+    if (mevcut) {
+      // Tür değiştiyse eski alanları temizle
+      const temiz = { kategoriId: null, karsiHesapId: null };
+      await DB.guncelle('islemler', mevcut.id, { ...temiz, ...veri });
+      Object.assign(mevcut, temiz, veri);
+      bildir('Hareket güncellendi.', 'basari');
+    } else {
+      veri.kayitNo = sonrakiKayitNo();
+      const y = await DB.ekle('islemler', veri);
+      State.islemler.unshift(y);
+      bildir('Hareket eklendi.', 'basari');
+    }
+    modalKapat(); krediKartlariSayfasi();
+  };
+}
 SAYFALAR['hesap-gider'] = (m) => hesapListesi('gider');
 SAYFALAR['hesap-gelir'] = (m) => hesapListesi('gelir');
 SAYFALAR['hesap-ortak'] = (m) => ortakHesabiSayfasi();
@@ -1783,6 +2005,81 @@ function bankaLogoIsle(dosya, tamam) {
     img.src = fr.result;
   };
   fr.readAsDataURL(dosya);
+}
+
+/* -------- AYARLAR: Kredi Kartı Ayarları (kart ekle/çıkar/son ödeme günü/logo) -------- */
+let _yeniKartLogo = null;
+SAYFALAR['ayar-kk'] = function () {
+  _yeniKartLogo = null;
+  const kartlar = State.hesaplar.filter(h => h.tip === 'krediKarti');
+  const satir = (h) => `
+    <div class="banka-satir">
+      ${kartTileHTML(h, true)}
+      <div class="banka-satir-ad"><b>${kacar(h.ad)}</b><small>Son ödeme: ${sonOdemeMetni(h.sonOdemeGunu)} · Borç: ${TL(kartBorc(h.id))}</small></div>
+      <button class="btn btn-kucuk" data-logo="${h.id}">🖼️ Logo</button>
+      <button class="btn btn-kucuk btn-kirmizi" data-sil="${h.id}">🗑️</button>
+    </div>`;
+  ic().innerHTML = `
+    <div class="bilgi-kutu"><span class="ikon">💳</span><div>Kredi kartlarınızı buradan ekleyin (kart adı + son ödeme günü), logolarını yükleyin veya silin. Bu kartlar “Kredi Kartları” hesabının üstünde şerit olarak görünür.</div></div>
+    <div class="izgara izgara-2">
+      <div class="kart">
+        <div class="kart-baslik"><h3>Kartlarım</h3><span class="soluk">${kartlar.length} kart</span></div>
+        <div class="banka-liste">${kartlar.length ? kartlar.map(satir).join('') : bosBlok('Henüz kart yok. Sağdan ekleyin.')}</div>
+      </div>
+      <div class="kart">
+        <div class="kart-baslik"><h3>Yeni Kart Ekle</h3></div>
+        <div class="form-alan"><label>Kart Adı</label><input type="text" id="ykAd" placeholder="Örn. Bonus Kart"></div>
+        <div class="form-alan"><label>Son Ödeme Günü</label>
+          <div class="gun-kutu"><span>Her ayın</span><input type="number" id="ykGun" min="1" max="31" value="1"><span>. günü</span></div>
+        </div>
+        <div class="form-alan"><label>Kart Logosu (opsiyonel)</label>
+          <div class="birak-alani" id="ykLogoBirak">
+            <span class="ikon">💳</span><b>Logo seç</b> veya sürükle<br>
+            <span class="soluk">.png · .jpg · .webp · .svg</span>
+            <input type="file" id="ykLogoDosya" accept="image/*" hidden>
+          </div>
+          <div id="ykLogoOnizleme" style="margin-top:12px"></div>
+        </div>
+        <button class="btn btn-ana" id="ykEkle" style="width:100%;justify-content:center;padding:12px">＋ Kartı Ekle</button>
+      </div>
+    </div>
+    <input type="file" id="kartLogoDosya" accept="image/*" hidden>`;
+
+  let _logoHedef = null;
+  const gizliDosya = $('#kartLogoDosya');
+  $$('[data-logo]').forEach(b => b.onclick = () => { _logoHedef = b.dataset.logo; gizliDosya.click(); });
+  gizliDosya.onchange = () => {
+    if (gizliDosya.files[0] && _logoHedef) bankaLogoIsle(gizliDosya.files[0], async (veri) => {
+      const h = State.hesaplar.find(x => x.id === _logoHedef);
+      await DB.guncelle('hesaplar', h.id, { logoData: veri }); h.logoData = veri;
+      bildir('Logo güncellendi.', 'basari'); git('ayar-kk');
+    });
+  };
+  $$('[data-sil]').forEach(b => b.onclick = () => hesapSil(b.dataset.sil));
+
+  const birak = $('#ykLogoBirak'), dosya = $('#ykLogoDosya');
+  birak.onclick = () => dosya.click();
+  ['dragover', 'dragenter'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.add('uzerinde'); }));
+  ['dragleave', 'drop'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.remove('uzerinde'); }));
+  birak.addEventListener('drop', e => { if (e.dataTransfer.files[0]) yeniKartLogoSec(e.dataTransfer.files[0]); });
+  dosya.onchange = () => { if (dosya.files[0]) yeniKartLogoSec(dosya.files[0]); };
+
+  $('#ykEkle').onclick = async () => {
+    const ad = $('#ykAd').value.trim();
+    if (!ad) return bildir('Kart adı girin.', 'hata');
+    const gun = Math.min(31, Math.max(1, parseInt($('#ykGun').value, 10) || 1));
+    const veri = { ad, tip: 'krediKarti', aktif: true, acilisBakiye: 0, sonOdemeGunu: gun };
+    if (_yeniKartLogo) veri.logoData = _yeniKartLogo;
+    const y = await DB.ekle('hesaplar', veri); State.hesaplar.push(y);
+    _yeniKartLogo = null;
+    bildir('Kart eklendi.', 'basari'); git('ayar-kk');
+  };
+};
+function yeniKartLogoSec(dosya) {
+  bankaLogoIsle(dosya, (veri) => {
+    _yeniKartLogo = veri;
+    $('#ykLogoOnizleme').innerHTML = `<div class="kart-tile mini"><img src="${veri}" alt="logo"></div>`;
+  });
 }
 
 /* -------- AYARLAR: Firma Bilgileri & Logo -------- */

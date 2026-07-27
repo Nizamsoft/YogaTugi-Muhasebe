@@ -604,6 +604,42 @@ table.banka-tablo .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:80
 .hareket-kart .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:800}
 .hareket-kart.hk-toplam{background:var(--krem);cursor:default}
 
+/* Kredi kartı — kart şeridi (kart biçimli) */
+.kart-serit .klogo{width:128px;flex:0 0 auto;text-align:center;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:7px;transition:transform .25s ease}
+.kart-tile{width:128px;height:80px;border-radius:14px;display:flex;flex-direction:column;justify-content:space-between;
+  padding:10px 12px;color:#fff;box-shadow:0 8px 16px rgba(0,0,0,.2);position:relative;overflow:hidden;
+  transform-style:preserve-3d;transition:transform .3s ease, box-shadow .3s ease, filter .3s ease}
+.kart-tile::after{content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.32),transparent 55%)}
+.kart-tile img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.kart-tile .chip{width:26px;height:18px;border-radius:4px;background:linear-gradient(135deg,#f2d27a,#c9a13c);box-shadow:inset 0 0 3px rgba(0,0,0,.3);z-index:1}
+.kart-tile .n{font-size:13px;font-weight:800;text-align:left;z-index:1;text-shadow:0 1px 2px rgba(0,0,0,.3);line-height:1.15}
+.kart-tile.mini{width:44px;height:30px;border-radius:7px;padding:6px;flex:0 0 auto}
+.kart-tile.mini .chip{width:15px;height:11px}
+.kart-serit .klogo .ad{font-size:12.5px;font-weight:700;color:var(--metin-soluk);line-height:1.15}
+.kart-serit .klogo .sd{font-size:10.5px;color:var(--metin-soluk);margin-top:-3px}
+.kart-serit .klogo:not(.sec) .kart-tile{filter:saturate(.6) opacity(.72);transform:scale(.92)}
+.kart-serit .klogo:hover .kart-tile{transform:scale(.97) translateY(-2px)}
+.kart-serit .klogo.sec .kart-tile{filter:none;box-shadow:0 16px 26px rgba(0,0,0,.3);animation:banka-suz 3s ease-in-out infinite}
+.kart-serit .klogo.sec .ad{color:var(--metin)}
+.banka-arac h3 .kart-tile.mini{border-radius:6px}
+
+/* Güncel borç hücresi (kırmızı borç, yeşil = 0/ödenmiş) */
+.borc-hucre{font-variant-numeric:tabular-nums;font-weight:800;color:var(--kirmizi)}
+.borc-hucre.sifir{color:var(--yesil-para)}
+.banka-tablo .tar{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* Kart hareket formu — mod butonları (Harcama kırmızı / Ödeme yeşil) */
+.yon-btn.kart-harc.sec{border-color:var(--kirmizi);background:var(--kirmizi-acik);color:var(--kirmizi)}
+.yon-btn.kart-harc.sec small{color:var(--kirmizi)}
+.yon-btn.kart-ode.sec{border-color:var(--yesil-para);background:#e6f4ec;color:var(--yesil-para)}
+.yon-btn.kart-ode.sec small{color:var(--yesil-para)}
+
+/* Son ödeme günü kutusu */
+.gun-kutu{display:flex;align-items:center;gap:9px}
+.gun-kutu span{font-size:14px;color:var(--metin-soluk)}
+.gun-kutu input{width:84px;text-align:center}
+
 /* Banka Ayarları listesi */
 .banka-liste{display:flex;flex-direction:column;gap:10px}
 .banka-satir{display:flex;align-items:center;gap:12px;padding:11px;border:1px solid var(--kenar);border-radius:13px;background:var(--kart)}
