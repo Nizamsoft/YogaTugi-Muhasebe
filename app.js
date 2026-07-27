@@ -283,13 +283,25 @@ const MENU = [
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_KARTLARI = [
-  { id: 'hesap-banka', ad: 'Banka Hesabı',     baslik: 'Bankalar',                ikon: '🏦', renk: 'v-banka', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
-  { id: 'hesap-kk',    ad: 'Kredi Kartı',      baslik: 'Kredi Kartı Hesapları',   ikon: '💳', renk: 'v-kart',  aciklama: 'kart harcama ve ödemelerinizi izleyin' },
-  { id: 'hesap-kasa',  ad: 'Kasa',             baslik: 'Kasa',                    ikon: '💵', renk: 'v-kasa',  aciklama: 'nakit giriş ve çıkışlarını takip edin' },
-  { id: 'hesap-ortak', ad: 'Ortaklar Hesabı',  baslik: 'Ortaklar Hesabı',         ikon: '🤝', renk: 'v-ortak', aciklama: 'ortak hak ediş ve ödemelerini görün' },
-  { id: 'hesap-gider', ad: 'Giderler Hesabı',  baslik: 'Giderler Hesabı',         ikon: '📉', renk: 'v-gider', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
-  { id: 'hesap-gelir', ad: 'Gelirler Hesabı',  baslik: 'Gelirler Hesabı',         ikon: '📈', renk: 'v-gelir', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
+  { id: 'hesap-banka', ad: 'Banka Hesabı',     baslik: 'Bankalar',                renk: 'banka', aciklama: 'banka hesaplarınızdaki işlemleri takip edin' },
+  { id: 'hesap-kk',    ad: 'Kredi Kartı',      baslik: 'Kredi Kartı Hesapları',   renk: 'kart',  aciklama: 'kart harcama ve ödemelerinizi izleyin' },
+  { id: 'hesap-kasa',  ad: 'Kasa',             baslik: 'Kasa',                    renk: 'kasa',  aciklama: 'nakit giriş ve çıkışlarını takip edin' },
+  { id: 'hesap-ortak', ad: 'Ortaklar Hesabı',  baslik: 'Ortaklar Hesabı',         renk: 'ortak', aciklama: 'ortak hak ediş ve ödemelerini görün' },
+  { id: 'hesap-gider', ad: 'Giderler Hesabı',  baslik: 'Giderler Hesabı',         renk: 'gider', aciklama: 'tüm giderlerinizi kalem kalem izleyin' },
+  { id: 'hesap-gelir', ad: 'Gelirler Hesabı',  baslik: 'Gelirler Hesabı',         renk: 'gelir', aciklama: 'tüm gelirlerinizi kalem kalem izleyin' },
 ];
+// Hesap kartları için şık çizim (line/duotone) ikonlar
+const HESAP_IKON = {
+  banka: '<path d="M12 3 3 8.2h18L12 3Z" fill="currentColor" opacity=".32"/><path d="M5 10.5v6.5M9 10.5v6.5M15 10.5v6.5M19 10.5v6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3.2 20h17.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  kart: '<rect x="2.5" y="5.5" width="19" height="13" rx="3" fill="currentColor" opacity=".3"/><rect x="2.5" y="5.5" width="19" height="13" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.7h19" stroke="currentColor" stroke-width="1.8"/><path d="M6 15h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  kasa: '<rect x="2.5" y="6.5" width="19" height="11" rx="2.5" fill="currentColor" opacity=".3"/><rect x="2.5" y="6.5" width="19" height="11" rx="2.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 9.5h.01M18.5 14.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  ortak: '<circle cx="9" cy="8" r="3.2" fill="currentColor" opacity=".3"/><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c0-3 2.6-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16.2 6.6a3 3 0 0 1 .3 5.7M18.5 19c0-2.3-1-4-2.6-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  gider: '<path d="M4 7.5l5 5 3-3 7.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 12v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  gelir: '<path d="M4 16.5l5-5 3 3 7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 12V7h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+function hesapIkonSVG(renk) {
+  return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">${HESAP_IKON[renk] || ''}</svg>`;
+}
 
 function menuCiz() {
   const nav = $('#anaMenu');
@@ -936,9 +948,9 @@ SAYFALAR.hesaplar = function () {
   ic().innerHTML = `
     <div class="hesap-kartlar">
       ${HESAP_KARTLARI.map(k => `
-        <button type="button" class="hkart" data-git="${k.id}">
-          <span class="visual ${k.renk}">${k.ikon}</span>
-          <span class="t">${kacar(k.ad)}</span>
+        <button type="button" class="hkart gc-${k.renk}" data-git="${k.id}">
+          <span class="visual r-${k.renk}">${hesapIkonSVG(k.renk)}</span>
+          <span class="t"><span>${kacar(k.ad)}</span></span>
           <span class="d">${kacar(k.aciklama)}</span>
         </button>`).join('')}
     </div>`;
