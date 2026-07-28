@@ -65,6 +65,15 @@ function tutarKutusuBagla(el, baslangic) {
   if (baslangic != null && baslangic !== '') el.value = tutarBicimle(String(baslangic).replace('.', ','));
   el.addEventListener('input', () => { el.value = tutarBicimle(el.value); });
 }
+/* Tarih satırı: görünmez <input type=date> değişince görünen metni (28 Tem 2026) günceller */
+function tarihGostergeBagla() {
+  const inp = document.querySelector('#hrTarih'), gos = document.querySelector('#hrTarihGos');
+  if (!inp || !gos) return;
+  const guncelle = () => { gos.textContent = fmtTarihUzun(inp.value); };
+  inp.addEventListener('input', guncelle);
+  inp.addEventListener('change', guncelle);
+  guncelle();
+}
 function yeniId() { return 'id' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
 function bugunISO() { return new Date().toISOString().slice(0, 10); }
 function donemStr(tarih) { return (tarih || bugunISO()).slice(0, 7); } // YYYY-MM
@@ -172,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '43';
+const APP_SURUM = '44';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1091,6 +1100,12 @@ const EKSTRE_CFG = {
   krediKarti: { ikon: '💳', ad: 'Kredi Kartı',  bosAd: 'kredi kartı',  ayar: 'ayar-kk',    borcMu: true },
 };
 const AY_KISA = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+/* "28 Tem 2026" biçimi (form tarih göstergesi) */
+function fmtTarihUzun(iso) {
+  const s = (iso || bugunISO()).slice(0, 10).split('-');
+  const m = parseInt(s[1], 10) || 1;
+  return `${parseInt(s[2], 10) || ''} ${AY_KISA[m - 1] || ''} ${s[0] || ''}`;
+}
 function tarihBlok(iso) {
   const s = (iso || bugunISO()).slice(0, 10).split('-');
   const m = parseInt(s[1], 10) || 1;
@@ -1457,7 +1472,7 @@ function bankaHareketFormu(bankaId, mevcut) {
         <input type="text" id="hrTutar" inputmode="decimal" autocomplete="off" placeholder="0,00 ₺">
       </div>
       <div class="hr-grup">
-        <div class="hr-satir"><label for="hrTarih">Tarih</label><input type="date" id="hrTarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
+        <div class="hr-satir hr-tarih-satir"><label>Tarih</label><span class="hr-deger" id="hrTarihGos">${fmtTarihUzun(mevcut ? mevcut.tarih : '')}</span><input type="date" id="hrTarih" aria-label="Tarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
         <div class="hr-satir sel" id="hrKalemKap"><label id="hrKalemEt" for="hrKalem">Gelir Adı</label><select id="hrKalem"></select></div>
         <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Ocak ders geliri"></div>
       </div>
@@ -1493,6 +1508,7 @@ function bankaHareketFormu(bankaId, mevcut) {
   };
   kalemDoldur();
   tutarKutusuBagla($('#hrTutar'), mevcut ? mevcut.tutar : '');
+  tarihGostergeBagla();
 
   $('#hrIptal').onclick = modalKapat;
   if ($('#hrSil')) $('#hrSil').onclick = () => {
@@ -1680,7 +1696,7 @@ function kartHareketFormu(kartId, mevcut) {
       <div class="hr-grup">
         <div class="hr-satir sel" id="hrGiderKap"><label for="hrGider">Gider Adı</label><select id="hrGider"></select></div>
         <div class="hr-satir sel" id="hrKaynakKap" style="display:none"><label for="hrKaynak">Ödeme Kaynağı</label><select id="hrKaynak">${kaynakSecenek(mevcut && mevcut.tip === 'transfer' ? mevcut.odemeHesabiId : null)}</select></div>
-        <div class="hr-satir"><label id="hrTarihEt" for="hrTarih">Tarih</label><input type="date" id="hrTarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
+        <div class="hr-satir hr-tarih-satir"><label id="hrTarihEt">Tarih</label><span class="hr-deger" id="hrTarihGos">${fmtTarihUzun(mevcut ? mevcut.tarih : '')}</span><input type="date" id="hrTarih" aria-label="Tarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
         <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Mat ve ekipman"></div>
       </div>
     </div>`;
@@ -1715,6 +1731,7 @@ function kartHareketFormu(kartId, mevcut) {
   };
   modUygula();
   tutarKutusuBagla($('#hrTutar'), mevcut ? mevcut.tutar : '');
+  tarihGostergeBagla();
 
   $('#hrIptal').onclick = modalKapat;
   if ($('#hrSil')) $('#hrSil').onclick = () => {

@@ -772,8 +772,13 @@ table.banka-tablo .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:80
 .hr-satir input,.hr-satir select{flex:1;border:none;background:none;text-align:right;font-size:14.5px;font-weight:600;
   color:var(--metin);font-family:inherit;padding:0 17px 0 0;min-width:0}
 .hr-satir input:focus,.hr-satir select:focus{outline:none;box-shadow:none}
-.hr-satir input[type="date"]{color-scheme:light;text-align:right}
-body.tema-koyu .hr-satir input[type="date"]{color-scheme:dark}
+/* Tarih satırı: görünen değer diğer satırlarla birebir sağ hizada; native seçici üstte şeffaf */
+.hr-tarih-satir{position:relative}
+.hr-deger{flex:1;min-width:0;text-align:right;font-size:14.5px;font-weight:600;color:var(--metin);
+  padding:0 17px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hr-tarih-satir input[type="date"]{position:absolute;inset:0;width:100%;height:100%;opacity:0;
+  padding:0;margin:0;border:none;background:none;-webkit-appearance:none;appearance:none;cursor:pointer;color-scheme:light}
+body.tema-koyu .hr-tarih-satir input[type="date"]{color-scheme:dark}
 .hr-satir.sel select{appearance:none;-webkit-appearance:none;text-align-last:right;cursor:pointer}
 .hr-satir.sel::after{content:"⌄";position:absolute;right:15px;top:9px;color:var(--metin-soluk);font-size:15px;pointer-events:none}
 .hr-yeni-satir{margin-top:8px}
