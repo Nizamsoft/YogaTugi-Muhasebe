@@ -629,6 +629,26 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 /* ============================================================
    EKSTRE görünümü (Banka · Kasa · Kredi Kartı ortak)
    ============================================================ */
+/* Açılır-kapanır hesap seçici (çip listesi) */
+.e-sec{margin-bottom:14px}
+.e-sec-trigger{display:flex;align-items:center;gap:9px;width:100%;background:var(--kart);border:1px solid var(--kenar);
+  border-radius:13px;padding:9px 13px;cursor:pointer;font-family:inherit;color:var(--metin);box-shadow:var(--golge);transition:border-color .15s}
+.e-sec-trigger b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.e-sec-trigger .say{font-size:11px;color:var(--metin-soluk);background:var(--yesil-acik);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.e-sec-trigger .ok{margin-left:auto;color:var(--metin-soluk);font-size:12px;transition:transform .25s ease;flex:0 0 auto}
+.e-sec.acik .e-sec-trigger{border-color:var(--yesil)}
+.e-sec.acik .e-sec-trigger .ok{transform:rotate(180deg)}
+.e-sec-liste{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.e-sec.acik .e-sec-liste{grid-template-rows:1fr}
+.e-sec-liste > .ic{overflow:hidden;min-height:0;display:flex;flex-wrap:wrap;gap:8px;padding-top:10px}
+.e-ml{width:26px;height:26px;border-radius:8px;overflow:hidden;display:grid;place-items:center;color:#fff;font-weight:800;font-size:10px;flex:0 0 auto}
+.e-ml img{width:100%;height:100%;object-fit:cover}
+.e-chip{display:inline-flex;align-items:center;gap:7px;background:var(--kart);border:1px solid var(--kenar);border-radius:999px;
+  padding:5px 13px 5px 6px;font-size:12.5px;font-weight:700;color:var(--metin-soluk);cursor:pointer;font-family:inherit;transition:.12s}
+.e-chip:hover{border-color:var(--yesil)}
+.e-chip.sec{background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;border-color:transparent;box-shadow:0 6px 12px -4px rgba(79,116,82,.5)}
+.e-chip .e-ml{width:24px;height:24px}
+
 .e-ozet{display:flex;align-items:center;justify-content:space-between;gap:12px;
   background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:14px;
   box-shadow:0 12px 24px -10px rgba(79,116,82,.55);position:relative;overflow:hidden}

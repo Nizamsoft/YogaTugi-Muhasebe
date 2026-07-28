@@ -1068,6 +1068,12 @@ function tarihBlok(iso) {
 function kasaTileHTML() {
   return `<div class="banka-tile" style="width:76px;height:76px;font-size:34px;background:linear-gradient(135deg,#7ba97e,#4f7452)">💵</div>`;
 }
+// Çip/seçici için küçük logo (yüklenen logo varsa görsel, yoksa renkli monogram)
+function hesapMiniLogo(h) {
+  if (h.logoData) return `<span class="e-ml"><img src="${h.logoData}" alt=""></span>`;
+  const t = renkTon(h.ad);
+  return `<span class="e-ml" style="background:linear-gradient(135deg,hsl(${t} 52% 55%),hsl(${t} 52% 38%))">${kacar(monogram(h.ad))}</span>`;
+}
 
 SAYFALAR['hesap-banka'] = () => { _ekstreSecili.banka = null; ekstreSayfasi('banka'); };
 SAYFALAR['hesap-kasa']  = () => { _ekstreSecili.kasa = null; ekstreSayfasi('kasa'); };
@@ -1093,14 +1099,18 @@ function ekstreSayfasi(tip) {
   const borcMu = cfg.borcMu;
   const kartMi = tip === 'krediKarti';
 
-  // Seçim şeridi (mevcut .banka-serit / .kart-serit stilini kullanır)
-  let serit;
-  if (kartMi) {
-    serit = hesaplar.map(h => `<button type="button" class="klogo ${h.id===secili.id?'sec':''}" data-ekstre="${h.id}">
-      ${kartTileHTML(h)}<span class="ad">${kacar(h.ad)}</span><span class="sd">${sonOdemeMetni(h.sonOdemeGunu)}</span></button>`).join('');
-  } else {
-    serit = hesaplar.map(h => `<button type="button" class="blogo ${h.id===secili.id?'sec':''}" data-ekstre="${h.id}">
-      ${tip==='kasa' ? kasaTileHTML() : bankaTileHTML(h)}<span class="ad">${kacar(h.ad)}</span></button>`).join('');
+  // Seçici: tek hesapta / kasada yok; çok hesapta açılır-kapanır (A) çip listesi
+  let secHTML = '';
+  if (tip !== 'kasa' && hesaplar.length > 1) {
+    const chips = hesaplar.map(h => `<button type="button" class="e-chip ${h.id===secili.id?'sec':''}" data-ekstre="${h.id}">
+      ${hesapMiniLogo(h)}<span>${kacar(h.ad)}</span></button>`).join('');
+    secHTML = `<div class="e-sec" id="eSec">
+      <button type="button" class="e-sec-trigger" id="secTrigger">
+        ${hesapMiniLogo(secili)}<b>${kacar(secili.ad)}</b>
+        <span class="say">${hesaplar.length} hesap</span><span class="ok">▾</span>
+      </button>
+      <div class="e-sec-liste"><div class="ic">${chips}</div></div>
+    </div>`;
   }
 
   // Hareketler — kronolojik (eski→yeni), yürüyen değer için
@@ -1140,7 +1150,7 @@ function ekstreSayfasi(tip) {
     </button>`).join('');
 
   ic().innerHTML = `${hesapGeriHTML()}
-    <div class="banka-serit${kartMi ? ' kart-serit' : ''}">${serit}</div>
+    ${secHTML}
     <div class="e-ozet">
       <div class="e-ozet-sol">
         <div class="k">${kacar(secili.ad)} · ${borcMu ? 'Güncel Borç' : 'Güncel Bakiye'}</div>
@@ -1153,6 +1163,7 @@ function ekstreSayfasi(tip) {
       ? `<div class="kart">${bosBlok('Bu hesapta henüz hareket yok. “＋ Yeni” ile ekleyin.')}</div>`
       : `<div class="e-liste">${satirlar}</div>`}`;
 
+  if ($('#secTrigger')) $('#secTrigger').onclick = () => $('#eSec').classList.toggle('acik');
   $$('[data-ekstre]').forEach(b => b.onclick = () => { _ekstreSecili[tip] = b.dataset.ekstre; ekstreSayfasi(tip); });
   const hareketFormu = kartMi ? kartHareketFormu : bankaHareketFormu;
   if ($('#yeniHareket')) $('#yeniHareket').onclick = () => hareketFormu(secili.id);
