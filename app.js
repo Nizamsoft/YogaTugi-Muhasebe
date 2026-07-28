@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '50';
+const APP_SURUM = '51';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -2163,59 +2163,129 @@ SAYFALAR['ayar-pay'] = function () {
 
 function ortakFormu(mevcut) {
   let fotoData = (mevcut && mevcut.foto) || null;
-  const avatarIc = () => fotoData
-    ? `<img src="${fotoData}" alt="" style="width:100%;height:100%;object-fit:cover">`
-    : `<span style="font-size:26px">📷</span>`;
+  let aktif = !mevcut || mevcut.aktif !== false;
+  const avatarIc = () => fotoData ? `<img src="${fotoData}" alt="">` : `<span style="font-size:24px">📷</span>`;
   const govde = `
-    <div style="text-align:center;margin-bottom:16px">
-      <div id="oFotoOnizle" title="Fotoğraf seç"
-        style="width:88px;height:88px;border-radius:50%;margin:0 auto 9px;overflow:hidden;background:var(--yesil-acik);display:grid;place-items:center;color:var(--yesil-koyu);cursor:pointer;border:1px solid var(--kenar)">${avatarIc()}</div>
-      <button type="button" class="btn btn-kucuk" id="oFotoBtn">📷 Fotoğraf Seç</button>
-      <button type="button" class="btn btn-kucuk" id="oFotoSil" ${fotoData?'':'style="display:none"'}>Kaldır</button>
+    <div class="of-foto-satir">
+      <div class="of-foto" id="oFotoOnizle" title="Fotoğraf seç">${avatarIc()}</div>
+      <div class="of-foto-btns">
+        <button type="button" class="btn btn-kucuk" id="oFotoBtn">📷 Fotoğraf Seç</button>
+        <button type="button" class="btn btn-kucuk" id="oFotoSil" ${fotoData?'':'style="display:none"'}>Kaldır</button>
+      </div>
       <input type="file" id="oFotoDosya" accept="image/*" hidden>
     </div>
     <div class="form-alan"><label>Ad Soyad</label><input type="text" id="oAd" value="${mevcut?kacar(mevcut.ad):''}" placeholder="Örn. Ayşe Yılmaz"></div>
-    <div class="form-satir">
-      <div class="form-alan"><label>Ders Ücreti (₺ / ders)</label><input type="number" id="oUcret" step="0.01" min="0" value="${mevcut&&mevcut.dersUcreti?mevcut.dersUcreti:''}" placeholder="Örn. 300"></div>
-      <div class="form-alan"><label>Pay Oranı (%)</label><input type="number" id="oPay" step="0.01" min="0" max="100" value="${mevcut?mevcut.payOrani:''}"></div>
+    <div class="of-grup">
+      <div class="of-grup-bas">💰 Ücret Bilgileri</div>
+      <div class="of-row2">
+        <div class="form-alan"><label>Ders Ücreti (₺)</label><input type="number" id="oUcret" step="0.01" min="0" inputmode="decimal" value="${mevcut&&mevcut.dersUcreti?mevcut.dersUcreti:''}" placeholder="Örn. 300"></div>
+        <div class="form-alan"><label>Pay Oranı (%)</label><input type="number" id="oPay" step="0.01" min="0" max="100" inputmode="decimal" value="${mevcut?mevcut.payOrani:''}" placeholder="0"></div>
+      </div>
     </div>
-    <div class="form-satir">
-      <div class="form-alan"><label>Telefon</label><input type="text" id="oTel" value="${mevcut?kacar(mevcut.telefon||''):''}"></div>
-      <div class="form-alan"><label>Durum</label><select id="oAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
+    <div class="of-grup">
+      <div class="of-grup-bas">👤 Kişisel Bilgiler</div>
+      <div class="of-row2">
+        <div class="form-alan"><label>Telefon</label><input type="tel" id="oTel" value="${mevcut?kacar(mevcut.telefon||''):''}" placeholder="05..."></div>
+        <div class="form-alan"><label>E-posta</label><input type="email" id="oEp" value="${mevcut?kacar(mevcut.eposta||''):''}" placeholder="ornek@..."></div>
+      </div>
     </div>
-    <div class="form-alan"><label>E-posta</label><input type="email" id="oEp" value="${mevcut?kacar(mevcut.eposta||''):''}"></div>`;
-  modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde, `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana" id="oiKaydet">💾 Kaydet</button>`);
+    <div class="form-alan"><label>Durum</label>
+      <div class="of-seg">
+        <button type="button" class="of-seg-btn ${aktif?'on':''}" data-aktif="1">Aktif</button>
+        <button type="button" class="of-seg-btn ${aktif?'':'on'}" data-aktif="0">Pasif</button>
+      </div>
+    </div>`;
+  modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde, `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="oiKaydet">💾 Kaydet</button>`);
   const sec = () => $('#oFotoDosya').click();
   $('#oFotoBtn').onclick = sec; $('#oFotoOnizle').onclick = sec;
   $('#oFotoSil').onclick = () => { fotoData = null; $('#oFotoOnizle').innerHTML = avatarIc(); $('#oFotoSil').style.display = 'none'; };
   $('#oFotoDosya').onchange = () => {
     const f = $('#oFotoDosya').files[0]; if (!f) return;
-    const fr = new FileReader();
-    fr.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const S = 160, c = document.createElement('canvas'); c.width = S; c.height = S;
-        const m = Math.min(img.width, img.height), sx = (img.width - m) / 2, sy = (img.height - m) / 2;
-        c.getContext('2d').drawImage(img, sx, sy, m, m, 0, 0, S, S);
-        try { fotoData = c.toDataURL('image/jpeg', 0.85); } catch { fotoData = fr.result; }
-        $('#oFotoOnizle').innerHTML = `<img src="${fotoData}" style="width:100%;height:100%;object-fit:cover">`;
-        $('#oFotoSil').style.display = '';
-      };
-      img.onerror = () => bildir('Görsel okunamadı.', 'hata');
-      img.src = fr.result;
-    };
-    fr.readAsDataURL(f);
+    fotoKirp(f, (veri) => {
+      fotoData = veri;
+      $('#oFotoOnizle').innerHTML = `<img src="${veri}" alt="">`;
+      $('#oFotoSil').style.display = '';
+    });
+    $('#oFotoDosya').value = '';
   };
+  $$('.of-seg-btn').forEach(b => b.onclick = () => {
+    aktif = b.dataset.aktif === '1';
+    $$('.of-seg-btn').forEach(x => x.classList.toggle('on', x.dataset.aktif === (aktif ? '1' : '0')));
+  });
   $('#oiIptal').onclick = modalKapat;
   $('#oiKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
     const veri = { ad, dersUcreti: parseFloat($('#oUcret').value) || 0, payOrani: parseFloat($('#oPay').value) || 0,
-      telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif: $('#oAktif').value === '1', foto: fotoData || null };
+      telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif, foto: fotoData || null };
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); git(State.aktifSayfa || 'ayar-pay');
   };
+}
+
+/* WhatsApp tarzı fotoğraf kırpma — daire içinde sürükle + yakınlaştır, kırpılmış kareyi döndürür */
+function fotoKirp(dosya, onTamam) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => acModal(img);
+    img.onerror = () => bildir('Görsel okunamadı.', 'hata');
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(dosya);
+
+  function acModal(img) {
+    const ST = 264, CR = 220, R = CR / 2, OUT = 240;
+    const baseScale = CR / Math.min(img.width, img.height);
+    let scale = 1, tx = 0, ty = 0;
+    const kap = document.createElement('div');
+    kap.className = 'modal-perde modal-ust-kat';
+    kap.innerHTML = `
+      <div class="modal modal-dar" role="dialog">
+        <div class="modal-ust"><h3>Fotoğrafı Ayarla</h3></div>
+        <div class="kirp-stage" style="width:${ST}px;height:${ST}px">
+          <img id="kImg" alt="" draggable="false">
+          <div class="kirp-mask" style="--r:${R}px"></div>
+          <div class="kirp-ring" style="width:${CR}px;height:${CR}px"></div>
+        </div>
+        <p class="kirp-ipuc">Sürükleyerek konumla · çubukla yakınlaştır</p>
+        <div class="kirp-zoom"><span>🏔️</span><input type="range" id="kZoom" min="1" max="3" step="0.01" value="1"><span style="font-size:19px">🏔️</span></div>
+        <div class="modal-alt"><button class="btn" id="kIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="kKullan">✓ Kullan</button></div>
+      </div>`;
+    document.body.appendChild(kap);
+    const el = kap.querySelector('#kImg');
+    el.src = img.src; el.style.width = img.width + 'px'; el.style.height = img.height + 'px';
+    const clamp = () => {
+      const ds = baseScale * scale;
+      const mx = Math.max(0, (img.width * ds - CR) / 2), my = Math.max(0, (img.height * ds - CR) / 2);
+      tx = Math.min(mx, Math.max(-mx, tx)); ty = Math.min(my, Math.max(-my, ty));
+    };
+    const uygula = () => {
+      const ds = baseScale * scale;
+      const L = ST / 2 + tx - img.width * ds / 2, T = ST / 2 + ty - img.height * ds / 2;
+      el.style.transform = `translate(${L}px,${T}px) scale(${ds})`;
+    };
+    uygula();
+    let sur = false, ox = 0, oy = 0;
+    el.addEventListener('pointerdown', e => { e.preventDefault(); sur = true; ox = e.clientX - tx; oy = e.clientY - ty; });
+    const mv = e => { if (!sur) return; tx = e.clientX - ox; ty = e.clientY - oy; clamp(); uygula(); };
+    const up = () => { sur = false; };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+    kap.querySelector('#kZoom').addEventListener('input', e => { scale = parseFloat(e.target.value); clamp(); uygula(); });
+    const kapat = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); kap.remove(); };
+    kap.querySelector('#kIptal').onclick = kapat;
+    kap.onclick = e => { if (e.target === kap) kapat(); };
+    kap.querySelector('#kKullan').onclick = () => {
+      const ds = baseScale * scale;
+      const L = ST / 2 + tx - img.width * ds / 2, T = ST / 2 + ty - img.height * ds / 2;
+      const srcX = (ST / 2 - R - L) / ds, srcY = (ST / 2 - R - T) / ds, srcWH = CR / ds;
+      const c = document.createElement('canvas'); c.width = OUT; c.height = OUT;
+      c.getContext('2d').drawImage(img, srcX, srcY, srcWH, srcWH, 0, 0, OUT, OUT);
+      let veri; try { veri = c.toDataURL('image/jpeg', 0.85); } catch { veri = img.src; }
+      kapat(); onTamam(veri);
+    };
+  }
 }
 
 SAYFALAR['ayar-komisyon'] = function () {
