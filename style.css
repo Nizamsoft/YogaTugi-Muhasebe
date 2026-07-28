@@ -648,6 +648,9 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 .e-chip:hover{border-color:var(--yesil)}
 .e-chip.sec{background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;border-color:transparent;box-shadow:0 6px 12px -4px rgba(79,116,82,.5)}
 .e-chip .e-ml{width:24px;height:24px}
+.e-chip-ekle{padding:5px 13px;border-style:dashed;color:var(--yesil-koyu)}
+.e-chip-ekle:hover{background:var(--yesil-acik)}
+body.tema-koyu .e-chip-ekle{color:#8fbf93}
 
 .e-ozet{display:flex;align-items:center;justify-content:space-between;gap:12px;
   background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:14px;

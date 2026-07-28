@@ -1099,17 +1099,18 @@ function ekstreSayfasi(tip) {
   const borcMu = cfg.borcMu;
   const kartMi = tip === 'krediKarti';
 
-  // Seçici: tek hesapta / kasada yok; çok hesapta açılır-kapanır (A) çip listesi
+  // Seçici: Kasa hariç her zaman görünür (açılır-kapanır çip listesi + "＋ Ekle")
   let secHTML = '';
-  if (tip !== 'kasa' && hesaplar.length > 1) {
+  if (tip !== 'kasa') {
     const chips = hesaplar.map(h => `<button type="button" class="e-chip ${h.id===secili.id?'sec':''}" data-ekstre="${h.id}">
       ${hesapMiniLogo(h)}<span>${kacar(h.ad)}</span></button>`).join('');
+    const ekleChip = cfg.ayar ? `<button type="button" class="e-chip e-chip-ekle" id="ekstreEkleChip">＋ ${kacar(cfg.ad)} Ekle</button>` : '';
+    const sayHTML = hesaplar.length > 1 ? `<span class="say">${hesaplar.length} hesap</span>` : '';
     secHTML = `<div class="e-sec" id="eSec">
       <button type="button" class="e-sec-trigger" id="secTrigger">
-        ${hesapMiniLogo(secili)}<b>${kacar(secili.ad)}</b>
-        <span class="say">${hesaplar.length} hesap</span><span class="ok">▾</span>
+        ${hesapMiniLogo(secili)}<b>${kacar(secili.ad)}</b>${sayHTML}<span class="ok">▾</span>
       </button>
-      <div class="e-sec-liste"><div class="ic">${chips}</div></div>
+      <div class="e-sec-liste"><div class="ic">${chips}${ekleChip}</div></div>
     </div>`;
   }
 
@@ -1164,6 +1165,7 @@ function ekstreSayfasi(tip) {
       : `<div class="e-liste">${satirlar}</div>`}`;
 
   if ($('#secTrigger')) $('#secTrigger').onclick = () => $('#eSec').classList.toggle('acik');
+  if ($('#ekstreEkleChip')) $('#ekstreEkleChip').onclick = () => git(cfg.ayar);
   $$('[data-ekstre]').forEach(b => b.onclick = () => { _ekstreSecili[tip] = b.dataset.ekstre; ekstreSayfasi(tip); });
   const hareketFormu = kartMi ? kartHareketFormu : bankaHareketFormu;
   if ($('#yeniHareket')) $('#yeniHareket').onclick = () => hareketFormu(secili.id);
