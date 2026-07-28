@@ -48,6 +48,8 @@ body.tema-koyu{
 
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
+/* Yatay taşmayı engelle: sabit üst/alt çubuklar yana kaymasın */
+html,body{overflow-x:hidden;max-width:100%}
 body{
   font-family:"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
   background:var(--krem);
@@ -55,6 +57,7 @@ body{
   font-size:15px;
   -webkit-font-smoothing:antialiased;
 }
+.icerik{overflow-x:hidden}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 a{color:var(--yesil-koyu);text-decoration:none}
 h1,h2,h3,h4{line-height:1.25}
