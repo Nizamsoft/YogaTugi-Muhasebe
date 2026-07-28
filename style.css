@@ -627,6 +627,44 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 }
 
 /* ============================================================
+   EKSTRE görünümü (Banka · Kasa · Kredi Kartı ortak)
+   ============================================================ */
+.e-ozet{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;border-radius:16px;padding:14px 16px;margin-bottom:14px;
+  box-shadow:0 12px 24px -10px rgba(79,116,82,.55);position:relative;overflow:hidden}
+.e-ozet::before{content:"";position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);top:-46px;right:-28px}
+.e-ozet-sol{position:relative;z-index:1;min-width:0}
+.e-ozet .k{font-size:12px;opacity:.92}
+.e-ozet .v{font-size:22px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.e-ozet .sd{font-size:10.5px;opacity:.85;margin-top:3px}
+.e-ozet .btn-yeni{position:relative;z-index:1;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;
+  font-family:inherit;font-size:13.5px;font-weight:700;border-radius:11px;padding:10px 15px;cursor:pointer;flex:0 0 auto;transition:background .15s}
+.e-ozet .btn-yeni:hover{background:rgba(255,255,255,.32)}
+
+.e-liste{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;overflow:hidden;box-shadow:var(--golge)}
+.e-satir{display:flex;gap:13px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--kenar);
+  padding:13px 14px;cursor:pointer;font-family:inherit;color:var(--metin);transition:background .12s}
+.e-satir:last-child{border-bottom:none}
+.e-satir:hover{background:var(--krem)}
+.e-tarih{flex:0 0 42px;text-align:center;line-height:1}
+.e-tarih .g{font-size:20px;font-weight:800;color:var(--metin)}
+.e-tarih .a{font-size:9px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.e-tarih .y{font-size:9px;color:var(--metin-soluk);margin-top:1px}
+.e-ic{flex:1;min-width:0}
+.e-l1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.e-l1 .e-ack{font-size:14.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.e-l1 .e-tut{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;flex:0 0 auto}
+.e-tut.g{color:var(--yesil-para)}
+.e-tut.r{color:var(--kirmizi)}
+.e-l2{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:4px}
+.e-l2 .e-bk{font-size:11px;color:var(--metin-soluk)}
+.e-l2 .e-bv{font-size:12px;color:var(--metin-soluk);font-weight:600;font-variant-numeric:tabular-nums}
+.e-kat{display:inline-block;margin-top:7px;font-size:10.5px;color:var(--yesil-koyu);background:var(--yesil-acik);
+  border:1px solid color-mix(in srgb,#6f9a72 22%,var(--kenar));border-radius:999px;padding:2px 9px;font-weight:600}
+.e-kat.r{color:var(--kirmizi);background:var(--kirmizi-acik);border-color:color-mix(in srgb,var(--kirmizi) 22%,var(--kenar))}
+body.tema-koyu .e-kat{color:#8fbf93}
+
+/* ============================================================
    BANKALAR — logo şeridi + Kayıt No tablosu + Banka Ayarları
    ============================================================ */
 .banka-serit{display:flex;gap:16px;flex-wrap:wrap;padding:4px 2px 18px;margin-bottom:18px;

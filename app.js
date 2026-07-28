@@ -289,9 +289,9 @@ const HESAP_KARTLARI = [
   { id: 'hesap-banka', grup: 'Para Hesapları',        ad: 'Banka Hesabı',    baslik: 'Bankalar',              ikon: '🏦', aciklama: 'Banka işlemlerini izleyin' },
   { id: 'hesap-kk',    grup: 'Para Hesapları',        ad: 'Kredi Kartı',     baslik: 'Kredi Kartı Hesapları', ikon: '💳', aciklama: 'Kart harcamalarını izleyin' },
   { id: 'hesap-kasa',  grup: 'Para Hesapları',        ad: 'Kasa',            baslik: 'Kasa',                  ikon: '💵', aciklama: 'Nakit giriş-çıkışları' },
-  { id: 'hesap-gider', grup: 'Gelir · Gider · Ortak', ad: 'Giderler Hesabı', baslik: 'Giderler Hesabı',       ikon: '📉', aciklama: 'Giderleri kalem kalem' },
-  { id: 'hesap-gelir', grup: 'Gelir · Gider · Ortak', ad: 'Gelirler Hesabı', baslik: 'Gelirler Hesabı',       ikon: '📈', aciklama: 'Gelirleri kalem kalem' },
-  { id: 'hesap-ortak', grup: 'Gelir · Gider · Ortak', ad: 'Ortaklar Hesabı', baslik: 'Ortaklar Hesabı',       ikon: '🤝', aciklama: 'Hak ediş ve ödemeler' },
+  { id: 'hesap-gider', grup: 'Gelir · Gider · Ortak', ad: 'Giderler Hesabı', baslik: 'Giderler Hesabı',       ikon: '📉', aciklama: 'Giderleri kalem kalem', gizli: true },
+  { id: 'hesap-gelir', grup: 'Gelir · Gider · Ortak', ad: 'Gelirler Hesabı', baslik: 'Gelirler Hesabı',       ikon: '📈', aciklama: 'Gelirleri kalem kalem', gizli: true },
+  { id: 'hesap-ortak', grup: 'Gelir · Gider · Ortak', ad: 'Ortaklar Hesabı', baslik: 'Ortaklar Hesabı',       ikon: '🤝', aciklama: 'Hak ediş ve ödemeler', gizli: true },
   { id: 'plan4me',     grup: 'Müşteri & Planlama',    ad: 'Plan4Me',         baslik: 'Plan4Me Aktarımı',      ikon: '🧘', aciklama: 'Ders planı ve katılım' },
   { id: 'potansiyel',  grup: 'Müşteri & Planlama',    ad: 'Potansiyel Müşteriler', baslik: 'Potansiyel Müşteriler', ikon: '🌱', aciklama: 'İlgilenenleri takip et' },
 ];
@@ -975,7 +975,7 @@ SAYFALAR.hesaplar = function () {
     </button>`;
   };
   ic().innerHTML = HESAP_GRUP_SIRA.map(grup => {
-    const kartlar = HESAP_KARTLARI.filter(k => k.grup === grup);
+    const kartlar = HESAP_KARTLARI.filter(k => k.grup === grup && !k.gizli);
     if (!kartlar.length) return '';
     return `<div class="hgrup-baslik">🌿 ${kacar(grup)}</div>
       <div class="hesap-kartlar${kartlar.length <= 2 ? ' iki' : ''}">${kartlar.map(kartHTML).join('')}</div>`;
@@ -1052,8 +1052,128 @@ function bankaTileHTML(h, boyut) {
   return `<div class="banka-tile" style="${stil};background:linear-gradient(135deg,hsl(${t} 52% 55%),hsl(${t} 52% 38%))">${kacar(monogram(h.ad))}</div>`;
 }
 
-SAYFALAR['hesap-banka'] = () => { _bankaSecili = null; bankalarSayfasi(); };
+/* ===================== ORTAK EKSTRE GÖRÜNÜMÜ (Banka · Kasa · Kredi Kartı) ===================== */
+const _ekstreSecili = { banka: null, kasa: null, krediKarti: null };
+const EKSTRE_CFG = {
+  banka:      { ikon: '🏦', ad: 'Banka',        bosAd: 'banka',        ayar: 'ayar-banka', borcMu: false },
+  kasa:       { ikon: '💵', ad: 'Kasa',         bosAd: 'kasa',         ayar: null,         borcMu: false },
+  krediKarti: { ikon: '💳', ad: 'Kredi Kartı',  bosAd: 'kredi kartı',  ayar: 'ayar-kk',    borcMu: true },
+};
+const AY_KISA = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+function tarihBlok(iso) {
+  const s = (iso || bugunISO()).slice(0, 10).split('-');
+  const m = parseInt(s[1], 10) || 1;
+  return `<div class="e-tarih"><div class="g">${kacar(s[2] || '')}</div><div class="a">${AY_KISA[m-1] || ''}</div><div class="y">${kacar(s[0] || '')}</div></div>`;
+}
+function kasaTileHTML() {
+  return `<div class="banka-tile" style="width:76px;height:76px;font-size:34px;background:linear-gradient(135deg,#7ba97e,#4f7452)">💵</div>`;
+}
 
+SAYFALAR['hesap-banka'] = () => { _ekstreSecili.banka = null; ekstreSayfasi('banka'); };
+SAYFALAR['hesap-kasa']  = () => { _ekstreSecili.kasa = null; ekstreSayfasi('kasa'); };
+SAYFALAR['hesap-kk']    = () => { _ekstreSecili.krediKarti = null; ekstreSayfasi('krediKarti'); };
+
+function ekstreSayfasi(tip) {
+  const cfg = EKSTRE_CFG[tip];
+  const hesaplar = State.hesaplar.filter(h => h.tip === tip);
+  if (_ekstreSecili[tip] && !hesaplar.some(h => h.id === _ekstreSecili[tip])) _ekstreSecili[tip] = null;
+  if (!_ekstreSecili[tip] && hesaplar.length) _ekstreSecili[tip] = hesaplar[0].id;   // ilkini otomatik seç
+
+  if (!hesaplar.length) {
+    const btn = cfg.ayar
+      ? `<button class="btn btn-ana" id="ekstreEkle" style="margin-top:12px">⚙️ ${cfg.ad} Ayarları'na git</button>`
+      : `<button class="btn btn-ana" id="ekstreEkle" style="margin-top:12px">＋ Kasa Oluştur</button>`;
+    ic().innerHTML = `${hesapGeriHTML()}
+      <div class="kart"><div class="banka-bos"><div class="el">${cfg.ikon}</div><p>Henüz ${cfg.bosAd} yok.</p>${btn}</div></div>`;
+    $('#ekstreEkle').onclick = () => cfg.ayar ? git(cfg.ayar) : kasaOlustur();
+    return;
+  }
+
+  const secili = hesaplar.find(h => h.id === _ekstreSecili[tip]);
+  const borcMu = cfg.borcMu;
+  const kartMi = tip === 'krediKarti';
+
+  // Seçim şeridi (mevcut .banka-serit / .kart-serit stilini kullanır)
+  let serit;
+  if (kartMi) {
+    serit = hesaplar.map(h => `<button type="button" class="klogo ${h.id===secili.id?'sec':''}" data-ekstre="${h.id}">
+      ${kartTileHTML(h)}<span class="ad">${kacar(h.ad)}</span><span class="sd">${sonOdemeMetni(h.sonOdemeGunu)}</span></button>`).join('');
+  } else {
+    serit = hesaplar.map(h => `<button type="button" class="blogo ${h.id===secili.id?'sec':''}" data-ekstre="${h.id}">
+      ${tip==='kasa' ? kasaTileHTML() : bankaTileHTML(h)}<span class="ad">${kacar(h.ad)}</span></button>`).join('');
+  }
+
+  // Hareketler — kronolojik (eski→yeni), yürüyen değer için
+  const hareketler = State.islemler
+    .filter(i => i.odemeHesabiId === secili.id || i.karsiHesapId === secili.id)
+    .slice()
+    .sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || (Number(a.kayitNo) || 0) - (Number(b.kayitNo) || 0));
+
+  let deger = borcMu ? 0 : (Number(secili.acilisBakiye) || 0);
+  const rows = hareketler.map(i => {
+    const tutar = Number(i.tutar) || 0;
+    const kat = State.hesaplar.find(h => h.id === i.kategoriId);
+    let artiMi, katAd;
+    if (borcMu) {
+      const odemeMi = (i.tip === 'transfer' && i.karsiHesapId === secili.id);
+      if (odemeMi) { deger -= tutar; artiMi = true;  katAd = 'Borç Ödeme'; }
+      else         { deger += tutar; artiMi = false; katAd = kat ? kat.ad : 'Harcama'; }
+    } else {
+      const girenMi = (i.tip === 'gelir') || (i.tip === 'transfer' && i.karsiHesapId === secili.id);
+      if (girenMi) { deger += tutar; artiMi = true;  katAd = (i.tip === 'gelir' && kat) ? kat.ad : 'Transfer'; }
+      else         { deger -= tutar; artiMi = false; katAd = (i.tip === 'gider' && kat) ? kat.ad : (i.tip === 'ortakOdeme' ? 'Ortak Ödeme' : 'Transfer'); }
+    }
+    return { i, artiMi, tutar, deger, katAd };
+  });
+  const guncel = deger;
+  const bakiyeLbl = borcMu ? 'Borç' : 'Bakiye';
+
+  const satirlar = rows.slice().reverse().map(r => `
+    <button type="button" class="e-satir" data-hareket="${r.i.id}">
+      ${tarihBlok(r.i.tarih)}
+      <div class="e-ic">
+        <div class="e-l1"><span class="e-ack">${kacar(r.i.aciklama || '—')}</span>
+          <span class="e-tut ${r.artiMi ? 'g' : 'r'}">${r.artiMi ? '+' : '−'}${TL(r.tutar)}</span></div>
+        <div class="e-l2"><span class="e-bk">İşlem Sonu ${bakiyeLbl}</span><span class="e-bv">${TL(r.deger)}</span></div>
+        <span class="e-kat ${r.artiMi ? '' : 'r'}">${kacar(r.katAd)}</span>
+      </div>
+    </button>`).join('');
+
+  ic().innerHTML = `${hesapGeriHTML()}
+    <div class="banka-serit${kartMi ? ' kart-serit' : ''}">${serit}</div>
+    <div class="e-ozet">
+      <div class="e-ozet-sol">
+        <div class="k">${kacar(secili.ad)} · ${borcMu ? 'Güncel Borç' : 'Güncel Bakiye'}</div>
+        <div class="v">${TL(guncel)}</div>
+        ${kartMi ? `<div class="sd">Son ödeme: ${sonOdemeMetni(secili.sonOdemeGunu)}</div>` : ''}
+      </div>
+      <button type="button" class="btn-yeni" id="yeniHareket">＋ Yeni</button>
+    </div>
+    ${hareketler.length === 0
+      ? `<div class="kart">${bosBlok('Bu hesapta henüz hareket yok. “＋ Yeni” ile ekleyin.')}</div>`
+      : `<div class="e-liste">${satirlar}</div>`}`;
+
+  $$('[data-ekstre]').forEach(b => b.onclick = () => { _ekstreSecili[tip] = b.dataset.ekstre; ekstreSayfasi(tip); });
+  const hareketFormu = kartMi ? kartHareketFormu : bankaHareketFormu;
+  if ($('#yeniHareket')) $('#yeniHareket').onclick = () => hareketFormu(secili.id);
+  $$('[data-hareket]').forEach(r => r.onclick = () => hareketFormu(secili.id, State.islemler.find(i => i.id === r.dataset.hareket)));
+}
+
+function kasaOlustur() {
+  const govde = `
+    <div class="form-alan"><label>Kasa Adı</label><input type="text" id="kAd" value="Kasa" placeholder="Örn. Merkez Kasa"></div>
+    <div class="form-alan"><label>Açılış Bakiyesi (₺)</label><input type="number" id="kBak" step="0.01" value="0"></div>`;
+  modalAc('Yeni Kasa', govde, `<button class="btn" id="kIptal">İptal</button><button class="btn btn-ana" id="kKaydet">💾 Oluştur</button>`);
+  $('#kIptal').onclick = modalKapat;
+  $('#kKaydet').onclick = async () => {
+    const ad = $('#kAd').value.trim() || 'Kasa';
+    const y = await DB.ekle('hesaplar', { ad, tip: 'kasa', acilisBakiye: parseFloat($('#kBak').value) || 0, aktif: true });
+    State.hesaplar.push(y); _ekstreSecili.kasa = y.id;
+    modalKapat(); bildir('Kasa oluşturuldu.', 'basari'); ekstreSayfasi('kasa');
+  };
+}
+
+/* (eski tablo görünümü — artık kullanılmıyor, ekstreSayfasi devraldı) */
 function bankalarSayfasi() {
   const bankalar = State.hesaplar.filter(h => h.tip === 'banka');
   // Seçili banka artık yoksa seçimi temizle
@@ -1220,7 +1340,7 @@ function bankaHareketFormu(bankaId, mevcut) {
     onayModal('Hareket silinsin mi?', `Kayıt No <b>#${mevcut.kayitNo || '—'}</b> — “${kacar(mevcut.aciklama || '')}” silinecek.`, async () => {
       await DB.sil('islemler', mevcut.id);
       State.islemler = State.islemler.filter(x => x.id !== mevcut.id);
-      bildir('Hareket silindi.', 'basari'); bankalarSayfasi();
+      bildir('Hareket silindi.', 'basari'); ekstreSayfasi(banka.tip);
     });
   };
   $('#hrKaydet').onclick = async () => {
@@ -1250,12 +1370,12 @@ function bankaHareketFormu(bankaId, mevcut) {
       State.islemler.unshift(y);
       bildir('Hareket eklendi.', 'basari');
     }
-    modalKapat(); bankalarSayfasi();
+    modalKapat(); ekstreSayfasi(banka.tip);
   };
 }
 
-SAYFALAR['hesap-kasa']  = (m) => hesapListesi('kasa');
-/* ===================== KREDİ KARTLARI (kart şeridi + harcama/borç ödeme) ===================== */
+/* hesap-kasa artık ekstreSayfasi('kasa') ile yukarıda tanımlı */
+/* ===================== KREDİ KARTI yardımcıları (ekstre ortak görünümü kullanır) ===================== */
 let _kartSecili = null;
 
 function sonOdemeMetni(gun) {
@@ -1271,8 +1391,8 @@ function kartTileHTML(h, mini) {
     <span class="chip"></span>${mini ? '' : `<span class="n">${kacar(h.ad)}</span>`}</div>`;
 }
 
-SAYFALAR['hesap-kk'] = () => { _kartSecili = null; krediKartlariSayfasi(); };
-
+/* hesap-kk artık ekstreSayfasi('krediKarti') ile yukarıda tanımlı */
+/* (eski kart tablo görünümü — artık kullanılmıyor) */
 function krediKartlariSayfasi() {
   const kartlar = State.hesaplar.filter(h => h.tip === 'krediKarti');
   if (_kartSecili && !kartlar.some(k => k.id === _kartSecili)) _kartSecili = null;
@@ -1438,7 +1558,7 @@ function kartHareketFormu(kartId, mevcut) {
     onayModal('Hareket silinsin mi?', `Kayıt No <b>#${mevcut.kayitNo || '—'}</b> — “${kacar(mevcut.aciklama || '')}” silinecek.`, async () => {
       await DB.sil('islemler', mevcut.id);
       State.islemler = State.islemler.filter(x => x.id !== mevcut.id);
-      bildir('Hareket silindi.', 'basari'); krediKartlariSayfasi();
+      bildir('Hareket silindi.', 'basari'); ekstreSayfasi('krediKarti');
     });
   };
   $('#hrKaydet').onclick = async () => {
@@ -1474,7 +1594,7 @@ function kartHareketFormu(kartId, mevcut) {
       State.islemler.unshift(y);
       bildir('Hareket eklendi.', 'basari');
     }
-    modalKapat(); krediKartlariSayfasi();
+    modalKapat(); ekstreSayfasi('krediKarti');
   };
 }
 SAYFALAR['hesap-gider'] = (m) => hesapListesi('gider');
