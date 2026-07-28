@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '44';
+const APP_SURUM = '45';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1489,7 +1489,8 @@ function bankaHareketFormu(bankaId, mevcut) {
     et.textContent = yon === 'giris' ? 'Gelir Adı' : 'Gider Adı';
     const secDef = seciliId || (mevcut && ((yon === 'giris') === (mevcut.tip === 'gelir')) ? mevcut.kategoriId : null);
     sel.innerHTML = kalemSecenek(liste, secDef);
-    sel.value = (secDef && liste.some(h => h.id === secDef)) ? secDef : (liste.length ? liste[0].id : '');
+    // Yeni harekette "— Kalem seç —" ile başla (ilk kalem otomatik seçilmesin)
+    sel.value = (secDef && liste.some(h => h.id === secDef)) ? secDef : '';
     _sonKalem = sel.value;
   };
   const yonSec = (y) => {
@@ -1523,8 +1524,11 @@ function bankaHareketFormu(bankaId, mevcut) {
     const tutar = tutarSayi($('#hrTutar').value);
     if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
     let katId = $('#hrKalem').value;
-    if (katId === '__yeni' || !katId) {
-      return yeniKalemModal(yon === 'giris' ? 'gelir' : 'gider', (yk) => kalemDoldur(yk.id));
+    if (katId === '__yeni') return yeniKalemModal(yon === 'giris' ? 'gelir' : 'gider', (yk) => kalemDoldur(yk.id));
+    if (!katId) {
+      const liste = State.hesaplar.filter(h => h.tip === (yon === 'giris' ? 'gelir' : 'gider'));
+      if (!liste.length) return yeniKalemModal(yon === 'giris' ? 'gelir' : 'gider', (yk) => kalemDoldur(yk.id));
+      return bildir(yon === 'giris' ? 'Bir gelir kalemi seçin.' : 'Bir gider kalemi seçin.', 'hata');
     }
     const veri = {
       tarih: $('#hrTarih').value, tutar,
@@ -1717,7 +1721,8 @@ function kartHareketFormu(kartId, mevcut) {
       const gider = State.hesaplar.filter(h => h.tip === 'gider');
       const secDef = seciliId || (mevcut && mevcut.tip !== 'transfer' ? mevcut.kategoriId : null);
       sel.innerHTML = kalemSecenek(secDef);
-      sel.value = (secDef && gider.some(h => h.id === secDef)) ? secDef : (gider.length ? gider[0].id : '');
+      // Yeni harekette "— Kalem seç —" ile başla
+      sel.value = (secDef && gider.some(h => h.id === secDef)) ? secDef : '';
       _sonKalem = sel.value;
     }
   };
@@ -1750,8 +1755,11 @@ function kartHareketFormu(kartId, mevcut) {
     let veri;
     if (mod === 'harcama') {
       let katId = $('#hrGider').value;
-      if (katId === '__yeni' || !katId) {
-        return yeniKalemModal('gider', (yk) => modUygula(yk.id));
+      if (katId === '__yeni') return yeniKalemModal('gider', (yk) => modUygula(yk.id));
+      if (!katId) {
+        const gider = State.hesaplar.filter(h => h.tip === 'gider');
+        if (!gider.length) return yeniKalemModal('gider', (yk) => modUygula(yk.id));
+        return bildir('Bir gider kalemi seçin.', 'hata');
       }
       veri = { tarih, tutar, tip: 'gider', odemeHesabiId: kart.id, kategoriId: katId, aciklama, kaynak: 'krediKarti' };
     } else {
