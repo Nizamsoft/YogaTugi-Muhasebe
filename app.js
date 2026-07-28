@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '48';
+const APP_SURUM = '49';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -312,7 +312,7 @@ const MENU = [
     { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik', gizli: true },
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
-    { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı', gizli: true },
+    { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı' },
     { id: 'ayar-yedek',     ad: 'Yedekleme',         ikon: '💾', baslik: 'Yedekleme' },
     { id: 'ayar-admin',     ad: 'Admin Ayarları',    ikon: '🛡️', baslik: 'Admin Ayarları', sadeceAdmin: true },
   ]},
@@ -2787,15 +2787,17 @@ function ustCubukKur() {
 
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
-  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊' },
+  { tip: 'sayfa', id: 'hesap-ortak', ad: 'Ortaklar', ikon: '🤝' },
   { tip: 'sayfa', id: 'hesaplar',  ad: 'Hesaplar', ikon: '🗂️' },
+  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
   { tip: 'grup',  grup: 'Raporlar', ad: 'Raporlar', ikon: '📈' },
   { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
   if (sayfa === 'dashboard') return 'dashboard';
-  // Hesaplar sekmesi: kart sayfası, hesap-*, Potansiyel Müşteriler ve Plan4Me
+  if (sayfa === 'hesap-ortak') return 'hesap-ortak';   // Ortaklar sekmesi
+  // Hesaplar sekmesi: kart sayfası, diğer hesap-*, Potansiyel Müşteriler ve Plan4Me
   if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa === 'plan4me' || sayfa.startsWith('hesap-')) return 'hesaplar';
   for (const m of ALT_MENU) {
     if (m.tip !== 'grup') continue;
@@ -2808,7 +2810,7 @@ function altMenuCiz() {
   const nav = $('#altMenu');
   nav.innerHTML = ALT_MENU.map(m => {
     const anahtar = m.tip === 'grup' ? m.grup : m.id;
-    return `<button type="button" class="alt-oge" data-alt="${kacar(anahtar)}">
+    return `<button type="button" class="alt-oge${m.merkez ? ' merkez' : ''}" data-alt="${kacar(anahtar)}">
       <span class="ic">${m.ikon}</span><span class="tx">${kacar(m.ad)}</span></button>`;
   }).join('');
   $$('.alt-oge', nav).forEach(b => b.onclick = () => {
