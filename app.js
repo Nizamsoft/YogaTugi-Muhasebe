@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '49';
+const APP_SURUM = '50';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1910,37 +1910,48 @@ function islemTipAd(i) {
 
 /* Ortaklar Hesabı — hak ediş vs ödenen */
 function ortakHesabiSayfasi() {
-  const ortaklar = State.ortaklar;
-  // Toplam net kar (tüm dönemler) baz alınır
-  const genelKar = Hesapla.donemOzet(null).netKar;
-  const dagitim = Hesapla.karPayiDagitimi(genelKar);
+  const donem = donemStr(bugunISO());
+  const list = State.ortaklar;
+  const aktifSayi = list.filter(o => o.aktif !== false).length;
+  const toplamGider = Hesapla.donemOzet(donem).gider;
+  const giderPayi = aktifSayi ? toplamGider / aktifSayi : 0;
+  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const renk = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'];
 
-  const satirlar = ortaklar.map(o => {
-    const hak = (dagitim.find(d => d.ortakId === o.id) || {}).tutar || 0;
-    const odenen = Hesapla.ortakOdenen(o.id, null);
-    const kalan = hak - odenen;
-    return `<tr>
-      <td>🤝 ${kacar(o.ad)}</td>
-      <td class="sag">%${sayi(o.payOrani)}</td>
-      <td class="sag pozitif">${TL(hak)}</td>
-      <td class="sag">${TL(odenen)}</td>
-      <td class="sag ${kalan>=0?'pozitif':'negatif'}"><b>${TL(kalan)}</b></td>
-      <td class="sag"><button class="btn btn-kucuk" data-ode="${o.id}">💸 Ödeme Yap</button></td>
-    </tr>`;
+  const kartlar = list.map((o, i) => {
+    const adet = (o.dersAdet && o.dersAdet[donem]) || 0;
+    const gelir = adet * (Number(o.dersUcreti) || 0);
+    const gider = (o.aktif !== false) ? giderPayi : 0;
+    const foto = o.foto
+      ? `<div class="ort-foto"><img src="${o.foto}" alt="${kacar(o.ad)}"></div>`
+      : `<div class="ort-foto ${renk[i % renk.length]}">${kacar(bas(o.ad))}</div>`;
+    return `<div class="ort-kart">
+      <div class="ort-arac"><button class="ort-btn" data-duzenle="${o.id}" title="Düzenle">✎</button><button class="ort-btn" data-sil="${o.id}" title="Sil">🗑️</button></div>
+      ${foto}
+      <div class="ort-ad">${kacar(o.ad)}</div>
+      <div class="ort-pay">%${sayi(o.payOrani || 0)} pay${o.aktif === false ? ' · pasif' : ''}</div>
+      <div class="ort-mrow"><span class="l">Ders</span><span class="v">${adet}</span></div>
+      <div class="ort-mrow"><span class="l">Gelir</span><span class="v g">${TL(gelir)}</span></div>
+      <div class="ort-mrow"><span class="l">Gider</span><span class="v r">−${TL(gider)}</span></div>
+    </div>`;
   }).join('');
 
   ic().innerHTML = `
-    ${hesapGeriHTML()}
-    <div class="bilgi-kutu"><span class="ikon">🤝</span><div>Ortaklara ait <b>hak ediş</b> (net kâr × pay oranı) ile yapılan <b>ödemeler</b> ve kalan bakiye burada izlenir.</div></div>
-    <div class="kart">
-      <div class="kart-baslik"><h3>Ortaklar Hesabı</h3><span class="soluk">Genel net kâr: <b class="${genelKar>=0?'pozitif':'negatif'}">${TL(genelKar)}</b></span></div>
-      ${ortaklar.length === 0 ? bosBlok('Ortak tanımlı değil. “Ortak Pay Oranı”ndan ekleyin.') : `
-      <div class="tablo-sar"><table class="tablo">
-        <thead><tr><th>Ortak</th><th class="sag">Pay</th><th class="sag">Hak Ediş</th><th class="sag">Ödenen</th><th class="sag">Kalan</th><th class="sag">İşlem</th></tr></thead>
-        <tbody>${satirlar}</tbody>
-      </table></div>`}
-    </div>`;
-  $$('[data-ode]').forEach(b => b.onclick = () => ortakOdemeFormu(b.dataset.ode));
+    <div class="ort-ust">
+      <span class="ort-ay">📅 ${donemAdi(donem)} · ${list.length} ortak</span>
+      <button class="btn btn-ana" id="ortEkle">＋ Ortak Ekle</button>
+    </div>
+    ${list.length === 0
+      ? `<div class="kart">${bosBlok('Henüz ortak yok. “＋ Ortak Ekle” ile ekleyin.')}</div>`
+      : `<div class="ort-izgara">${kartlar}</div>`}`;
+
+  $('#ortEkle').onclick = () => ortakFormu();
+  $$('[data-duzenle]').forEach(b => b.onclick = () => ortakFormu(State.ortaklar.find(o => o.id === b.dataset.duzenle)));
+  $$('[data-sil]').forEach(b => b.onclick = () => onayModal('Ortak silinsin mi?', 'Bu işlem geri alınamaz.', async () => {
+    await DB.sil('ortaklar', b.dataset.sil);
+    State.ortaklar = State.ortaklar.filter(o => o.id !== b.dataset.sil);
+    bildir('Silindi.', 'basari'); ortakHesabiSayfasi();
+  }));
 }
 
 function ortakOdemeFormu(ortakId) {
@@ -2203,7 +2214,7 @@ function ortakFormu(mevcut) {
       telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif: $('#oAktif').value === '1', foto: fotoData || null };
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
-    modalKapat(); bildir('Kaydedildi.', 'basari'); git('ayar-pay');
+    modalKapat(); bildir('Kaydedildi.', 'basari'); git(State.aktifSayfa || 'ayar-pay');
   };
 }
 
