@@ -148,6 +148,13 @@ const SABIT_ADMIN = {
   hashler: ['833b0b5def5616ae555d81040563c19594b7500aaf4dee277b926bbf048b00d0', 'ycc397796'],
 };
 
+/* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
+const APP_SURUM = '41';
+const APP_SURUM_TARIH = '28 Tem 2026';
+
+/* Giriş yapan kullanıcı yönetici (admin) mi? */
+function adminMi() { return (State.kullanici && State.kullanici.ad) === SABIT_ADMIN.kullanici; }
+
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
   const [hesaplar, islemler, ortaklar, komisyonlar, karPayi, kullanicilar, potansiyel] = await Promise.all(
@@ -280,6 +287,7 @@ const MENU = [
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
     { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı', gizli: true },
+    { id: 'ayar-admin',     ad: 'Admin Ayarları',    ikon: '🛡️', baslik: 'Admin Ayarları', sadeceAdmin: true },
   ]},
 ];
 
@@ -314,7 +322,7 @@ function menuCiz() {
   for (const m of MENU) {
     if (m.gizli) continue;
     if (m.grup) {
-      const ogeler = m.ogeler.filter(o => !o.gizli);
+      const ogeler = m.ogeler.filter(o => !o.gizli && (!o.sadeceAdmin || adminMi()));
       if (!ogeler.length) continue;
       html += `<div class="menu-grup">
         <button type="button" class="grup-baslik">
@@ -1086,12 +1094,10 @@ function ekstreSayfasi(tip) {
   if (!_ekstreSecili[tip] && hesaplar.length) _ekstreSecili[tip] = hesaplar[0].id;   // ilkini otomatik seç
 
   if (!hesaplar.length) {
-    const btn = cfg.ayar
-      ? `<button class="btn btn-ana" id="ekstreEkle" style="margin-top:12px">⚙️ ${cfg.ad} Ayarları'na git</button>`
-      : `<button class="btn btn-ana" id="ekstreEkle" style="margin-top:12px">＋ Kasa Oluştur</button>`;
+    const btn = `<button class="btn btn-ana" id="ekstreEkle" style="margin-top:12px">＋ ${cfg.ad} ${tip === 'kasa' ? 'Oluştur' : 'Ekle'}</button>`;
     ic().innerHTML = `${hesapGeriHTML()}
       <div class="kart"><div class="banka-bos"><div class="el">${cfg.ikon}</div><p>Henüz ${cfg.bosAd} yok.</p>${btn}</div></div>`;
-    $('#ekstreEkle').onclick = () => cfg.ayar ? git(cfg.ayar) : kasaOlustur();
+    $('#ekstreEkle').onclick = () => hesapEkleModal(tip);
     return;
   }
 
@@ -1165,7 +1171,7 @@ function ekstreSayfasi(tip) {
       : `<div class="e-liste">${satirlar}</div>`}`;
 
   if ($('#secTrigger')) $('#secTrigger').onclick = () => $('#eSec').classList.toggle('acik');
-  if ($('#ekstreEkleChip')) $('#ekstreEkleChip').onclick = () => git(cfg.ayar);
+  if ($('#ekstreEkleChip')) $('#ekstreEkleChip').onclick = () => hesapEkleModal(tip);
   $$('[data-ekstre]').forEach(b => b.onclick = () => { _ekstreSecili[tip] = b.dataset.ekstre; ekstreSayfasi(tip); });
   const hareketFormu = kartMi ? kartHareketFormu : bankaHareketFormu;
   if ($('#yeniHareket')) $('#yeniHareket').onclick = () => hareketFormu(secili.id);
@@ -1183,6 +1189,71 @@ function kasaOlustur() {
     const y = await DB.ekle('hesaplar', { ad, tip: 'kasa', acilisBakiye: parseFloat($('#kBak').value) || 0, aktif: true });
     State.hesaplar.push(y); _ekstreSecili.kasa = y.id;
     modalKapat(); bildir('Kasa oluşturuldu.', 'basari'); ekstreSayfasi('kasa');
+  };
+}
+
+/* Premium hesap ekleme penceresi — Kasa / Banka / Kredi Kartı (gruplu liste tarzı) */
+function hesapEkleModal(tip, mevcut) {
+  const bilgi = HESAP_TIPLERI[tip];
+  if (!bilgi) return;
+  const logoDestek = (tip === 'banka' || tip === 'krediKarti');
+  let _logo = (mevcut && mevcut.logoData) || null;
+
+  const satirlar = [];
+  satirlar.push(`<div class="hr-satir"><label for="heAd">${bilgi.ad} Adı</label>
+    <input type="text" id="heAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. ${ornekAd(tip)}"></div>`);
+  if (tip === 'krediKarti') {
+    satirlar.push(`<div class="hr-satir"><label for="heGun">Son Ödeme Günü</label>
+      <input type="number" id="heGun" min="1" max="31" inputmode="numeric" value="${mevcut ? (mevcut.sonOdemeGunu || 1) : 1}" placeholder="1"></div>`);
+  } else {
+    satirlar.push(`<div class="hr-satir"><label for="heAcilis">Açılış Bakiyesi (₺)</label>
+      <input type="number" id="heAcilis" step="0.01" inputmode="decimal" value="${mevcut ? (mevcut.acilisBakiye || 0) : 0}"></div>`);
+  }
+  if (logoDestek) {
+    satirlar.push(`<div class="hr-satir hr-logo-satir"><label>Logo</label>
+      <div class="hr-logo-sag">
+        <span id="heLogoOn">${_logo ? `<span class="hr-logo-tile"><img src="${_logo}" alt=""></span>` : ''}</span>
+        <button type="button" class="hr-logo-btn" id="heLogoBtn">🖼️ ${_logo ? 'Değiştir' : 'Logo Seç'}</button>
+      </div></div>`);
+  }
+
+  const govde = `<div class="hr-form">
+    <div class="hr-grup">${satirlar.join('')}</div>
+    ${logoDestek ? '<input type="file" id="heLogoDosya" accept="image/*" hidden>' : ''}
+  </div>`;
+  const kaydetEt = tip === 'kasa' ? '💾 Oluştur' : '💾 Kaydet';
+  const alt = `<button class="btn" id="heIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="heKaydet">${kaydetEt}</button>`;
+  modalAc(mevcut ? bilgi.ad + ' Düzenle' : 'Yeni ' + bilgi.ad, govde, alt, `<span class="hr-rozet">${bilgi.ikon} ${kacar(bilgi.ad)}</span>`);
+
+  if (logoDestek) {
+    const dosya = $('#heLogoDosya');
+    $('#heLogoBtn').onclick = () => dosya.click();
+    dosya.onchange = () => { if (dosya.files[0]) bankaLogoIsle(dosya.files[0], (veri) => {
+      _logo = veri;
+      $('#heLogoOn').innerHTML = `<span class="hr-logo-tile"><img src="${veri}" alt=""></span>`;
+      $('#heLogoBtn').textContent = '🖼️ Değiştir';
+    }); };
+  }
+
+  $('#heIptal').onclick = modalKapat;
+  $('#heKaydet').onclick = async () => {
+    const ad = $('#heAd').value.trim();
+    if (!ad) return bildir(bilgi.ad + ' adı girin.', 'hata');
+    const veri = { ad, tip, aktif: true };
+    if (tip === 'krediKarti') {
+      veri.acilisBakiye = 0;
+      veri.sonOdemeGunu = Math.min(31, Math.max(1, parseInt($('#heGun').value, 10) || 1));
+    } else {
+      veri.acilisBakiye = parseFloat($('#heAcilis').value) || 0;
+    }
+    if (logoDestek) veri.logoData = _logo || null;
+    let hedefId;
+    if (mevcut) { await DB.guncelle('hesaplar', mevcut.id, veri); Object.assign(mevcut, veri); hedefId = mevcut.id; }
+    else { const y = await DB.ekle('hesaplar', veri); State.hesaplar.push(y); hedefId = y.id; }
+    _ekstreSecili[tip] = hedefId;
+    modalKapat();
+    bildir(mevcut ? 'Güncellendi.' : bilgi.ad + ' eklendi.', 'basari');
+    ekstreSayfasi(tip);
   };
 }
 
@@ -2312,6 +2383,45 @@ function yeniKartLogoSec(dosya) {
   });
 }
 
+/* -------- AYARLAR: Admin Ayarları (sadece yönetici) -------- */
+SAYFALAR['ayar-admin'] = function () {
+  if (!adminMi()) {
+    ic().innerHTML = `<div class="kart">${bosBlok('Bu bölümü yalnızca yönetici (Admin) görüntüleyebilir.')}</div>`;
+    return;
+  }
+  ic().innerHTML = `
+    <div class="admin-kart">
+      <div class="admin-head"><span class="ai">🛡️</span><h3>Admin Ayarları</h3><span class="rz">SADECE YÖNETİCİ</span></div>
+      <div class="admin-body">
+        <div class="admin-satir"><span class="l">Uygulama Sürümü</span><span class="v">Sürüm ${APP_SURUM} · ${APP_SURUM_TARIH}</span></div>
+        <p class="admin-not">Yeni bir güncelleme yayınlandığında, en güncel hâli bu cihaza indirmek için aşağıdaki düğmeye basın. Eski sürüm önbellekte kalmaz, en yeni sürüm yüklenir.</p>
+        <button class="admin-guncelle" id="adGuncelle">⟳ En Güncel Sürümü Getir</button>
+        <p class="admin-alt">🔒 Verileriniz korunur — yalnızca uygulama dosyaları yenilenir.</p>
+      </div>
+    </div>`;
+  $('#adGuncelle').onclick = () => enGuncelSurumuGetir();
+};
+
+/* En güncel sürümü zorla getir: önbelleği/servis çalışanını temizle, taze index.html yükle.
+   localStorage'a (verilere) dokunmaz. */
+async function enGuncelSurumuGetir() {
+  const btn = $('#adGuncelle');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Güncelleniyor…'; }
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if (window.caches && caches.keys) {
+      const anahtarlar = await caches.keys();
+      await Promise.all(anahtarlar.map(k => caches.delete(k)));
+    }
+  } catch (e) { /* önbellek yoksa sorun değil */ }
+  // Benzersiz sorgu ile index.html'i taze çektir (tarayıcı önbelleğini atlatır)
+  const yeni = location.pathname + '?g=' + Date.now();
+  location.replace(yeni);
+}
+
 /* -------- AYARLAR: Firma Bilgileri & Logo -------- */
 SAYFALAR['ayar-firma'] = function () {
   const a = State.ayarlar || {};
@@ -2630,7 +2740,7 @@ function altMenuGuncelle() {
 function grupSheet(grupAd) {
   const m = MENU.find(g => g.grup === grupAd);
   if (!m) return;
-  const ogeler = m.ogeler.filter(o => !o.gizli);
+  const ogeler = m.ogeler.filter(o => !o.gizli && (!o.sadeceAdmin || adminMi()));
   $('#altSheet').innerHTML = `
     <div class="cizgi"></div>
     <h4>${m.ikon} ${kacar(grupAd)}</h4>
