@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '46';
+const APP_SURUM = '47';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -297,12 +297,6 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
-  { grup: 'Veri Girişleri', ikon: '📥', ogeler: [
-    { id: 'banka-aktarim', ad: 'Banka Aktarımı',       ikon: '🏦', baslik: 'Banka Aktarımı' },
-    { id: 'plan4me',       ad: 'Plan4Me Aktarımı',     ikon: '📅', baslik: 'Plan4Me Aktarımı' },
-    { id: 'kk-aktarim',    ad: 'Kredi Kartı Aktarımı', ikon: '💳', baslik: 'Kredi Kartı Aktarımı' },
-    { id: 'kasa-giris',    ad: 'Kasa Girişleri',       ikon: '💵', baslik: 'Kasa Girişleri' },
-  ]},
   { id: 'hesaplar', ad: 'Hesaplar', ikon: '🗂️', baslik: 'Hesaplar' },
   { grup: 'Raporlar', ikon: '📊', ogeler: [
     { id: 'rapor-karzarar', ad: 'Kar / Zarar Raporu',    ikon: '⚖️', baslik: 'Kar / Zarar Raporu' },
@@ -2793,7 +2787,6 @@ function ustCubukKur() {
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊' },
-  { tip: 'grup',  grup: 'Veri Girişleri', ad: 'Girişler', ikon: '📥' },
   { tip: 'sayfa', id: 'hesaplar',  ad: 'Hesaplar', ikon: '🗂️' },
   { tip: 'grup',  grup: 'Raporlar', ad: 'Raporlar', ikon: '📈' },
   { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
@@ -2801,8 +2794,8 @@ const ALT_MENU = [
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
   if (sayfa === 'dashboard') return 'dashboard';
-  // Hesaplar sekmesi: kart sayfası, hesap-* ve Potansiyel Müşteriler (Plan4Me hariç — o Girişler'de)
-  if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa.startsWith('hesap-')) return 'hesaplar';
+  // Hesaplar sekmesi: kart sayfası, hesap-*, Potansiyel Müşteriler ve Plan4Me
+  if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa === 'plan4me' || sayfa.startsWith('hesap-')) return 'hesaplar';
   for (const m of ALT_MENU) {
     if (m.tip !== 'grup') continue;
     const grup = MENU.find(g => g.grup === m.grup);
