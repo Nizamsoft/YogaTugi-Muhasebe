@@ -823,6 +823,10 @@ body.tema-koyu .hr-tarih-satir input[type="date"]{color-scheme:dark}
 .admin-guncelle:disabled{opacity:.7;cursor:default;filter:none}
 .admin-alt{font-size:12px;color:var(--metin-soluk);text-align:center;margin:11px 2px 0}
 
+/* Yedekleme sayfası — sade, sadece butonlar */
+.yedek-kart{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding:22px}
+.yedek-kart .btn{justify-content:center;padding:15px;font-size:15px;border-radius:12px}
+
 /* Banka hareketleri — mobil kart görünümü (masaüstünde gizli) */
 .banka-kartlar{display:none;flex-direction:column;gap:10px}
 .hareket-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:13px;padding:12px 13px;box-shadow:var(--golge);cursor:pointer}

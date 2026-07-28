@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '47';
+const APP_SURUM = '48';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -313,6 +313,7 @@ const MENU = [
     { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
     { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı', gizli: true },
+    { id: 'ayar-yedek',     ad: 'Yedekleme',         ikon: '💾', baslik: 'Yedekleme' },
     { id: 'ayar-admin',     ad: 'Admin Ayarları',    ikon: '🛡️', baslik: 'Admin Ayarları', sadeceAdmin: true },
   ]},
 ];
@@ -2843,6 +2844,22 @@ function sheetKapat() { document.body.classList.remove('sheet-acik'); }
 /* ==========================================================
    YEDEKLEME — Dışa aktar / İçe aktar / Sıfırla
    ========================================================== */
+/* Ayarlar > Yedekleme sayfası — sade, sadece butonlar */
+SAYFALAR['ayar-yedek'] = function () {
+  ic().innerHTML = `
+    <div class="kart yedek-kart">
+      <button class="btn btn-ana" id="yedIndir">⤓ Yedeği İndir</button>
+      <button class="btn" id="yedYukle">⤒ Yedekten Geri Yükle</button>
+      <input type="file" id="yedDosya" accept=".json" hidden>
+      <button class="btn btn-kirmizi" id="yedSil">🗑️ Tüm Verileri Sil</button>
+    </div>`;
+  $('#yedIndir').onclick = yedekIndir;
+  $('#yedYukle').onclick = () => $('#yedDosya').click();
+  $('#yedDosya').onchange = (e) => { if (e.target.files[0]) yedekGeriYukle(e.target.files[0]); };
+  $('#yedSil').onclick = () => onayModal('Tüm veriler silinsin mi?',
+    'Bu işlem geri alınamaz. Önce yedek almanız önerilir.', verileriSifirla);
+};
+
 function yedekModal() {
   const adet = State.hesaplar.length + State.islemler.length + State.ortaklar.length;
   modalAc('Yedekleme & Veri Yönetimi', `
