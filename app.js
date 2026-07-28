@@ -949,13 +949,31 @@ function kasaSihirbaz() {
    7) HESAPLAR
    ========================================================== */
 /* -------- HESAPLAR (kart sayfası) -------- */
+// Kart alt satırı: açıklama yerine canlı özet rakam
+function hesapKartOzet(k) {
+  const TLk = (n) => Math.round(Number(n) || 0).toLocaleString('tr-TR') + ' ₺';
+  const paraTop = (tip) => State.hesaplar.filter(h => h.tip === tip).reduce((s, h) => s + Hesapla.paraHesapBakiye(h.id), 0);
+  switch (k.id) {
+    case 'hesap-banka': { const t = paraTop('banka'); return { metin: TLk(t), sinif: t < 0 ? 'r' : 'n' }; }
+    case 'hesap-kasa':  { const t = paraTop('kasa');  return { metin: TLk(t), sinif: t < 0 ? 'r' : 'n' }; }
+    case 'hesap-kk':    { const b = -paraTop('krediKarti'); return { metin: TLk(b), sinif: b > 0 ? 'r' : 'n' }; }
+    case 'hesap-gider': return { metin: TLk(Hesapla.donemOzet(null).gider), sinif: 'r' };
+    case 'hesap-gelir': return { metin: TLk(Hesapla.donemOzet(null).gelir), sinif: 'g' };
+    case 'hesap-ortak': return { metin: State.ortaklar.length + ' ortak', sinif: 'n' };
+    case 'potansiyel':  return { metin: State.potansiyel.length + ' kişi', sinif: 'n' };
+    default:            return { metin: '—', sinif: 'soluk' };
+  }
+}
 SAYFALAR.hesaplar = function () {
-  const kartHTML = (k) => `
+  const kartHTML = (k) => {
+    const o = hesapKartOzet(k);
+    return `
     <button type="button" class="hkart" data-git="${k.id}">
       <span class="visual"><span class="hk-emoji">${k.ikon}</span></span>
       <span class="t">${kacar(k.ad)}</span>
-      <span class="d">${kacar(k.aciklama)}</span>
+      <span class="rakam ${o.sinif}">${kacar(o.metin)}</span>
     </button>`;
+  };
   ic().innerHTML = HESAP_GRUP_SIRA.map(grup => {
     const kartlar = HESAP_KARTLARI.filter(k => k.grup === grup);
     if (!kartlar.length) return '';

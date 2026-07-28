@@ -592,14 +592,14 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 .hkart:nth-child(4) .visual{animation-delay:.75s}
 .hkart:nth-child(5) .visual{animation-delay:1s}
 .hkart:nth-child(6) .visual{animation-delay:1.25s}
-/* Başlık — 2 satırlık hizalı alan (kartlar dizili) */
-.hkart .t{font-size:16px;font-weight:800;line-height:1.2;text-align:center;
-  min-height:2.4em;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
-/* Açıklama — hepsi aynı boyda, ortalı, gömük (inset) 3D alan */
-.hkart .d{align-self:stretch;height:46px;display:flex;align-items:center;justify-content:center;text-align:center;
-  font-size:11.5px;font-weight:600;color:var(--metin-soluk);line-height:1.3;padding:4px 8px;border-radius:11px;
-  background:color-mix(in srgb, var(--krem) 55%, var(--kart));
-  box-shadow:inset 0 2px 5px rgba(96,78,42,.16), inset 0 -1px 0 rgba(255,255,255,.5)}
+/* Başlık (üstte, sade) — 2 satır hizalı alan; altında canlı özet rakam */
+.hkart .t{font-size:12.5px;font-weight:700;color:var(--metin-soluk);text-align:center;line-height:1.2;
+  min-height:2.3em;display:flex;align-items:flex-end;justify-content:center;margin-bottom:5px}
+.hkart .rakam{font-size:17px;font-weight:800;line-height:1.1;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+.hkart .rakam.g{color:var(--yesil-para)}
+.hkart .rakam.r{color:var(--kirmizi)}
+.hkart .rakam.n{color:var(--metin)}
+.hkart .rakam.soluk{color:var(--metin-soluk)}
 
 /* Alt hesap sayfalarındaki "‹ Hesaplar" dön bağlantısı */
 .hesap-geri{
@@ -617,9 +617,10 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
   .hgrup-baslik{margin:18px 4px 9px;font-size:11.5px;letter-spacing:1.3px}
   .hgrup-baslik:first-child{margin-top:2px}
   .hkart{padding:16px 7px 14px;border-radius:16px}
-  .hkart .visual{width:56px;height:56px;margin-bottom:10px;font-size:27px}
-  .hkart .t{font-size:13px;margin-bottom:9px}
-  .hkart .d{height:40px;font-size:10px;padding:4px 7px;border-radius:9px}
+  .hkart{padding:15px 6px 13px}
+  .hkart .visual{width:52px;height:52px;margin-bottom:9px;font-size:25px}
+  .hkart .t{font-size:11px;min-height:2.2em;margin-bottom:4px}
+  .hkart .rakam{font-size:15px}
 }
 @media(prefers-reduced-motion:reduce){
   .hkart .visual{animation:none}
