@@ -50,6 +50,10 @@ body.tema-koyu{
 html,body{height:100%}
 /* Yatay taşmayı engelle: sabit üst/alt çubuklar yana kaymasın */
 html,body{overflow-x:hidden;max-width:100%}
+/* Sadece dikey kaydırma: yakınlaşma (çift dokunma/pinch) ve yatay kayma kapalı */
+html,body{touch-action:pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+/* İçinde yatay kaydırılabilen alanlar (geniş raporlar) bundan muaf */
+.tablo-sar{touch-action:pan-x pan-y}
 body{
   font-family:"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji",sans-serif;
   background:var(--krem);
@@ -322,6 +326,8 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   background:var(--kart);border-radius:16px;box-shadow:var(--golge-buyuk);
   width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
 }
+.modal-ust-kat{z-index:210}   /* üst üste açılan ikinci modal (yeni kalem) */
+.modal-dar{max-width:400px}
 .modal-ust{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--kenar)}
 .modal-ust h3{font-size:17px}
 .modal-kapat{background:none;border:none;font-size:22px;cursor:pointer;color:var(--metin-soluk);line-height:1}
@@ -751,7 +757,7 @@ table.banka-tablo .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:80
 .hr-tutar label{font-size:13.5px;font-weight:700;color:var(--yesil-koyu);margin:0}
 .hr-tutar.cikis label{color:var(--kirmizi)}
 .hr-tutar input{border:none;background:none;text-align:right;font-size:26px;font-weight:800;
-  color:var(--yesil-para);font-variant-numeric:tabular-nums;width:58%;min-width:0;padding:0;font-family:inherit}
+  color:var(--yesil-para);font-variant-numeric:tabular-nums;flex:1;width:auto;min-width:0;padding:0;font-family:inherit}
 .hr-tutar.cikis input{color:var(--kirmizi)}
 .hr-tutar input:focus{outline:none;box-shadow:none}
 .hr-tutar input::placeholder{color:color-mix(in srgb,var(--yesil-para) 42%,transparent);font-weight:700}
@@ -762,13 +768,14 @@ table.banka-tablo .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:80
 .hr-satir{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--kenar);position:relative}
 .hr-satir:last-child{border-bottom:none}
 .hr-satir>label{flex:0 0 92px;font-size:13.5px;font-weight:700;color:var(--metin-soluk);margin:0}
+/* Tüm değerler aynı sağ hizada bitsin: ortak sağ boşluk (ok göstergesi için pay) */
 .hr-satir input,.hr-satir select{flex:1;border:none;background:none;text-align:right;font-size:14.5px;font-weight:600;
-  color:var(--metin);font-family:inherit;padding:0;min-width:0}
+  color:var(--metin);font-family:inherit;padding:0 17px 0 0;min-width:0}
 .hr-satir input:focus,.hr-satir select:focus{outline:none;box-shadow:none}
-.hr-satir input[type="date"]{color-scheme:light}
+.hr-satir input[type="date"]{color-scheme:light;text-align:right}
 body.tema-koyu .hr-satir input[type="date"]{color-scheme:dark}
-.hr-satir.sel select{appearance:none;-webkit-appearance:none;text-align-last:right;padding-right:16px;cursor:pointer}
-.hr-satir.sel::after{content:"⌄";position:absolute;right:14px;top:9px;color:var(--metin-soluk);font-size:15px;pointer-events:none}
+.hr-satir.sel select{appearance:none;-webkit-appearance:none;text-align-last:right;cursor:pointer}
+.hr-satir.sel::after{content:"⌄";position:absolute;right:15px;top:9px;color:var(--metin-soluk);font-size:15px;pointer-events:none}
 .hr-yeni-satir{margin-top:8px}
 .hr-yeni-satir input{width:100%;border:1px solid var(--kenar-koyu);border-radius:10px;background:var(--kart);
   padding:10px 12px;font-size:14px;color:var(--metin);font-family:inherit}

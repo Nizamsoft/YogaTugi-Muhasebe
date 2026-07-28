@@ -42,6 +42,29 @@ function TL(n) {
   return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
 }
 function sayi(n) { return (Number(n) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+/* --- Tutar giriş kutusu: yazarken canlı "5.000,12 ₺" biçimlendirme --- */
+function tutarBicimle(ham) {
+  ham = String(ham == null ? '' : ham).replace(/[^\d,]/g, '');   // sadece rakam + virgül
+  const vi = ham.indexOf(',');
+  let tam, ond = null;
+  if (vi >= 0) { tam = ham.slice(0, vi).replace(/,/g, ''); ond = ham.slice(vi + 1).replace(/,/g, '').slice(0, 2); }
+  else tam = ham;
+  tam = tam.replace(/^0+(?=\d)/, '');                            // baştaki gereksiz sıfırlar
+  const tamB = tam ? Number(tam).toLocaleString('tr-TR') : (ond !== null ? '0' : '');
+  if (!tamB && ond === null) return '';
+  return (ond !== null ? (tamB || '0') + ',' + ond : tamB) + ' ₺';
+}
+function tutarSayi(str) {
+  str = String(str == null ? '' : str).replace(/[^\d,]/g, '').replace(',', '.');
+  return parseFloat(str) || 0;
+}
+/* Bir input'u tutar kutusu yap: canlı biçimlendir, başlangıç değerini de biçimle */
+function tutarKutusuBagla(el, baslangic) {
+  if (!el) return;
+  if (baslangic != null && baslangic !== '') el.value = tutarBicimle(String(baslangic).replace('.', ','));
+  el.addEventListener('input', () => { el.value = tutarBicimle(el.value); });
+}
 function yeniId() { return 'id' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
 function bugunISO() { return new Date().toISOString().slice(0, 10); }
 function donemStr(tarih) { return (tarih || bugunISO()).slice(0, 7); } // YYYY-MM
@@ -149,7 +172,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '41';
+const APP_SURUM = '42';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1369,6 +1392,46 @@ function bankalarSayfasi() {
   $$('[data-hareket]').forEach(r => r.onclick = () => bankaHareketFormu(_bankaSecili, State.islemler.find(i => i.id === r.dataset.hareket)));
 }
 
+/* Yeni gelir/gider kalemi eklemek için üstte açılan küçük form (ana modalı kapatmaz) */
+function yeniKalemModal(tur, sonra) {
+  const ad = tur === 'gelir' ? 'Gelir' : 'Gider';
+  const ornek = tur === 'gelir' ? 'Ders Geliri' : 'Kira';
+  const kap = document.createElement('div');
+  kap.className = 'modal-perde modal-ust-kat';
+  kap.innerHTML = `
+    <div class="modal modal-dar" role="dialog">
+      <div class="modal-ust"><h3>Yeni ${ad} Kalemi</h3>
+        <span class="hr-rozet">${tur === 'gelir' ? '📈' : '📉'} ${ad}</span>
+        <button class="modal-kapat" type="button">×</button></div>
+      <div class="modal-govde"><div class="hr-form">
+        <div class="hr-grup"><div class="hr-satir"><label for="ykAdInp">${ad} Adı</label>
+          <input type="text" id="ykAdInp" placeholder="Örn. ${ornek}"></div></div>
+      </div></div>
+      <div class="modal-alt">
+        <button class="btn" type="button" data-iptal>İptal</button>
+        <button class="btn btn-ana hr-kaydet" type="button" data-kaydet>💾 Ekle</button>
+      </div>
+    </div>`;
+  document.body.appendChild(kap);
+  const kapat = () => kap.remove();
+  const inp = kap.querySelector('#ykAdInp');
+  setTimeout(() => inp.focus(), 50);
+  kap.querySelector('.modal-kapat').onclick = kapat;
+  kap.querySelector('[data-iptal]').onclick = kapat;
+  kap.onclick = (e) => { if (e.target === kap) kapat(); };
+  const kaydet = async () => {
+    const v = inp.value.trim();
+    if (!v) return bildir(ad + ' adı girin.', 'hata');
+    const yk = await DB.ekle('hesaplar', { ad: v, tip: tur, aktif: true });
+    State.hesaplar.push(yk);
+    kapat();
+    bildir(ad + ' kalemi eklendi.', 'basari');
+    if (sonra) sonra(yk);
+  };
+  kap.querySelector('[data-kaydet]').onclick = kaydet;
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') kaydet(); });
+}
+
 /* Banka hareketi ekle / düzenle — muhasebe bilmeyen için basit: Giriş mi Çıkış mı */
 function bankaHareketFormu(bankaId, mevcut) {
   const banka = State.hesaplar.find(h => h.id === bankaId);
@@ -1389,15 +1452,14 @@ function bankaHareketFormu(bankaId, mevcut) {
         <button type="button" class="yon-btn ${baslangicYon === 'cikis' ? 'sec' : ''}" data-yon="cikis">⬆️ Para Çıktı<small>Gider / Ödeme</small></button>
       </div>
       <div class="hr-tutar ${baslangicYon === 'cikis' ? 'cikis' : ''}" id="hrTutarKutu">
-        <label for="hrTutar">Tutar (₺)</label>
-        <input type="number" id="hrTutar" step="0.01" min="0" inputmode="decimal" value="${mevcut ? mevcut.tutar : ''}" placeholder="0,00">
+        <label for="hrTutar">Tutar</label>
+        <input type="text" id="hrTutar" inputmode="decimal" autocomplete="off" placeholder="0,00 ₺">
       </div>
       <div class="hr-grup">
         <div class="hr-satir"><label for="hrTarih">Tarih</label><input type="date" id="hrTarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
         <div class="hr-satir sel" id="hrKalemKap"><label id="hrKalemEt" for="hrKalem">Gelir Adı</label><select id="hrKalem"></select></div>
         <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Ocak ders geliri"></div>
       </div>
-      <div class="hr-yeni-satir" id="hrYeniKap" style="display:none"><input type="text" id="hrYeniKalem" placeholder="Yeni kalem adı (örn. Kira)"></div>
     </div>`;
 
   const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
@@ -1405,14 +1467,15 @@ function bankaHareketFormu(bankaId, mevcut) {
   modalAc(mevcut ? 'Hareketi Düzenle' : 'Yeni Hareket', govde, alt, `<span class="hr-rozet">🏦 ${kacar(banka.ad)}</span>`);
 
   let yon = baslangicYon;
-  const kalemDoldur = () => {
+  const kalemDoldur = (seciliId) => {
     const et = $('#hrKalemEt'), sel = $('#hrKalem');
-    const liste = yon === 'giris' ? gelirKalem : giderKalem;
+    const liste = State.hesaplar.filter(h => h.tip === (yon === 'giris' ? 'gelir' : 'gider'));
     et.textContent = yon === 'giris' ? 'Gelir Adı' : 'Gider Adı';
-    const seciliKat = mevcut && ((yon === 'giris') === (mevcut.tip === 'gelir')) ? mevcut.kategoriId : null;
-    sel.innerHTML = kalemSecenek(liste, seciliKat);
-    if (!liste.length) sel.value = '__yeni';
-    $('#hrYeniKap').style.display = sel.value === '__yeni' ? 'block' : 'none';
+    const secDef = seciliId || (mevcut && ((yon === 'giris') === (mevcut.tip === 'gelir')) ? mevcut.kategoriId : null);
+    sel.innerHTML = kalemSecenek(liste, secDef);
+    if (secDef && liste.some(h => h.id === secDef)) sel.value = secDef;
+    else if (liste.length) sel.value = liste[0].id;
+    else sel.value = '__yeni';
   };
   const yonSec = (y) => {
     yon = y;
@@ -1421,8 +1484,11 @@ function bankaHareketFormu(bankaId, mevcut) {
     kalemDoldur();
   };
   $$('.yon-btn').forEach(b => b.onclick = () => yonSec(b.dataset.yon));
-  $('#hrKalem').onchange = () => { $('#hrYeniKap').style.display = $('#hrKalem').value === '__yeni' ? 'block' : 'none'; };
+  $('#hrKalem').onchange = () => {
+    if ($('#hrKalem').value === '__yeni') yeniKalemModal(yon === 'giris' ? 'gelir' : 'gider', (yk) => kalemDoldur(yk.id));
+  };
   kalemDoldur();
+  tutarKutusuBagla($('#hrTutar'), mevcut ? mevcut.tutar : '');
 
   $('#hrIptal').onclick = modalKapat;
   if ($('#hrSil')) $('#hrSil').onclick = () => {
@@ -1434,16 +1500,12 @@ function bankaHareketFormu(bankaId, mevcut) {
     });
   };
   $('#hrKaydet').onclick = async () => {
-    const tutar = parseFloat($('#hrTutar').value);
+    const tutar = tutarSayi($('#hrTutar').value);
     if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
     let katId = $('#hrKalem').value;
-    if (katId === '__yeni') {
-      const ad = $('#hrYeniKalem').value.trim();
-      if (!ad) return bildir(yon === 'giris' ? 'Gelir adı girin.' : 'Gider adı girin.', 'hata');
-      const yk = await DB.ekle('hesaplar', { ad, tip: yon === 'giris' ? 'gelir' : 'gider', aktif: true });
-      State.hesaplar.push(yk); katId = yk.id;
+    if (katId === '__yeni' || !katId) {
+      return yeniKalemModal(yon === 'giris' ? 'gelir' : 'gider', (yk) => kalemDoldur(yk.id));
     }
-    if (!katId) return bildir('Bir kalem seçin.', 'hata');
     const veri = {
       tarih: $('#hrTarih').value, tutar,
       tip: yon === 'giris' ? 'gelir' : 'gider',
@@ -1594,7 +1656,7 @@ function kartHareketFormu(kartId, mevcut) {
   const baslangicMod = mevcut ? (mevcut.tip === 'transfer' ? 'odeme' : 'harcama') : 'harcama';
 
   const kalemSecenek = (secili) =>
-    giderKalem.map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${kacar(h.ad)}</option>`).join('')
+    State.hesaplar.filter(h => h.tip === 'gider').map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${kacar(h.ad)}</option>`).join('')
     + `<option value="__yeni">➕ Yeni gider kalemi ekle…</option>`;
   const kaynakSecenek = (secili) => kaynakHesaplar.length
     ? kaynakHesaplar.map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${HESAP_TIPLERI[h.tip].ikon} ${kacar(h.ad)}</option>`).join('')
@@ -1607,8 +1669,8 @@ function kartHareketFormu(kartId, mevcut) {
         <button type="button" class="yon-btn kart-ode ${baslangicMod === 'odeme' ? 'sec' : ''}" data-mod="odeme">💳 Borç Ödeme<small>borcu azaltır</small></button>
       </div>
       <div class="hr-tutar ${baslangicMod === 'harcama' ? 'cikis' : ''}" id="hrTutarKutu">
-        <label for="hrTutar">Tutar (₺)</label>
-        <input type="number" id="hrTutar" step="0.01" min="0" inputmode="decimal" value="${mevcut ? mevcut.tutar : ''}" placeholder="0,00">
+        <label for="hrTutar">Tutar</label>
+        <input type="text" id="hrTutar" inputmode="decimal" autocomplete="off" placeholder="0,00 ₺">
       </div>
       <div class="hr-grup">
         <div class="hr-satir sel" id="hrGiderKap"><label for="hrGider">Gider Adı</label><select id="hrGider"></select></div>
@@ -1616,7 +1678,6 @@ function kartHareketFormu(kartId, mevcut) {
         <div class="hr-satir"><label id="hrTarihEt" for="hrTarih">Tarih</label><input type="date" id="hrTarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
         <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Mat ve ekipman"></div>
       </div>
-      <div class="hr-yeni-satir" id="hrYeniGiderKap" style="display:none"><input type="text" id="hrYeniGider" placeholder="Yeni gider adı (örn. Malzeme)"></div>
     </div>`;
 
   const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
@@ -1624,7 +1685,7 @@ function kartHareketFormu(kartId, mevcut) {
   modalAc(mevcut ? 'Kart Hareketi Düzenle' : 'Yeni Kart Hareketi', govde, alt, `<span class="hr-rozet">💳 ${kacar(kart.ad)}</span>`);
 
   let mod = baslangicMod;
-  const modUygula = () => {
+  const modUygula = (seciliId) => {
     $$('.yon-btn').forEach(b => b.classList.toggle('sec', b.dataset.mod === mod));
     $('#hrGiderKap').style.display = mod === 'harcama' ? '' : 'none';
     $('#hrKaynakKap').style.display = mod === 'odeme' ? '' : 'none';
@@ -1632,16 +1693,20 @@ function kartHareketFormu(kartId, mevcut) {
     $('#hrTutarKutu').classList.toggle('cikis', mod === 'harcama');
     if (mod === 'harcama') {
       const sel = $('#hrGider');
-      sel.innerHTML = kalemSecenek(mevcut && mevcut.tip !== 'transfer' ? mevcut.kategoriId : null);
-      if (!giderKalem.length) sel.value = '__yeni';
-      $('#hrYeniGiderKap').style.display = sel.value === '__yeni' ? 'block' : 'none';
-    } else {
-      $('#hrYeniGiderKap').style.display = 'none';
+      const gider = State.hesaplar.filter(h => h.tip === 'gider');
+      const secDef = seciliId || (mevcut && mevcut.tip !== 'transfer' ? mevcut.kategoriId : null);
+      sel.innerHTML = kalemSecenek(secDef);
+      if (secDef && gider.some(h => h.id === secDef)) sel.value = secDef;
+      else if (gider.length) sel.value = gider[0].id;
+      else sel.value = '__yeni';
     }
   };
   $$('.yon-btn').forEach(b => b.onclick = () => { mod = b.dataset.mod; modUygula(); });
-  $('#hrGider').onchange = () => { $('#hrYeniGiderKap').style.display = $('#hrGider').value === '__yeni' ? 'block' : 'none'; };
+  $('#hrGider').onchange = () => {
+    if ($('#hrGider').value === '__yeni') yeniKalemModal('gider', (yk) => modUygula(yk.id));
+  };
   modUygula();
+  tutarKutusuBagla($('#hrTutar'), mevcut ? mevcut.tutar : '');
 
   $('#hrIptal').onclick = modalKapat;
   if ($('#hrSil')) $('#hrSil').onclick = () => {
@@ -1653,20 +1718,16 @@ function kartHareketFormu(kartId, mevcut) {
     });
   };
   $('#hrKaydet').onclick = async () => {
-    const tutar = parseFloat($('#hrTutar').value);
+    const tutar = tutarSayi($('#hrTutar').value);
     if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
     const tarih = $('#hrTarih').value;
     const aciklama = $('#hrAciklama').value.trim();
     let veri;
     if (mod === 'harcama') {
       let katId = $('#hrGider').value;
-      if (katId === '__yeni') {
-        const ad = $('#hrYeniGider').value.trim();
-        if (!ad) return bildir('Gider adı girin.', 'hata');
-        const yk = await DB.ekle('hesaplar', { ad, tip: 'gider', aktif: true });
-        State.hesaplar.push(yk); katId = yk.id;
+      if (katId === '__yeni' || !katId) {
+        return yeniKalemModal('gider', (yk) => modUygula(yk.id));
       }
-      if (!katId) return bildir('Bir gider kalemi seçin.', 'hata');
       veri = { tarih, tutar, tip: 'gider', odemeHesabiId: kart.id, kategoriId: katId, aciklama, kaynak: 'krediKarti' };
     } else {
       const kaynakId = $('#hrKaynak').value;
@@ -2883,6 +2944,13 @@ document.addEventListener('DOMContentLoaded', () => {
   firmaBilgileriUygula();
   ustCubukKur();
   girisKur();
+  yakinlastirmaKapat();
 });
+
+/* iOS Safari'de pinch yakınlaştırmasını engelle (çift-dokunma zaten touch-action:pan-y ile kapalı) */
+function yakinlastirmaKapat() {
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+    document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+}
 
 })();
