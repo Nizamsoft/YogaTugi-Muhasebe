@@ -737,6 +737,48 @@ table.banka-tablo .bakiye-hucre{font-variant-numeric:tabular-nums;font-weight:80
 .yon-btn[data-yon="cikis"].sec{border-color:var(--kirmizi);background:var(--kirmizi-acik);color:var(--kirmizi)}
 .yon-btn[data-yon="cikis"].sec small{color:var(--kirmizi)}
 
+/* ---- Yeni Hareket — premium gruplu liste formu (Konsept B) ---- */
+.modal-ust h3{flex:1}
+.hr-rozet{display:inline-flex;align-items:center;gap:6px;background:var(--yesil-acik);color:var(--yesil-koyu);
+  font-size:12px;font-weight:700;border-radius:999px;padding:5px 12px;white-space:nowrap;max-width:46%;overflow:hidden;text-overflow:ellipsis}
+.hr-form .yon-secim{margin-bottom:15px}
+
+/* Vurgulu tutar kutusu */
+.hr-tutar{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--yesil-acik);border:1px solid color-mix(in srgb,var(--yesil) 24%,var(--kenar));
+  border-radius:14px;padding:12px 16px;margin-bottom:15px;transition:background .2s,border-color .2s}
+.hr-tutar.cikis{background:var(--kirmizi-acik);border-color:color-mix(in srgb,var(--kirmizi) 24%,var(--kenar))}
+.hr-tutar label{font-size:13.5px;font-weight:700;color:var(--yesil-koyu);margin:0}
+.hr-tutar.cikis label{color:var(--kirmizi)}
+.hr-tutar input{border:none;background:none;text-align:right;font-size:26px;font-weight:800;
+  color:var(--yesil-para);font-variant-numeric:tabular-nums;width:58%;min-width:0;padding:0;font-family:inherit}
+.hr-tutar.cikis input{color:var(--kirmizi)}
+.hr-tutar input:focus{outline:none;box-shadow:none}
+.hr-tutar input::placeholder{color:color-mix(in srgb,var(--yesil-para) 42%,transparent);font-weight:700}
+.hr-tutar.cikis input::placeholder{color:color-mix(in srgb,var(--kirmizi) 40%,transparent)}
+
+/* Gruplu liste (iOS ayarlar tarzı) */
+.hr-grup{background:var(--gri);border:1px solid var(--kenar);border-radius:14px;overflow:hidden}
+.hr-satir{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--kenar);position:relative}
+.hr-satir:last-child{border-bottom:none}
+.hr-satir>label{flex:0 0 92px;font-size:13.5px;font-weight:700;color:var(--metin-soluk);margin:0}
+.hr-satir input,.hr-satir select{flex:1;border:none;background:none;text-align:right;font-size:14.5px;font-weight:600;
+  color:var(--metin);font-family:inherit;padding:0;min-width:0}
+.hr-satir input:focus,.hr-satir select:focus{outline:none;box-shadow:none}
+.hr-satir input[type="date"]{color-scheme:light}
+body.tema-koyu .hr-satir input[type="date"]{color-scheme:dark}
+.hr-satir.sel select{appearance:none;-webkit-appearance:none;text-align-last:right;padding-right:16px;cursor:pointer}
+.hr-satir.sel::after{content:"⌄";position:absolute;right:14px;top:9px;color:var(--metin-soluk);font-size:15px;pointer-events:none}
+.hr-yeni-satir{margin-top:8px}
+.hr-yeni-satir input{width:100%;border:1px solid var(--kenar-koyu);border-radius:10px;background:var(--kart);
+  padding:10px 12px;font-size:14px;color:var(--metin);font-family:inherit}
+.hr-yeni-satir input:focus{outline:none;border-color:var(--yesil);box-shadow:0 0 0 3px var(--yesil-acik)}
+
+/* Premium Kaydet butonu */
+.hr-kaydet{flex:1;justify-content:center;border:none;color:#fff;padding:12px 16px;font-size:14.5px;border-radius:11px;
+  background:linear-gradient(135deg,var(--yesil),var(--yesil-koyu));box-shadow:0 8px 16px -6px rgba(79,116,82,.5)}
+.hr-kaydet:hover{filter:brightness(1.06);color:#fff}
+
 /* Banka hareketleri — mobil kart görünümü (masaüstünde gizli) */
 .banka-kartlar{display:none;flex-direction:column;gap:10px}
 .hareket-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:13px;padding:12px 13px;box-shadow:var(--golge);cursor:pointer}
