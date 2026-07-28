@@ -127,7 +127,9 @@ body.tema-koyu #girisEkrani{
 .giris-demo{margin-top:18px;font-size:12px;color:var(--nink-soft)}
 
 /* ============ UYGULAMA İSKELETİ ============ */
-.uygulama{display:flex;min-height:100vh}
+/* min-height: iOS'ta 100vh görünür alandan uzun olduğu için içerik kısayken
+   sayfa gereksiz kayıyordu; 100dvh (dinamik görünür yükseklik) ile bu giderilir. */
+.uygulama{display:flex;min-height:100vh;min-height:100dvh}
 
 /* --------- Kenar menü --------- */
 .kenar{
