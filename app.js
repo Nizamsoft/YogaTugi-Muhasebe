@@ -184,8 +184,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '56';
-const APP_SURUM_TARIH = '28 Tem 2026';
+const APP_SURUM = '57';
+const APP_SURUM_TARIH = '30 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return (State.kullanici && State.kullanici.ad) === SABIT_ADMIN.kullanici; }
@@ -205,6 +205,11 @@ async function veriYukle() {
   State.musteriler = musteriler || [];
   State.dersler = dersler || [];
   State.odemeler = odemeler || [];
+  // Tahsilatların yazılacağı 'Ders Geliri' gelir kalemi her zaman bulunsun
+  if (!State.hesaplar.some(h => h.tip === 'gelir' && h.ad === 'Ders Geliri')) {
+    const k = await DB.ekle('hesaplar', { ad: 'Ders Geliri', tip: 'gelir', aktif: true });
+    State.hesaplar.push(k);
+  }
   await kayitNoMigrasyon();
 }
 
@@ -1034,18 +1039,23 @@ function musterilerSayfasi() {
   const list = State.musteriler;
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   const renk = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'];
-  const kartlar = list.map((m, i) => {
+  const satirlar = list.map((m, i) => {
     const c = musteriCari(m.id);
-    return `<div class="ort-kart">
-      <div class="ort-arac"><button class="ort-btn" data-mduzenle="${m.id}" title="Düzenle">✎</button><button class="ort-btn" data-msil="${m.id}" title="Sil">🗑️</button></div>
-      <div class="ort-foto ${renk[i % renk.length]}">${kacar(bas(m.ad))}</div>
-      <div class="ort-ad">${kacar(m.ad)}</div>
-      <div class="ort-pay">${m.telefon ? kacar(m.telefon) : '&nbsp;'}</div>
-      <div class="ort-mrow"><span class="l">Aldığı Ders</span><span class="v">${c.adet}</span></div>
-      <div class="ort-mrow"><span class="l">Ödediği</span><span class="v g">${TL(c.odenen)}</span></div>
-      <div class="ort-mrow ort-net"><span class="l">Kalan Borç</span><span class="v ${c.borc > 0 ? 'r' : 'g'}">${TL(c.borc)}</span></div>
-      <button type="button" class="mus-ode" data-mders="${m.id}">＋ Ders Ekle</button>
-      <button type="button" class="mus-tah" data-mtah="${m.id}">💵 Tahsilat Al</button>
+    return `<div class="mus-satir">
+      <div class="mus-foto ${renk[i % renk.length]}">${kacar(bas(m.ad))}</div>
+      <div class="mus-kimlik">
+        <div class="mus-ad">${kacar(m.ad)}</div>
+        <div class="mus-alt">${c.adet} ders · Ödediği ${TL(c.odenen)}</div>
+      </div>
+      <div class="mus-borc">
+        <span class="l">Kalan Borç</span>
+        <span class="v ${c.borc > 0 ? 'r' : 'g'}">${TL(c.borc)}</span>
+      </div>
+      <div class="mus-arac">
+        <button class="mus-mini ekle" data-mders="${m.id}" title="Ders Ekle">＋</button>
+        <button class="mus-mini" data-mduzenle="${m.id}" title="Düzenle">✎</button>
+        <button class="mus-mini" data-msil="${m.id}" title="Sil">🗑️</button>
+      </div>
     </div>`;
   }).join('');
   ic().innerHTML = `
@@ -1055,7 +1065,7 @@ function musterilerSayfasi() {
     </div>
     ${list.length === 0
       ? `<div class="kart">${bosBlok('Henüz müşteri yok. “＋ Yeni Müşteri” ile ekleyin (ders kaydında da eklenebilir).')}</div>`
-      : `<div class="ort-izgara">${kartlar}</div>`}`;
+      : `<div class="mus-liste">${satirlar}</div>`}`;
   $('#musEkle').onclick = () => musteriFormu();
   $$('[data-mduzenle]').forEach(b => b.onclick = () => musteriFormu(State.musteriler.find(m => m.id === b.dataset.mduzenle)));
   $$('[data-msil]').forEach(b => b.onclick = () => onayModal('Müşteri silinsin mi?', 'Müşterinin ders/ödeme kayıtları kalır ama sahipsiz görünebilir.', async () => {
@@ -1063,7 +1073,6 @@ function musterilerSayfasi() {
     bildir('Silindi.', 'basari'); musterilerSayfasi();
   }));
   $$('[data-mders]').forEach(b => b.onclick = () => dersKaydiFormu(null, { onMusteri: b.dataset.mders, geri: () => musterilerSayfasi() }));
-  $$('[data-mtah]').forEach(b => b.onclick = () => tahsilatFormu(b.dataset.mtah));
 }
 
 function musteriFormu(mevcut) {
@@ -1084,52 +1093,8 @@ function musteriFormu(mevcut) {
   };
 }
 
-/* "Ders Geliri" gelir kalemini bul/oluştur (tahsilatlar bu kaleme yazılır) */
-async function dersGeliriKalemId() {
-  let k = State.hesaplar.find(h => h.tip === 'gelir' && h.ad === 'Ders Geliri');
-  if (!k) { k = await DB.ekle('hesaplar', { ad: 'Ders Geliri', tip: 'gelir', aktif: true }); State.hesaplar.push(k); }
-  return k.id;
-}
-
-/* Tahsilat — müşteriden para al; seçilen KASA/BANKA hesabına gelir olarak işlenir, cari borcu düşer */
-function tahsilatFormu(musteriId) {
-  const m = State.musteriler.find(x => x.id === musteriId);
-  if (!m) return;
-  const c = musteriCari(musteriId);
-  const hesaplar = State.hesaplar.filter(h => h.tip === 'kasa' || h.tip === 'banka');
-  if (!hesaplar.length) {
-    return onayModal('Tahsilat hesabı yok', 'Tahsilatı almak için önce bir <b>Kasa</b> veya <b>Banka</b> hesabı gerekir. Şimdi Kasa oluşturulsun mu?', () => hesapEkleModal('kasa'));
-  }
-  const hesapSecenek = hesaplar.map(h => `<option value="${h.id}">${HESAP_TIPLERI[h.tip].ikon} ${kacar(h.ad)}</option>`).join('');
-  const govde = `
-    <div class="hr-form">
-      <div class="rozet-ders">💵 Tahsilat · Kalan borç ${TL(c.borc)}</div>
-      <div class="hr-tutar" id="hrTutarKutu"><label for="hrTutar">Tutar</label>
-        <input type="text" id="hrTutar" inputmode="decimal" autocomplete="off" placeholder="0,00 ₺"></div>
-      <div class="hr-grup">
-        <div class="hr-satir sel"><label for="tHesap">Tahsilat Hesabı</label><select id="tHesap">${hesapSecenek}</select></div>
-        <div class="hr-satir hr-tarih-satir"><label>Tarih</label><span class="hr-deger" id="hrTarihGos">${fmtTarihUzun('')}</span><input type="date" id="hrTarih" aria-label="Tarih" value="${bugunISO()}"></div>
-        <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" placeholder="Örn. Nakit tahsilat"></div>
-      </div>
-    </div>`;
-  modalAc('Tahsilat Al', govde, `<button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`, `<span class="hr-rozet">👥 ${kacar(m.ad)}</span>`);
-  tutarKutusuBagla($('#hrTutar'), '');
-  tarihGostergeBagla();
-  $('#hrIptal').onclick = modalKapat;
-  $('#hrKaydet').onclick = async () => {
-    const tutar = tutarSayi($('#hrTutar').value);
-    if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
-    const hesapId = $('#tHesap').value;
-    if (!hesapId) return bildir('Tahsilat hesabı seçin.', 'hata');
-    const veri = {
-      tarih: $('#hrTarih').value, tutar, tip: 'gelir', odemeHesabiId: hesapId,
-      kategoriId: await dersGeliriKalemId(), musteriId, kaynak: 'tahsilat',
-      aciklama: $('#hrAciklama').value.trim() || ('Tahsilat · ' + m.ad), kayitNo: sonrakiKayitNo(),
-    };
-    const y = await DB.ekle('islemler', veri); State.islemler.unshift(y);
-    modalKapat(); bildir('Tahsilat kaydedildi.', 'basari'); musterilerSayfasi();
-  };
-}
+/* Tahsilat artık "Yeni Hareket" (banka/kasa) formundan, gelir → "Ders Geliri" + müşteri
+   seçilerek yapılır. Ayrı Tahsilat formu kaldırıldı. */
 
 SAYFALAR['kk-aktarim'] = () => aktarimSayfasi({
   baslik: 'Kredi Kartı Aktarımı', hedefTip: 'krediKarti', kaynak: 'krediKarti',
@@ -1767,11 +1732,16 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
   const giderKalem = State.hesaplar.filter(h => h.tip === 'gider');
   // Düzenlemede yön: gelir → giriş, diğer (gider/ortakOdeme) → çıkış
   const baslangicYon = mevcut ? (mevcut.tip === 'gelir' ? 'giris' : 'cikis') : 'giris';
+  // "Ders Geliri" gelir kalemi seçilirse müşteri (tahsilat) seçtirilir
+  const dersGelirKalem = State.hesaplar.find(h => h.tip === 'gelir' && h.ad === 'Ders Geliri');
 
   const kalemSecenek = (liste, secili) =>
     `<option value="">— Kalem seç —</option>`
     + liste.map(h => `<option value="${h.id}" ${secili === h.id ? 'selected' : ''}>${kacar(h.ad)}</option>`).join('')
     + `<option value="__yeni">➕ Yeni kalem ekle…</option>`;
+  const musteriSecenek = (sec) => `<option value="">— Müşteri seç —</option>`
+    + State.musteriler.map(m => `<option value="${m.id}" ${sec === m.id ? 'selected' : ''}>${kacar(m.ad)}</option>`).join('')
+    + `<option value="__yeni">➕ Yeni Müşteri ekle…</option>`;
 
   const govde = `
     <div class="hr-form">
@@ -1786,6 +1756,7 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
       <div class="hr-grup">
         <div class="hr-satir hr-tarih-satir"><label>Tarih</label><span class="hr-deger" id="hrTarihGos">${fmtTarihUzun(mevcut ? mevcut.tarih : '')}</span><input type="date" id="hrTarih" aria-label="Tarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
         <div class="hr-satir sel" id="hrKalemKap"><label id="hrKalemEt" for="hrKalem">Gelir Adı</label><select id="hrKalem"></select></div>
+        <div class="hr-satir sel gizli" id="hrMusteriKap"><label for="hrMusteri">Müşteri</label><select id="hrMusteri"></select></div>
         <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Ocak ders geliri"></div>
       </div>
     </div>`;
@@ -1794,7 +1765,14 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
     <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
   modalAc(mevcut ? (opts.baslikDuzenle || 'Hareketi Düzenle') : (opts.baslik || 'Yeni Hareket'), govde, alt, `<span class="hr-rozet">${rozet}</span>`);
 
-  let yon = baslangicYon, _sonKalem = '';
+  let yon = baslangicYon, _sonKalem = '', _sonMu = mevcut ? (mevcut.musteriId || '') : '';
+  // Tahsilat (müşteri) satırını göster/gizle: sadece Para Girdi + "Ders Geliri" kaleminde
+  const musteriSatirGuncelle = () => {
+    const goster = yon === 'giris' && dersGelirKalem && $('#hrKalem').value === dersGelirKalem.id;
+    $('#hrMusteriKap').classList.toggle('gizli', !goster);
+    if (goster) { const s = $('#hrMusteri'); s.innerHTML = musteriSecenek(_sonMu); s.value = (_sonMu && State.musteriler.some(m => m.id === _sonMu)) ? _sonMu : ''; }
+    return goster;
+  };
   const kalemDoldur = (seciliId) => {
     const et = $('#hrKalemEt'), sel = $('#hrKalem');
     const liste = State.hesaplar.filter(h => h.tip === (yon === 'giris' ? 'gelir' : 'gider'));
@@ -1804,6 +1782,7 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
     // Yeni harekette "— Kalem seç —" ile başla (ilk kalem otomatik seçilmesin)
     sel.value = (secDef && liste.some(h => h.id === secDef)) ? secDef : '';
     _sonKalem = sel.value;
+    musteriSatirGuncelle();
   };
   const yonSec = (y) => {
     yon = y;
@@ -1817,9 +1796,14 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
     if (v === '__yeni') {
       $('#hrKalem').value = _sonKalem || '';   // iptal edilirse '__yeni'de takılı kalmasın
       yeniKalemModal(yon === 'giris' ? 'gelir' : 'gider', (yk) => kalemDoldur(yk.id));
-    } else { _sonKalem = v; }
+    } else { _sonKalem = v; musteriSatirGuncelle(); }
   };
   kalemDoldur();
+  $('#hrMusteri').onchange = () => {
+    const v = $('#hrMusteri').value;
+    if (v === '__yeni') { $('#hrMusteri').value = _sonMu || ''; yeniMusteriModal((yk) => { _sonMu = yk.id; musteriSatirGuncelle(); }); }
+    else { _sonMu = v; }
+  };
   tutarKutusuBagla($('#hrTutar'), mevcut ? mevcut.tutar : '');
   tarihGostergeBagla();
 
@@ -1848,6 +1832,15 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
       odemeHesabiId: banka.id, kategoriId: katId,
       aciklama: $('#hrAciklama').value.trim(), kaynak,
     };
+    // "Ders Geliri" seçiliyse müşteri tahsilatı olarak işaretle
+    const tahsilatMi = yon === 'giris' && dersGelirKalem && katId === dersGelirKalem.id;
+    if (tahsilatMi) {
+      const mid = $('#hrMusteri').value;
+      if (!mid || mid === '__yeni') return bildir('Tahsilat için müşteri seçin.', 'hata');
+      veri.musteriId = mid; veri.kaynak = 'tahsilat';
+    } else if (mevcut && mevcut.musteriId) {
+      veri.musteriId = null;   // tahsilat kalemi değiştiyse müşteri bağını kaldır
+    }
     if (mevcut) {
       await DB.guncelle('islemler', mevcut.id, veri);
       Object.assign(mevcut, veri);
