@@ -184,7 +184,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '54';
+const APP_SURUM = '55';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1279,6 +1279,8 @@ function hesapKartOzet(k) {
     case 'hesap-gider': return { metin: TLk(Hesapla.donemOzet(null).gider), sinif: 'r' };
     case 'hesap-gelir': return { metin: TLk(Hesapla.donemOzet(null).gelir), sinif: 'g' };
     case 'hesap-ortak': return { metin: State.ortaklar.length + ' ortak', sinif: 'n' };
+    case 'plan4me':     { const d = donemStr(bugunISO()); return { metin: State.dersler.filter(x => donemStr(x.tarih) === d).length + ' ders', sinif: 'n' }; }
+    case 'musteriler':  return { metin: State.musteriler.length + ' kişi', sinif: 'n' };
     case 'potansiyel':  return { metin: State.potansiyel.length + ' kişi', sinif: 'n' };
     default:            return { metin: '—', sinif: 'soluk' };
   }
