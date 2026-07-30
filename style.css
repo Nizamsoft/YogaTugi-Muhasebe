@@ -833,8 +833,10 @@ body.tema-koyu .hr-tarih-satir input[type="date"]{color-scheme:dark}
 .yedek-kart{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding:22px}
 .yedek-kart .btn{justify-content:center;padding:15px;font-size:15px;border-radius:12px}
 
-/* Plan4Me — kasa çip seçici */
-.p4-secici{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+/* Plan4Me — ders geliri etiketi (toggle yerine) */
+.rozet-ders{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--yesil-acik);
+  color:var(--yesil-para);font-weight:800;font-size:13.5px;border:1px solid color-mix(in srgb,var(--yesil) 22%,var(--kenar));
+  border-radius:12px;padding:10px;margin-bottom:14px}
 
 /* Ortaklar sayfası — kompakt 2 sütunlu kart ızgarası */
 .ort-ust{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
