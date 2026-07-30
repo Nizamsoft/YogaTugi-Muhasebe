@@ -181,7 +181,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '51';
+const APP_SURUM = '52';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -327,7 +327,7 @@ const HESAP_KARTLARI = [
   { id: 'hesap-gider', grup: 'Gelir · Gider · Ortak', ad: 'Giderler Hesabı', baslik: 'Giderler Hesabı',       ikon: '📉', aciklama: 'Giderleri kalem kalem', gizli: true },
   { id: 'hesap-gelir', grup: 'Gelir · Gider · Ortak', ad: 'Gelirler Hesabı', baslik: 'Gelirler Hesabı',       ikon: '📈', aciklama: 'Gelirleri kalem kalem', gizli: true },
   { id: 'hesap-ortak', grup: 'Gelir · Gider · Ortak', ad: 'Ortaklar Hesabı', baslik: 'Ortaklar Hesabı',       ikon: '🤝', aciklama: 'Hak ediş ve ödemeler', gizli: true },
-  { id: 'plan4me',     grup: 'Müşteri & Planlama',    ad: 'Plan4Me',         baslik: 'Plan4Me Aktarımı',      ikon: '🧘', aciklama: 'Ders planı ve katılım' },
+  { id: 'plan4me',     grup: 'Müşteri & Planlama',    ad: 'Plan4Me',         baslik: 'Plan4Me — Ders Kayıtları', ikon: '🧘', aciklama: 'Ders gelirlerini gir' },
   { id: 'potansiyel',  grup: 'Müşteri & Planlama',    ad: 'Potansiyel Müşteriler', baslik: 'Potansiyel Müşteriler', ikon: '🌱', aciklama: 'İlgilenenleri takip et' },
 ];
 // Hesap kartları için şık çizim (line/duotone) ikonlar
@@ -816,10 +816,72 @@ SAYFALAR['banka-aktarim'] = () => aktarimSayfasi({
   baslik: 'Banka Aktarımı', hedefTip: 'banka', kaynak: 'banka',
   aciklama: 'Bankanızın ekstre/hesap hareketleri dosyasını (CSV veya Excel) yükleyin ya da manuel giriş yapın. Giriş (alacak) → gelir, çıkış (borç) → gider olarak işlenir.',
 });
-SAYFALAR['plan4me'] = () => aktarimSayfasi({
-  baslik: 'Plan4Me Aktarımı', hedefTip: 'kasa', kaynak: 'plan4me',
-  aciklama: 'Plan4Me ders kayıt raporunu yükleyin (otomatik) ya da tek tek ders gelirlerini manuel girin. Ders ücretleri gelir olarak işlenir.',
-});
+SAYFALAR['plan4me'] = () => plan4meSayfasi();
+
+/* Plan4Me — manuel ders kaydı (premium "Yeni Hareket" formuyla). Otomatik/dosya yok. */
+let _plan4meKasa = null;
+function plan4meFormAc(kasa) {
+  bankaHareketFormu(kasa.id, null, {
+    kaynak: 'plan4me', rozet: `🧘 ${kacar(kasa.ad)}`,
+    baslik: 'Yeni Ders Kaydı', baslikDuzenle: 'Ders Kaydı Düzenle', geri: () => plan4meSayfasi(),
+  });
+}
+function plan4meSayfasi() {
+  const kasalar = State.hesaplar.filter(h => h.tip === 'kasa');
+  if (_plan4meKasa && !kasalar.some(k => k.id === _plan4meKasa)) _plan4meKasa = null;
+  if (!_plan4meKasa && kasalar.length) _plan4meKasa = kasalar[0].id;
+
+  if (!kasalar.length) {
+    ic().innerHTML = `<div class="kart"><div class="banka-bos">
+      <div class="el">🧘</div><p>Ders gelirlerini girmek için önce bir <b>Kasa</b> oluşturun.</p>
+      <button class="btn btn-ana" id="p4Kasa" style="margin-top:12px">＋ Kasa Oluştur</button></div></div>`;
+    $('#p4Kasa').onclick = () => hesapEkleModal('kasa');
+    return;
+  }
+
+  const kasa = kasalar.find(k => k.id === _plan4meKasa);
+  const donem = donemStr(bugunISO());
+  const dersler = State.islemler
+    .filter(i => i.kaynak === 'plan4me' && i.tip === 'gelir' && i.odemeHesabiId === kasa.id && donemStr(i.tarih) === donem)
+    .slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '') || (Number(b.kayitNo) || 0) - (Number(a.kayitNo) || 0));
+  const toplam = dersler.reduce((s, i) => s + (Number(i.tutar) || 0), 0);
+
+  const secici = kasalar.length > 1
+    ? `<div class="p4-secici">${kasalar.map(k => `<button type="button" class="e-chip ${k.id === kasa.id ? 'sec' : ''}" data-kasa="${k.id}">${hesapMiniLogo(k)}<span>${kacar(k.ad)}</span></button>`).join('')}</div>`
+    : '';
+
+  const satirlar = dersler.map(i => {
+    const kat = State.hesaplar.find(h => h.id === i.kategoriId);
+    return `<button type="button" class="e-satir" data-hareket="${i.id}">
+      ${tarihBlok(i.tarih)}
+      <div class="e-ic">
+        <div class="e-l1"><span class="e-ack">${kacar(i.aciklama || (kat ? kat.ad : 'Ders'))}</span>
+          <span class="e-tut g">+${TL(i.tutar)}</span></div>
+        <span class="e-kat">${kacar(kat ? kat.ad : 'Ders Geliri')}</span>
+      </div>
+    </button>`;
+  }).join('');
+
+  ic().innerHTML = `
+    ${secici}
+    <div class="e-ozet">
+      <div class="e-ozet-sol">
+        <div class="k">🧘 ${kacar(kasa.ad)} · ${donemAdi(donem)} Ders Geliri</div>
+        <div class="v">${TL(toplam)}</div>
+        <div class="sd">${dersler.length} kayıt</div>
+      </div>
+      <button type="button" class="btn-yeni" id="p4Yeni">＋ Yeni Ders</button>
+    </div>
+    ${dersler.length === 0
+      ? `<div class="kart">${bosBlok('Bu ay ders kaydı yok. “＋ Yeni Ders” ile ekleyin.')}</div>`
+      : `<div class="e-liste">${satirlar}</div>`}`;
+
+  $$('[data-kasa]').forEach(b => b.onclick = () => { _plan4meKasa = b.dataset.kasa; plan4meSayfasi(); });
+  $('#p4Yeni').onclick = () => plan4meFormAc(kasa);
+  $$('[data-hareket]').forEach(r => r.onclick = () => bankaHareketFormu(kasa.id, State.islemler.find(i => i.id === r.dataset.hareket), {
+    kaynak: 'plan4me', rozet: `🧘 ${kacar(kasa.ad)}`, baslik: 'Yeni Ders Kaydı', baslikDuzenle: 'Ders Kaydı Düzenle', geri: () => plan4meSayfasi(),
+  }));
+}
 SAYFALAR['kk-aktarim'] = () => aktarimSayfasi({
   baslik: 'Kredi Kartı Aktarımı', hedefTip: 'krediKarti', kaynak: 'krediKarti',
   aciklama: 'Kredi kartı ekstre dosyanızı yükleyin. Harcamalar gider, iadeler/tahsilatlar gelir olarak işlenir.',
@@ -1442,10 +1504,14 @@ function yeniKalemModal(tur, sonra) {
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') kaydet(); });
 }
 
-/* Banka hareketi ekle / düzenle — muhasebe bilmeyen için basit: Giriş mi Çıkış mı */
-function bankaHareketFormu(bankaId, mevcut) {
+/* Banka hareketi ekle / düzenle — muhasebe bilmeyen için basit: Giriş mi Çıkış mı
+   opts ile Plan4Me gibi yerlerden yeniden kullanılabilir: {kaynak, rozet, baslik, baslikDuzenle, geri} */
+function bankaHareketFormu(bankaId, mevcut, opts = {}) {
   const banka = State.hesaplar.find(h => h.id === bankaId);
   if (!banka) return;
+  const kaynak = opts.kaynak || 'banka';
+  const rozet = opts.rozet || `🏦 ${kacar(banka.ad)}`;
+  const geri = opts.geri || (() => ekstreSayfasi(banka.tip));
   const gelirKalem = State.hesaplar.filter(h => h.tip === 'gelir');
   const giderKalem = State.hesaplar.filter(h => h.tip === 'gider');
   // Düzenlemede yön: gelir → giriş, diğer (gider/ortakOdeme) → çıkış
@@ -1475,7 +1541,7 @@ function bankaHareketFormu(bankaId, mevcut) {
 
   const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
     <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
-  modalAc(mevcut ? 'Hareketi Düzenle' : 'Yeni Hareket', govde, alt, `<span class="hr-rozet">🏦 ${kacar(banka.ad)}</span>`);
+  modalAc(mevcut ? (opts.baslikDuzenle || 'Hareketi Düzenle') : (opts.baslik || 'Yeni Hareket'), govde, alt, `<span class="hr-rozet">${rozet}</span>`);
 
   let yon = baslangicYon, _sonKalem = '';
   const kalemDoldur = (seciliId) => {
@@ -1512,7 +1578,7 @@ function bankaHareketFormu(bankaId, mevcut) {
     onayModal('Hareket silinsin mi?', `Kayıt No <b>#${mevcut.kayitNo || '—'}</b> — “${kacar(mevcut.aciklama || '')}” silinecek.`, async () => {
       await DB.sil('islemler', mevcut.id);
       State.islemler = State.islemler.filter(x => x.id !== mevcut.id);
-      bildir('Hareket silindi.', 'basari'); ekstreSayfasi(banka.tip);
+      bildir('Hareket silindi.', 'basari'); geri();
     });
   };
   $('#hrKaydet').onclick = async () => {
@@ -1529,7 +1595,7 @@ function bankaHareketFormu(bankaId, mevcut) {
       tarih: $('#hrTarih').value, tutar,
       tip: yon === 'giris' ? 'gelir' : 'gider',
       odemeHesabiId: banka.id, kategoriId: katId,
-      aciklama: $('#hrAciklama').value.trim(), kaynak: 'banka',
+      aciklama: $('#hrAciklama').value.trim(), kaynak,
     };
     if (mevcut) {
       await DB.guncelle('islemler', mevcut.id, veri);
@@ -1541,7 +1607,7 @@ function bankaHareketFormu(bankaId, mevcut) {
       State.islemler.unshift(y);
       bildir('Hareket eklendi.', 'basari');
     }
-    modalKapat(); ekstreSayfasi(banka.tip);
+    modalKapat(); geri();
   };
 }
 
