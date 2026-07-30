@@ -184,7 +184,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '55';
+const APP_SURUM = '56';
 const APP_SURUM_TARIH = '28 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -465,13 +465,19 @@ SAYFALAR.dashboard = function () {
 /* Ortak başına hesaplama: ders geliri, eşit gider payı, hak ediş */
 /* Müşteri ödemelerini derslere dağıt (FIFO: en eski ders önce kapanır).
    Döner: { [dersId]: ödenenTutar }  */
+/* Bir müşterinin toplam tahsilatı (kasa/banka gelir işlemleri 'tahsilat' + eski cari ödemeler) */
+function musteriTahsilat(mid) {
+  const isl = State.islemler.filter(i => i.kaynak === 'tahsilat' && i.musteriId === mid).reduce((s, i) => s + (Number(i.tutar) || 0), 0);
+  const leg = (State.odemeler || []).filter(o => o.musteriId === mid).reduce((s, o) => s + (Number(o.tutar) || 0), 0);
+  return isl + leg;
+}
 function dersOdemeDagit() {
   const sonuc = {};
   const grup = {};
   State.dersler.forEach(d => { (grup[d.musteriId] = grup[d.musteriId] || []).push(d); });
   Object.keys(grup).forEach(mid => {
     const dler = grup[mid].slice().sort((a, b) => (a.tarih || '').localeCompare(b.tarih || ''));
-    let bakiye = (State.odemeler || []).filter(o => o.musteriId === mid).reduce((s, o) => s + (Number(o.tutar) || 0), 0);
+    let bakiye = musteriTahsilat(mid);
     dler.forEach(d => {
       const u = Number(d.ucret) || 0;
       const odenen = Math.max(0, Math.min(bakiye, u));
@@ -855,12 +861,13 @@ function plan4meSayfasi() {
   const satirlar = dersler.map(d => {
     const eg = State.ortaklar.find(o => o.id === d.egitmenId);
     const mu = State.musteriler.find(m => m.id === d.musteriId);
+    const turEt = d.tur === 'ozel' ? '🧘 Özel' : '👥 Grup';
     return `<button type="button" class="e-satir" data-ders="${d.id}">
       ${tarihBlok(d.tarih)}
       <div class="e-ic">
         <div class="e-l1"><span class="e-ack">${kacar(mu ? mu.ad : 'Müşteri')}</span>
           <span class="e-tut g">${TL(d.ucret)}</span></div>
-        <div class="e-l2"><span class="e-bk">🧘 ${kacar(eg ? eg.ad : 'Eğitmen')}</span>
+        <div class="e-l2"><span class="e-bk">🧘 ${kacar(eg ? eg.ad : 'Eğitmen')} · ${turEt}</span>
           <span>${kacar(d.aciklama || '')}</span></div>
       </div>
     </button>`;
@@ -883,8 +890,11 @@ function plan4meSayfasi() {
   $$('[data-ders]').forEach(r => r.onclick = () => dersKaydiFormu(State.dersler.find(d => d.id === r.dataset.ders)));
 }
 
-/* Ders kaydı formu — premium tarz; para/toggle yok, Eğitmen + Müşteri + Ücret (cari) */
-function dersKaydiFormu(mevcut) {
+/* Ders kaydı formu — premium tarz; para/toggle yok, Grup/Özel + Eğitmen + Müşteri + Ücret (cari)
+   opts: {onMusteri, geri} — Müşteriler'den açınca müşteri önceden seçili gelir, kaydedince geri()'ye döner */
+function dersKaydiFormu(mevcut, opts = {}) {
+  const geri = opts.geri || (() => plan4meSayfasi());
+  let tur = mevcut ? (mevcut.tur || 'grup') : 'grup';
   const egitmenSecenek = (sec) => `<option value="">— Eğitmen seç —</option>`
     + State.ortaklar.map(o => `<option value="${o.id}" ${sec === o.id ? 'selected' : ''}>${kacar(o.ad)}</option>`).join('')
     + `<option value="__yeni">➕ Yeni Eğitmen ekle…</option>`;
@@ -894,7 +904,10 @@ function dersKaydiFormu(mevcut) {
 
   const govde = `
     <div class="hr-form">
-      <div class="rozet-ders">⬇️ Ders Geliri · Cari (Alacak)</div>
+      <div class="yon-secim ders-tur">
+        <button type="button" class="yon-btn ${tur === 'grup' ? 'sec' : ''}" data-tur="grup">👥 Grup<small>Grup dersi</small></button>
+        <button type="button" class="yon-btn ${tur === 'ozel' ? 'sec' : ''}" data-tur="ozel">🧘 Özel<small>Birebir ders</small></button>
+      </div>
       <div class="hr-tutar" id="hrTutarKutu">
         <label for="hrTutar">Ücret</label>
         <input type="text" id="hrTutar" inputmode="decimal" autocomplete="off" placeholder="0,00 ₺">
@@ -908,17 +921,18 @@ function dersKaydiFormu(mevcut) {
     </div>`;
   const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
     <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
-  modalAc(mevcut ? 'Ders Kaydı Düzenle' : 'Yeni Ders Kaydı', govde, alt, `<span class="hr-rozet">🧘 Plan4Me</span>`);
+  modalAc(mevcut ? 'Ders Kaydı Düzenle' : 'Yeni Ders Kaydı', govde, alt, `<span class="hr-rozet">🧘 Ders</span>`);
 
-  let _sonEg = mevcut ? mevcut.egitmenId : '', _sonMu = mevcut ? mevcut.musteriId : '';
+  $$('.ders-tur .yon-btn').forEach(b => b.onclick = () => { tur = b.dataset.tur; $$('.ders-tur .yon-btn').forEach(x => x.classList.toggle('sec', x.dataset.tur === tur)); });
+
+  let _sonEg = mevcut ? mevcut.egitmenId : '', _sonMu = mevcut ? mevcut.musteriId : (opts.onMusteri || '');
   const egDoldur = (sec) => { const s = $('#dEgitmen'); s.innerHTML = egitmenSecenek(sec); s.value = (sec && State.ortaklar.some(o => o.id === sec)) ? sec : ''; _sonEg = s.value; };
   const muDoldur = (sec) => { const s = $('#dMusteri'); s.innerHTML = musteriSecenek(sec); s.value = (sec && State.musteriler.some(m => m.id === sec)) ? sec : ''; _sonMu = s.value; };
-  const ucretOner = (o) => { const inp = $('#hrTutar'); if (o && o.dersUcreti && !tutarSayi(inp.value)) inp.value = tutarBicimle(String(o.dersUcreti).replace('.', ',')); };
   egDoldur(_sonEg); muDoldur(_sonMu);
   $('#dEgitmen').onchange = () => {
     const v = $('#dEgitmen').value;
-    if (v === '__yeni') { $('#dEgitmen').value = _sonEg || ''; yeniEgitmenModal((yk) => { egDoldur(yk.id); ucretOner(yk); }); }
-    else { _sonEg = v; ucretOner(State.ortaklar.find(o => o.id === v)); }
+    if (v === '__yeni') { $('#dEgitmen').value = _sonEg || ''; yeniEgitmenModal((yk) => egDoldur(yk.id)); }
+    else { _sonEg = v; }
   };
   $('#dMusteri').onchange = () => {
     const v = $('#dMusteri').value;
@@ -934,7 +948,7 @@ function dersKaydiFormu(mevcut) {
     onayModal('Ders kaydı silinsin mi?', 'Bu işlem geri alınamaz.', async () => {
       await DB.sil('dersler', mevcut.id);
       State.dersler = State.dersler.filter(d => d.id !== mevcut.id);
-      bildir('Ders kaydı silindi.', 'basari'); plan4meSayfasi();
+      bildir('Ders kaydı silindi.', 'basari'); geri();
     });
   };
   $('#hrKaydet').onclick = async () => {
@@ -944,10 +958,10 @@ function dersKaydiFormu(mevcut) {
     if (!egitmenId) return bildir('Eğitmen seçin.', 'hata');
     const musteriId = $('#dMusteri').value;
     if (!musteriId) return bildir('Müşteri seçin.', 'hata');
-    const veri = { tarih: $('#hrTarih').value, egitmenId, musteriId, ucret, aciklama: $('#hrAciklama').value.trim() };
+    const veri = { tarih: $('#hrTarih').value, egitmenId, musteriId, ucret, tur, aciklama: $('#hrAciklama').value.trim() };
     if (mevcut) { await DB.guncelle('dersler', mevcut.id, veri); Object.assign(mevcut, veri); bildir('Ders güncellendi.', 'basari'); }
     else { const y = await DB.ekle('dersler', veri); State.dersler.unshift(y); bildir('Ders kaydedildi.', 'basari'); }
-    modalKapat(); plan4meSayfasi();
+    modalKapat(); geri();
   };
 }
 
@@ -1012,7 +1026,7 @@ SAYFALAR['musteriler'] = () => musterilerSayfasi();
 function musteriCari(mid) {
   const dler = State.dersler.filter(d => d.musteriId === mid);
   const bedel = dler.reduce((s, d) => s + (Number(d.ucret) || 0), 0);
-  const odenen = (State.odemeler || []).filter(o => o.musteriId === mid).reduce((s, o) => s + (Number(o.tutar) || 0), 0);
+  const odenen = musteriTahsilat(mid);
   return { adet: dler.length, bedel, odenen, borc: bedel - odenen };
 }
 
@@ -1030,7 +1044,8 @@ function musterilerSayfasi() {
       <div class="ort-mrow"><span class="l">Aldığı Ders</span><span class="v">${c.adet}</span></div>
       <div class="ort-mrow"><span class="l">Ödediği</span><span class="v g">${TL(c.odenen)}</span></div>
       <div class="ort-mrow ort-net"><span class="l">Kalan Borç</span><span class="v ${c.borc > 0 ? 'r' : 'g'}">${TL(c.borc)}</span></div>
-      <button type="button" class="mus-ode" data-mode="${m.id}">＋ Ödeme Ekle</button>
+      <button type="button" class="mus-ode" data-mders="${m.id}">＋ Ders Ekle</button>
+      <button type="button" class="mus-tah" data-mtah="${m.id}">💵 Tahsilat Al</button>
     </div>`;
   }).join('');
   ic().innerHTML = `
@@ -1047,7 +1062,8 @@ function musterilerSayfasi() {
     await DB.sil('musteriler', b.dataset.msil); State.musteriler = State.musteriler.filter(m => m.id !== b.dataset.msil);
     bildir('Silindi.', 'basari'); musterilerSayfasi();
   }));
-  $$('[data-mode]').forEach(b => b.onclick = () => musteriOdemeFormu(b.dataset.mode));
+  $$('[data-mders]').forEach(b => b.onclick = () => dersKaydiFormu(null, { onMusteri: b.dataset.mders, geri: () => musterilerSayfasi() }));
+  $$('[data-mtah]').forEach(b => b.onclick = () => tahsilatFormu(b.dataset.mtah));
 }
 
 function musteriFormu(mevcut) {
@@ -1068,39 +1084,50 @@ function musteriFormu(mevcut) {
   };
 }
 
-function musteriOdemeFormu(musteriId, mevcut) {
+/* "Ders Geliri" gelir kalemini bul/oluştur (tahsilatlar bu kaleme yazılır) */
+async function dersGeliriKalemId() {
+  let k = State.hesaplar.find(h => h.tip === 'gelir' && h.ad === 'Ders Geliri');
+  if (!k) { k = await DB.ekle('hesaplar', { ad: 'Ders Geliri', tip: 'gelir', aktif: true }); State.hesaplar.push(k); }
+  return k.id;
+}
+
+/* Tahsilat — müşteriden para al; seçilen KASA/BANKA hesabına gelir olarak işlenir, cari borcu düşer */
+function tahsilatFormu(musteriId) {
   const m = State.musteriler.find(x => x.id === musteriId);
   if (!m) return;
   const c = musteriCari(musteriId);
+  const hesaplar = State.hesaplar.filter(h => h.tip === 'kasa' || h.tip === 'banka');
+  if (!hesaplar.length) {
+    return onayModal('Tahsilat hesabı yok', 'Tahsilatı almak için önce bir <b>Kasa</b> veya <b>Banka</b> hesabı gerekir. Şimdi Kasa oluşturulsun mu?', () => hesapEkleModal('kasa'));
+  }
+  const hesapSecenek = hesaplar.map(h => `<option value="${h.id}">${HESAP_TIPLERI[h.tip].ikon} ${kacar(h.ad)}</option>`).join('');
   const govde = `
     <div class="hr-form">
       <div class="rozet-ders">💵 Tahsilat · Kalan borç ${TL(c.borc)}</div>
       <div class="hr-tutar" id="hrTutarKutu"><label for="hrTutar">Tutar</label>
         <input type="text" id="hrTutar" inputmode="decimal" autocomplete="off" placeholder="0,00 ₺"></div>
       <div class="hr-grup">
-        <div class="hr-satir hr-tarih-satir"><label>Tarih</label><span class="hr-deger" id="hrTarihGos">${fmtTarihUzun(mevcut ? mevcut.tarih : '')}</span><input type="date" id="hrTarih" aria-label="Tarih" value="${mevcut ? (mevcut.tarih || bugunISO()).slice(0,10) : bugunISO()}"></div>
-        <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Nakit ödeme"></div>
+        <div class="hr-satir sel"><label for="tHesap">Tahsilat Hesabı</label><select id="tHesap">${hesapSecenek}</select></div>
+        <div class="hr-satir hr-tarih-satir"><label>Tarih</label><span class="hr-deger" id="hrTarihGos">${fmtTarihUzun('')}</span><input type="date" id="hrTarih" aria-label="Tarih" value="${bugunISO()}"></div>
+        <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" placeholder="Örn. Nakit tahsilat"></div>
       </div>
     </div>`;
-  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}<button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
-  modalAc(mevcut ? 'Ödeme Düzenle' : 'Ödeme Ekle', govde, alt, `<span class="hr-rozet">👥 ${kacar(m.ad)}</span>`);
-  tutarKutusuBagla($('#hrTutar'), mevcut ? mevcut.tutar : '');
+  modalAc('Tahsilat Al', govde, `<button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`, `<span class="hr-rozet">👥 ${kacar(m.ad)}</span>`);
+  tutarKutusuBagla($('#hrTutar'), '');
   tarihGostergeBagla();
   $('#hrIptal').onclick = modalKapat;
-  if ($('#hrSil')) $('#hrSil').onclick = () => {
-    modalKapat();
-    onayModal('Ödeme silinsin mi?', 'Bu işlem geri alınamaz.', async () => {
-      await DB.sil('odemeler', mevcut.id); State.odemeler = State.odemeler.filter(o => o.id !== mevcut.id);
-      bildir('Ödeme silindi.', 'basari'); musterilerSayfasi();
-    });
-  };
   $('#hrKaydet').onclick = async () => {
     const tutar = tutarSayi($('#hrTutar').value);
     if (!tutar || tutar <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
-    const veri = { musteriId, tarih: $('#hrTarih').value, tutar, aciklama: $('#hrAciklama').value.trim() };
-    if (mevcut) { await DB.guncelle('odemeler', mevcut.id, veri); Object.assign(mevcut, veri); bildir('Ödeme güncellendi.', 'basari'); }
-    else { const y = await DB.ekle('odemeler', veri); State.odemeler.unshift(y); bildir('Ödeme kaydedildi.', 'basari'); }
-    modalKapat(); musterilerSayfasi();
+    const hesapId = $('#tHesap').value;
+    if (!hesapId) return bildir('Tahsilat hesabı seçin.', 'hata');
+    const veri = {
+      tarih: $('#hrTarih').value, tutar, tip: 'gelir', odemeHesabiId: hesapId,
+      kategoriId: await dersGeliriKalemId(), musteriId, kaynak: 'tahsilat',
+      aciklama: $('#hrAciklama').value.trim() || ('Tahsilat · ' + m.ad), kayitNo: sonrakiKayitNo(),
+    };
+    const y = await DB.ekle('islemler', veri); State.islemler.unshift(y);
+    modalKapat(); bildir('Tahsilat kaydedildi.', 'basari'); musterilerSayfasi();
   };
 }
 

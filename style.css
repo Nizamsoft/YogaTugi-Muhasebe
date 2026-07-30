@@ -870,10 +870,17 @@ body.tema-koyu .hr-tarih-satir input[type="date"]{color-scheme:dark}
 .ort-mrow.ort-net{border-top:2px solid var(--kenar-koyu);margin-top:2px;padding-top:8px}
 .ort-mrow.ort-net .l{color:var(--metin);font-weight:800}
 .ort-mrow.ort-net .v{font-size:14px}
-/* Müşteri kartı — Ödeme Ekle butonu */
-.mus-ode{width:100%;margin-top:10px;border:1px solid var(--yesil);background:var(--yesil-acik);color:var(--yesil-koyu);
-  font-family:inherit;font-weight:800;font-size:12.5px;border-radius:10px;padding:9px;cursor:pointer}
-.mus-ode:hover{filter:brightness(1.03)}
+/* Müşteri kartı — Ders Ekle (ana) + Tahsilat (ikincil) butonları */
+.mus-ode{width:100%;margin-top:10px;border:none;background:linear-gradient(135deg,var(--yesil),var(--yesil-koyu));color:#fff;
+  font-family:inherit;font-weight:800;font-size:12.5px;border-radius:10px;padding:9px;cursor:pointer;
+  box-shadow:0 6px 12px -6px rgba(79,116,82,.5)}
+.mus-ode:hover{filter:brightness(1.05)}
+.mus-tah{width:100%;margin-top:7px;border:1px solid var(--kenar-koyu);background:var(--kart);color:var(--yesil-koyu);
+  font-family:inherit;font-weight:800;font-size:12.5px;border-radius:10px;padding:8px;cursor:pointer}
+.mus-tah:hover{border-color:var(--yesil);background:var(--yesil-acik)}
+/* Ders türü (Grup/Özel) — seçili yeşil */
+.ders-tur .yon-btn.sec{border-color:var(--yesil-para);background:#e6f4ec;color:var(--yesil-para)}
+.ders-tur .yon-btn.sec small{color:var(--yesil-para)}
 
 /* Ortak formu — kompakt, gruplu */
 .of-foto-satir{display:flex;align-items:center;gap:14px;margin-bottom:15px}
