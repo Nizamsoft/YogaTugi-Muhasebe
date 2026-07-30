@@ -865,6 +865,15 @@ body.tema-koyu .hr-tarih-satir input[type="date"]{color-scheme:dark}
 .ort-mrow .v{font-weight:800;font-variant-numeric:tabular-nums}
 .ort-mrow .v.g{color:var(--yesil-para)}
 .ort-mrow .v.r{color:var(--kirmizi)}
+.ort-mrow .v.a{color:var(--gold)}
+/* Net Kar / Kalan Borç — vurgulu alt satır */
+.ort-mrow.ort-net{border-top:2px solid var(--kenar-koyu);margin-top:2px;padding-top:8px}
+.ort-mrow.ort-net .l{color:var(--metin);font-weight:800}
+.ort-mrow.ort-net .v{font-size:14px}
+/* Müşteri kartı — Ödeme Ekle butonu */
+.mus-ode{width:100%;margin-top:10px;border:1px solid var(--yesil);background:var(--yesil-acik);color:var(--yesil-koyu);
+  font-family:inherit;font-weight:800;font-size:12.5px;border-radius:10px;padding:9px;cursor:pointer}
+.mus-ode:hover{filter:brightness(1.03)}
 
 /* Ortak formu — kompakt, gruplu */
 .of-foto-satir{display:flex;align-items:center;gap:14px;margin-bottom:15px}
