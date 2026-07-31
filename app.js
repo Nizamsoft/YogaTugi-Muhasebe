@@ -184,8 +184,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '57';
-const APP_SURUM_TARIH = '30 Tem 2026';
+const APP_SURUM = '58';
+const APP_SURUM_TARIH = '31 Tem 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return (State.kullanici && State.kullanici.ad) === SABIT_ADMIN.kullanici; }
@@ -879,6 +879,7 @@ function plan4meSayfasi() {
   }).join('');
 
   ic().innerHTML = `
+    ${hesapGeriHTML()}
     <div class="e-ozet">
       <div class="e-ozet-sol">
         <div class="k">🧘 ${donemAdi(donem)} · Ders Kayıtları (Cari)</div>
@@ -1059,6 +1060,7 @@ function musterilerSayfasi() {
     </div>`;
   }).join('');
   ic().innerHTML = `
+    ${hesapGeriHTML()}
     <div class="ort-ust">
       <span class="ort-ay">👥 ${list.length} müşteri</span>
       <button class="btn btn-ana" id="musEkle">＋ Yeni Müşteri</button>
