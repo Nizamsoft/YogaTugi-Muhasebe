@@ -451,7 +451,11 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .ortakkart{background:var(--kart);border:1px solid var(--kenar);border-radius:var(--radius);box-shadow:var(--golge);overflow:hidden;margin-top:18px}
 .ortakkart .ok-head{padding:16px 20px 14px;border-bottom:1px solid var(--kenar);display:flex;align-items:center;justify-content:space-between}
 .ortakkart .ok-head h3{font-size:17px;margin:0}
-.ortakkart .ok-head .dn{font-size:12.5px;color:var(--metin-soluk);font-weight:600}
+.ortakkart .ok-head .dn{font-size:12.5px;color:var(--metin-soluk);font-weight:700;min-width:96px;text-align:center}
+.ortakkart .ok-donem{display:flex;align-items:center;gap:8px}
+.ortakkart .ok-ok{width:30px;height:30px;border-radius:9px;border:1px solid var(--kenar);background:var(--kart);
+  font-size:17px;line-height:1;color:var(--yesil-koyu);cursor:pointer;display:grid;place-items:center}
+.ortakkart .ok-ok:hover{border-color:var(--yesil);background:var(--yesil-acik)}
 .ortakkart .bolme{display:flex;align-items:center;gap:15px;padding:17px 20px;border-bottom:1px solid var(--kenar)}
 .ortakkart .bolme:nth-child(even){background:rgba(111,154,114,.05)}
 .ortakkart .av{width:54px;height:54px;border-radius:50%;flex-shrink:0;overflow:hidden;

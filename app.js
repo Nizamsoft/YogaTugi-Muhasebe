@@ -200,7 +200,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '59';
+const APP_SURUM = '60';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -478,10 +478,14 @@ SAYFALAR.dashboard = function () {
       </div>
     </div>
 
-    ${ortakKartHTML(donem)}
+    ${ortakKartHTML(_okDonem || donem)}
   `;
   $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
+  const okD = _okDonem || donem;
+  if ($('#okGeri')) $('#okGeri').onclick = () => { _okDonem = donemKaydir(okD, -1); SAYFALAR.dashboard(); };
+  if ($('#okIleri')) $('#okIleri').onclick = () => { _okDonem = donemKaydir(okD, +1); SAYFALAR.dashboard(); };
 };
+let _okDonem = null;   // Dashboard "Ortak Hak Edişleri" kartında görüntülenen dönem
 
 /* Ortak başına hesaplama: ders geliri, eşit gider payı, hak ediş */
 /* Müşteri ödemelerini derslere dağıt (FIFO: en eski ders önce kapanır).
@@ -532,7 +536,10 @@ function ortakKartHTML(donem) {
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   return `
   <div class="ortakkart">
-    <div class="ok-head"><h3>🤝 Ortak Hak Edişleri</h3><span class="dn">${donemAdi(donem)}</span></div>
+    <div class="ok-head"><h3>🤝 Ortak Hak Edişleri</h3>
+      <div class="ok-donem"><button type="button" class="ok-ok" id="okGeri" title="Önceki ay">‹</button>
+      <span class="dn">${donemAdi(donem)}</span>
+      <button type="button" class="ok-ok" id="okIleri" title="Sonraki ay">›</button></div></div>
     ${rows.length === 0
       ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Pay Oranı”ndan ekleyin.')
       : rows.map((r, i) => {
