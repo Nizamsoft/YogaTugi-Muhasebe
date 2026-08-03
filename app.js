@@ -93,6 +93,22 @@ function donemAdi(donem) {
   return `${aylar[parseInt(m, 10) - 1]} ${y}`;
 }
 function kacar(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+/* Dönemi (YYYY-MM) n ay kaydır */
+function donemKaydir(donem, n) {
+  let [y, m] = donem.split('-').map(Number);
+  m += n;
+  while (m < 1) { m += 12; y--; }
+  while (m > 12) { m -= 12; y++; }
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+/* Kısa tarih: "2026-06-29" → "29.06" */
+function kisaTarih(iso) { return (iso && iso.length >= 10) ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}` : (iso ? fmtTarih(iso) : ''); }
+/* Türkçe başlık harfi: "burcu ÇOLAK" → "Burcu Çolak" */
+function baslikHarf(s) {
+  return String(s == null ? '' : s).trim().split(/\s+/).map(w =>
+    w ? w.charAt(0).toLocaleUpperCase('tr') + w.slice(1).toLocaleLowerCase('tr') : ''
+  ).join(' ');
+}
 
 function bildir(mesaj, tip = '') {
   const b = document.createElement('div');
@@ -184,8 +200,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '58';
-const APP_SURUM_TARIH = '31 Tem 2026';
+const APP_SURUM = '59';
+const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return (State.kullanici && State.kullanici.ad) === SABIT_ADMIN.kullanici; }
@@ -857,43 +873,204 @@ SAYFALAR['banka-aktarim'] = () => aktarimSayfasi({
 SAYFALAR['plan4me'] = () => plan4meSayfasi();
 
 /* Plan4Me — cari mantığıyla ders kaydı (kasa/para YOK). Eğitmen + Müşteri + ücret (alacak). */
+let _p4Donem = null;   // Plan4Me'de görüntülenen dönem (YYYY-MM); null = bu ay
+
 function plan4meSayfasi() {
-  const donem = donemStr(bugunISO());
+  const donem = _p4Donem || donemStr(bugunISO());
   const dersler = State.dersler.filter(d => donemStr(d.tarih) === donem)
     .slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || ''));
   const toplam = dersler.reduce((s, d) => s + (Number(d.ucret) || 0), 0);
+  const seansTop = dersler.reduce((s, d) => s + (Number(d.seans) || 0), 0);
 
   const satirlar = dersler.map(d => {
     const eg = State.ortaklar.find(o => o.id === d.egitmenId);
     const mu = State.musteriler.find(m => m.id === d.musteriId);
-    const turEt = d.tur === 'ozel' ? '🧘 Özel' : '👥 Grup';
+    const paketMi = d.tur === 'paket';
+    const turEt = paketMi ? `📦 ${d.seans || 0} seans` : (d.tur === 'ozel' ? '🧘 Özel' : '👥 Grup');
+    const alt = (paketMi && d.bitis) ? `${kisaTarih(d.baslangic)} → ${kisaTarih(d.bitis)}` : kacar(d.aciklama || '');
     return `<button type="button" class="e-satir" data-ders="${d.id}">
       ${tarihBlok(d.tarih)}
       <div class="e-ic">
         <div class="e-l1"><span class="e-ack">${kacar(mu ? mu.ad : 'Müşteri')}</span>
           <span class="e-tut g">${TL(d.ucret)}</span></div>
         <div class="e-l2"><span class="e-bk">🧘 ${kacar(eg ? eg.ad : 'Eğitmen')} · ${turEt}</span>
-          <span>${kacar(d.aciklama || '')}</span></div>
+          <span>${alt}</span></div>
       </div>
     </button>`;
   }).join('');
 
   ic().innerHTML = `
     ${hesapGeriHTML()}
+    <div class="p4-donem">
+      <button type="button" class="p4-ok" id="p4Geri" title="Önceki ay">‹</button>
+      <span class="p4-ay">${donemAdi(donem)}</span>
+      <button type="button" class="p4-ok" id="p4Ileri" title="Sonraki ay">›</button>
+    </div>
     <div class="e-ozet">
       <div class="e-ozet-sol">
-        <div class="k">🧘 ${donemAdi(donem)} · Ders Kayıtları (Cari)</div>
+        <div class="k">🧘 Ders / Paket Kayıtları (Cari)</div>
         <div class="v">${TL(toplam)}</div>
-        <div class="sd">${dersler.length} ders</div>
+        <div class="sd">${dersler.length} kayıt${seansTop ? ` · ${seansTop} seans` : ''}</div>
       </div>
-      <button type="button" class="btn-yeni" id="p4Yeni">＋ Yeni Ders</button>
+      <button type="button" class="btn-yeni" id="p4Yeni">＋ Yeni</button>
     </div>
+    <button type="button" class="p4-aktar" id="p4Aktar">📥 Excel'den Paket Aktar</button>
     ${dersler.length === 0
-      ? `<div class="kart">${bosBlok('Bu ay ders kaydı yok. “＋ Yeni Ders” ile ekleyin.')}</div>`
+      ? `<div class="kart">${bosBlok("Bu ay kayıt yok. “＋ Yeni” ile ekleyin ya da Excel'den aktarın.")}</div>`
       : `<div class="e-liste">${satirlar}</div>`}`;
 
+  $('#p4Geri').onclick = () => { _p4Donem = donemKaydir(donem, -1); plan4meSayfasi(); };
+  $('#p4Ileri').onclick = () => { _p4Donem = donemKaydir(donem, +1); plan4meSayfasi(); };
   $('#p4Yeni').onclick = () => dersKaydiFormu();
+  $('#p4Aktar').onclick = () => paketAktarModal();
   $$('[data-ders]').forEach(r => r.onclick = () => dersKaydiFormu(State.dersler.find(d => d.id === r.dataset.ders)));
+}
+
+/* ============ Excel'den paket satışı içe aktarma ============ */
+function paketAktarModal() {
+  const govde = `<div id="paGovde">
+    <div class="pa-drop" id="paDrop">
+      <div class="ic">📥</div>
+      <div class="t">Excel dosyasını seç</div>
+      <div class="s">.xlsx · “Satılan Paketler” tablosu</div>
+      <button type="button" class="pa-sec" id="paSecBtn">📂 Dosya Seç</button>
+      <input type="file" id="paDosya" accept=".xlsx,.xls" hidden>
+    </div></div>`;
+  modalAc('Excel\'den İçe Aktar', govde, `<button class="btn" id="paIptal">İptal</button>`, `<span class="hr-rozet">📄 Paket Satışları</span>`);
+  $('#paIptal').onclick = modalKapat;
+  const dosya = $('#paDosya');
+  $('#paSecBtn').onclick = (e) => { e.stopPropagation(); dosya.click(); };
+  $('#paDrop').onclick = () => dosya.click();
+  dosya.onchange = () => { if (dosya.files[0]) paketDosyaOku(dosya.files[0]); };
+}
+
+function paketDosyaOku(dosya) {
+  const g = $('#paGovde');
+  g.innerHTML = `<div class="yukleniyor"><div class="spinner"></div>Dosya okunuyor…</div>`;
+  if (typeof XLSX === 'undefined') { g.innerHTML = bosBlok('Excel okuma kütüphanesi yüklenmemiş.'); return; }
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const wb = XLSX.read(new Uint8Array(fr.result), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const satirlar = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+      paketOnizle(satirlar, dosya.name);
+    } catch (e) { g.innerHTML = bosBlok('Dosya okunamadı: ' + e.message); }
+  };
+  fr.readAsArrayBuffer(dosya);
+}
+
+function paketOnizle(satirlar, dosyaAd) {
+  const g = $('#paGovde');
+  const norm = (s) => String(s == null ? '' : s).trim().toLocaleLowerCase('tr');
+  const nrm = (s) => norm(s).replace(/\s+/g, ' ');   // isim eşleme anahtarı
+
+  // Başlık satırını bul (Üye + Tutar + Seans içeren satır)
+  let bi = -1;
+  for (let i = 0; i < satirlar.length; i++) {
+    const hs = (satirlar[i] || []).map(norm);
+    if (hs.some(x => x.includes('üye') || x.includes('uye') || x.includes('müşteri') || x.includes('musteri'))
+      && hs.some(x => x.includes('tutar')) && hs.some(x => x.includes('seans'))) { bi = i; break; }
+  }
+  if (bi < 0) { g.innerHTML = bosBlok('Beklenen sütunlar (Üye, Seans, Tutar) bulunamadı. Doğru dosyayı seçtiğinizden emin olun.'); return; }
+  const bas = satirlar[bi].map(norm);
+  const col = (keys) => bas.findIndex(b => keys.some(k => b.includes(k)));
+  const cTar = col(['tarih']), cEg = col(['eğitmen', 'egitmen']),
+    cUye = col(['üye', 'uye', 'müşteri', 'musteri']), cSns = col(['seans']),
+    cBas = col(['başlangıç', 'baslangic']), cBit = col(['bitiş', 'bitis']), cTut = col(['tutar']);
+
+  const ham = [];
+  for (let i = bi + 1; i < satirlar.length; i++) {
+    const r = satirlar[i] || [];
+    const uyeAd = String(r[cUye] == null ? '' : r[cUye]).trim();
+    if (!uyeAd || /toplam/i.test(uyeAd)) continue;
+    const ucret = paraCoz(r[cTut]);
+    const seans = parseInt(paraCoz(r[cSns]), 10) || 0;
+    if (ucret <= 0 && !seans) continue;
+    ham.push({
+      tarih: tarihNormalize(cTar >= 0 ? r[cTar] : '') || bugunISO(),
+      egitmenAd: baslikHarf(cEg >= 0 ? r[cEg] : ''),
+      musteriAd: baslikHarf(uyeAd),
+      seans, ucret,
+      baslangic: cBas >= 0 ? tarihNormalize(r[cBas]) : '',
+      bitis: cBit >= 0 ? tarihNormalize(r[cBit]) : '',
+    });
+  }
+  if (!ham.length) { g.innerHTML = bosBlok('Aktarılacak satır bulunamadı.'); return; }
+
+  // Mükerrer engelleme (daha önce Excel'den aktarılanlar)
+  const imza = (k) => `${k.tarih}|${nrm(k.musteriAd)}|${k.ucret}|${k.seans}`;
+  const mevcutImza = new Set(State.dersler.filter(d => d.kaynak === 'excel' && d.imzaId).map(d => d.imzaId));
+  const yeni = ham.filter(k => !mevcutImza.has(imza(k)));
+  const atlanan = ham.length - yeni.length;
+
+  // Eğitmen / müşteri eşleme
+  const egMap = new Map(State.ortaklar.map(o => [nrm(o.ad), o.id]));
+  const muMap = new Map(State.musteriler.map(m => [nrm(m.ad), m.id]));
+  const yeniEg = [...new Set(yeni.map(k => k.egitmenAd).filter(a => a && !egMap.has(nrm(a))))];
+  const yeniMu = [...new Set(yeni.map(k => k.musteriAd).filter(a => a && !muMap.has(nrm(a))))];
+  const egTop = new Set(yeni.map(k => nrm(k.egitmenAd)).filter(Boolean)).size;
+  const muTop = new Set(yeni.map(k => nrm(k.musteriAd)).filter(Boolean)).size;
+  const tutarTop = yeni.reduce((s, k) => s + k.ucret, 0);
+  const seansGenel = yeni.reduce((s, k) => s + k.seans, 0);
+
+  if (!yeni.length) {
+    g.innerHTML = bosBlok(`Bu dosyadaki ${ham.length} kaydın tamamı zaten içe aktarılmış. Yeni kayıt yok.`);
+    return;
+  }
+
+  const ornek = yeni.slice(0, 5).map(k => `<div class="pa-tr">
+    <span class="pa-c-tar">${kisaTarih(k.tarih)}</span>
+    <span class="pa-c-uye">${kacar(k.musteriAd)}</span>
+    <span class="pa-c-eg">${kacar(k.egitmenAd)}</span>
+    <span class="pa-c-se">${k.seans}</span>
+    <span class="pa-c-tut">${(Math.round(k.ucret)).toLocaleString('tr-TR')}</span>
+  </div>`).join('');
+
+  g.innerHTML = `
+    <div class="pa-ozet">
+      <div class="pa-oz"><div class="k">Paket kaydı</div><div class="v">${yeni.length}</div></div>
+      <div class="pa-oz"><div class="k">Toplam seans</div><div class="v">${seansGenel.toLocaleString('tr-TR')}</div></div>
+      <div class="pa-oz"><div class="k">Müşteri</div><div class="v">${muTop}${yeniMu.length ? ` <small>+${yeniMu.length} yeni</small>` : ''}</div></div>
+      <div class="pa-oz"><div class="k">Eğitmen</div><div class="v">${egTop}${yeniEg.length ? ` <small>+${yeniEg.length} yeni</small>` : ''}</div></div>
+      <div class="pa-oz tam"><div class="k">Toplam Tutar (cari borç olarak yazılır)</div><div class="v">${TL(tutarTop)}</div></div>
+    </div>
+    <div class="pa-uyari"><span>⚠️</span><span>Bu kayıtlar <b>açık borç</b> olarak eklenir; ödeme/tahsilat yazılmaz.${atlanan ? ` <b>${atlanan}</b> mükerrer satır atlandı.` : ''}</span></div>
+    <div class="pa-onbas">Örnek satırlar (ilk ${Math.min(5, yeni.length)})</div>
+    <div class="pa-tablo">
+      <div class="pa-tr bas"><span class="pa-c-tar">Tarih</span><span class="pa-c-uye">Müşteri</span><span class="pa-c-eg">Eğitmen</span><span class="pa-c-se">Sns</span><span class="pa-c-tut">Tutar</span></div>
+      ${ornek}
+      ${yeni.length > 5 ? `<div class="pa-daha">… ${yeni.length - 5} kayıt daha</div>` : ''}
+    </div>`;
+
+  // Alt butonu güncelle: İçe Aktar
+  const alt = $('#modalKap .modal-alt') || document.querySelector('.modal-alt');
+  if (alt) alt.innerHTML = `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="paAktar">✓ İçe Aktar (${yeni.length})</button>`;
+  $('#paIptal').onclick = modalKapat;
+  $('#paAktar').onclick = async () => {
+    const btn = $('#paAktar'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
+    for (const ad of yeniEg) {
+      const o = await DB.ekle('ortaklar', { ad, dersUcreti: 0, payOrani: 0, aktif: true, foto: null });
+      State.ortaklar.push(o); egMap.set(nrm(ad), o.id);
+    }
+    for (const ad of yeniMu) {
+      const m = await DB.ekle('musteriler', { ad, telefon: '' });
+      State.musteriler.push(m); muMap.set(nrm(ad), m.id);
+    }
+    const kayitlar = yeni.map(k => ({
+      tarih: k.tarih, egitmenId: egMap.get(nrm(k.egitmenAd)) || null, musteriId: muMap.get(nrm(k.musteriAd)) || null,
+      ucret: k.ucret, tur: 'paket', seans: k.seans, baslangic: k.baslangic, bitis: k.bitis,
+      aciklama: '', kaynak: 'excel', imzaId: imza(k),
+    }));
+    const eklenen = await DB.topluEkle('dersler', kayitlar);
+    State.dersler = eklenen.concat(State.dersler);
+    modalKapat();
+    bildir(`${eklenen.length} paket içe aktarıldı${atlanan ? `, ${atlanan} mükerrer atlandı` : ''}.`, 'basari');
+    // İçe aktarılan kayıtlar görünsün diye en erken kaydın dönemine geç
+    const enErken = eklenen.map(k => k.tarih).filter(Boolean).sort()[0];
+    if (enErken) _p4Donem = donemStr(enErken);
+    plan4meSayfasi();
+  };
 }
 
 /* Ders kaydı formu — premium tarz; para/toggle yok, Grup/Özel + Eğitmen + Müşteri + Ücret (cari)
@@ -1032,8 +1209,9 @@ SAYFALAR['musteriler'] = () => musterilerSayfasi();
 function musteriCari(mid) {
   const dler = State.dersler.filter(d => d.musteriId === mid);
   const bedel = dler.reduce((s, d) => s + (Number(d.ucret) || 0), 0);
+  const seans = dler.reduce((s, d) => s + (Number(d.seans) || 0), 0);
   const odenen = musteriTahsilat(mid);
-  return { adet: dler.length, bedel, odenen, borc: bedel - odenen };
+  return { adet: dler.length, seans, bedel, odenen, borc: bedel - odenen };
 }
 
 function musterilerSayfasi() {
@@ -1046,7 +1224,7 @@ function musterilerSayfasi() {
       <div class="mus-foto ${renk[i % renk.length]}">${kacar(bas(m.ad))}</div>
       <div class="mus-kimlik">
         <div class="mus-ad">${kacar(m.ad)}</div>
-        <div class="mus-alt">${c.adet} ders · Ödediği ${TL(c.odenen)}</div>
+        <div class="mus-alt">${c.adet} kayıt${c.seans ? ` · ${c.seans} seans` : ''} · Öd. ${TL(c.odenen)}</div>
       </div>
       <div class="mus-borc">
         <span class="l">Kalan Borç</span>
