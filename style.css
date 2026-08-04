@@ -484,6 +484,11 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .ortakkart .he-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:16px}
 .ortakkart .he-kart{border:1px solid var(--kenar);border-radius:15px;background:var(--kart);overflow:hidden}
 .ortakkart .he-bas{display:flex;align-items:center;gap:11px;padding:13px 15px 12px;border-bottom:1px solid var(--gri)}
+.ortakkart .he-kim{flex:1;min-width:0}
+.ortakkart .he-arac{display:flex;gap:5px;margin-left:auto}
+.ortakkart .he-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--kenar);background:var(--gri);
+  font-size:12px;line-height:1;color:var(--metin-soluk);cursor:pointer;display:grid;place-items:center;padding:0}
+.ortakkart .he-btn:hover{border-color:var(--yesil);color:var(--yesil-koyu)}
 .ortakkart .he-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;flex:0 0 auto;overflow:hidden}
 .ortakkart .he-av img{width:100%;height:100%;object-fit:cover}
 .ortakkart .he-av.g{background:linear-gradient(135deg,#7ba97e,#4f7452)}

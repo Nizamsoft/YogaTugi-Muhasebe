@@ -200,11 +200,13 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '64';
+const APP_SURUM = '65';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
-function adminMi() { return (State.kullanici && State.kullanici.ad) === SABIT_ADMIN.kullanici; }
+function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
+/* Giriş yapan kullanıcı bir ortaksa onun id'si; admin/eşleşmeyen için null */
+function aktifOrtakId() { return (State.kullanici && State.kullanici.ortakId) || null; }
 
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
@@ -374,9 +376,11 @@ function hesapIkonSVG(renk) {
 
 function menuCiz() {
   const nav = $('#anaMenu');
+  const sadeceOrtak = !adminMi();   // ortak girişi: yalnızca Panel + Ortaklar
   let html = '';
   for (const m of MENU) {
     if (m.gizli) continue;
+    if (sadeceOrtak && !(m.id === 'dashboard' || m.id === 'hesap-ortak')) continue;
     if (m.grup) {
       const ogeler = m.ogeler.filter(o => !o.gizli && (!o.sadeceAdmin || adminMi()));
       if (!ogeler.length) continue;
@@ -531,38 +535,46 @@ function ortakHesapla(donem) {
   });
 }
 
-/* Dashboard: tek büyük "Ortak Hak Edişleri" kartı (4 dikey bölme) */
-function ortakKartHTML(donem) {
-  const rows = ortakHesapla(donem);
-  const toplamHE = rows.reduce((s, r) => s + r.hakEdis, 0);
+/* Bir ortağın "fiş" kartı (dashboard + Ortaklar sayfası ortak kullanır) */
+function ortakFisKartHTML(r, i, duzenlenebilir) {
   const avSinif = ['g', 'b', 'p', 'a'];
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   const eksi = (n) => n ? `−${TL(n)}` : TL(0);
+  const av = r.o.foto
+    ? `<div class="he-av"><img src="${r.o.foto}" alt="${kacar(r.o.ad)}"></div>`
+    : `<div class="he-av ${avSinif[i % 4]}">${kacar(bas(r.o.ad))}</div>`;
+  const arac = duzenlenebilir
+    ? `<div class="he-arac"><button type="button" class="he-btn" data-duzenle="${r.o.id}" title="Düzenle">✎</button><button type="button" class="he-btn" data-sil="${r.o.id}" title="Sil">🗑️</button></div>`
+    : '';
+  return `<div class="he-kart">
+    <div class="he-bas">${av}<div class="he-kim"><div class="isim">${kacar(r.o.ad)}</div><div class="rol">Eğitmen</div></div>${arac}</div>
+    <div class="he-satirlar">
+      <div class="sr info"><span class="et"><span class="ik">📦</span>Satılan Paket</span><span class="tt">${TL(r.dersGeliri)}</span></div>
+      <div class="sr"><span class="et"><span class="ik">✅</span>Tahsil Edilen</span><span class="tt green">${TL(r.tahsil)}</span></div>
+      <div class="sr"><span class="et"><span class="ik">🏦</span>Banka Komisyonu</span><span class="tt red">${eksi(r.bankaKomisyon)}</span></div>
+      <div class="sr info"><span class="et"><span class="ik">⏳</span>Kalan Alacak</span><span class="tt gold">${TL(r.alacak)}</span></div>
+      <div class="sr"><span class="et"><span class="ik">➗</span>Gider Payı</span><span class="tt red">${eksi(r.giderPayi)}</span></div>
+    </div>
+    <div class="he-sonuc"><span class="k">💰 Hak Ediş</span><span class="v"${r.hakEdis < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.hakEdis)}</span></div>
+  </div>`;
+}
+
+/* Dashboard: "Ortak Hak Edişleri" kartı. Ortak girişi varsa yalnızca kendi kartı. */
+function ortakKartHTML(donem) {
+  let rows = ortakHesapla(donem);
+  const benim = aktifOrtakId();
+  if (benim) rows = rows.filter(r => r.o.id === benim);
+  const toplamHE = rows.reduce((s, r) => s + r.hakEdis, 0);
   return `
   <div class="ortakkart">
-    <div class="ok-head"><h3>🤝 Ortak Hak Edişleri</h3>
+    <div class="ok-head"><h3>🤝 ${benim ? 'Hak Edişim' : 'Ortak Hak Edişleri'}</h3>
       <div class="ok-donem"><button type="button" class="ok-ok" id="okGeri" title="Önceki ay">‹</button>
       <span class="dn">${donemAdi(donem)}</span>
       <button type="button" class="ok-ok" id="okIleri" title="Sonraki ay">›</button></div></div>
     ${rows.length === 0
-      ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Pay Oranı”ndan ekleyin.')
-      : `<div class="he-izgara">${rows.map((r, i) => {
-          const av = r.o.foto
-            ? `<div class="he-av"><img src="${r.o.foto}" alt="${kacar(r.o.ad)}"></div>`
-            : `<div class="he-av ${avSinif[i % 4]}">${kacar(bas(r.o.ad))}</div>`;
-          return `<div class="he-kart">
-            <div class="he-bas">${av}<div><div class="isim">${kacar(r.o.ad)}</div><div class="rol">Eğitmen</div></div></div>
-            <div class="he-satirlar">
-              <div class="sr info"><span class="et"><span class="ik">📦</span>Satılan Paket</span><span class="tt">${TL(r.dersGeliri)}</span></div>
-              <div class="sr"><span class="et"><span class="ik">✅</span>Tahsil Edilen</span><span class="tt green">${TL(r.tahsil)}</span></div>
-              <div class="sr"><span class="et"><span class="ik">🏦</span>Banka Komisyonu</span><span class="tt red">${eksi(r.bankaKomisyon)}</span></div>
-              <div class="sr info"><span class="et"><span class="ik">⏳</span>Kalan Alacak</span><span class="tt gold">${TL(r.alacak)}</span></div>
-              <div class="sr"><span class="et"><span class="ik">➗</span>Gider Payı</span><span class="tt red">${eksi(r.giderPayi)}</span></div>
-            </div>
-            <div class="he-sonuc"><span class="k">💰 Hak Ediş</span><span class="v"${r.hakEdis < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.hakEdis)}</span></div>
-          </div>`;
-        }).join('')}</div>
-        <div class="ok-foot"><span class="k">Toplam Hak Ediş</span><span class="v">${TL(toplamHE)}</span></div>`
+      ? bosBlok(benim ? 'Bu ay kaydınız yok. Aylar arasında gezinebilirsiniz.' : 'Henüz ortak yok. “Ayarlar → Ortak Pay Oranı”ndan ekleyin.')
+      : `<div class="he-izgara">${rows.map((r, i) => ortakFisKartHTML(r, i, false)).join('')}</div>
+        ${benim ? '' : `<div class="ok-foot"><span class="k">Toplam Hak Ediş</span><span class="v">${TL(toplamHE)}</span></div>`}`
     }
   </div>`;
 }
@@ -2455,49 +2467,32 @@ function islemTipAd(i) {
 }
 
 /* Ortaklar Hesabı — hak ediş vs ödenen */
-function ortakHesabiSayfasi() {
-  const donem = donemStr(bugunISO());
-  const list = State.ortaklar;
-  const aktifSayi = list.filter(o => o.aktif !== false).length;
-  const toplamGider = Hesapla.donemOzet(donem).gider;
-  const giderPayi = aktifSayi ? toplamGider / aktifSayi : 0;
-  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
-  const renk = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'];
-  const dagit = dersOdemeDagit();
+let _ortakDonem = null;   // Ortaklar Hesabı sayfasında görüntülenen dönem
 
-  const kartlar = list.map((o, i) => {
-    const dler = State.dersler.filter(d => d.egitmenId === o.id && donemStr(d.tarih) === donem);
-    const adet = dler.length;
-    const gelir = dler.reduce((s, d) => s + (dagit[d.id] || 0), 0);                          // tahsil edilen
-    const alacak = dler.reduce((s, d) => s + ((Number(d.ucret) || 0) - (dagit[d.id] || 0)), 0); // ödenmemiş
-    const gider = (o.aktif !== false) ? giderPayi : 0;
-    const netKar = gelir - gider;
-    const foto = o.foto
-      ? `<div class="ort-foto"><img src="${o.foto}" alt="${kacar(o.ad)}"></div>`
-      : `<div class="ort-foto ${renk[i % renk.length]}">${kacar(bas(o.ad))}</div>`;
-    return `<div class="ort-kart">
-      <div class="ort-arac"><button class="ort-btn" data-duzenle="${o.id}" title="Düzenle">✎</button><button class="ort-btn" data-sil="${o.id}" title="Sil">🗑️</button></div>
-      ${foto}
-      <div class="ort-ad">${kacar(o.ad)}</div>
-      <div class="ort-pay">%${sayi(o.payOrani || 0)} pay${o.aktif === false ? ' · pasif' : ''}</div>
-      <div class="ort-mrow"><span class="l">Ders</span><span class="v">${adet}</span></div>
-      <div class="ort-mrow"><span class="l">Alacağı</span><span class="v a">${TL(alacak)}</span></div>
-      <div class="ort-mrow"><span class="l">Gelir</span><span class="v g">${TL(gelir)}</span></div>
-      <div class="ort-mrow"><span class="l">Gider</span><span class="v r">−${TL(gider)}</span></div>
-      <div class="ort-mrow ort-net"><span class="l">Net Kar</span><span class="v ${netKar < 0 ? 'r' : 'g'}">${TL(netKar)}</span></div>
-    </div>`;
-  }).join('');
+function ortakHesabiSayfasi() {
+  const donem = _ortakDonem || donemStr(bugunISO());
+  const duzenlenebilir = adminMi();
+  let rows = ortakHesapla(donem);
+  const benim = aktifOrtakId();
+  if (benim) rows = rows.filter(r => r.o.id === benim);
 
   ic().innerHTML = `
+    ${duzenlenebilir ? hesapGeriHTML() : ''}
     <div class="ort-ust">
-      <span class="ort-ay">📅 ${donemAdi(donem)} · ${list.length} ortak</span>
-      <button class="btn btn-ana" id="ortEkle">＋ Ortak Ekle</button>
+      <div class="p4-donem" style="margin:0">
+        <button type="button" class="p4-ok" id="ortGeri" title="Önceki ay">‹</button>
+        <span class="p4-ay">${donemAdi(donem)}</span>
+        <button type="button" class="p4-ok" id="ortIleri" title="Sonraki ay">›</button>
+      </div>
+      ${duzenlenebilir ? '<button class="btn btn-ana" id="ortEkle">＋ Ortak Ekle</button>' : ''}
     </div>
-    ${list.length === 0
-      ? `<div class="kart">${bosBlok('Henüz ortak yok. “＋ Ortak Ekle” ile ekleyin.')}</div>`
-      : `<div class="ort-izgara">${kartlar}</div>`}`;
+    ${rows.length === 0
+      ? `<div class="kart">${bosBlok(benim ? 'Bu ay kaydınız yok.' : 'Henüz ortak yok. “＋ Ortak Ekle” ile ekleyin.')}</div>`
+      : `<div class="ortakkart" style="margin-top:0"><div class="he-izgara">${rows.map((r, i) => ortakFisKartHTML(r, i, duzenlenebilir)).join('')}</div></div>`}`;
 
-  $('#ortEkle').onclick = () => ortakFormu();
+  $('#ortGeri').onclick = () => { _ortakDonem = donemKaydir(donem, -1); ortakHesabiSayfasi(); };
+  $('#ortIleri').onclick = () => { _ortakDonem = donemKaydir(donem, +1); ortakHesabiSayfasi(); };
+  if ($('#ortEkle')) $('#ortEkle').onclick = () => ortakFormu();
   $$('[data-duzenle]').forEach(b => b.onclick = () => ortakFormu(State.ortaklar.find(o => o.id === b.dataset.duzenle)));
   $$('[data-sil]').forEach(b => b.onclick = () => onayModal('Ortak silinsin mi?', 'Bu işlem geri alınamaz.', async () => {
     await DB.sil('ortaklar', b.dataset.sil);
@@ -2741,6 +2736,13 @@ function ortakFormu(mevcut) {
         <div class="form-alan"><label>E-posta</label><input type="email" id="oEp" value="${mevcut?kacar(mevcut.eposta||''):''}" placeholder="ornek@..."></div>
       </div>
     </div>
+    <div class="of-grup">
+      <div class="of-grup-bas">🔑 Giriş Bilgileri <span style="font-weight:600;text-transform:none;letter-spacing:0;opacity:.75">— ortak girince sadece kendi panelini görür</span></div>
+      <div class="of-row2">
+        <div class="form-alan"><label>Kullanıcı Adı</label><input type="text" id="oGiris" autocomplete="off" value="${mevcut?kacar(mevcut.girisAd||''):''}" placeholder="ör. irem"></div>
+        <div class="form-alan"><label>Şifre</label><input type="password" id="oSifre" autocomplete="new-password" placeholder="${mevcut&&mevcut.sifreHash?'••••• (değiştirmek için yaz)':'Şifre belirle'}"></div>
+      </div>
+    </div>
     <div class="form-alan"><label>Durum</label>
       <div class="of-seg">
         <button type="button" class="of-seg-btn ${aktif?'on':''}" data-aktif="1">Aktif</button>
@@ -2768,8 +2770,19 @@ function ortakFormu(mevcut) {
   $('#oiKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
+    const girisAd = $('#oGiris').value.trim();
+    const sifre = $('#oSifre').value;
+    // Aynı kullanıcı adı başka ortakta veya admin'de olmasın
+    if (girisAd) {
+      if (girisAd.toLocaleLowerCase('tr') === SABIT_ADMIN.kullanici.toLocaleLowerCase('tr'))
+        return bildir('Bu kullanıcı adı yöneticiye ait, başka seçin.', 'hata');
+      if (State.ortaklar.some(o => o.id !== (mevcut && mevcut.id) && (o.girisAd || '').toLocaleLowerCase('tr') === girisAd.toLocaleLowerCase('tr')))
+        return bildir('Bu kullanıcı adı zaten kullanılıyor.', 'hata');
+    }
     const veri = { ad, dersUcreti: parseFloat($('#oUcret').value) || 0, payOrani: parseFloat($('#oPay').value) || 0,
-      telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif, foto: fotoData || null };
+      telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif, foto: fotoData || null, girisAd };
+    if (sifre) veri.sifreHash = await sifreHash(sifre);
+    else if (mevcut && mevcut.sifreHash) veri.sifreHash = mevcut.sifreHash;   // boş bırakılırsa mevcut şifre korunur
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); git(State.aktifSayfa || 'ayar-pay');
@@ -3266,9 +3279,10 @@ async function uygulamayiBaslat() {
   $('#uygulama').classList.remove('gizli');
   // Kullanıcı bilgisi
   const ep = State.kullanici?.email || 'yerel@yogatugi.com';
-  $('#kullaniciAd').textContent = State.kullanici?.ad || ep.split('@')[0];
-  $('#kullaniciRol').textContent = 'Yönetici';
-  $('#kullaniciRozet').textContent = (ep[0] || '?').toUpperCase();
+  const ad = State.kullanici?.ad || ep.split('@')[0];
+  $('#kullaniciAd').textContent = ad;
+  $('#kullaniciRol').textContent = adminMi() ? 'Yönetici' : 'Ortak';
+  $('#kullaniciRozet').textContent = (ad[0] || '?').toLocaleUpperCase('tr');
   await veriYukle();
   menuCiz();
   git('dashboard');
@@ -3346,8 +3360,16 @@ function girisKur() { girisGovdeCiz(); }
 
 function girisGovdeCiz() {
   const govde = $('#girisGovde');
-  // Daha önce girildiyse doğrudan aç (oturum hatırlanır)
-  if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }
+  // Daha önce girildiyse oturumu geri yükle (admin veya ortak)
+  const oturumRaw = localStorage.getItem('yt_oturum');
+  if (oturumRaw) {
+    try {
+      const o = JSON.parse(oturumRaw);
+      State.kullanici = { email: (o.ad || 'admin') + '@yogatugi', ad: o.ad, rol: o.rol || 'admin', ortakId: o.ortakId || null };
+      uygulamayiBaslat(); return;
+    } catch { /* bozuksa normal girişe düş */ }
+  }
+  if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }   // eski oturum → admin
   govde.innerHTML = `
     <label for="gKul">Kullanıcı Adı</label>
     <input type="text" id="gKul" placeholder="Admin" autocomplete="username">
@@ -3364,23 +3386,43 @@ async function girisDogrula() {
   const kul = ($('#gKul').value || '').trim();
   const sif = $('#gSif').value || '';
   const hata = $('#girisHata');
-  if (kul.toLocaleLowerCase('tr') !== SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) {
-    hata.textContent = 'Kullanıcı adı hatalı.'; return;
+  const kulLc = kul.toLocaleLowerCase('tr');
+  // 1) Admin
+  if (kulLc === SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) {
+    const h = await sifreHash(sif);
+    if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
+    return girisYap(SABIT_ADMIN.kullanici);
   }
+  // 2) Ortak girişi (kullanıcı adı + şifre ortak kaydında tanımlıysa)
+  const ortaklar = DB._oku('ortaklar');
+  const o = ortaklar.find(x => x.girisAd && x.sifreHash && x.girisAd.toLocaleLowerCase('tr') === kulLc);
+  if (!o) { hata.textContent = 'Kullanıcı adı hatalı.'; return; }
   const h = await sifreHash(sif);
-  if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
-  girisYap(SABIT_ADMIN.kullanici);
+  if (h !== o.sifreHash) { hata.textContent = 'Şifre hatalı.'; return; }
+  girisYapOrtak(o);
 }
 
 async function girisYap(ad) {
-  State.kullanici = { email: (ad || 'admin') + '@yogatugi', ad: ad || SABIT_ADMIN.kullanici };
-  localStorage.setItem('yt_girisYapildi', '1');
+  State.kullanici = { email: (ad || 'admin') + '@yogatugi', ad: ad || SABIT_ADMIN.kullanici, rol: 'admin', ortakId: null };
+  oturumSakla();
   await uygulamayiBaslat();
+}
+/* Ortak olarak giriş — dashboard'da yalnızca kendi kartını görür */
+async function girisYapOrtak(o) {
+  State.kullanici = { email: (o.girisAd || o.id) + '@yogatugi', ad: o.ad, rol: 'ortak', ortakId: o.id };
+  oturumSakla();
+  await uygulamayiBaslat();
+}
+function oturumSakla() {
+  const k = State.kullanici;
+  localStorage.setItem('yt_oturum', JSON.stringify({ ad: k.ad, rol: k.rol, ortakId: k.ortakId || null }));
+  localStorage.setItem('yt_girisYapildi', '1');   // geriye dönük uyumluluk
 }
 
 /* Çıkış, tema, mobil menü */
 function cikisYap() {
   localStorage.removeItem('yt_girisYapildi');
+  localStorage.removeItem('yt_oturum');
   State.kullanici = null;
   $('#uygulama').classList.add('gizli');
   $('#girisEkrani').classList.remove('gizli');
@@ -3441,7 +3483,10 @@ function altMenuAktifId(sayfa) {
 }
 function altMenuCiz() {
   const nav = $('#altMenu');
-  nav.innerHTML = ALT_MENU.map(m => {
+  const sadeceOrtak = !adminMi();   // ortak: yalnızca Ortaklar + Panel
+  nav.innerHTML = ALT_MENU
+    .filter(m => !sadeceOrtak || m.id === 'dashboard' || m.id === 'hesap-ortak')
+    .map(m => {
     const anahtar = m.tip === 'grup' ? m.grup : m.id;
     return `<button type="button" class="alt-oge${m.merkez ? ' merkez' : ''}" data-alt="${kacar(anahtar)}">
       <span class="ic">${m.ikon}</span><span class="tx">${kacar(m.ad)}</span></button>`;
