@@ -200,7 +200,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '60';
+const APP_SURUM = '61';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1221,17 +1221,36 @@ function musteriCari(mid) {
   return { adet: dler.length, seans, bedel, odenen, borc: bedel - odenen };
 }
 
+/* Müşterinin paket durumu: en geç bitiş tarihi bugüne eşit/ileri → 'devam', hepsi geçmişse → 'biten', paketsizse → 'yok' */
+function paketDurum(mid) {
+  const bitisler = State.dersler.filter(d => d.musteriId === mid).map(d => d.bitis).filter(Boolean).sort();
+  if (!bitisler.length) return 'yok';
+  return bitisler[bitisler.length - 1] >= bugunISO() ? 'devam' : 'biten';
+}
+
+let _musFiltre = { paket: 'tumu', borc: 'tumu' };
+
 function musterilerSayfasi() {
-  const list = State.musteriler;
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   const renk = ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'];
-  const satirlar = list.map((m, i) => {
-    const c = musteriCari(m.id);
-    return `<div class="mus-satir">
+
+  const hepsi = State.musteriler.map(m => ({ m, c: musteriCari(m.id), pd: paketDurum(m.id) }));
+  const nPaket = { tumu: hepsi.length, devam: hepsi.filter(x => x.pd === 'devam').length, biten: hepsi.filter(x => x.pd === 'biten').length };
+  const nBorc = { tumu: hepsi.length, borclu: hepsi.filter(x => x.c.borc > 0).length, odemis: hepsi.filter(x => x.c.borc <= 0).length };
+
+  const gosterilen = hepsi
+    .filter(x => (_musFiltre.paket === 'tumu' || x.pd === _musFiltre.paket)
+      && (_musFiltre.borc === 'tumu' || (_musFiltre.borc === 'borclu' ? x.c.borc > 0 : x.c.borc <= 0)))
+    .sort((a, b) => a.m.ad.localeCompare(b.m.ad, 'tr'));
+
+  const rozet = (pd) => pd === 'devam' ? '<span class="mus-rz dvm">📦 Devam</span>'
+    : pd === 'biten' ? '<span class="mus-rz bit">📦 Bitti</span>' : '';
+
+  const satirlar = gosterilen.map(({ m, c, pd }, i) => `<div class="mus-satir">
       <div class="mus-foto ${renk[i % renk.length]}">${kacar(bas(m.ad))}</div>
       <div class="mus-kimlik">
         <div class="mus-ad">${kacar(m.ad)}</div>
-        <div class="mus-alt">${c.adet} kayıt${c.seans ? ` · ${c.seans} seans` : ''} · Öd. ${TL(c.odenen)}</div>
+        <div class="mus-alt">${rozet(pd)}${c.seans ? `${c.seans} seans` : `${c.adet} kayıt`} · Öd. ${TL(c.odenen)}</div>
       </div>
       <div class="mus-borc">
         <span class="l">Kalan Borç</span>
@@ -1242,17 +1261,42 @@ function musterilerSayfasi() {
         <button class="mus-mini" data-mduzenle="${m.id}" title="Düzenle">✎</button>
         <button class="mus-mini" data-msil="${m.id}" title="Sil">🗑️</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
+
+  const opt = (deger, v, ad, n, kirmizi) =>
+    `<button type="button" class="${deger === v ? 'sec' + (kirmizi ? ' kirmizi' : '') : ''}" data-val="${v}">${ad}${n != null ? `<small>${n}</small>` : ''}</button>`;
+
   ic().innerHTML = `
     ${hesapGeriHTML()}
     <div class="ort-ust">
-      <span class="ort-ay">👥 ${list.length} müşteri</span>
+      <span class="ort-ay">👥 ${gosterilen.length} / ${hepsi.length} müşteri</span>
       <button class="btn btn-ana" id="musEkle">＋ Yeni Müşteri</button>
     </div>
-    ${list.length === 0
+    <div class="mus-filtre">
+      <div class="seg-grup"><span class="seg-et">Paket</span>
+        <div class="seg3d" data-seg="paket">
+          ${opt(_musFiltre.paket, 'tumu', 'Tümü')}
+          ${opt(_musFiltre.paket, 'devam', 'Devam Eden', nPaket.devam)}
+          ${opt(_musFiltre.paket, 'biten', 'Biten', nPaket.biten)}
+        </div>
+      </div>
+      <div class="seg-grup"><span class="seg-et">Borç</span>
+        <div class="seg3d" data-seg="borc">
+          ${opt(_musFiltre.borc, 'tumu', 'Tümü')}
+          ${opt(_musFiltre.borc, 'borclu', 'Borçlu', nBorc.borclu, true)}
+          ${opt(_musFiltre.borc, 'odemis', 'Borcu Biten', nBorc.odemis)}
+        </div>
+      </div>
+    </div>
+    ${hepsi.length === 0
       ? `<div class="kart">${bosBlok('Henüz müşteri yok. “＋ Yeni Müşteri” ile ekleyin (ders kaydında da eklenebilir).')}</div>`
-      : `<div class="mus-liste">${satirlar}</div>`}`;
+      : (gosterilen.length === 0
+        ? `<div class="kart">${bosBlok('Bu filtreye uygun müşteri yok.')}</div>`
+        : `<div class="mus-liste">${satirlar}</div>`)}`;
+
+  $$('.seg3d').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+    _musFiltre[seg.dataset.seg] = b.dataset.val; musterilerSayfasi();
+  }));
   $('#musEkle').onclick = () => musteriFormu();
   $$('[data-mduzenle]').forEach(b => b.onclick = () => musteriFormu(State.musteriler.find(m => m.id === b.dataset.mduzenle)));
   $$('[data-msil]').forEach(b => b.onclick = () => onayModal('Müşteri silinsin mi?', 'Müşterinin ders/ödeme kayıtları kalır ama sahipsiz görünebilir.', async () => {
