@@ -200,7 +200,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '63';
+const APP_SURUM = '64';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -325,6 +325,7 @@ const Hesapla = {
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
   { id: 'hesaplar', ad: 'Hesaplar', ikon: '🗂️', baslik: 'Hesaplar' },
+  { id: 'hesap-ortak', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar Hesabı' },
   { grup: 'Raporlar', ikon: '📊', ogeler: [
     { id: 'rapor-karzarar', ad: 'Kar / Zarar Raporu',    ikon: '⚖️', baslik: 'Kar / Zarar Raporu' },
     { id: 'rapor-hakedis',  ad: 'Ortak Hak Ediş',        ikon: '🥧', baslik: 'Ortak Hak Ediş Raporu' },
@@ -419,7 +420,8 @@ function git(sayfa) {
   const m = menuBul(sayfa) || { baslik: '—' };
   $('#sayfaBaslik').textContent = m.baslik;
   // Hesap kart sayfaları menüde tekil "Hesaplar" öğesini aktif tutar
-  const hesapKartMi = HESAP_KARTLARI.some(k => k.id === sayfa);
+  // (Ortaklar Hesabı'nın kenar menüde kendi öğesi var — hariç tut)
+  const hesapKartMi = HESAP_KARTLARI.some(k => k.id === sayfa) && sayfa !== 'hesap-ortak';
   const vurgulanan = hesapKartMi ? 'hesaplar' : sayfa;
   $$('.menu-oge').forEach(b => b.classList.toggle('aktif', b.dataset.sayfa === vurgulanan));
   // Aktif alt sayfanın grubunu aç, diğerlerini kapat (akordeon)
