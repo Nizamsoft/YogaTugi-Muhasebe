@@ -200,7 +200,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '61';
+const APP_SURUM = '62';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
