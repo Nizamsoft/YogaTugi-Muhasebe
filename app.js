@@ -200,7 +200,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '62';
+const APP_SURUM = '63';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -520,11 +520,12 @@ function ortakHesapla(donem) {
   return aktif.map(o => {
     const dler = State.dersler.filter(d => d.egitmenId === o.id && donemStr(d.tarih) === donem);
     const adet = dler.length;
-    const dersGeliri = dler.reduce((s, d) => s + (Number(d.ucret) || 0), 0);   // toplam ders bedeli
-    const tahsil = dler.reduce((s, d) => s + (dagit[d.id] || 0), 0);           // tahsil edilen (Gelir)
-    const alacak = dersGeliri - tahsil;                                        // ödenmemiş (Alacağı)
-    const netKar = tahsil - giderPayi;
-    return { o, adet, ucret: Number(o.dersUcreti) || 0, dersGeliri, tahsil, alacak, giderPayi, netKar, hakEdis: netKar };
+    const dersGeliri = dler.reduce((s, d) => s + (Number(d.ucret) || 0), 0);   // Satılan Paket Tutarı
+    const tahsil = dler.reduce((s, d) => s + (dagit[d.id] || 0), 0);           // Tahsil Edilen
+    const alacak = dersGeliri - tahsil;                                        // Kalan Alacak
+    const bankaKomisyon = 0;   // İleride: banka hareketleri dosyasından otomatik çekilecek
+    const netKar = tahsil - bankaKomisyon - giderPayi;                         // Hak Ediş
+    return { o, adet, ucret: Number(o.dersUcreti) || 0, dersGeliri, tahsil, alacak, bankaKomisyon, giderPayi, netKar, hakEdis: netKar };
   });
 }
 
@@ -532,8 +533,9 @@ function ortakHesapla(donem) {
 function ortakKartHTML(donem) {
   const rows = ortakHesapla(donem);
   const toplamHE = rows.reduce((s, r) => s + r.hakEdis, 0);
-  const avSinif = ['', 'g', 'b', 'p'];
+  const avSinif = ['g', 'b', 'p', 'a'];
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const eksi = (n) => n ? `−${TL(n)}` : TL(0);
   return `
   <div class="ortakkart">
     <div class="ok-head"><h3>🤝 Ortak Hak Edişleri</h3>
@@ -542,22 +544,23 @@ function ortakKartHTML(donem) {
       <button type="button" class="ok-ok" id="okIleri" title="Sonraki ay">›</button></div></div>
     ${rows.length === 0
       ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Pay Oranı”ndan ekleyin.')
-      : rows.map((r, i) => {
+      : `<div class="he-izgara">${rows.map((r, i) => {
           const av = r.o.foto
-            ? `<div class="av"><img src="${r.o.foto}" alt="${kacar(r.o.ad)}"></div>`
-            : `<div class="av ${avSinif[i % 4]}">${kacar(bas(r.o.ad))}</div>`;
-          return `<div class="bolme">
-            ${av}
-            <div class="mid">
-              <div class="ad">${kacar(r.o.ad)}</div>
-              <div class="sub"><b>${r.adet} ders</b> · ${TL(r.dersGeliri)}<br>
-                Gider payı: <span class="negatif">−${TL(r.giderPayi)}</span></div>
+            ? `<div class="he-av"><img src="${r.o.foto}" alt="${kacar(r.o.ad)}"></div>`
+            : `<div class="he-av ${avSinif[i % 4]}">${kacar(bas(r.o.ad))}</div>`;
+          return `<div class="he-kart">
+            <div class="he-bas">${av}<div><div class="isim">${kacar(r.o.ad)}</div><div class="rol">Eğitmen</div></div></div>
+            <div class="he-satirlar">
+              <div class="sr info"><span class="et"><span class="ik">📦</span>Satılan Paket</span><span class="tt">${TL(r.dersGeliri)}</span></div>
+              <div class="sr"><span class="et"><span class="ik">✅</span>Tahsil Edilen</span><span class="tt green">${TL(r.tahsil)}</span></div>
+              <div class="sr"><span class="et"><span class="ik">🏦</span>Banka Komisyonu</span><span class="tt red">${eksi(r.bankaKomisyon)}</span></div>
+              <div class="sr info"><span class="et"><span class="ik">⏳</span>Kalan Alacak</span><span class="tt gold">${TL(r.alacak)}</span></div>
+              <div class="sr"><span class="et"><span class="ik">➗</span>Gider Payı</span><span class="tt red">${eksi(r.giderPayi)}</span></div>
             </div>
-            <div class="he"><div class="k">HAK EDİŞ</div>
-              <div class="v"${r.hakEdis < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.hakEdis)}</div></div>
+            <div class="he-sonuc"><span class="k">💰 Hak Ediş</span><span class="v"${r.hakEdis < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.hakEdis)}</span></div>
           </div>`;
-        }).join('')
-        + `<div class="ok-foot"><span class="k">Toplam Hak Ediş</span><span class="v">${TL(toplamHE)}</span></div>`
+        }).join('')}</div>
+        <div class="ok-foot"><span class="k">Toplam Hak Ediş</span><span class="v">${TL(toplamHE)}</span></div>`
     }
   </div>`;
 }
