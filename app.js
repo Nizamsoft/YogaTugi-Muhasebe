@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '99';
+const APP_SURUM = '100';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '19:35';
+const APP_SURUM_SAAT = '19:41';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4988,59 +4988,59 @@ function autofillKapatKur() {
 /* ==========================================================
    Kontrol Listesi — sağdan açılan test paneli (tikler cihazda saklanır)
    ========================================================== */
-/* Maddeler gerçek işleyiş sırasına göre dizili: önce kurulum, sonra müşteri → ders → ödeme → ayarlar → genel */
+/* Maddeler gerçek işleyiş sırasına dizili. Her madde: [id, başlık, nasıl test edilir (aşama aşama)] */
 const KONTROL_LISTE = [
   { ad: '1) Kurulum — Önce bunları tanımla', ikon: '🗂️', maddeler: [
-    ['ayr_ortak', 'Ortak (eğitmen) ekle — Ayarlar › Ortak Bilgileri'],
-    ['tnm_uyelik', 'Üyelik tanımı — ad + ders seçenekleri (4/8/12 = fiyat) + geçerlilik + açıklama'],
-    ['tnm_uyelikduz', 'Üyelik düzenle / sil çalışıyor'],
-    ['tnm_gider', 'Gider ekle / düzenle / sil çalışıyor'],
+    ['ayr_ortak', 'Eğitmen (ortak) ekle', 'Ayarlar › Ortak Bilgileri → “＋ Ortak Ekle” → adı yaz → kaydet. Listede görünmeli.'],
+    ['tnm_uyelik', 'Üyelik paketi tanımla', 'Ayarlar › Tanımlamalar › Üyelikler → “＋ Üyelik Ekle” → ad + ders seçenekleri (örn. 4=8.000, 8=16.000) + geçerlilik günü → kaydet.'],
+    ['tnm_uyelikduz', 'Üyeliği düzenle / sil', 'Üyelikler listesinde bir paketi düzenle (fiyat değiştir), sonra sil. Değişiklikler uygulanmalı.'],
+    ['tnm_gider', 'Gider ekle / düzenle / sil', 'Ayarlar › Tanımlamalar › Giderler → “＋ Gider Ekle” → tutar + tarih. Sonra o gideri düzenle ve sil.'],
   ]},
   { ad: '2) Müşteri & Üyelik — Üye al, paket ata', ikon: '🎓', maddeler: [
-    ['ogr_yeniuye', 'Yeni Üye kaydı — telefon otomatik 505-033-41-27 biçimine dönüyor'],
-    ['ogr_beklet', '“Daha Sonra Devam” ile potansiyel olarak bekletme çalışıyor'],
-    ['ogr_islemsec', 'Potansiyel → “Paket Ata” → İşlem Seç (altta Vazgeç, Şimdilik Beklet yok)'],
-    ['ogr_egitmensec', 'Paket Ata — Eğitmen ayrı ekrandan seçiliyor'],
-    ['ogr_paket2adim', 'Paket Ata — paket 2 adımda seçiliyor (paket → İlerle → ders sayısı)'],
-    ['ogr_direktpaket', 'Yeni Üye → “Ben Ders Paketi Tanımlayacağım” ile direkt öğrenci oluyor'],
-    ['ogr_ikincipaket', 'Eski Üye → kayıtlı öğrenciye ikinci paket ekleniyor'],
-    ['ogr_detay', 'Öğrenci satırına tıklayınca üyelik detayı açılıyor'],
-    ['ogr_kartlar', 'Detayda her paket ayrı kart (kalan ders/ödeme barlarıyla) doğru'],
-    ['ogr_paketiptal', 'Paketi İptal çalışıyor (son paket kalkınca öğrenci potansiyele dönüyor)'],
-    ['ogr_duzenle', 'Öğrenci düzenle (ad, soyad, telefon) çalışıyor'],
-    ['ogr_sil', 'Öğrenci sil çalışıyor'],
-    ['ogr_sekme', 'Öğrenci / Potansiyel sekmeleri ve sayaçları doğru'],
+    ['ogr_yeniuye', 'Yeni üye kaydı + telefon biçimi', 'Öğrenciler → “＋ Yeni Üyelik Oluştur” → “Yeni Üye” → ad/soyad + telefona 05050334127 yaz. Otomatik 505-033-41-27 olmalı.'],
+    ['ogr_beklet', 'Potansiyel olarak beklet', 'Yeni üye sonrası ekranda “Daha Sonra Devam Edeceğim” seç. Kişi “Potansiyel” sekmesine düşmeli.'],
+    ['ogr_islemsec', 'İşlem Seç ekranı doğru mu', 'Potansiyel sekmesi → kişide “Paket Ata”. Altta “Vazgeç” olmalı, “Şimdilik Beklet” OLMAMALI.'],
+    ['ogr_egitmensec', 'Eğitmen ayrı ekrandan seçiliyor', 'Paket Ata içinde “Eğitmen” satırına dokun → açılan listeden birini seç → ana forma dönsün.'],
+    ['ogr_paket2adim', 'Paket 2 adımda seçiliyor', '“Üyelik Paketi” satırı → paketi seç → “İlerle” → ders sayısını (4/8/12) seç → “Seç”.'],
+    ['ogr_direktpaket', 'Yeni üyeye direkt paket', 'Yeni üye sonrası “Ben Ders Paketi Tanımlayacağım” → eğitmen + paket seç → “Öğrenciye Ekle”. Kişi öğrenci olmalı.'],
+    ['ogr_ikincipaket', 'Eski üyeye ikinci paket', '“＋ Yeni Üyelik Oluştur” → “Eski Üye” → kişiyi seç → paket ata. Kişide 2. paket görünmeli.'],
+    ['ogr_detay', 'Öğrenci detayını aç', 'Öğrenciler listesinde bir satıra dokun → üyelik detayı açılmalı.'],
+    ['ogr_kartlar', 'Paket kartları doğru', 'Detayda her paket ayrı kart; kalan ders ve kalan ödeme barları doğru görünmeli.'],
+    ['ogr_paketiptal', 'Paketi iptal et', 'Detayda bir paketin “Paketi İptal” → onayla. Paket kalkmalı; son paketse kişi Potansiyele dönmeli.'],
+    ['ogr_duzenle', 'Öğrenci bilgisini düzenle', 'Satırdaki ✎ → ad/soyad/telefon değiştir → kaydet. Güncellenmeli.'],
+    ['ogr_sil', 'Öğrenci sil', 'Satırdaki 🗑️ → onayla. Kişi listeden kalkmalı.'],
+    ['ogr_sekme', 'Sekmeler ve sayaçlar', '“Öğrenciler” ve “Potansiyel” sekmeleri arasında geç; üstteki sayılar doğru olmalı.'],
   ]},
   { ad: '3) Dersler — Planla, gerçekleştir', ikon: '📅', maddeler: [
-    ['drs_olustur', 'Ders Oluştur — Ders Adı + Eğitmen (ayrı ekran) + Öğrenci çoklu (ayrı ekran)'],
-    ['drs_tarihsaat', 'Tarih takvimden, Saat manuel giriliyor (0930 → 09:30)'],
-    ['drs_planlanan', 'Planlanan sekmesi + sarı “B” rozeti doğru'],
-    ['drs_gerceklesti', 'Gerçekleşti (tek öğrenci) → 1 ders düşüyor'],
-    ['drs_katilim', 'Grup dersi Gerçekleşti → “Kimler Katıldı?” ile seçilenlerden düşüyor'],
-    ['drs_iptal', 'İptal → ders düşmüyor'],
-    ['drs_sil', 'Dersi Sil çalışıyor (gerçekleştiyse düşen dersler iade)'],
-    ['drs_rozet', 'Durum rozetleri B / G / İ renkleri doğru (sarı/yeşil/kırmızı)'],
+    ['drs_olustur', 'Ders oluştur', 'Dersler → “＋ Ders Oluştur” → ders adı + Eğitmen (ayrı ekran) + “Öğrenci Seç/Ekle” (çoklu, ayrı ekran).'],
+    ['drs_tarihsaat', 'Tarih ve saat girişi', 'Tarihi takvimden seç; saat kutusuna 0930 yaz → 09:30 olmalı → “Dersi Planla”.'],
+    ['drs_planlanan', 'Planlanan sekmesi', 'Ders “Planlanan” sekmesinde görünmeli; yanında sarı “B” rozeti olmalı.'],
+    ['drs_gerceklesti', 'Tek öğrencide gerçekleşti', 'Tek öğrencili dersin “B” rozetine dokun → “Gerçekleşti”. Öğrencinin kalan dersi 1 azalmalı.'],
+    ['drs_katilim', 'Grup dersinde katılım', 'Çok öğrencili dersi “Gerçekleşti” yap → “Kimler Katıldı?” açılmalı → gelmeyeni işaretten çıkar → sadece katılanlardan 1’er ders düşmeli.'],
+    ['drs_iptal', 'Ders iptali', 'Rozet → “İptal”. Ders “İptal” sekmesine geçmeli; kimseden ders düşmemeli.'],
+    ['drs_sil', 'Dersi sil', 'Rozet → “Dersi Sil” → onayla. Ders kalkmalı; gerçekleşmişse düşen dersler iade edilmeli.'],
+    ['drs_rozet', 'Rozet renkleri', 'B sarı, G yeşil, İ kırmızı görünmeli.'],
   ]},
   { ad: '4) Ödemeler — Tahsilat', ikon: '💰', maddeler: [
-    ['ode_al', 'Ödeme Al — müşteri (aramalı), tutar, tarih, tür seçiliyor'],
-    ['ode_fifo', 'Borç en eski paketten düşüyor (FIFO)'],
-    ['ode_donuk', 'Kalan Borcu satırda donuyor (yeni ödeme eski satırı değiştirmiyor)'],
-    ['ode_detay', 'Ödeme sonrası öğrenci detayında kalan ödeme güncelleniyor'],
-    ['ode_sil', 'Ödeme sil → borç geri geliyor'],
+    ['ode_al', 'Ödeme al', 'Ödemeler → “＋ Ödeme Al” → müşteriyi ara-seç → tutar + tarih + tür (Nakit/Kart/Havale) → “Ödemeyi Kaydet”.'],
+    ['ode_fifo', 'Borç en eskiden düşüyor', 'Ödeme sonrası öğrencinin en eski paketinin kalan ödemesi azalmalı (FIFO).'],
+    ['ode_donuk', 'Kalan borç donuyor', 'Aynı kişiye iki ödeme yap. Eski satırın “Kalan Borcu” DEĞİŞMEMELİ; sadece yeni satır güncel olmalı.'],
+    ['ode_detay', 'Detayda ödeme güncel', 'Ödemeden sonra öğrenci detayında kalan ödeme azalmış olmalı.'],
+    ['ode_sil', 'Ödeme sil', 'Ödeme satırındaki 🗑️ → onayla. Silinen tutar öğrencinin borcuna geri eklenmeli.'],
   ]},
   { ad: '5) Ayarlar & Yedek', ikon: '⚙️', maddeler: [
-    ['ayr_firma', 'Firma adı / logo değiştirme çalışıyor'],
-    ['ayr_bulut', 'Bulut senkron (varsa) — veriler diğer cihazda görünüyor'],
-    ['ayr_yedek', 'Yedekleme — indir / geri yükle çalışıyor'],
+    ['ayr_firma', 'Firma adı / logo', 'Ayarlar › Firma → ad ve logo değiştir → kaydet. Menü ve başlıkta güncellenmeli.'],
+    ['ayr_bulut', 'Bulut senkron (varsa)', 'Bulut bağlıysa: bir cihazda değişiklik yap, başka cihaz/oturumda aynı veriler görünmeli.'],
+    ['ayr_yedek', 'Yedekle / geri yükle', 'Ayarlar › Yedekleme → dosyayı indir; sonra aynı dosyayı geri yükle. Veriler yerine gelmeli.'],
   ]},
   { ad: '6) Genel & Görünüm', ikon: '✨', maddeler: [
-    ['gen_blur', 'Açılır pencerelerde arka plan bulanık (turuncu değil)'],
-    ['gen_autofill', 'Hiçbir metin kutusunda Chrome otomatik-tamamlama balonu çıkmıyor'],
-    ['gen_bicim', 'Telefon 505-033-41-27 ve tutar 1.000 biçimi doğru'],
-    ['gen_surum', 'Sol altta sürüm + saat + ⟳ güncelle düğmesi var'],
-    ['gen_tema', 'Tema (açık / koyu) değişiyor'],
-    ['gen_mobil', 'Mobil alt menü / sekme çubuğu çalışıyor'],
-    ['gen_panel', 'Bu kontrol paneli açılıp kapanıyor, tikler kaydediliyor'],
+    ['gen_blur', 'Arka plan bulanık', 'Herhangi bir açılır pencere aç → arka plan bulanık olmalı (turuncu değil).'],
+    ['gen_autofill', 'Otomatik-tamamlama kapalı', 'Ad/telefon kutularına dokun → Chrome’un isim/telefon önerisi balonu ÇIKMAMALI.'],
+    ['gen_bicim', 'Telefon & tutar biçimi', 'Telefon 505-033-41-27 gibi; tutar yazarken 1.000 gibi noktalı olmalı.'],
+    ['gen_surum', 'Sürüm ve güncelle düğmesi', 'Sol altta sürüm no + tarih/saat + ⟳ güncelle düğmesi görünmeli.'],
+    ['gen_tema', 'Tema değişimi', 'Sağ üstteki 🌙 ile açık/koyu tema geçişi çalışmalı.'],
+    ['gen_mobil', 'Mobil menü', 'Telefonda alt sekme çubuğu ve ☰ menü çalışmalı.'],
+    ['gen_panel', 'Kontrol paneli', 'Bu panel açılıp kapanmalı; işaretlerin uygulamayı kapatıp açınca durmalı.'],
   ]},
 ];
 let KL_DURUM = {};
@@ -5085,11 +5085,14 @@ function klCiz() {
     }).join('');
     return `<div class="kl-grp"><div class="kl-grp-bas">${g.ikon} ${kacar(g.ad)} <span class="kl-gsay">✓${go}${gn ? ` · ✗${gn}` : ''}</span></div>${rows}</div>`;
   }).join('');
+  const oncekiGovde = panel.querySelector('.kl-govde');
+  const kaydirmaTop = oncekiGovde ? oncekiGovde.scrollTop : 0;   // yeniden çizince kaydırma başa dönmesin
   panel.innerHTML = `
     <div class="kl-bas"><span class="kl-ik">✅</span><span class="kl-t">Kontrol Listesi</span><button type="button" class="kl-x" id="klKapat" title="Kapat">✕</button></div>
     <div class="kl-ozet"><span class="kl-yz">${s.ok}/${s.top}</span><span class="kl-pbar"><span style="width:${yuzde}%"></span></span>${s.no ? `<span class="kl-sr">✗ ${s.no}</span>` : ''}</div>
     <div class="kl-govde">${grupHTML}</div>
     <div class="kl-alt"><button type="button" class="kl-prompt" id="klPrompt">📋 Prompt Kopyala</button><button type="button" class="kl-sifir" id="klSifir" title="Tümünü sıfırla">↺</button></div>`;
+  { const yeniGovde = panel.querySelector('.kl-govde'); if (yeniGovde) yeniGovde.scrollTop = kaydirmaTop; }
   document.getElementById('klKapat').onclick = kontrolKapat;
   document.getElementById('klPrompt').onclick = klPromptKopyala;
   document.getElementById('klSifir').onclick = () => onayModal('Tüm işaretler silinsin mi?', 'Bütün ✓ / ✗ işaretleri ve notlar sıfırlanır.', () => { KL_DURUM = {}; klKaydet(); klCiz(); });
