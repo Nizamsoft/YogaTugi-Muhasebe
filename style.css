@@ -1561,3 +1561,46 @@ body.tema-koyu .hr-tarih-satir input[type="date"]{color-scheme:dark}
   .banka-arac h3{font-size:15.5px}
 }
 @media(prefers-reduced-motion:reduce){.blogo.sec .banka-tile{animation:none}}
+
+/* ==========================================================
+   Kontrol Listesi — sağdan açılan test paneli
+   ========================================================== */
+.kl-fab{position:fixed;right:18px;bottom:18px;z-index:150;background:linear-gradient(135deg,#6f9a72,#557a58);color:#fff;border:none;border-radius:30px;padding:12px 17px;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer;box-shadow:0 10px 22px -6px rgba(50,70,45,.6);display:flex;align-items:center;gap:7px}
+.kl-fab:active{transform:scale(.96)}
+.kl-perde{position:fixed;inset:0;z-index:149;background:rgba(22,26,20,.38);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .2s}
+.kl-panel{position:fixed;top:0;right:0;bottom:0;z-index:150;width:390px;max-width:92vw;background:var(--kart);border-left:1px solid var(--kenar-koyu);box-shadow:-16px 0 40px -20px rgba(60,45,20,.55);display:flex;flex-direction:column;transform:translateX(102%);transition:transform .26s cubic-bezier(.2,.7,.3,1)}
+body.kl-acik .kl-panel{transform:translateX(0)}
+body.kl-acik .kl-fab{opacity:0;pointer-events:none}
+.kl-bas{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--kenar)}
+.kl-bas .kl-ik{width:30px;height:30px;border-radius:9px;background:var(--yesil-acik);display:grid;place-items:center;font-size:15px}
+.kl-bas .kl-t{font-weight:800;font-size:15.5px}
+.kl-x{margin-left:auto;border:1px solid var(--kenar);background:#fff;border-radius:9px;width:32px;height:32px;font-size:16px;cursor:pointer;color:var(--metin-soluk)}
+.kl-ozet{display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid var(--kenar)}
+.kl-yz{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:16px;color:var(--yesil-koyu)}
+.kl-pbar{flex:1;height:8px;border-radius:6px;background:#ece0c4;overflow:hidden}
+.kl-pbar span{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#7fae83,#5f8f63)}
+.kl-sr{font-size:11px;font-weight:800;color:var(--kirmizi);background:var(--kirmizi-acik);border:1px solid #e6c3bf;border-radius:20px;padding:3px 9px;white-space:nowrap}
+.kl-govde{flex:1;overflow-y:auto;padding:8px 14px 14px}
+.kl-grp{margin-top:8px}
+.kl-grp-bas{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:#a8792f;text-transform:uppercase;letter-spacing:.3px;padding:8px 2px 4px}
+.kl-gsay{color:var(--metin-soluk);letter-spacing:0;font-size:11px}
+.kl-row{display:flex;align-items:center;gap:9px;padding:9px 3px;border-top:1px solid var(--kenar);font-size:13px}
+.kl-grp .kl-row:first-of-type{border-top:none}
+.kl-mt{flex:1;min-width:0}
+.kl-mt small{display:block;font-size:11px;color:var(--metin-soluk);margin-top:1px}
+.kl-row.ok .kl-mt{color:var(--metin-soluk);text-decoration:line-through}
+.kl-row.ok .kl-mt small{text-decoration:none}
+.kl-ibs{display:flex;gap:6px;flex:0 0 auto}
+.kl-ib{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--kenar-koyu);background:#fff;font-size:14px;font-weight:800;cursor:pointer;display:grid;place-items:center;color:#b7ab8f}
+.kl-ib.ok.sec{background:linear-gradient(135deg,#7fae83,#5f8f63);border-color:#5f8f63;color:#fff}
+.kl-ib.no.sec{background:linear-gradient(135deg,#d66a61,#c0483f);border-color:#c0483f;color:#fff}
+.kl-note{padding:0 2px 8px}
+.kl-note textarea{width:100%;box-sizing:border-box;border:1px solid #e6c3bf;border-radius:10px;padding:8px 10px;font-family:inherit;font-size:12.5px;color:var(--metin);background:#fdf5f4;resize:vertical}
+.kl-alt{display:flex;gap:9px;padding:12px 14px;border-top:1px solid var(--kenar)}
+.kl-prompt{flex:1;border:none;background:linear-gradient(135deg,#6f9a72,#557a58);color:#fff;border-radius:11px;padding:11px;font-size:13.5px;font-weight:800;font-family:inherit;cursor:pointer}
+.kl-sifir{border:1px solid var(--kenar-koyu);background:#fff;color:var(--metin-soluk);border-radius:11px;padding:11px 14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
+@media (max-width:880px){
+  .kl-fab{bottom:78px}
+  body.kl-acik .kl-perde{opacity:1;pointer-events:auto}
+}
+@media (prefers-reduced-motion:reduce){.kl-panel{transition:none}}

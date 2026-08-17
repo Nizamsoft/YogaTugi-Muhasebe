@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '97';
+const APP_SURUM = '98';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '19:04';
+const APP_SURUM_SAAT = '19:28';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -562,6 +562,7 @@ function menuCiz() {
       html += `<button class="menu-oge tekil" data-sayfa="${m.id}"><span class="ikon">${m.ikon}</span>${kacar(m.ad)}</button>`;
     }
   }
+  html += `<button class="menu-oge tekil" id="menuKontrol"><span class="ikon">✅</span>Kontrol Listesi</button>`;
   nav.innerHTML = html;
   // Akordeon: grup başlığına basınca aç/kapa; biri açılınca diğerleri kapanır
   $$('.grup-baslik', nav).forEach(b => b.onclick = () => {
@@ -570,7 +571,8 @@ function menuCiz() {
     $$('.menu-grup', nav).forEach(g => g.classList.remove('acik'));
     if (!acikti) grup.classList.add('acik');
   });
-  $$('.menu-oge', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa));
+  $$('.menu-oge', nav).forEach(b => { if (b.dataset.sayfa) b.onclick = () => git(b.dataset.sayfa); });
+  { const mk = $('#menuKontrol'); if (mk) mk.onclick = () => { kontrolAc(); document.body.classList.remove('menu-acik'); }; }
   const ks = $('#kenarSurum');
   if (ks) {
     ks.innerHTML = `<div class="ks-bilg"><b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH} · ${APP_SURUM_SAAT}</span></div><button type="button" class="ks-guncelle" id="ksGuncelle" title="En güncel sürümü getir">⟳</button>`;
@@ -4450,6 +4452,7 @@ async function uygulamayiBaslat() {
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   menuCiz();
+  kontrolKur();
   git('dashboard');
 }
 
@@ -4980,6 +4983,146 @@ function autofillKapatKur() {
   };
   tara(document.body);
   try { new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(tara))).observe(document.body, { childList: true, subtree: true }); } catch {}
+}
+
+/* ==========================================================
+   Kontrol Listesi — sağdan açılan test paneli (tikler cihazda saklanır)
+   ========================================================== */
+const KONTROL_LISTE = [
+  { ad: 'Öğrenciler & Üyelikler', ikon: '🎓', maddeler: [
+    ['ogr_yeniuye', 'Yeni Üye kaydı — telefon otomatik 505-033-41-27 biçimine dönüyor'],
+    ['ogr_beklet', '“Daha Sonra Devam” ile potansiyel olarak bekletme çalışıyor'],
+    ['ogr_islemsec', 'Potansiyel → “Paket Ata” → İşlem Seç (altta Vazgeç, Şimdilik Beklet yok)'],
+    ['ogr_egitmensec', 'Paket Ata — Eğitmen ayrı ekrandan seçiliyor'],
+    ['ogr_paket2adim', 'Paket Ata — paket 2 adımda seçiliyor (paket → İlerle → ders sayısı)'],
+    ['ogr_direktpaket', 'Yeni Üye → “Ben Ders Paketi Tanımlayacağım” ile direkt öğrenci oluyor'],
+    ['ogr_ikincipaket', 'Eski Üye → kayıtlı öğrenciye ikinci paket ekleniyor'],
+    ['ogr_detay', 'Öğrenci satırına tıklayınca üyelik detayı açılıyor'],
+    ['ogr_kartlar', 'Detayda her paket ayrı kart (kalan ders/ödeme barlarıyla) doğru'],
+    ['ogr_paketiptal', 'Paketi İptal çalışıyor (son paket kalkınca öğrenci potansiyele dönüyor)'],
+    ['ogr_duzenle', 'Öğrenci düzenle (ad, soyad, telefon) çalışıyor'],
+    ['ogr_sil', 'Öğrenci sil çalışıyor'],
+    ['ogr_sekme', 'Öğrenci / Potansiyel sekmeleri ve sayaçları doğru'],
+  ]},
+  { ad: 'Dersler', ikon: '📅', maddeler: [
+    ['drs_olustur', 'Ders Oluştur — Ders Adı + Eğitmen (ayrı ekran) + Öğrenci çoklu (ayrı ekran)'],
+    ['drs_tarihsaat', 'Tarih takvimden, Saat manuel giriliyor (0930 → 09:30)'],
+    ['drs_planlanan', 'Planlanan sekmesi + sarı “B” rozeti doğru'],
+    ['drs_gerceklesti', 'Gerçekleşti (tek öğrenci) → 1 ders düşüyor'],
+    ['drs_katilim', 'Grup dersi Gerçekleşti → “Kimler Katıldı?” ile seçilenlerden düşüyor'],
+    ['drs_iptal', 'İptal → ders düşmüyor'],
+    ['drs_sil', 'Dersi Sil çalışıyor (gerçekleştiyse düşen dersler iade)'],
+    ['drs_rozet', 'Durum rozetleri B / G / İ renkleri doğru (sarı/yeşil/kırmızı)'],
+  ]},
+  { ad: 'Ödemeler', ikon: '💰', maddeler: [
+    ['ode_al', 'Ödeme Al — müşteri (aramalı), tutar, tarih, tür seçiliyor'],
+    ['ode_fifo', 'Borç en eski paketten düşüyor (FIFO)'],
+    ['ode_donuk', 'Kalan Borcu satırda donuyor (yeni ödeme eski satırı değiştirmiyor)'],
+    ['ode_sil', 'Ödeme sil → borç geri geliyor'],
+    ['ode_detay', 'Öğrenci detayında kalan ödeme güncelleniyor'],
+  ]},
+  { ad: 'Tanımlar (Üyelik & Gider)', ikon: '🗂️', maddeler: [
+    ['tnm_uyelik', 'Üyelik tanımı — ad + ders seçenekleri (4/8/12 = fiyat) + geçerlilik + açıklama'],
+    ['tnm_uyelikduz', 'Üyelik düzenle / sil çalışıyor'],
+    ['tnm_gider', 'Gider ekle / düzenle / sil çalışıyor'],
+  ]},
+  { ad: 'Ayarlar & Ortaklar', ikon: '⚙️', maddeler: [
+    ['ayr_ortak', 'Ortak (eğitmen) ekle / düzenle / sil çalışıyor'],
+    ['ayr_firma', 'Firma adı / logo değiştirme çalışıyor'],
+    ['ayr_bulut', 'Bulut senkron (varsa) — veriler diğer cihazda görünüyor'],
+    ['ayr_yedek', 'Yedekleme — indir / geri yükle çalışıyor'],
+  ]},
+  { ad: 'Genel & Görünüm', ikon: '✨', maddeler: [
+    ['gen_blur', 'Açılır pencerelerde arka plan bulanık (turuncu değil)'],
+    ['gen_autofill', 'Hiçbir metin kutusunda Chrome otomatik-tamamlama balonu çıkmıyor'],
+    ['gen_bicim', 'Telefon 505-033-41-27 ve tutar 1.000 biçimi doğru'],
+    ['gen_surum', 'Sol altta sürüm + saat + ⟳ güncelle düğmesi var'],
+    ['gen_tema', 'Tema (açık / koyu) değişiyor'],
+    ['gen_mobil', 'Mobil alt menü / sekme çubuğu çalışıyor'],
+    ['gen_panel', 'Bu kontrol paneli açılıp kapanıyor, tikler kaydediliyor'],
+  ]},
+];
+let KL_DURUM = {};
+function klYukle() { try { KL_DURUM = JSON.parse(localStorage.getItem('yt_kontrol') || '{}') || {}; } catch { KL_DURUM = {}; } }
+function klKaydet() { try { localStorage.setItem('yt_kontrol', JSON.stringify(KL_DURUM)); } catch { /* dolu olabilir */ } }
+function klSayac() {
+  let top = 0, ok = 0, no = 0;
+  for (const g of KONTROL_LISTE) for (const md of g.maddeler) { top++; const d = KL_DURUM[md[0]]; if (d && d.d === 'ok') ok++; else if (d && d.d === 'no') no++; }
+  return { top, ok, no };
+}
+function kontrolKur() {
+  if (document.getElementById('klPanel')) return;
+  klYukle();
+  const fab = document.createElement('button');
+  fab.id = 'klFab'; fab.className = 'kl-fab'; fab.type = 'button';
+  fab.innerHTML = '✅ <span>Kontrol</span>';
+  fab.onclick = kontrolAc;
+  const perde = document.createElement('div');
+  perde.id = 'klPerde'; perde.className = 'kl-perde'; perde.onclick = kontrolKapat;
+  const panel = document.createElement('aside');
+  panel.id = 'klPanel'; panel.className = 'kl-panel';
+  document.body.appendChild(fab);
+  document.body.appendChild(perde);
+  document.body.appendChild(panel);
+}
+function kontrolAc() { kontrolKur(); klCiz(); document.body.classList.add('kl-acik'); }
+function kontrolKapat() { document.body.classList.remove('kl-acik'); }
+function klCiz() {
+  const panel = document.getElementById('klPanel'); if (!panel) return;
+  const s = klSayac();
+  const yuzde = s.top ? Math.round(s.ok / s.top * 100) : 0;
+  const grupHTML = KONTROL_LISTE.map(g => {
+    let go = 0, gn = 0;
+    const rows = g.maddeler.map(([id, metin, alt]) => {
+      const d = KL_DURUM[id] || {};
+      const durum = d.d || '';
+      if (durum === 'ok') go++; else if (durum === 'no') gn++;
+      return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}" data-id="${id}">
+        <span class="kl-mt">${kacar(metin)}${alt ? `<small>${kacar(alt)}</small>` : ''}</span>
+        <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var">✗</button></span>
+      </div>${durum === 'no' ? `<div class="kl-note"><textarea data-note="${id}" placeholder="Sorunu kısaca yaz…" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}`;
+    }).join('');
+    return `<div class="kl-grp"><div class="kl-grp-bas">${g.ikon} ${kacar(g.ad)} <span class="kl-gsay">✓${go}${gn ? ` · ✗${gn}` : ''}</span></div>${rows}</div>`;
+  }).join('');
+  panel.innerHTML = `
+    <div class="kl-bas"><span class="kl-ik">✅</span><span class="kl-t">Kontrol Listesi</span><button type="button" class="kl-x" id="klKapat" title="Kapat">✕</button></div>
+    <div class="kl-ozet"><span class="kl-yz">${s.ok}/${s.top}</span><span class="kl-pbar"><span style="width:${yuzde}%"></span></span>${s.no ? `<span class="kl-sr">✗ ${s.no}</span>` : ''}</div>
+    <div class="kl-govde">${grupHTML}</div>
+    <div class="kl-alt"><button type="button" class="kl-prompt" id="klPrompt">📋 Prompt Kopyala</button><button type="button" class="kl-sifir" id="klSifir" title="Tümünü sıfırla">↺</button></div>`;
+  document.getElementById('klKapat').onclick = kontrolKapat;
+  document.getElementById('klPrompt').onclick = klPromptKopyala;
+  document.getElementById('klSifir').onclick = () => onayModal('Tüm işaretler silinsin mi?', 'Bütün ✓ / ✗ işaretleri ve notlar sıfırlanır.', () => { KL_DURUM = {}; klKaydet(); klCiz(); });
+  panel.querySelectorAll('.kl-ib').forEach(b => b.onclick = () => {
+    const id = b.closest('.kl-row').dataset.id, k = b.dataset.k;
+    const cur = (KL_DURUM[id] && KL_DURUM[id].d) || '';
+    if (cur === k) delete KL_DURUM[id];
+    else KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: k });
+    klKaydet(); klCiz();
+    if (KL_DURUM[id] && KL_DURUM[id].d === 'no') { const ta = panel.querySelector(`[data-note="${id}"]`); if (ta) ta.focus(); }
+  });
+  panel.querySelectorAll('[data-note]').forEach(ta => ta.addEventListener('input', () => {
+    const id = ta.dataset.note; KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: 'no', n: ta.value }); klKaydet();
+  }));
+}
+function klPromptKopyala() {
+  const sorunlar = [];
+  for (const g of KONTROL_LISTE) for (const [id, metin] of g.maddeler) { const d = KL_DURUM[id]; if (d && d.d === 'no') sorunlar.push({ grup: g.ad, metin, not: (d.n || '').trim() }); }
+  const s = klSayac();
+  let t = `GREEN VILLAGE PILATES — KONTROL RAPORU (Sürüm ${APP_SURUM})\n`;
+  t += `Çalışıyor: ${s.ok}/${s.top} · Sorun: ${s.no}\n\n`;
+  if (sorunlar.length) {
+    t += 'SORUNLAR:\n';
+    sorunlar.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}${x.not ? ` — ${x.not}` : ''}\n`; });
+    t += '\nLütfen bu maddeleri düzelt ve her birine tek tek ne yaptığını yaz.';
+  } else t += 'İşaretli sorun yok. ✓';
+  const tamam = () => bildir('Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(tamam).catch(() => klPromptGoster(t));
+  else klPromptGoster(t);
+}
+function klPromptGoster(t) {
+  modalAc('Kontrol Raporu', `<textarea class="gp-inp" id="klRapor" style="width:100%;box-sizing:border-box;min-height:220px;font-family:monospace;font-size:12px">${kacar(t)}</textarea><p class="soluk" style="font-size:12px;margin-top:8px">Metni seç, kopyala ve sohbete yapıştır.</p>`, `<button class="btn" id="klRaporKapat">Kapat</button>`);
+  document.getElementById('klRaporKapat').onclick = modalKapat;
+  setTimeout(() => { const el = document.getElementById('klRapor'); if (el) { el.focus(); el.select(); } }, 60);
 }
 
 /* Otomatik sürüm kontrolü: taze index.html'i çek, daha yeni sürüm varsa
