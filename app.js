@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '98';
+const APP_SURUM = '99';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '19:28';
+const APP_SURUM_SAAT = '19:35';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4988,8 +4988,15 @@ function autofillKapatKur() {
 /* ==========================================================
    Kontrol Listesi — sağdan açılan test paneli (tikler cihazda saklanır)
    ========================================================== */
+/* Maddeler gerçek işleyiş sırasına göre dizili: önce kurulum, sonra müşteri → ders → ödeme → ayarlar → genel */
 const KONTROL_LISTE = [
-  { ad: 'Öğrenciler & Üyelikler', ikon: '🎓', maddeler: [
+  { ad: '1) Kurulum — Önce bunları tanımla', ikon: '🗂️', maddeler: [
+    ['ayr_ortak', 'Ortak (eğitmen) ekle — Ayarlar › Ortak Bilgileri'],
+    ['tnm_uyelik', 'Üyelik tanımı — ad + ders seçenekleri (4/8/12 = fiyat) + geçerlilik + açıklama'],
+    ['tnm_uyelikduz', 'Üyelik düzenle / sil çalışıyor'],
+    ['tnm_gider', 'Gider ekle / düzenle / sil çalışıyor'],
+  ]},
+  { ad: '2) Müşteri & Üyelik — Üye al, paket ata', ikon: '🎓', maddeler: [
     ['ogr_yeniuye', 'Yeni Üye kaydı — telefon otomatik 505-033-41-27 biçimine dönüyor'],
     ['ogr_beklet', '“Daha Sonra Devam” ile potansiyel olarak bekletme çalışıyor'],
     ['ogr_islemsec', 'Potansiyel → “Paket Ata” → İşlem Seç (altta Vazgeç, Şimdilik Beklet yok)'],
@@ -5004,7 +5011,7 @@ const KONTROL_LISTE = [
     ['ogr_sil', 'Öğrenci sil çalışıyor'],
     ['ogr_sekme', 'Öğrenci / Potansiyel sekmeleri ve sayaçları doğru'],
   ]},
-  { ad: 'Dersler', ikon: '📅', maddeler: [
+  { ad: '3) Dersler — Planla, gerçekleştir', ikon: '📅', maddeler: [
     ['drs_olustur', 'Ders Oluştur — Ders Adı + Eğitmen (ayrı ekran) + Öğrenci çoklu (ayrı ekran)'],
     ['drs_tarihsaat', 'Tarih takvimden, Saat manuel giriliyor (0930 → 09:30)'],
     ['drs_planlanan', 'Planlanan sekmesi + sarı “B” rozeti doğru'],
@@ -5014,25 +5021,19 @@ const KONTROL_LISTE = [
     ['drs_sil', 'Dersi Sil çalışıyor (gerçekleştiyse düşen dersler iade)'],
     ['drs_rozet', 'Durum rozetleri B / G / İ renkleri doğru (sarı/yeşil/kırmızı)'],
   ]},
-  { ad: 'Ödemeler', ikon: '💰', maddeler: [
+  { ad: '4) Ödemeler — Tahsilat', ikon: '💰', maddeler: [
     ['ode_al', 'Ödeme Al — müşteri (aramalı), tutar, tarih, tür seçiliyor'],
     ['ode_fifo', 'Borç en eski paketten düşüyor (FIFO)'],
     ['ode_donuk', 'Kalan Borcu satırda donuyor (yeni ödeme eski satırı değiştirmiyor)'],
+    ['ode_detay', 'Ödeme sonrası öğrenci detayında kalan ödeme güncelleniyor'],
     ['ode_sil', 'Ödeme sil → borç geri geliyor'],
-    ['ode_detay', 'Öğrenci detayında kalan ödeme güncelleniyor'],
   ]},
-  { ad: 'Tanımlar (Üyelik & Gider)', ikon: '🗂️', maddeler: [
-    ['tnm_uyelik', 'Üyelik tanımı — ad + ders seçenekleri (4/8/12 = fiyat) + geçerlilik + açıklama'],
-    ['tnm_uyelikduz', 'Üyelik düzenle / sil çalışıyor'],
-    ['tnm_gider', 'Gider ekle / düzenle / sil çalışıyor'],
-  ]},
-  { ad: 'Ayarlar & Ortaklar', ikon: '⚙️', maddeler: [
-    ['ayr_ortak', 'Ortak (eğitmen) ekle / düzenle / sil çalışıyor'],
+  { ad: '5) Ayarlar & Yedek', ikon: '⚙️', maddeler: [
     ['ayr_firma', 'Firma adı / logo değiştirme çalışıyor'],
     ['ayr_bulut', 'Bulut senkron (varsa) — veriler diğer cihazda görünüyor'],
     ['ayr_yedek', 'Yedekleme — indir / geri yükle çalışıyor'],
   ]},
-  { ad: 'Genel & Görünüm', ikon: '✨', maddeler: [
+  { ad: '6) Genel & Görünüm', ikon: '✨', maddeler: [
     ['gen_blur', 'Açılır pencerelerde arka plan bulanık (turuncu değil)'],
     ['gen_autofill', 'Hiçbir metin kutusunda Chrome otomatik-tamamlama balonu çıkmıyor'],
     ['gen_bicim', 'Telefon 505-033-41-27 ve tutar 1.000 biçimi doğru'],
