@@ -750,6 +750,74 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .pa-metin .alt{font-size:11.5px;color:var(--metin-soluk);font-weight:600;margin-top:1px}
 .pa-tik{margin-left:auto;color:#a8792f;font-weight:800}
 
+/* ============ Dersler ============ */
+.ders-sayfa{max-width:880px;margin:0}
+.ders-ogr-ad{font-weight:800;font-size:14.5px}
+.ders-adet-satir{margin-top:4px}
+.ders-adet{display:inline-block;font-size:11px;font-weight:800;color:#a8792f;background:#f6e6ad;border-radius:999px;padding:2px 9px}
+/* durum baş-harf rozeti */
+.drz{width:32px;height:32px;border-radius:10px;display:inline-grid;place-items:center;font-weight:800;font-size:15px;cursor:pointer;border:1.5px solid transparent;font-family:inherit;line-height:1}
+.drz.b{background:#faedc6;color:#9c7413;border-color:#e6d59a}
+.drz.g{background:#dcefdb;color:#3f7a45;border-color:#bcdcbd}
+.drz.i{background:#f4ded9;color:#b1483f;border-color:#e6c2ba}
+.drz-pop{position:fixed;z-index:240;width:196px;background:var(--kart);border:1px solid var(--kenar);border-radius:14px;box-shadow:0 22px 44px -18px rgba(80,60,20,.5);padding:6px}
+.drz-pop-cap{font-size:10.5px;color:var(--metin-soluk);text-align:center;padding:6px 4px 4px}
+.drz-opt{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13.5px;border:none;background:transparent;width:100%;font-family:inherit;text-align:left;color:var(--metin)}
+.drz-opt:hover{background:var(--gri-acik,#f2ead9)}
+.drz-opt.sec{background:#fffaf0}
+.drz-opt .drz{width:26px;height:26px;font-size:13px;border-radius:8px;cursor:default}
+/* Ders Oluştur — öğrenci çoklu seçim */
+.ds-chipler{display:flex;flex-wrap:wrap;gap:7px}
+.ds-chipler:not(:empty){margin-bottom:9px}
+.ds-chip{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#fbf1d4,#f6e6ad);color:#a8792f;border-radius:999px;padding:5px 8px 5px 10px;font-size:12.5px;font-weight:700}
+.ds-chip .x{width:16px;height:16px;border-radius:50%;background:rgba(168,121,47,.2);display:grid;place-items:center;font-size:10px;cursor:pointer}
+.ds-oliste{border:1px solid var(--kenar);border-radius:12px;max-height:184px;overflow:auto;background:#fff}
+.ds-osat{display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--kenar)}
+.ds-osat:last-child{border-bottom:none}
+.ds-osat:hover{background:var(--gri-acik,#f2ead9)}
+.ds-ochk{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--kenar);display:grid;place-items:center;font-size:12px;color:#fff;flex:0 0 auto}
+.ds-osat.sec .ds-ochk{background:linear-gradient(135deg,#d3a84a,#c69133);border-color:#c69133}
+.ds-osat.sec{background:#fffaf0}
+.oav-mini{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f2d98a,#d3a84a);display:grid;place-items:center;font-size:10px;font-weight:800;color:#40320f;flex:0 0 auto}
+.ds-obil{flex:1;min-width:0;display:flex;flex-direction:column}
+.ds-obil .ad{font-weight:700;font-size:14px}
+.ds-obil .alt{font-size:11px;color:var(--metin-soluk);margin-top:1px}
+/* Seçici katmanı (takvim/saat) — form modalının üstünde */
+.picker-perde{position:fixed;inset:0;background:rgba(40,30,10,.42);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px}
+.picker-iptal,.picker-tamam{flex:1;border-radius:11px;padding:11px;font-weight:800;font-size:13.5px;font-family:inherit;cursor:pointer}
+.picker-iptal{border:1px solid var(--kenar);background:#fff;color:var(--metin-soluk)}
+.picker-tamam{border:none;color:#40320f;background:linear-gradient(135deg,#f2d98a,#d3a84a 55%,#c69133)}
+/* Takvim */
+.tsz{width:320px;max-width:100%;background:var(--kart);border:1px solid var(--kenar);border-radius:20px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(60,45,20,.5)}
+.tsz-head{padding:13px 18px;border-bottom:1px solid var(--kenar);font-family:Georgia,"Times New Roman",serif;font-size:16px}
+.tsz-ay{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 6px}
+.tsz-nav{width:32px;height:32px;border-radius:9px;border:1px solid var(--kenar);background:#fff;color:#a8792f;font-weight:800;cursor:pointer;font-family:inherit}
+.tsz-ad{font-weight:800;font-size:14.5px}
+.tsz-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:6px 14px 12px}
+.tsz-gun{text-align:center;font-size:10.5px;font-weight:800;color:var(--metin-soluk);text-transform:uppercase;padding:4px 0}
+.tsz-t{aspect-ratio:1;display:grid;place-items:center;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer}
+.tsz-t:hover{background:var(--gri-acik,#f2ead9)}
+.tsz-t.bos{visibility:hidden;cursor:default}
+.tsz-t.gecmis{color:#c2b79f}
+.tsz-t.bugun{box-shadow:inset 0 0 0 1.5px #e3cd93}
+.tsz-t.sec{background:linear-gradient(135deg,#e6c777,#c69133);color:#40320f;font-weight:800}
+.tsz-foot{display:flex;gap:10px;padding:12px 14px 16px;border-top:1px solid var(--kenar)}
+/* Saat tekerleği */
+.ssz{width:252px;max-width:100%;background:var(--kart);border:1px solid var(--kenar);border-radius:20px;box-shadow:0 30px 60px -20px rgba(60,45,20,.5);padding:16px 18px}
+.ssz-head{font-family:Georgia,"Times New Roman",serif;font-size:16px}
+.ssz-sub{font-size:12px;color:var(--metin-soluk);margin:2px 0 12px}
+.ssz-wheels{display:flex;gap:12px;align-items:center;justify-content:center}
+.ssz-kolon{font-size:24px;font-weight:800;color:#a8792f}
+.ssz-kk{display:flex;gap:12px;justify-content:center;margin-top:7px}
+.ssz-kk span{flex:1;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;color:var(--metin-soluk)}
+.wsel-wrap{flex:1;position:relative;height:160px}
+.wsel-band{position:absolute;left:6px;right:6px;top:60px;height:40px;border-radius:10px;background:linear-gradient(135deg,#fbf1d4,#f6e6ad);box-shadow:inset 0 0 0 1px #e6d59a;pointer-events:none;z-index:1}
+.wsel{height:160px;overflow-y:auto;border:1px solid var(--kenar);border-radius:14px;background:transparent;scroll-snap-type:y mandatory;position:relative;z-index:2;scrollbar-width:none}
+.wsel::-webkit-scrollbar{display:none}
+.wsel-liste{padding:60px 0}
+.wsel-oge{height:40px;line-height:40px;text-align:center;font-size:18px;font-weight:700;color:var(--metin-soluk);scroll-snap-align:center;cursor:pointer}
+.wsel-oge.on{color:#40320f;font-weight:800;font-size:20px}
+
 /* Gider Ekle — açılır grup seçici (satır içi) */
 .gd-dd{position:relative}
 .gd-trig{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;

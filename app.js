@@ -25,6 +25,7 @@ const State = {
   giderGruplari: [], // {id, ad}  — Gider grup başlıkları
   uyelikler: [],     // {id, ad, fiyat, dersSayisi, gecerlilikGun, kapsam}  — Tanımlamalar > Üyelikler
   ogrenciler: [],    // {id, ad, soyad, telefon, olusturma, durum:'potansiyel'|'ogrenci', egitmenId, paketler:[{id,uyelikId,paketAd,dersToplam,kalanDers,fiyat,kalanOdeme,tarih}]}
+  dersler: [],       // {id, dersAd, egitmenId, ogrenciIds:[], tarih:'YYYY-MM-DD', saat:'HH:MM', durum:'bekliyor'|'gerceklesti'|'iptal', dusumler:[{ogrenciId,paketId}], olusturma}
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -169,7 +170,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler', 'ogrenciler'];   // ortak (ad+foto) + Giderler + grupları + Üyelikler + Öğrenciler
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler', 'ogrenciler', 'dersler'];   // + Dersler
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -359,9 +360,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '88';
+const APP_SURUM = '89';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '15:37';
+const APP_SURUM_SAAT = '16:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -384,6 +385,7 @@ async function veriYukle() {
   State.giderGruplari = DB._oku('giderGruplari');
   State.uyelikler = DB._oku('uyelikler');
   State.ogrenciler = DB._oku('ogrenciler');
+  State.dersler = DB._oku('dersler');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
 }
@@ -484,6 +486,7 @@ const Hesapla = {
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
   { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
+  { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
     { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
@@ -3758,6 +3761,258 @@ function ogrenciDuzenle(o) {
   };
 }
 
+/* ==========================================================
+   Dersler (planlanan / gerçekleşen / iptal + ders satışı düşümü)
+   ========================================================== */
+const AY_TAM = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+let dersAktifSekme = 'bekliyor';   // 'bekliyor' | 'gerceklesti' | 'iptal'
+function ogrenciTamAd(o) { return o ? `${o.ad} ${o.soyad || ''}`.trim() : '—'; }
+
+SAYFALAR['dersler'] = function () {
+  const hepsi = State.dersler || [];
+  const say = { bekliyor: 0, gerceklesti: 0, iptal: 0 };
+  hepsi.forEach(d => { if (say[d.durum] != null) say[d.durum]++; });
+  const liste = hepsi.filter(d => d.durum === dersAktifSekme).sort((a, b) => (a.tarih + a.saat).localeCompare(b.tarih + b.saat));
+  const drzHarf = { bekliyor: ['b', 'B'], gerceklesti: ['g', 'G'], iptal: ['i', 'İ'] };
+  const ogrHucre = (d) => {
+    const ids = d.ogrenciIds || [];
+    if (!ids.length) return '<span class="ogr-soluk">—</span>';
+    const ilk = ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0]));
+    return `<span class="ders-ogr-ad">${kacar(ilk)}</span>${ids.length > 1 ? ` <span class="ogr-pk">+${ids.length - 1}</span>` : ''}${d.dersAd ? `<div class="ders-adet-satir"><span class="ders-adet">${kacar(d.dersAd)}</span></div>` : ''}`;
+  };
+  const satir = (d) => {
+    const e = State.ortaklar.find(x => x.id === d.egitmenId);
+    const [c, h] = drzHarf[d.durum] || ['b', 'B'];
+    return `<tr>
+      <td data-l="Eğitmen"><span class="ogr-egit"><span class="ogr-ea">${basHarf(e ? e.ad : '—')}</span>${kacar(e ? egitmenKisaAd(e) : '—')}</span></td>
+      <td data-l="Öğrenci">${ogrHucre(d)}</td>
+      <td data-l="Tarih">${fmtTarihUzun(d.tarih)}</td>
+      <td data-l="Saat">${kacar(d.saat || '')}</td>
+      <td data-l="Durum"><button type="button" class="drz ${c}" data-drz="${d.id}" title="Durumu değiştir">${h}</button></td>
+    </tr>`;
+  };
+  const bosMetin = dersAktifSekme === 'bekliyor' ? 'Planlanan ders yok. “＋ Ders Oluştur” ile başlayın.'
+    : dersAktifSekme === 'gerceklesti' ? 'Gerçekleşen ders yok.' : 'İptal edilmiş ders yok.';
+  ic().innerHTML = `
+    <div class="ders-sayfa">
+      <div class="ogr-ust">
+        <div class="ogr-seg">
+          <button type="button" class="${dersAktifSekme === 'bekliyor' ? 'sec' : ''}" data-dsek="bekliyor">Planlanan <span class="rk">${say.bekliyor}</span></button>
+          <button type="button" class="${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
+          <button type="button" class="${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
+        </div>
+        <button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button>
+      </div>
+      ${liste.length
+        ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+            <thead><tr><th>Eğitmen</th><th>Öğrenci</th><th>Tarih</th><th>Saat</th><th>Durum</th></tr></thead>
+            <tbody>${liste.map(satir).join('')}</tbody></table></div></div>`
+        : `<div class="gp-bos">${bosMetin}</div>`}
+    </div>`;
+  $('#dersEkle').onclick = () => dersOlusturModal();
+  $$('[data-dsek]').forEach(b => b.onclick = () => { dersAktifSekme = b.dataset.dsek; SAYFALAR['dersler'](); });
+  $$('[data-drz]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d, b); });
+};
+
+/* Durum rozetine basınca açılan küçük menü */
+function durumPopup(ders, anker) {
+  document.querySelectorAll('.drz-pop').forEach(x => x.remove());
+  const secenekler = [['bekliyor', 'b', 'B', 'Bekliyor'], ['gerceklesti', 'g', 'G', 'Gerçekleşti'], ['iptal', 'i', 'İ', 'İptal edildi']];
+  const pop = document.createElement('div');
+  pop.className = 'drz-pop';
+  pop.innerHTML = `<div class="drz-pop-cap">Durum seç</div>` + secenekler.map(([d, c, h, ad]) =>
+    `<button type="button" class="drz-opt ${ders.durum === d ? 'sec' : ''}" data-d="${d}"><span class="drz ${c}">${h}</span>${ad}</button>`).join('');
+  document.body.appendChild(pop);
+  const r = anker.getBoundingClientRect();
+  let left = r.right - pop.offsetWidth; if (left < 8) left = 8;
+  let top = r.bottom + 6; if (top + pop.offsetHeight > window.innerHeight - 8) top = r.top - pop.offsetHeight - 6;
+  pop.style.left = left + 'px'; pop.style.top = Math.max(8, top) + 'px';
+  const kapat = (e) => { if (!pop.contains(e.target) && e.target !== anker) { pop.remove(); document.removeEventListener('pointerdown', kapat, true); } };
+  setTimeout(() => document.addEventListener('pointerdown', kapat, true), 0);
+  pop.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { pop.remove(); document.removeEventListener('pointerdown', kapat, true); dersDurumDegistir(ders, b.dataset.d); });
+}
+
+function dersDurumDegistir(ders, yeni) {
+  if (ders.durum === yeni) return;
+  if (ders.durum === 'gerceklesti' && yeni !== 'gerceklesti') dersDusumGeriAl(ders);
+  if (yeni === 'gerceklesti') dersDusumUygula(ders);
+  ders.durum = yeni;
+  DB.guncelle('dersler', ders.id, { durum: ders.durum, dusumler: ders.dusumler || [] });
+  bildir(yeni === 'gerceklesti' ? 'Ders gerçekleşti — kalan dersler güncellendi.' : yeni === 'iptal' ? 'Ders iptal edildi.' : 'Ders tekrar bekliyor.', yeni === 'iptal' ? '' : 'basari');
+  SAYFALAR['dersler']();
+}
+/* Gerçekleşti: her öğrenciden 1 ders düş (en eski paketten — FIFO) */
+function dersDusumUygula(ders) {
+  ders.dusumler = ders.dusumler || [];
+  if (ders.dusumler.length) return;   // zaten uygulanmış
+  for (const oid of (ders.ogrenciIds || [])) {
+    const o = State.ogrenciler.find(x => x.id === oid); if (!o) continue;
+    const uygun = (o.paketler || []).filter(p => (Number(p.kalanDers) || 0) > 0)
+      .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')));
+    if (!uygun.length) continue;   // kalan dersi yok — düşülmez
+    uygun[0].kalanDers = (Number(uygun[0].kalanDers) || 0) - 1;
+    ders.dusumler.push({ ogrenciId: oid, paketId: uygun[0].id });
+    DB.guncelle('ogrenciler', o.id, { paketler: o.paketler });
+  }
+}
+/* Geri al: düşülen dersleri iade et */
+function dersDusumGeriAl(ders) {
+  for (const d of (ders.dusumler || [])) {
+    const o = State.ogrenciler.find(x => x.id === d.ogrenciId); if (!o) continue;
+    const p = (o.paketler || []).find(x => x.id === d.paketId); if (!p) continue;
+    p.kalanDers = (Number(p.kalanDers) || 0) + 1;
+    DB.guncelle('ogrenciler', o.id, { paketler: o.paketler });
+  }
+  ders.dusumler = [];
+}
+
+/* Ders Oluştur formu */
+function dersOlusturModal() {
+  const egitmenler = State.ortaklar.filter(x => x.aktif !== false);
+  const ogrenciler = State.ogrenciler.filter(x => x.durum === 'ogrenci').slice()
+    .sort((a, b) => ogrenciTamAd(a).localeCompare(ogrenciTamAd(b), 'tr'));
+  if (!egitmenler.length) return bildir('Önce eğitmen (ortak) ekleyin: Ayarlar › Ortak Bilgileri.', 'hata');
+  if (!ogrenciler.length) return bildir('Önce paketli öğrenci ekleyin (Öğrenciler).', 'hata');
+
+  let egitmenId = egitmenler[0].id;
+  const secili = new Set();
+  let tarih = bugunISO();
+  let saat = '10:00';
+  const eAd = (id) => { const e = egitmenler.find(x => x.id === id); return e ? egitmenKisaAd(e) : 'Seç'; };
+  const ogrItem = (o) => {
+    const m = ogrenciMetrik(o);
+    const paketAd = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) + ' · ' : '';
+    return `<div class="ds-osat ${secili.has(o.id) ? 'sec' : ''}" data-o="${o.id}"><span class="ds-ochk">${secili.has(o.id) ? '✓' : ''}</span><span class="oav-mini">${basHarf(o.ad, o.soyad)}</span><span class="ds-obil"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${paketAd}${m.kalanDers} ders kaldı</span></span></div>`;
+  };
+  const chipler = () => Array.from(secili).map(id => { const o = ogrenciler.find(x => x.id === id); return o ? `<span class="ds-chip">${kacar(ogrenciTamAd(o))} <span class="x" data-cx="${id}">✕</span></span>` : ''; }).join('');
+
+  const govde = `
+    <div class="gp-alan"><label>Ders Adı</label><input type="text" class="gp-inp" id="dsAd" placeholder="Örn. Reformer"></div>
+    <div class="gp-alan"><label>Dersi Verecek Eğitmen</label>
+      <div class="pa-dd"><button type="button" class="pa-trig" id="dsETrig"><span id="dsEAd">${kacar(eAd(egitmenId))}</span><span class="ok">▾</span></button>
+        <div class="pa-panel" id="dsEPanel" hidden>${egitmenler.map(e => `<div class="pa-oge" data-e="${e.id}"><span class="ogr-ea">${basHarf(e.ad)}</span>${kacar(egitmenKisaAd(e))}</div>`).join('')}</div></div></div>
+    <div class="gp-alan"><label>Dersi Alacak Öğrenci(ler)</label>
+      <div class="ds-chipler" id="dsChipler">${chipler()}</div>
+      <div class="uys-ara"><span>🔍</span><input type="text" id="dsAra" placeholder="Öğrenci ara…"></div>
+      <div class="ds-oliste" id="dsListe">${ogrenciler.map(ogrItem).join('')}</div></div>
+    <div class="uy-ikili">
+      <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
+      <div class="gp-alan" style="margin:0"><label>Saat</label><button type="button" class="pa-trig" id="dsSaat"><span id="dsSaatAd">${saat}</span><span class="ok">🕐</span></button></div>
+    </div>`;
+  modalAc('Ders Oluştur', govde,
+    `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet">💾 Dersi Planla</button>`,
+    `<span class="hr-rozet">📅 Ders</span>`);
+  setTimeout(() => $('#dsAd').focus(), 50);
+
+  const eTrig = $('#dsETrig'), ePanel = $('#dsEPanel');
+  eTrig.onclick = () => { ePanel.hidden = !ePanel.hidden; eTrig.classList.toggle('acik', !ePanel.hidden); };
+  $$('[data-e]', ePanel).forEach(el => el.onclick = () => { egitmenId = el.dataset.e; $('#dsEAd').textContent = eAd(egitmenId); ePanel.hidden = true; eTrig.classList.remove('acik'); });
+
+  const listeYenile = () => {
+    const q = ($('#dsAra').value || '').trim().toLocaleLowerCase('tr');
+    const suz = ogrenciler.filter(o => ogrenciTamAd(o).toLocaleLowerCase('tr').includes(q));
+    $('#dsListe').innerHTML = suz.length ? suz.map(ogrItem).join('') : `<div class="gp-bos" style="margin:8px 6px">Eşleşen öğrenci yok.</div>`;
+    ogrBagla();
+  };
+  const chipYenile = () => { $('#dsChipler').innerHTML = chipler(); $$('[data-cx]').forEach(c => c.onclick = () => { secili.delete(c.dataset.cx); chipYenile(); listeYenile(); }); };
+  const ogrBagla = () => $$('#dsListe [data-o]').forEach(el => el.onclick = () => { const id = el.dataset.o; if (secili.has(id)) secili.delete(id); else secili.add(id); chipYenile(); listeYenile(); });
+  ogrBagla(); chipYenile();
+  $('#dsAra').addEventListener('input', listeYenile);
+
+  $('#dsTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#dsTarihAd').textContent = fmtTarihUzun(tarih); });
+  $('#dsSaat').onclick = () => saatSecici(saat, (v) => { saat = v; $('#dsSaatAd').textContent = saat; });
+  $('#dsIptal').onclick = modalKapat;
+  $('#dsKaydet').onclick = async () => {
+    const ad = $('#dsAd').value.trim();
+    if (!ad) return bildir('Ders adı girin.', 'hata');
+    if (!secili.size) return bildir('En az bir öğrenci seçin.', 'hata');
+    const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat, durum: 'bekliyor', dusumler: [] };
+    const y = await DB.ekle('dersler', veri); State.dersler.push(y);
+    modalKapat(); dersAktifSekme = 'bekliyor'; bildir('Ders planlandı.', 'basari'); SAYFALAR['dersler']();
+  };
+}
+
+/* Katman: form modalının üzerine yüzen seçici (takvim/saat) */
+function pickerKatman(icHTML) {
+  const kap = document.createElement('div');
+  kap.className = 'picker-perde';
+  kap.innerHTML = icHTML;
+  document.body.appendChild(kap);
+  kap.addEventListener('pointerdown', (e) => { if (e.target === kap) kap.remove(); });
+  return kap;
+}
+/* Uygulamaya özel takvim */
+function tarihSecici(mevcutISO, cb) {
+  const bug = bugunISO();
+  let [gy, gm] = (mevcutISO || bug).split('-').map(Number);   // gm 1-12
+  let secili = mevcutISO || bug;
+  const kap = pickerKatman('<div class="tsz" id="tszKutu"></div>');
+  const kutu = kap.querySelector('#tszKutu');
+  const ciz = () => {
+    const y = gy, m = gm - 1;
+    const ofset = (new Date(y, m, 1).getDay() + 6) % 7;
+    const gunSay = new Date(y, m + 1, 0).getDate();
+    let hucreler = '';
+    for (let i = 0; i < ofset; i++) hucreler += '<span class="tsz-t bos"></span>';
+    for (let d = 1; d <= gunSay; d++) {
+      const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const cls = ['tsz-t'];
+      if (iso === bug) cls.push('bugun');
+      if (iso < bug) cls.push('gecmis');
+      if (iso === secili) cls.push('sec');
+      hucreler += `<span class="${cls.join(' ')}" data-iso="${iso}">${d}</span>`;
+    }
+    kutu.innerHTML = `
+      <div class="tsz-head">Tarih Seç</div>
+      <div class="tsz-ay"><button type="button" class="tsz-nav" data-yon="-1">‹</button><span class="tsz-ad">${AY_TAM[m]} ${y}</span><button type="button" class="tsz-nav" data-yon="1">›</button></div>
+      <div class="tsz-grid">${['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'].map(g => `<span class="tsz-gun">${g}</span>`).join('')}${hucreler}</div>
+      <div class="tsz-foot"><button type="button" class="picker-iptal" id="tszIptal">İptal</button><button type="button" class="picker-tamam" id="tszTamam">Tamam</button></div>`;
+    kutu.querySelectorAll('[data-yon]').forEach(b => b.onclick = () => { gm += Number(b.dataset.yon); if (gm < 1) { gm = 12; gy--; } if (gm > 12) { gm = 1; gy++; } ciz(); });
+    kutu.querySelectorAll('[data-iso]').forEach(b => b.onclick = () => { secili = b.dataset.iso; ciz(); });
+    kutu.querySelector('#tszIptal').onclick = () => kap.remove();
+    kutu.querySelector('#tszTamam').onclick = () => { kap.remove(); cb(secili); };
+  };
+  ciz();
+}
+/* Uygulamaya özel saat tekerleği */
+function kurWheel(wrap, values, secili, degisti) {
+  const OY = 40;
+  wrap.innerHTML = `<div class="wsel-band"></div><div class="wsel"><div class="wsel-liste">${values.map(v => `<div class="wsel-oge" data-v="${v}">${v}</div>`).join('')}</div></div>`;
+  const scroll = wrap.querySelector('.wsel');
+  let idx = Math.max(0, values.indexOf(secili));
+  const ogeler = () => Array.from(wrap.querySelectorAll('.wsel-oge'));
+  const isaretle = () => ogeler().forEach((e, i) => e.classList.toggle('on', i === idx));
+  const merkezle = (i, smooth) => scroll.scrollTo({ top: i * OY, behavior: smooth ? 'smooth' : 'auto' });
+  isaretle();
+  setTimeout(() => merkezle(idx, false), 0);
+  let zaman;
+  scroll.addEventListener('scroll', () => {
+    clearTimeout(zaman);
+    zaman = setTimeout(() => {
+      const yeni = Math.max(0, Math.min(values.length - 1, Math.round(scroll.scrollTop / OY)));
+      if (yeni !== idx) { idx = yeni; isaretle(); if (degisti) degisti(values[idx]); }
+    }, 80);
+  });
+  ogeler().forEach((e, i) => e.onclick = () => { idx = i; isaretle(); if (degisti) degisti(values[i]); merkezle(i, true); });
+  return { get: () => values[idx] };
+}
+function saatSecici(mevcut, cb) {
+  const [sh, sd] = (mevcut || '10:00').split(':');
+  const saatler = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const dklar = ['00', '15', '30', '45'];
+  const kap = pickerKatman(`
+    <div class="ssz">
+      <div class="ssz-head">Saat Seç</div><div class="ssz-sub">Kaydırarak saat ve dakikayı seç</div>
+      <div class="ssz-wheels"><div class="wsel-wrap" id="wSaat"></div><span class="ssz-kolon">:</span><div class="wsel-wrap" id="wDk"></div></div>
+      <div class="ssz-kk"><span>Saat</span><span></span><span>Dakika</span></div>
+      <div class="tsz-foot"><button type="button" class="picker-iptal" id="sszIptal">İptal</button><button type="button" class="picker-tamam" id="sszTamam">Tamam</button></div>
+    </div>`);
+  const wSaat = kurWheel(kap.querySelector('#wSaat'), saatler, saatler.includes(sh) ? sh : '10', null);
+  const wDk = kurWheel(kap.querySelector('#wDk'), dklar, dklar.includes(sd) ? sd : '00', null);
+  kap.querySelector('#sszIptal').onclick = () => kap.remove();
+  kap.querySelector('#sszTamam').onclick = () => { kap.remove(); cb(`${wSaat.get()}:${wDk.get()}`); };
+}
+
 /* Yüklenen logoyu küçült (max 240px) ve ayarlara kaydet */
 function logoDosyaIsle(dosya) {
   if (!/^image\//.test(dosya.type) && !/\.svg$/i.test(dosya.name)) return bildir('Lütfen bir görsel dosyası seçin.', 'hata');
@@ -3989,6 +4244,7 @@ function ustCubukKur() {
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
   { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
+  { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: '📅' },
   { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
