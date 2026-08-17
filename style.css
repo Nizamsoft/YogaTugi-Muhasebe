@@ -612,6 +612,33 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 @media (hover:none){.tnm-row-arac{opacity:1}}
 @media (max-width:560px){.tnm-row-arac{opacity:1}}
 
+/* ============ Üyelikler (ders/üyelik paketleri) ============ */
+.uk-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,250px));gap:18px}
+.uk{position:relative;border-radius:20px;padding:2px;animation:tnmGir .34s ease both;
+  background:linear-gradient(135deg,#e7cf94,#f6e6ad 38%,#d3a84a 60%,#f7e9b4 82%,#c69133);
+  box-shadow:0 20px 38px -22px rgba(120,90,20,.5)}
+.uk-ic{background:linear-gradient(180deg,#fffefb,#fdf6ea);border-radius:18px;padding:20px 18px 16px;height:100%;display:flex;flex-direction:column}
+.uk-bas{display:flex;align-items:center;gap:10px}
+.uk-ik{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;flex:0 0 auto;
+  background:linear-gradient(135deg,#fbf1d4,#f2d98a);box-shadow:inset 0 0 0 1px #ecd79f}
+.uk-ad{font-family:Georgia,"Times New Roman",serif;font-size:18px;font-weight:700;color:var(--metin)}
+.uk-fiyat{margin:14px 0 4px;font-weight:800;font-size:26px;color:#a8792f;letter-spacing:.5px}
+.uk-fiyat small{font-size:14px;font-weight:700}
+.uk-ay{height:1px;background:var(--line);margin:12px 0}
+.uk-satir{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;padding:5px 0;color:var(--metin)}
+.uk-satir .e{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;background:var(--gri-acik,#f2ead9);flex:0 0 auto}
+.uk-satir b{color:#a8792f}
+.uk-kapsam{color:var(--metin);font-weight:700}
+.uk-arac{display:flex;gap:7px;margin-top:auto;padding-top:14px}
+.uk-arac button{flex:1;border:1px solid var(--kenar);background:#fff;border-radius:10px;padding:9px;font-family:inherit;font-weight:700;font-size:12.5px;color:var(--metin-soluk);cursor:pointer}
+.uk-arac button:hover{border-color:var(--gold)}
+.uk-arac .duz{color:#a8792f;border-color:#ecd79f}
+/* Üyelik formu — birimli alanlar */
+.uy-ikili{display:flex;gap:10px}
+.uy-ikili .gp-alan{flex:1}
+.uy-birimli{position:relative}
+.uy-birim{position:absolute;right:13px;bottom:12px;font-size:13.5px;font-weight:700;color:var(--metin-soluk);pointer-events:none}
+
 /* Gider Ekle — açılır grup seçici (satır içi) */
 .gd-dd{position:relative}
 .gd-trig{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;

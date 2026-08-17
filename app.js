@@ -23,6 +23,7 @@ const State = {
   odemeler: [],      // {id, musteriId, tarih, tutar, aciklama}  — müşteri tahsilatları (cari ödeme)
   giderler: [],      // {id, ad, grupId}  — Tanımlamalar > Giderler (gider kalem isimleri)
   giderGruplari: [], // {id, ad}  — Gider grup başlıkları
+  uyelikler: [],     // {id, ad, fiyat, dersSayisi, gecerlilikGun, kapsam}  — Tanımlamalar > Üyelikler
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -47,6 +48,13 @@ function TL(n) {
   return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
 }
 function sayi(n) { return (Number(n) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+/* Binlik ayraçlı tam sayı (ondalıksız): 50000 -> "50.000" */
+function binlik(n) { return Math.round(Number(n) || 0).toLocaleString('tr-TR'); }
+/* Yazılan metinden yalnızca rakamları al ve binlik nokta ekle: "50000" -> "50.000" */
+function binlikBiciml(metin) {
+  const rakam = String(metin == null ? '' : metin).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  return rakam ? Number(rakam).toLocaleString('tr-TR') : '';
+}
 
 /* --- Tutar giriş kutusu: yazarken canlı "5.000,12 ₺" biçimlendirme --- */
 function tutarBicimle(ham) {
@@ -139,7 +147,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari'];   // ortak (ad+foto) + Giderler + grupları
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler'];   // ortak (ad+foto) + Giderler + grupları + Üyelikler
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -329,7 +337,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '81';
+const APP_SURUM = '82';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -351,6 +359,7 @@ async function veriYukle() {
   State.ortaklar = temiz;
   State.giderler = DB._oku('giderler');
   State.giderGruplari = DB._oku('giderGruplari');
+  State.uyelikler = DB._oku('uyelikler');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
 }
@@ -457,7 +466,7 @@ const MENU = [
   ]},
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler' };
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak', 'Müşteri & Planlama'];
@@ -3291,6 +3300,7 @@ SAYFALAR['ayar-ortak'] = function () {
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
   { id: 'gider', ad: 'Giderler', ikon: '📉', alt: 'Gider kalemleri ve grupları' },
+  { id: 'uyelik', ad: 'Üyelikler', ikon: '🎟️', alt: 'Ders ve üyelik paketleri' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
   ic().innerHTML = `
@@ -3402,6 +3412,80 @@ function giderFormu(mevcut) {
     if (mevcut) { await DB.guncelle('giderler', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('giderler', veri); State.giderler.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['tanim-gider']();
+  };
+}
+
+/* -------- Tanımlamalar: Üyelikler (ders/üyelik paketleri) -------- */
+SAYFALAR['tanim-uyelik'] = function () {
+  const uyelikler = State.uyelikler;
+  const kartHTML = (u) => `<div class="uk"><div class="uk-ic">
+      <div class="uk-bas"><span class="uk-ik">🎟️</span><span class="uk-ad">${kacar(u.ad)}</span></div>
+      <div class="uk-fiyat">${binlik(u.fiyat)} <small>₺</small></div>
+      <div class="uk-ay"></div>
+      <div class="uk-satir"><span class="e">📚</span><span><b>${Number(u.dersSayisi) || 0}</b> Ders</span></div>
+      <div class="uk-satir"><span class="e">⏳</span><span><b>${Number(u.gecerlilikGun) || 0}</b> Gün geçerli</span></div>
+      ${u.kapsam ? `<div class="uk-satir"><span class="e">🎯</span><span class="uk-kapsam">${kacar(u.kapsam)}</span></div>` : ''}
+      <div class="uk-arac"><button type="button" class="duz" data-ud="${u.id}">✎ Düzenle</button><button type="button" data-us="${u.id}">🗑️ Sil</button></div>
+    </div></div>`;
+
+  ic().innerHTML = `
+    <div class="uk-sayfa">
+      <div class="tnm-scr-ust">
+        <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
+        <button type="button" class="gp-ekle" id="uyEkle">＋ Üyelik Ekle</button>
+      </div>
+      ${uyelikler.length === 0
+        ? `<div class="gp-bos">Henüz üyelik yok. “＋ Üyelik Ekle” ile ilk paketi oluşturun.</div>`
+        : `<div class="uk-izgara">${uyelikler.map(kartHTML).join('')}</div>`}
+    </div>`;
+  $('#tnmGeri').onclick = () => git('ayar-tanimlama');
+  $('#uyEkle').onclick = () => uyelikFormu();
+  $$('[data-ud]').forEach(b => b.onclick = () => uyelikFormu(State.uyelikler.find(u => u.id === b.dataset.ud)));
+  $$('[data-us]').forEach(b => b.onclick = () => onayModal('Üyelik silinsin mi?', '', async () => {
+    await DB.sil('uyelikler', b.dataset.us); State.uyelikler = State.uyelikler.filter(u => u.id !== b.dataset.us);
+    bildir('Silindi.', 'basari'); SAYFALAR['tanim-uyelik']();
+  }));
+};
+
+function uyelikFormu(mevcut) {
+  const govde = `
+    <div class="gp-alan"><label>Üyelik Adı</label>
+      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Gold Paket"></div>
+    <div class="uy-ikili">
+      <div class="gp-alan uy-birimli"><label>Fiyatı</label>
+        <input type="text" inputmode="numeric" class="gp-inp" id="uyFiyat" value="${mevcut ? binlik(mevcut.fiyat) : ''}" placeholder="50.000"><span class="uy-birim">₺</span></div>
+      <div class="gp-alan"><label>Ders Sayısı</label>
+        <input type="text" inputmode="numeric" class="gp-inp" id="uyDers" value="${mevcut ? (Number(mevcut.dersSayisi) || '') : ''}" placeholder="15"></div>
+    </div>
+    <div class="gp-alan uy-birimli"><label>Geçerlilik Süresi</label>
+      <input type="text" inputmode="numeric" class="gp-inp" id="uyGun" value="${mevcut ? (Number(mevcut.gecerlilikGun) || '') : ''}" placeholder="60"><span class="uy-birim">gün</span></div>
+    <div class="gp-alan" style="margin:0"><label>Kapsamı</label>
+      <input type="text" class="gp-inp" id="uyKapsam" value="${mevcut ? kacar(mevcut.kapsam || '') : ''}" placeholder="Örn. Grup Dersleri ve Özel Dersler"></div>`;
+  modalAc(mevcut ? 'Üyelik Düzenle' : 'Yeni Üyelik', govde,
+    `<button class="btn" id="uyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="uyKaydet">💾 Kaydet</button>`,
+    `<span class="hr-rozet">🎟️ Üyelik</span>`);
+
+  setTimeout(() => $('#uyAd').focus(), 50);
+  // Fiyat: yazdıkça binlik nokta
+  const fy = $('#uyFiyat');
+  fy.addEventListener('input', () => { fy.value = binlikBiciml(fy.value); });
+  // Ders sayısı / gün: yalnızca rakam
+  ['uyDers', 'uyGun'].forEach(id => { const el = $('#' + id); el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, ''); }); });
+
+  $('#uyIptal').onclick = modalKapat;
+  $('#uyKaydet').onclick = async () => {
+    const ad = $('#uyAd').value.trim();
+    if (!ad) return bildir('Üyelik adı girin.', 'hata');
+    const veri = {
+      ad,
+      fiyat: Number(($('#uyFiyat').value || '').replace(/\D/g, '')) || 0,
+      dersSayisi: Number($('#uyDers').value) || 0,
+      gecerlilikGun: Number($('#uyGun').value) || 0,
+      kapsam: $('#uyKapsam').value.trim(),
+    };
+    if (mevcut) { await DB.guncelle('uyelikler', mevcut.id, veri); Object.assign(mevcut, veri); }
+    else { const y = await DB.ekle('uyelikler', veri); State.uyelikler.push(y); }
+    modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['tanim-uyelik']();
   };
 }
 
