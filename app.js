@@ -352,8 +352,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '84';
+const APP_SURUM = '85';
 const APP_SURUM_TARIH = '17 Ağu 2026';
+const APP_SURUM_SAAT = '14:34';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -544,7 +545,7 @@ function menuCiz() {
     if (!acikti) grup.classList.add('acik');
   });
   $$('.menu-oge', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa));
-  if ($('#kenarSurum')) $('#kenarSurum').innerHTML = `<b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH}</span>`;
+  if ($('#kenarSurum')) $('#kenarSurum').innerHTML = `<b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH} · ${APP_SURUM_SAAT}</span>`;
 }
 
 function menuBul(id) {
@@ -3213,7 +3214,7 @@ SAYFALAR['ayar-admin'] = function () {
     <div class="admin-kart">
       <div class="admin-head"><span class="ai">🛡️</span><h3>Admin Ayarları</h3><span class="rz">SADECE YÖNETİCİ</span></div>
       <div class="admin-body">
-        <div class="admin-satir"><span class="l">Uygulama Sürümü</span><span class="v">Sürüm ${APP_SURUM} · ${APP_SURUM_TARIH}</span></div>
+        <div class="admin-satir"><span class="l">Uygulama Sürümü</span><span class="v">Sürüm ${APP_SURUM} · ${APP_SURUM_TARIH} · ${APP_SURUM_SAAT}</span></div>
         <p class="admin-not">Yeni bir güncelleme yayınlandığında, en güncel hâli bu cihaza indirmek için aşağıdaki düğmeye basın. Eski sürüm önbellekte kalmaz, en yeni sürüm yüklenir.</p>
         <button class="admin-guncelle" id="adGuncelle">⟳ En Güncel Sürümü Getir</button>
         <p class="admin-alt">🔒 Verileriniz korunur — yalnızca uygulama dosyaları yenilenir.</p>
