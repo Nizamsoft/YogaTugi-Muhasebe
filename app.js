@@ -359,9 +359,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '87';
+const APP_SURUM = '88';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '14:55';
+const APP_SURUM_SAAT = '15:37';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3582,7 +3582,7 @@ SAYFALAR['ogrenciler'] = function () {
 
   $('#yeniUyelikBtn').onclick = yeniUyelikBaslat;
   $$('[data-sekme]').forEach(b => b.onclick = () => { ogrenciAktifSekme = b.dataset.sekme; SAYFALAR['ogrenciler'](); });
-  $$('[data-oata]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oata); if (o) paketAtaModal(o); });
+  $$('[data-oata]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oata); if (o) islemSecModal(o); });
   $$('[data-oduzenle]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oduzenle); if (o) ogrenciDuzenle(o); });
   $$('[data-osil]').forEach(b => b.onclick = () => onayModal('Kayıt silinsin mi?', 'Bu öğrenci ve tüm paketleri silinecek.', async () => {
     await DB.sil('ogrenciler', b.dataset.osil); State.ogrenciler = State.ogrenciler.filter(x => x.id !== b.dataset.osil);
@@ -3661,6 +3661,23 @@ function uyeSecModal() {
     $('#uyeListe').innerHTML = sonuc.length ? sonuc.map(satir).join('') : `<div class="gp-bos" style="margin:0">Eşleşen üye yok.</div>`;
     bagla();
   });
+}
+
+/* Potansiyeldeki “Paket Ata” → işlem seç (kişi başlıklı, düzenlenmiş metinler) */
+function islemSecModal(o) {
+  const tamAd = `${o.ad} ${o.soyad || ''}`.trim();
+  const govde = `
+    <div class="is-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="is-kisi-bilg"><span class="ad">${kacar(tamAd)}</span><span class="alt">Potansiyel müşteri${o.telefon ? ` · ${kacar(o.telefon)}` : ''}</span></span></div>
+    <div class="is-soru">Ne yapmak istersiniz?</div>
+    <div class="uys-ikisec">
+      <button type="button" class="uys-opt uana" id="isPaket"><span class="uys-ik">🎟️</span><span class="uys-metin"><span class="ad">Ders Paketi Tanımla</span><span class="alt">Eğitmen ve paket seç → öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt" id="isBeklet"><span class="uys-ik gri">🕒</span><span class="uys-metin"><span class="ad">Şimdilik Beklet</span><span class="alt">Potansiyel listesinde kalmaya devam etsin</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt pas" id="isLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşteriye Link Gönder</span><span class="alt">Paketi kendisi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
+    </div>`;
+  modalAc('İşlem Seç', govde, null, `<span class="hr-rozet">👤 ${kacar(tamAd)}</span>`);
+  $('#isPaket').onclick = () => paketAtaModal(o);
+  $('#isBeklet').onclick = () => { modalKapat(); bildir('Potansiyel olarak beklemede.', ''); };
+  $('#isLink').onclick = () => bildir('Bu bölüm yapım aşamasında.', '');
 }
 
 /* Ders paketi ata — eğitmen + üyelik paketi seçimi */
