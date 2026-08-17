@@ -24,6 +24,7 @@ const State = {
   giderler: [],      // {id, ad, grupId}  — Tanımlamalar > Giderler (gider kalem isimleri)
   giderGruplari: [], // {id, ad}  — Gider grup başlıkları
   uyelikler: [],     // {id, ad, fiyat, dersSayisi, gecerlilikGun, kapsam}  — Tanımlamalar > Üyelikler
+  ogrenciler: [],    // {id, ad, soyad, telefon, olusturma, durum:'potansiyel'|'ogrenci', egitmenId, paketler:[{id,uyelikId,paketAd,dersToplam,kalanDers,fiyat,kalanOdeme,tarih}]}
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -88,6 +89,20 @@ function tarihGostergeBagla() {
   guncelle();
 }
 function yeniId() { return 'id' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
+/* İsimden baş harf(ler) — "Ayşe Yılmaz" -> "AY", "Elif" -> "EL" */
+function basHarf(...parcalar) {
+  const kelimeler = parcalar.map(p => String(p || '').trim()).filter(Boolean).join(' ').split(/\s+/).filter(Boolean);
+  if (!kelimeler.length) return '?';
+  if (kelimeler.length === 1) return kelimeler[0].slice(0, 2).toLocaleUpperCase('tr');
+  return (kelimeler[0][0] + kelimeler[kelimeler.length - 1][0]).toLocaleUpperCase('tr');
+}
+/* Eğitmen (ortak) kısa gösterim adı: "Elif Kaya" -> "Elif K." */
+function egitmenKisaAd(o) {
+  if (!o) return '—';
+  const p = String(o.ad || '').trim().split(/\s+/).filter(Boolean);
+  if (p.length <= 1) return o.ad || '—';
+  return p[0] + ' ' + p[p.length - 1][0].toLocaleUpperCase('tr') + '.';
+}
 function bugunISO() { return new Date().toISOString().slice(0, 10); }
 function donemStr(tarih) { return (tarih || bugunISO()).slice(0, 7); } // YYYY-MM
 function buAy() { return bugunISO().slice(0, 7); }
@@ -147,7 +162,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler'];   // ortak (ad+foto) + Giderler + grupları + Üyelikler
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler', 'ogrenciler'];   // ortak (ad+foto) + Giderler + grupları + Üyelikler + Öğrenciler
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -337,7 +352,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '83';
+const APP_SURUM = '84';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -360,6 +375,7 @@ async function veriYukle() {
   State.giderler = DB._oku('giderler');
   State.giderGruplari = DB._oku('giderGruplari');
   State.uyelikler = DB._oku('uyelikler');
+  State.ogrenciler = DB._oku('ogrenciler');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
 }
@@ -459,6 +475,7 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
+  { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
     { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
@@ -3489,6 +3506,245 @@ function uyelikFormu(mevcut) {
   };
 }
 
+/* ==========================================================
+   Öğrenciler (müşteri kayıtları + üyelik/paket satışı)
+   ========================================================== */
+let ogrenciAktifSekme = 'ogrenci';   // 'ogrenci' | 'potansiyel'
+
+function tarihKisa(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  catch { return '—'; }
+}
+/* Bir öğrencinin paketlerinden toplam metrikler */
+function ogrenciMetrik(o) {
+  const p = o.paketler || [];
+  return p.reduce((a, x) => {
+    a.kalanDers += Number(x.kalanDers) || 0;
+    a.dersToplam += Number(x.dersToplam) || 0;
+    a.kalanOdeme += Number(x.kalanOdeme) || 0;
+    a.fiyatToplam += Number(x.fiyat) || 0;
+    return a;
+  }, { kalanDers: 0, dersToplam: 0, kalanOdeme: 0, fiyatToplam: 0 });
+}
+function egitmenAdiById(id) { const o = State.ortaklar.find(x => x.id === id); return o ? egitmenKisaAd(o) : '—'; }
+
+SAYFALAR['ogrenciler'] = function () {
+  const hepsi = State.ogrenciler || [];
+  const ogr = hepsi.filter(o => o.durum === 'ogrenci');
+  const pot = hepsi.filter(o => o.durum !== 'ogrenci');
+
+  const barHTML = (kullanilan, toplam, tur) => {
+    const y = toplam > 0 ? Math.max(0, Math.min(100, (kullanilan / toplam) * 100)) : 0;
+    return `<span class="ogr-bar ${tur}"><span style="width:${y}%"></span></span>`;
+  };
+  const ogrenciSatir = (o) => {
+    const m = ogrenciMetrik(o);
+    const paketler = o.paketler || [];
+    const paketRozet = paketler.length
+      ? `<span class="ogr-pk">${kacar(paketler[0].paketAd)}</span>${paketler.length > 1 ? ` <span class="ogr-pk">+${paketler.length - 1}</span>` : ''}`
+      : '<span class="ogr-soluk">—</span>';
+    const odemeHucre = m.kalanOdeme <= 0
+      ? `<span class="ogr-metrik"><span class="rakam ogr-odendi">Ödendi</span>${barHTML(1, 1, 'odeme')}</span>`
+      : `<span class="ogr-metrik"><span class="rakam ogr-altin">${binlik(m.kalanOdeme)}<span class="top"> / ${binlik(m.fiyatToplam)} ₺</span></span>${barHTML(m.fiyatToplam - m.kalanOdeme, m.fiyatToplam, 'odeme')}</span>`;
+    return `<tr>
+      <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-bilg"><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="ogr-tel">${kacar(o.telefon || '')}</span></span></span></td>
+      <td data-l="Eğitmeni"><span class="ogr-egit"><span class="ogr-ea">${basHarf(egitmenAdiById(o.egitmenId))}</span>${kacar(egitmenAdiById(o.egitmenId))}</span></td>
+      <td data-l="Paket">${paketRozet}</td>
+      <td data-l="Kalan Ders" class="sag"><span class="ogr-metrik"><span class="rakam">${m.kalanDers}<span class="top"> / ${m.dersToplam}</span></span>${barHTML(m.dersToplam - m.kalanDers, m.dersToplam, 'ders')}</span></td>
+      <td data-l="Kalan Ödeme" class="sag">${odemeHucre}</td>
+      <td class="sag"><span class="ogr-arac"><button type="button" data-oduzenle="${o.id}" title="Düzenle">✎</button><button type="button" data-osil="${o.id}" title="Sil">🗑️</button></span></td>
+    </tr>`;
+  };
+  const potSatir = (o) => `<tr>
+      <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span></span></td>
+      <td data-l="Tel">${kacar(o.telefon || '—')}</td>
+      <td data-l="Görüşülen Tarih">${tarihKisa(o.olusturma)}</td>
+      <td class="sag"><span class="ogr-arac"><button type="button" class="ogr-ata" data-oata="${o.id}">Paket Ata</button><button type="button" data-osil="${o.id}" title="Sil">🗑️</button></span></td>
+    </tr>`;
+
+  const ogrenciTablo = ogr.length
+    ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Paket</th><th class="sag">Kalan Ders</th><th class="sag">Kalan Ödeme</th><th></th></tr></thead>
+        <tbody>${ogr.map(ogrenciSatir).join('')}</tbody></table></div></div>`
+    : `<div class="gp-bos">Henüz öğrenci yok. “＋ Yeni Üyelik Oluştur” ile başlayın.</div>`;
+  const potTablo = pot.length
+    ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        <thead><tr><th>Öğrenci</th><th>Tel</th><th>Görüşülen Tarih</th><th></th></tr></thead>
+        <tbody>${pot.map(potSatir).join('')}</tbody></table></div></div>`
+    : `<div class="gp-bos">Bekleyen potansiyel müşteri yok.</div>`;
+
+  ic().innerHTML = `
+    <div class="ogr-sayfa">
+      <div class="ogr-ust">
+        <div class="ogr-seg">
+          <button type="button" class="${ogrenciAktifSekme === 'ogrenci' ? 'sec' : ''}" data-sekme="ogrenci">Öğrenciler <span class="rk">${ogr.length}</span></button>
+          <button type="button" class="${ogrenciAktifSekme === 'potansiyel' ? 'sec' : ''}" data-sekme="potansiyel">Potansiyel <span class="rk">${pot.length}</span></button>
+        </div>
+        <button type="button" class="gp-ekle" id="yeniUyelikBtn">＋ Yeni Üyelik Oluştur</button>
+      </div>
+      ${ogrenciAktifSekme === 'ogrenci' ? ogrenciTablo : potTablo}
+    </div>`;
+
+  $('#yeniUyelikBtn').onclick = yeniUyelikBaslat;
+  $$('[data-sekme]').forEach(b => b.onclick = () => { ogrenciAktifSekme = b.dataset.sekme; SAYFALAR['ogrenciler'](); });
+  $$('[data-oata]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oata); if (o) paketAtaModal(o); });
+  $$('[data-oduzenle]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oduzenle); if (o) ogrenciDuzenle(o); });
+  $$('[data-osil]').forEach(b => b.onclick = () => onayModal('Kayıt silinsin mi?', 'Bu öğrenci ve tüm paketleri silinecek.', async () => {
+    await DB.sil('ogrenciler', b.dataset.osil); State.ogrenciler = State.ogrenciler.filter(x => x.id !== b.dataset.osil);
+    bildir('Silindi.', 'basari'); SAYFALAR['ogrenciler']();
+  }));
+};
+
+/* “＋ Yeni Üyelik Oluştur” → Yeni Üye / Eski Üye */
+function yeniUyelikBaslat() {
+  const govde = `
+    <div class="uys-ikisec">
+      <button type="button" class="uys-opt yeni" id="uysYeni"><span class="uys-ik">🌱</span><span class="uys-metin"><span class="ad">Yeni Üye</span><span class="alt">İlk kez kayıt — ad, soyad, telefon</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt eski" id="uysEski"><span class="uys-ik">👤</span><span class="uys-metin"><span class="ad">Eski Üye</span><span class="alt">Kayıtlı öğrenciye yeni paket ekle</span></span><span class="uys-ok">›</span></button>
+    </div>`;
+  modalAc('Yeni Üyelik', govde, `<button class="btn" id="uysIptal" style="flex:1">İptal</button>`, `<span class="hr-rozet">🎟️ Üyelik</span>`);
+  $('#uysIptal').onclick = modalKapat;
+  $('#uysYeni').onclick = yeniUyeFormu;
+  $('#uysEski').onclick = uyeSecModal;
+}
+
+/* Yeni Üye kaydı → potansiyel oluştur → ne yapmak istersiniz? */
+function yeniUyeFormu() {
+  const govde = `
+    <div class="gp-alan"><label>Adı</label><input type="text" class="gp-inp" id="oAd" placeholder="Örn. Ayşe" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan"><label>Soyadı</label><input type="text" class="gp-inp" id="oSoyad" placeholder="Örn. Yılmaz" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="tel" class="gp-inp" id="oTel" placeholder="Örn. 0532 111 22 33" autocomplete="off"></div>`;
+  modalAc('Yeni Üye', govde,
+    `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oDevam">Devam Et →</button>`,
+    `<span class="hr-rozet">🌱 Yeni Üye</span>`);
+  setTimeout(() => $('#oAd').focus(), 50);
+  $('#oIptal').onclick = modalKapat;
+  $('#oDevam').onclick = async () => {
+    const ad = $('#oAd').value.trim();
+    if (!ad) return bildir('Ad girin.', 'hata');
+    const veri = { ad, soyad: $('#oSoyad').value.trim(), telefon: $('#oTel').value.trim(), durum: 'potansiyel', egitmenId: null, paketler: [] };
+    const y = await DB.ekle('ogrenciler', veri); State.ogrenciler.push(y);
+    neYapmakModal(y);
+  };
+}
+
+/* Potansiyel oluştu — 3 seçenek */
+function neYapmakModal(o) {
+  const govde = `
+    <div class="ny-ust"><div class="ny-ik">✅</div><div class="ny-bilg"><h4>Potansiyel Müşteri Oluştu</h4><p>${kacar(o.ad)} ${kacar(o.soyad || '')} eklendi. Ne yapmak istersiniz?</p></div></div>
+    <div class="uys-ikisec">
+      <button type="button" class="uys-opt" id="nySonra"><span class="uys-ik gri">🕒</span><span class="uys-metin"><span class="ad">Daha Sonra Devam Edeceğim</span><span class="alt">Potansiyel müşteri olarak beklet</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt" id="nyPaket"><span class="uys-ik">🎟️</span><span class="uys-metin"><span class="ad">Ben Ders Paketi Tanımlayacağım</span><span class="alt">Eğitmen + paket seç, öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt pas" id="nyLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşterime Link Göndereceğim</span><span class="alt">Paketi kendi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>`;
+  modalAc('Potansiyel Müşteri Oluştu', govde, null, `<span class="hr-rozet">🌱 Yeni Üye</span>`);
+  $('#nySonra').onclick = () => { modalKapat(); ogrenciAktifSekme = 'potansiyel'; bildir('Potansiyel müşterilere eklendi.', 'basari'); SAYFALAR['ogrenciler'](); };
+  $('#nyPaket').onclick = () => paketAtaModal(o);
+  $('#nyLink').onclick = () => bildir('Bu bölüm yapım aşamasında.', '');
+}
+
+/* Eski Üye → kayıtlı öğrenci seç */
+function uyeSecModal() {
+  const liste = State.ogrenciler || [];
+  if (!liste.length) return bildir('Kayıtlı üye yok. Önce “Yeni Üye” ekleyin.', 'hata');
+  const satir = (o) => {
+    const m = ogrenciMetrik(o);
+    const pk = (o.paketler || []).length;
+    const durumMetin = o.durum === 'ogrenci' ? (pk > 1 ? pk + ' paket' : (o.paketler[0] ? o.paketler[0].paketAd : 'Öğrenci')) : 'Potansiyel';
+    return `<button type="button" class="uys-uye" data-uye="${o.id}"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="uys-uye-bilg"><span class="ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="alt">${kacar(o.telefon || '—')} · ${kacar(durumMetin)}</span></span><span class="uys-ok">›</span></button>`;
+  };
+  const govde = `
+    <div class="uys-ara"><span>🔍</span><input type="text" id="uyeAra" placeholder="İsim ile ara…" autocomplete="off"></div>
+    <div class="uys-liste" id="uyeListe">${liste.map(satir).join('')}</div>`;
+  modalAc('Üye Seç', govde, `<button class="btn" id="uyeGeri" style="flex:1">‹ Geri</button>`, `<span class="hr-rozet">👤 Eski Üye</span>`);
+  const bagla = () => $$('#uyeListe [data-uye]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.uye); if (o) paketAtaModal(o); });
+  bagla();
+  $('#uyeGeri').onclick = yeniUyelikBaslat;
+  $('#uyeAra').addEventListener('input', e => {
+    const q = e.target.value.trim().toLocaleLowerCase('tr');
+    const sonuc = liste.filter(o => (`${o.ad} ${o.soyad || ''}`).toLocaleLowerCase('tr').includes(q));
+    $('#uyeListe').innerHTML = sonuc.length ? sonuc.map(satir).join('') : `<div class="gp-bos" style="margin:0">Eşleşen üye yok.</div>`;
+    bagla();
+  });
+}
+
+/* Ders paketi ata — eğitmen + üyelik paketi seçimi */
+function paketAtaModal(o) {
+  const egitmenler = State.ortaklar.filter(x => x.aktif !== false);
+  const paketler = State.uyelikler || [];
+  if (!egitmenler.length) return bildir('Önce eğitmen (ortak) ekleyin: Ayarlar › Ortak Bilgileri.', 'hata');
+  if (!paketler.length) return bildir('Önce üyelik paketi tanımlayın: Tanımlamalar › Üyelikler.', 'hata');
+
+  let egitmenId = o.egitmenId || egitmenler[0].id;
+  let uyelikId = paketler[0].id;
+  const eAd = (id) => { const e = egitmenler.find(x => x.id === id); return e ? egitmenKisaAd(e) : 'Seç'; };
+  const pAd = (id) => { const p = paketler.find(x => x.id === id); return p ? p.ad : 'Seç'; };
+  const eOgeler = () => egitmenler.map(e =>
+    `<div class="pa-oge ${egitmenId === e.id ? 'sec' : ''}" data-e="${e.id}"><span class="ogr-ea">${basHarf(e.ad)}</span>${kacar(egitmenKisaAd(e))}${egitmenId === e.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
+  const pOgeler = () => paketler.map(p =>
+    `<div class="pa-oge ${uyelikId === p.id ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${binlik(p.fiyat)} ₺ · ${Number(p.dersSayisi) || 0} Ders · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${uyelikId === p.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
+
+  const govde = `
+    <div class="gp-alan"><label>Eğitmen</label>
+      <div class="pa-dd">
+        <button type="button" class="pa-trig" id="paeTrig"><span id="paeAd">${kacar(eAd(egitmenId))}</span><span class="ok">▾</span></button>
+        <div class="pa-panel" id="paePanel" hidden>${eOgeler()}</div>
+      </div></div>
+    <div class="gp-alan" style="margin:0"><label>Üyelik Paketi</label>
+      <div class="pa-dd">
+        <button type="button" class="pa-trig" id="papTrig"><span id="papAd">${kacar(pAd(uyelikId))}</span><span class="ok">▾</span></button>
+        <div class="pa-panel" id="papPanel" hidden>${pOgeler()}</div>
+      </div></div>`;
+  modalAc('Ders Paketi Ata', govde,
+    `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="paKaydet">💾 Öğrenciye Ekle</button>`,
+    `<span class="hr-rozet">🎟️ Paket</span>`);
+
+  const kur = (trig, panel, ogelerFn, secFn) => {
+    const t = $(trig), p = $(panel);
+    t.onclick = () => { const ac = p.hidden; $$('.pa-panel').forEach(x => x.hidden = true); $$('.pa-trig').forEach(x => x.classList.remove('acik')); p.hidden = !ac; t.classList.toggle('acik', ac); };
+    const bagla = () => $$('[data-e],[data-p]', p).forEach(el => el.onclick = () => { secFn(el); p.hidden = true; t.classList.remove('acik'); });
+    p._yenile = () => { p.innerHTML = ogelerFn(); bagla(); };
+    bagla();
+  };
+  kur('#paeTrig', '#paePanel', eOgeler, (el) => { egitmenId = el.dataset.e; $('#paeAd').textContent = eAd(egitmenId); $('#paePanel')._yenile(); });
+  kur('#papTrig', '#papPanel', pOgeler, (el) => { uyelikId = el.dataset.p; $('#papAd').textContent = pAd(uyelikId); $('#papPanel')._yenile(); });
+
+  $('#paIptal').onclick = modalKapat;
+  $('#paKaydet').onclick = async () => {
+    const uy = paketler.find(x => x.id === uyelikId);
+    if (!uy) return bildir('Paket seçin.', 'hata');
+    const paket = {
+      id: yeniId(), uyelikId: uy.id, paketAd: uy.ad,
+      dersToplam: Number(uy.dersSayisi) || 0, kalanDers: Number(uy.dersSayisi) || 0,
+      fiyat: Number(uy.fiyat) || 0, kalanOdeme: Number(uy.fiyat) || 0,
+      tarih: new Date().toISOString(),
+    };
+    const guncel = { egitmenId, durum: 'ogrenci', paketler: [...(o.paketler || []), paket] };
+    await DB.guncelle('ogrenciler', o.id, guncel); Object.assign(o, guncel);
+    modalKapat(); ogrenciAktifSekme = 'ogrenci'; bildir('Paket öğrenciye eklendi.', 'basari'); SAYFALAR['ogrenciler']();
+  };
+}
+
+/* Öğrenci bilgilerini düzenle (ad, soyad, telefon) */
+function ogrenciDuzenle(o) {
+  const govde = `
+    <div class="gp-alan"><label>Adı</label><input type="text" class="gp-inp" id="oAd" value="${kacar(o.ad || '')}" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan"><label>Soyadı</label><input type="text" class="gp-inp" id="oSoyad" value="${kacar(o.soyad || '')}" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="tel" class="gp-inp" id="oTel" value="${kacar(o.telefon || '')}" autocomplete="off"></div>`;
+  modalAc('Öğrenci Düzenle', govde,
+    `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oKaydet">💾 Kaydet</button>`,
+    `<span class="hr-rozet">👤 Öğrenci</span>`);
+  setTimeout(() => $('#oAd').focus(), 50);
+  $('#oIptal').onclick = modalKapat;
+  $('#oKaydet').onclick = async () => {
+    const ad = $('#oAd').value.trim();
+    if (!ad) return bildir('Ad girin.', 'hata');
+    const guncel = { ad, soyad: $('#oSoyad').value.trim(), telefon: $('#oTel').value.trim() };
+    await DB.guncelle('ogrenciler', o.id, guncel); Object.assign(o, guncel);
+    modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['ogrenciler']();
+  };
+}
+
 /* Yüklenen logoyu küçült (max 240px) ve ayarlara kaydet */
 function logoDosyaIsle(dosya) {
   if (!/^image\//.test(dosya.type) && !/\.svg$/i.test(dosya.name)) return bildir('Lütfen bir görsel dosyası seçin.', 'hata');
@@ -3719,6 +3975,7 @@ function ustCubukKur() {
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
+  { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
   { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
