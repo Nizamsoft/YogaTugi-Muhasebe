@@ -352,9 +352,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '85';
+const APP_SURUM = '86';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '14:34';
+const APP_SURUM_SAAT = '14:37';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -481,6 +481,7 @@ const MENU = [
     { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
     { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
     { id: 'ayar-tanimlama',  ad: 'Tanımlamalar',    ikon: '🗂️', baslik: 'Tanımlamalar' },
+    { id: 'ayar-admin',      ad: 'Güncelleme',      ikon: '⟳', baslik: 'Güncelleme', sadeceAdmin: true },
   ]},
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
@@ -4304,7 +4305,32 @@ document.addEventListener('DOMContentLoaded', () => {
   ustCubukKur();
   girisKur();
   yakinlastirmaKapat();
+  surumKontrol();
 });
+
+/* Otomatik sürüm kontrolü: taze index.html'i çek, daha yeni sürüm varsa
+   önbelleği atlayarak kendini güncelle (ana ekrana eklenmiş cihazlar için).
+   Sonsuz döngüyü önlemek için oturumda tek sefer dener. */
+async function surumKontrol() {
+  try {
+    if (sessionStorage.getItem('yt_surum_kontrol')) return;
+    sessionStorage.setItem('yt_surum_kontrol', '1');
+    const yol = location.pathname.replace(/[^/]*$/, '') + 'index.html?sk=' + Date.now();
+    const r = await fetch(yol, { cache: 'no-store' });
+    if (!r.ok) return;
+    const html = await r.text();
+    const m = html.match(/app\.js\?v=(\d+)/);
+    if (m && Number(m[1]) > Number(APP_SURUM)) {
+      if ('serviceWorker' in navigator) {
+        try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(x => x.unregister())); } catch {}
+      }
+      if (window.caches && caches.keys) {
+        try { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch {}
+      }
+      location.replace(location.pathname + '?g=' + Date.now());
+    }
+  } catch { /* çevrimdışı vb. — sorun değil */ }
+}
 
 /* iOS Safari'de pinch yakınlaştırmasını engelle (çift-dokunma zaten touch-action:pan-y ile kapalı) */
 function yakinlastirmaKapat() {
