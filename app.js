@@ -21,6 +21,7 @@ const State = {
   musteriler: [],    // {id, ad, telefon, not}  — ders müşterileri (cari)
   dersler: [],       // {id, tarih, egitmenId, musteriId, ucret, aciklama}  — cari ders kaydı (kasa/para yok)
   odemeler: [],      // {id, musteriId, tarih, tutar, aciklama}  — müşteri tahsilatları (cari ödeme)
+  giderler: [],      // {id, ad}  — Tanımlamalar > Giderler (gider kalem isimleri)
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -137,7 +138,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar'];   // sadeleştirildi: yalnızca ortak (ad + foto)
+const KOLEKSIYONLAR = ['ortaklar', 'giderler'];   // ortak (ad+foto) + Tanımlamalar > Giderler
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -322,7 +323,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '74';
+const APP_SURUM = '75';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -342,6 +343,7 @@ async function veriYukle() {
   if (degisti) DB._yaz('ortaklar', temiz);   // bu aynı zamanda buluta temiz veriyi gönderir
   else if (temizlik && window._Bulut) window._Bulut.itPlanla();
   State.ortaklar = temiz;
+  State.giderler = DB._oku('giderler');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
 }
@@ -442,10 +444,13 @@ const Hesapla = {
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
-    { id: 'ayar-firma',  ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
-    { id: 'ayar-ortak',  ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
+    { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
+    { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
+    { id: 'ayar-tanimlama',  ad: 'Tanımlamalar',    ikon: '🗂️', baslik: 'Tanımlamalar' },
   ]},
 ];
+// Menüde olmayan alt sayfaların üst başlıkları
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler' };
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak', 'Müşteri & Planlama'];
@@ -514,6 +519,7 @@ function menuBul(id) {
     if (m.id === id) return m;
     if (m.ogeler) { const o = m.ogeler.find(x => x.id === id); if (o) return o; }
   }
+  if (SAYFA_BASLIK[id]) return { baslik: SAYFA_BASLIK[id] };
   const k = HESAP_KARTLARI.find(x => x.id === id);
   if (k) return k;
   return null;
@@ -3274,6 +3280,67 @@ SAYFALAR['ayar-ortak'] = function () {
     bildir('Silindi.', 'basari'); SAYFALAR['ayar-ortak']();
   }));
 };
+
+/* -------- AYARLAR: Tanımlamalar (hub) -------- */
+const TANIMLAR = [
+  { id: 'gider', ad: 'Giderler', ikon: '📉' },
+];
+SAYFALAR['ayar-tanimlama'] = function () {
+  ic().innerHTML = `
+    <div class="tnm-hub">
+      <div class="tnm-tiles">
+        ${TANIMLAR.map(t => `<button type="button" class="tnm-tile" data-tanim="${t.id}">
+          <div class="tnm-tile-ic"><div class="tnm-ic">${t.ikon}</div><div class="tnm-ad">${kacar(t.ad)}</div></div>
+        </button>`).join('')}
+      </div>
+    </div>`;
+  $$('[data-tanim]').forEach(b => b.onclick = () => {
+    b.classList.add('sec');
+    setTimeout(() => git('tanim-' + b.dataset.tanim), 200);
+  });
+};
+
+/* -------- Tanımlamalar: Giderler (gider kalem isimleri) -------- */
+SAYFALAR['tanim-gider'] = function () {
+  const list = State.giderler;
+  const rows = list.map(g => `<div class="tnm-kalem"><div class="tnm-kalem-ic">
+      <span class="tnm-nokta"></span><span class="tnm-kalem-ad">${kacar(g.ad)}</span>
+      <span class="tnm-kalem-arac"><button type="button" data-gd="${g.id}" title="Düzenle">✎</button><button type="button" data-gs="${g.id}" title="Sil">🗑️</button></span>
+    </div></div>`).join('');
+  ic().innerHTML = `
+    <div class="tnm-scr-ust">
+      <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
+      <button type="button" class="gp-ekle" id="gdEkle">＋ Gider Ekle</button>
+    </div>
+    ${list.length === 0
+      ? `<div class="gp-bos" style="max-width:560px">Liste boş</div>`
+      : `<div class="tnm-liste">${rows}</div>`}`;
+  $('#tnmGeri').onclick = () => git('ayar-tanimlama');
+  $('#gdEkle').onclick = () => giderFormu();
+  $$('[data-gd]').forEach(b => b.onclick = () => giderFormu(State.giderler.find(g => g.id === b.dataset.gd)));
+  $$('[data-gs]').forEach(b => b.onclick = () => onayModal('Gider silinsin mi?', '', async () => {
+    await DB.sil('giderler', b.dataset.gs); State.giderler = State.giderler.filter(g => g.id !== b.dataset.gs);
+    bildir('Silindi.', 'basari'); SAYFALAR['tanim-gider']();
+  }));
+};
+
+function giderFormu(mevcut) {
+  const govde = `<div class="gp-alan" style="margin:0"><label>Gider Adı</label>
+    <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira"></div>`;
+  modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', govde,
+    `<button class="btn" id="gdIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gdKaydet">💾 Kaydet</button>`,
+    `<span class="hr-rozet">📉 Gider</span>`);
+  const inp = $('#gdAd'); setTimeout(() => inp.focus(), 50);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') $('#gdKaydet').click(); });
+  $('#gdIptal').onclick = modalKapat;
+  $('#gdKaydet').onclick = async () => {
+    const ad = inp.value.trim();
+    if (!ad) return bildir('Ad girin.', 'hata');
+    if (mevcut) { await DB.guncelle('giderler', mevcut.id, { ad }); Object.assign(mevcut, { ad }); }
+    else { const y = await DB.ekle('giderler', { ad }); State.giderler.push(y); }
+    modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['tanim-gider']();
+  };
+}
 
 /* Yüklenen logoyu küçült (max 240px) ve ayarlara kaydet */
 function logoDosyaIsle(dosya) {
