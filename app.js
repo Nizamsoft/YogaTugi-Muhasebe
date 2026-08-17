@@ -360,9 +360,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '91';
+const APP_SURUM = '92';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '16:55';
+const APP_SURUM_SAAT = '17:03';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4627,20 +4627,23 @@ document.addEventListener('DOMContentLoaded', () => {
   surumKontrol();
 });
 
-/* Tarayıcı otomatik-tamamlama / adres önerilerini tüm giriş alanlarında kapat.
-   autocomplete=new-password + readonly (odakta kaldırılır) — Chrome dahil güvenilir. */
+/* Tarayıcı kayıtlı-değer önerisini tüm giriş alanlarında kapat.
+   Chrome önerisi alan ADINA göre eşleşir; her alana benzersiz ad verilince
+   eşleşecek geçmiş kalmaz → açılır öneri çıkmaz. Yazmayı engellemez. */
 function autofillKapatKur() {
   const disi = ['checkbox', 'radio', 'file', 'range', 'color', 'hidden', 'submit', 'button', 'reset'];
+  let sayac = 0;
   const uygula = (el) => {
     if (!el || el.dataset.afk) return;
-    const t = (el.getAttribute('type') || 'text').toLowerCase();
     el.dataset.afk = '1';
+    const t = (el.getAttribute('type') || 'text').toLowerCase();
     if (el.tagName === 'INPUT' && disi.includes(t)) return;
-    el.setAttribute('autocomplete', 'new-password');
+    el.setAttribute('autocomplete', 'off');
     el.setAttribute('autocorrect', 'off');
     el.setAttribute('autocapitalize', 'off');
     el.setAttribute('spellcheck', 'false');
-    if (t !== 'password') el.setAttribute('readonly', 'readonly');
+    el.setAttribute('name', 'yt-nf-' + Date.now().toString(36) + '-' + (sayac++));
+    if (el.hasAttribute('readonly') && !el.dataset.gercekReadonly) el.removeAttribute('readonly');   // eski sürümden kalan kilidi temizle
   };
   const tara = (kok) => {
     if (!kok || kok.nodeType !== 1) return;
@@ -4649,17 +4652,6 @@ function autofillKapatKur() {
   };
   tara(document.body);
   try { new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(tara))).observe(document.body, { childList: true, subtree: true }); } catch {}
-  const yazilabilir = (el) => el && el.dataset && el.dataset.afk && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && (el.getAttribute('type') || 'text').toLowerCase() !== 'password';
-  // Odak anında alan readonly kalır (tarayıcı önerisi çıkamaz), bir tick sonra
-  // yazılabilir olur; odaktan çıkınca tekrar kilitlenir → öneri her seferinde engellenir.
-  document.addEventListener('focusin', (e) => {
-    const el = e.target;
-    if (yazilabilir(el) && el.hasAttribute('readonly')) setTimeout(() => { if (document.activeElement === el) el.removeAttribute('readonly'); }, 0);
-  }, true);
-  document.addEventListener('focusout', (e) => {
-    const el = e.target;
-    if (yazilabilir(el)) el.setAttribute('readonly', 'readonly');
-  }, true);
 }
 
 /* Otomatik sürüm kontrolü: taze index.html'i çek, daha yeni sürüm varsa
