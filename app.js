@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '94';
+const APP_SURUM = '95';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '17:46';
+const APP_SURUM_SAAT = '18:05';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4091,17 +4091,28 @@ const ODEME_TURLERI = { nakit: '💵 Nakit', kart: '💳 Kredi Kartı', havale: 
 SAYFALAR['odemeler'] = function () {
   const kayitlar = (State.odemeler || []).slice().sort((a, b) => (b.tarih + (b.olusturma || '')).localeCompare(a.tarih + (a.olusturma || '')));
   const turSinif = { nakit: 'nakit', kart: 'kart', havale: 'havale' };
+  // Kalan Borcu = ödeme yapıldığı ANDAKİ kalan borç (kaydedilmiş anlık görüntü).
+  // Eski kayıtlarda alan yoksa: mevcut borç + bu ödemeden sonraki (aynı öğrenci) ödemeler ile geriye dönük hesapla.
+  const anahtar = (x) => (x.tarih || '') + (x.olusturma || '');
+  const borcSonrasi = (od) => {
+    if (typeof od.kalanBorc === 'number') return od.kalanBorc;
+    const o = State.ogrenciler.find(x => x.id === od.ogrenciId);
+    const guncel = o ? ogrenciMetrik(o).kalanOdeme : 0;
+    const sonra = (State.odemeler || []).filter(x => x.ogrenciId === od.ogrenciId && anahtar(x) > anahtar(od))
+      .reduce((s, x) => s + (Number(x.tutar) || 0), 0);
+    return guncel + sonra;
+  };
   const satir = (od) => {
     const o = State.ogrenciler.find(x => x.id === od.ogrenciId);
     const e = o ? State.ortaklar.find(x => x.id === o.egitmenId) : null;
-    const m = o ? ogrenciMetrik(o) : { kalanOdeme: 0 };
+    const kb = borcSonrasi(od);
     return `<tr>
       <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o ? o.ad : '?', o ? o.soyad : '')}</span><span class="ogr-ad">${o ? kacar(ogrenciTamAd(o)) : '—'}</span></span></td>
       <td data-l="Eğitmeni"><span class="ogr-egit"><span class="ogr-ea">${basHarf(e ? e.ad : '—')}</span>${e ? kacar(egitmenKisaAd(e)) : '—'}</span></td>
       <td data-l="Ödediği Tarih">${fmtTarihUzun(od.tarih)}</td>
       <td data-l="Ödeme Türü"><span class="od-tur ${turSinif[od.tur] || 'nakit'}">${ODEME_TURLERI[od.tur] || od.tur}</span></td>
       <td data-l="Ödediği Tutar" class="sag od-tutar">${binlik(od.tutar)} ₺</td>
-      <td data-l="Kalan Borcu" class="sag ${m.kalanOdeme > 0 ? 'od-borc' : 'od-borc ok'}">${m.kalanOdeme > 0 ? binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'}</td>
+      <td data-l="Kalan Borcu" class="sag ${kb > 0 ? 'od-borc' : 'od-borc ok'}">${kb > 0 ? binlik(kb) + ' ₺' : 'Borç yok'}</td>
       <td class="sag"><span class="ogr-arac"><button type="button" data-odsil="${od.id}" title="Sil">🗑️</button></span></td>
     </tr>`;
   };
@@ -4210,8 +4221,9 @@ function odemeAlModal() {
     if (tutar <= 0) return bildir('Tutar girin.', 'hata');
     const o = State.ogrenciler.find(x => x.id === seciliId);
     const dusumler = odemeDusumUygula(o, tutar);
+    const kalanBorc = ogrenciMetrik(o).kalanOdeme;   // bu ödemeden hemen SONRAKİ kalan borç (anlık görüntü — sonradan değişmez)
     await DB.guncelle('ogrenciler', o.id, { paketler: o.paketler });
-    const y = await DB.ekle('odemeler', { ogrenciId: o.id, tutar, tarih, tur, dusumler });
+    const y = await DB.ekle('odemeler', { ogrenciId: o.id, tutar, tarih, tur, dusumler, kalanBorc });
     State.odemeler.push(y);
     modalKapat(); bildir('Ödeme kaydedildi.', 'basari'); SAYFALAR['odemeler']();
   };
