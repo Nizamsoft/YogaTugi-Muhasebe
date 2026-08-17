@@ -18,14 +18,13 @@ const State = {
   karPayi: [],       // {id, donem, toplamGelir, toplamGider, netKar, dagitim[], olusturma}
   kullanicilar: [],  // {id, eposta, ad, rol, aktif}
   potansiyel: [],    // {id, ad, telefon, not, durum}
-  musteriler: [],    // {id, ad, telefon, not}  — ders müşterileri (cari)
-  dersler: [],       // {id, tarih, egitmenId, musteriId, ucret, aciklama}  — cari ders kaydı (kasa/para yok)
-  odemeler: [],      // {id, musteriId, tarih, tutar, aciklama}  — müşteri tahsilatları (cari ödeme)
+  musteriler: [],    // {id, ad, telefon, not}  — (eski) ders müşterileri
   giderler: [],      // {id, ad, grupId}  — Tanımlamalar > Giderler (gider kalem isimleri)
   giderGruplari: [], // {id, ad}  — Gider grup başlıkları
   uyelikler: [],     // {id, ad, fiyat, dersSayisi, gecerlilikGun, kapsam}  — Tanımlamalar > Üyelikler
   ogrenciler: [],    // {id, ad, soyad, telefon, olusturma, durum:'potansiyel'|'ogrenci', egitmenId, paketler:[{id,uyelikId,paketAd,dersToplam,kalanDers,fiyat,kalanOdeme,tarih}]}
   dersler: [],       // {id, dersAd, egitmenId, ogrenciIds:[], tarih:'YYYY-MM-DD', saat:'HH:MM', durum:'bekliyor'|'gerceklesti'|'iptal', dusumler:[{ogrenciId,paketId}], olusturma}
+  odemeler: [],      // {id, ogrenciId, tutar, tarih:'YYYY-MM-DD', tur:'nakit'|'kart'|'havale', dusumler:[{paketId,tutar}], olusturma}
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -170,8 +169,8 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler', 'ogrenciler', 'dersler'];   // + Dersler
-const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler'];   // + Ödemeler
+const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
 const DB = {
@@ -360,9 +359,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '92';
+const APP_SURUM = '93';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '17:03';
+const APP_SURUM_SAAT = '17:19';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -386,8 +385,9 @@ async function veriYukle() {
   State.uyelikler = DB._oku('uyelikler');
   State.ogrenciler = DB._oku('ogrenciler');
   State.dersler = DB._oku('dersler');
+  State.odemeler = DB._oku('odemeler');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
-  State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
+  State.kullanicilar = []; State.potansiyel = []; State.musteriler = [];
 }
 
 /* Kayıt No — her işleme benzersiz sıralı numara. Eski kayıtlar için tek seferlik doldurulur. */
@@ -487,6 +487,7 @@ const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
   { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
   { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
+  { id: 'odemeler', ad: 'Ödemeler', ikon: '💰', baslik: 'Ödemeler' },
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
     { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
@@ -4064,6 +4065,140 @@ function saatSecici(mevcut, cb) {
   kap.querySelector('#sszTamam').onclick = () => { kap.remove(); cb(`${wSaat.get()}:${wDk.get()}`); };
 }
 
+/* ==========================================================
+   Ödemeler (müşteri tahsilatları — kalan borçtan FIFO düşer)
+   ========================================================== */
+const ODEME_TURLERI = { nakit: '💵 Nakit', kart: '💳 Kredi Kartı', havale: '🏦 Havale' };
+
+SAYFALAR['odemeler'] = function () {
+  const kayitlar = (State.odemeler || []).slice().sort((a, b) => (b.tarih + (b.olusturma || '')).localeCompare(a.tarih + (a.olusturma || '')));
+  const turSinif = { nakit: 'nakit', kart: 'kart', havale: 'havale' };
+  const satir = (od) => {
+    const o = State.ogrenciler.find(x => x.id === od.ogrenciId);
+    const e = o ? State.ortaklar.find(x => x.id === o.egitmenId) : null;
+    const m = o ? ogrenciMetrik(o) : { kalanOdeme: 0 };
+    return `<tr>
+      <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o ? o.ad : '?', o ? o.soyad : '')}</span><span class="ogr-ad">${o ? kacar(ogrenciTamAd(o)) : '—'}</span></span></td>
+      <td data-l="Eğitmeni"><span class="ogr-egit"><span class="ogr-ea">${basHarf(e ? e.ad : '—')}</span>${e ? kacar(egitmenKisaAd(e)) : '—'}</span></td>
+      <td data-l="Ödediği Tarih">${fmtTarihUzun(od.tarih)}</td>
+      <td data-l="Ödeme Türü"><span class="od-tur ${turSinif[od.tur] || 'nakit'}">${ODEME_TURLERI[od.tur] || od.tur}</span></td>
+      <td data-l="Ödediği Tutar" class="sag od-tutar">${binlik(od.tutar)} ₺</td>
+      <td data-l="Kalan Borcu" class="sag ${m.kalanOdeme > 0 ? 'od-borc' : 'od-borc ok'}">${m.kalanOdeme > 0 ? binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'}</td>
+      <td class="sag"><span class="ogr-arac"><button type="button" data-odsil="${od.id}" title="Sil">🗑️</button></span></td>
+    </tr>`;
+  };
+  ic().innerHTML = `
+    <div class="odeme-sayfa">
+      <div class="ogr-ust">
+        <div class="od-baslik">Ödeme Kayıtları</div>
+        <button type="button" class="gp-ekle" id="odemeAlBtn">＋ Ödeme Al</button>
+      </div>
+      ${kayitlar.length
+        ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+            <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Ödediği Tarih</th><th>Ödeme Türü</th><th class="sag">Ödediği Tutar</th><th class="sag">Kalan Borcu</th><th></th></tr></thead>
+            <tbody>${kayitlar.map(satir).join('')}</tbody></table></div></div>`
+        : `<div class="gp-bos">Henüz ödeme yok. “＋ Ödeme Al” ile ilk ödemeyi işleyin.</div>`}
+    </div>`;
+  $('#odemeAlBtn').onclick = () => odemeAlModal();
+  $$('[data-odsil]').forEach(b => b.onclick = () => onayModal('Ödeme silinsin mi?', 'Bu tutar öğrencinin borcuna geri eklenir.', async () => {
+    const od = State.odemeler.find(x => x.id === b.dataset.odsil); if (od) await odemeGeriAl(od);
+    bildir('Ödeme silindi.', 'basari'); SAYFALAR['odemeler']();
+  }));
+};
+
+/* Ödemeyi öğrencinin en eski borcundan (FIFO) düş */
+function odemeDusumUygula(o, tutar) {
+  const dusumler = [];
+  let kalan = Number(tutar) || 0;
+  const paketler = (o.paketler || []).slice().sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')));
+  for (const p of paketler) {
+    if (kalan <= 0) break;
+    const borc = Number(p.kalanOdeme) || 0;
+    if (borc <= 0) continue;
+    const ode = Math.min(kalan, borc);
+    p.kalanOdeme = borc - ode; kalan -= ode;
+    dusumler.push({ paketId: p.id, tutar: ode });
+  }
+  return dusumler;   // fazla ödeme (kalan) yok sayılır
+}
+async function odemeGeriAl(od) {
+  const o = State.ogrenciler.find(x => x.id === od.ogrenciId);
+  if (o) {
+    for (const d of (od.dusumler || [])) {
+      const p = (o.paketler || []).find(x => x.id === d.paketId);
+      if (p) p.kalanOdeme = (Number(p.kalanOdeme) || 0) + (Number(d.tutar) || 0);
+    }
+    await DB.guncelle('ogrenciler', o.id, { paketler: o.paketler });
+  }
+  await DB.sil('odemeler', od.id);
+  State.odemeler = State.odemeler.filter(x => x.id !== od.id);
+}
+
+function odemeAlModal() {
+  const ogrenciler = State.ogrenciler.filter(x => x.durum === 'ogrenci').slice()
+    .sort((a, b) => ogrenciTamAd(a).localeCompare(ogrenciTamAd(b), 'tr'));
+  if (!ogrenciler.length) return bildir('Önce paketli öğrenci ekleyin (Öğrenciler).', 'hata');
+
+  let seciliId = null;
+  let tarih = bugunISO();
+  let tur = 'nakit';
+  const borcMetin = (o) => { const m = ogrenciMetrik(o); return m.kalanOdeme > 0 ? 'Kalan borç: ' + binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'; };
+  const mItem = (o) => {
+    const m = ogrenciMetrik(o);
+    const pk = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) : '';
+    return `<button type="button" class="od-msat" data-o="${o.id}"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="od-bilg"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${pk}</span></span><span class="od-brc ${m.kalanOdeme > 0 ? '' : 'ok'}">${m.kalanOdeme > 0 ? binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'}</span></button>`;
+  };
+  const musteriAlanHTML = () => {
+    if (!seciliId) {
+      return `<div class="uys-ara"><span>🔍</span><input type="text" id="odAra" placeholder="Öğrenci ara…"></div>
+        <div class="od-mliste" id="odListe">${ogrenciler.map(mItem).join('')}</div>`;
+    }
+    const o = ogrenciler.find(x => x.id === seciliId);
+    return `<div class="od-mus-sec"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="od-bilg"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${borcMetin(o)}</span></span><button type="button" class="od-deg" id="odDeg">Değiştir</button></div>`;
+  };
+  const govde = `
+    <div class="gp-alan"><label>Müşteri</label><div id="odMus">${musteriAlanHTML()}</div></div>
+    <div class="gp-alan uy-birimli"><label>Ödediği Tutar</label><input type="text" inputmode="numeric" class="gp-inp" id="odTutar"><span class="uy-birim">₺</span></div>
+    <div class="gp-alan"><label>Ödeme Tarihi</label><button type="button" class="pa-trig" id="odTarih"><span id="odTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
+    <div class="gp-alan" style="margin:0"><label>Ödeme Türü</label>
+      <div class="turcip" id="odTur">${Object.entries(ODEME_TURLERI).map(([k, l]) => `<button type="button" class="tc ${tur === k ? 'sec' : ''}" data-t="${k}">${l}</button>`).join('')}</div></div>`;
+  modalAc('Ödeme Al', govde,
+    `<button class="btn" id="odIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="odKaydet">💾 Ödemeyi Kaydet</button>`,
+    `<span class="hr-rozet od-rozet">💰 Ödeme</span>`);
+
+  const musBagla = () => {
+    if (!seciliId) {
+      const listeYenile = () => {
+        const q = ($('#odAra').value || '').trim().toLocaleLowerCase('tr');
+        const suz = ogrenciler.filter(o => ogrenciTamAd(o).toLocaleLowerCase('tr').includes(q));
+        $('#odListe').innerHTML = suz.length ? suz.map(mItem).join('') : `<div class="gp-bos" style="margin:8px 6px">Eşleşen öğrenci yok.</div>`;
+        satBagla();
+      };
+      const satBagla = () => $$('#odListe [data-o]').forEach(el => el.onclick = () => { seciliId = el.dataset.o; $('#odMus').innerHTML = musteriAlanHTML(); musBagla(); });
+      satBagla();
+      const ara = $('#odAra'); if (ara) ara.addEventListener('input', listeYenile);
+    } else {
+      $('#odDeg').onclick = () => { seciliId = null; $('#odMus').innerHTML = musteriAlanHTML(); musBagla(); };
+    }
+  };
+  musBagla();
+  const tut = $('#odTutar'); tut.addEventListener('input', () => { tut.value = binlikBiciml(tut.value); });
+  $$('#odTur [data-t]').forEach(b => b.onclick = () => { tur = b.dataset.t; $$('#odTur .tc').forEach(x => x.classList.toggle('sec', x.dataset.t === tur)); });
+  $('#odTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#odTarihAd').textContent = fmtTarihUzun(tarih); });
+  $('#odIptal').onclick = modalKapat;
+  $('#odKaydet').onclick = async () => {
+    if (!seciliId) return bildir('Müşteri seçin.', 'hata');
+    const tutar = Number((tut.value || '').replace(/\D/g, '')) || 0;
+    if (tutar <= 0) return bildir('Tutar girin.', 'hata');
+    const o = State.ogrenciler.find(x => x.id === seciliId);
+    const dusumler = odemeDusumUygula(o, tutar);
+    await DB.guncelle('ogrenciler', o.id, { paketler: o.paketler });
+    const y = await DB.ekle('odemeler', { ogrenciId: o.id, tutar, tarih, tur, dusumler });
+    State.odemeler.push(y);
+    modalKapat(); bildir('Ödeme kaydedildi.', 'basari'); SAYFALAR['odemeler']();
+  };
+}
+
 /* Yüklenen logoyu küçült (max 240px) ve ayarlara kaydet */
 function logoDosyaIsle(dosya) {
   if (!/^image\//.test(dosya.type) && !/\.svg$/i.test(dosya.name)) return bildir('Lütfen bir görsel dosyası seçin.', 'hata');
@@ -4296,6 +4431,7 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
   { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
   { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: '📅' },
+  { tip: 'sayfa', id: 'odemeler', ad: 'Ödemeler', ikon: '💰' },
   { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul

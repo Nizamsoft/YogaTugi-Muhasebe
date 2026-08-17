@@ -858,6 +858,36 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .wsel-oge{height:40px;line-height:40px;text-align:center;font-size:18px;font-weight:700;color:var(--metin-soluk);scroll-snap-align:center;cursor:pointer}
 .wsel-oge.on{color:#40320f;font-weight:800;font-size:20px}
 
+/* ============ Ödemeler ============ */
+.odeme-sayfa{max-width:980px;margin:0}
+.od-baslik{font-family:Georgia,"Times New Roman",serif;font-size:16px;font-weight:700;color:#a8792f}
+.od-tur{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;border-radius:999px;padding:4px 11px;white-space:nowrap}
+.od-tur.nakit{background:#e4f0e2;color:#4e7a52}
+.od-tur.kart{background:#e7eef7;color:#3f6296}
+.od-tur.havale{background:#f3ead2;color:#997518}
+.od-tutar{font-weight:800;color:#4e7a52}
+.od-borc{font-weight:800;color:#b1483f}
+.od-borc.ok{color:#4e7a52}
+.od-rozet{background:#e4f0e2 !important;color:#4e7a52 !important}
+/* Ödeme Al — müşteri seçim */
+.od-mliste{border:1px solid var(--kenar);border-radius:12px;max-height:190px;overflow:auto;background:#fff}
+.od-msat{display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;border:none;border-bottom:1px solid var(--kenar);background:transparent;width:100%;font-family:inherit;text-align:left}
+.od-msat:last-child{border-bottom:none}
+.od-msat:hover{background:var(--gri-acik,#f2ead9)}
+.od-bilg{flex:1;min-width:0;display:flex;flex-direction:column}
+.od-bilg .ad{font-weight:700;font-size:14px;color:var(--metin)}
+.od-bilg .alt{font-size:11px;color:var(--metin-soluk);margin-top:1px}
+.od-brc{font-weight:800;color:#b1483f;font-size:12.5px;flex:0 0 auto}
+.od-brc.ok{color:#4e7a52}
+.od-mus-sec{display:flex;align-items:center;gap:11px;border:1.5px solid var(--gold);background:linear-gradient(135deg,#fbf1d4,#f6e6ad);border-radius:12px;padding:9px 12px}
+.od-mus-sec .ad{font-weight:800;font-size:14.5px;color:var(--metin)}
+.od-mus-sec .alt{font-size:11.5px;color:#a8792f;font-weight:700;margin-top:1px}
+.od-deg{border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:800;color:#a8792f;cursor:pointer;flex:0 0 auto}
+/* Ödeme türü çipleri */
+.turcip{display:flex;gap:8px;flex-wrap:wrap}
+.turcip .tc{border:1.5px solid var(--kenar);background:#fff;border-radius:999px;padding:9px 15px;font-family:inherit;font-weight:800;font-size:13px;color:var(--metin-soluk);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.turcip .tc.sec{border-color:var(--gold);background:linear-gradient(135deg,#fbf1d4,#f6e6ad);color:#a8792f}
+
 /* Gider Ekle — açılır grup seçici (satır içi) */
 .gd-dd{position:relative}
 .gd-trig{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
