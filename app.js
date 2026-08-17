@@ -337,7 +337,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '82';
+const APP_SURUM = '83';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -3361,7 +3361,7 @@ function giderFormu(mevcut) {
 
   const govde = `
     <div class="gp-alan"><label>Gider Adı</label>
-      <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira"></div>
+      <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="gp-alan" style="margin:0"><label>Grup</label>
       <div class="gd-dd" id="gdDD">
         <button type="button" class="gd-trig" id="gdTrig"><span id="gdSeciliAd">${kacar(grupAdi(seciliGrup))}</span><span class="ok">▾</span></button>
@@ -3370,7 +3370,7 @@ function giderFormu(mevcut) {
           ${State.giderGruplari.length ? '<div class="gd-ay"></div>' : ''}
           <div class="gd-oge gd-yeni" id="gdYeni"><span class="art">＋</span>Yeni Grup</div>
           <div class="gd-yenigrup" id="gdYeniGrup" hidden>
-            <input type="text" class="gp-inp" id="gdYeniAd" placeholder="Yeni grup adı…">
+            <input type="text" class="gp-inp" id="gdYeniAd" placeholder="Yeni grup adı…" autocomplete="off" autocorrect="off" spellcheck="false">
             <button type="button" class="gd-ekle" id="gdYeniEkle">Ekle</button>
           </div>
         </div></div>
@@ -3450,17 +3450,17 @@ SAYFALAR['tanim-uyelik'] = function () {
 function uyelikFormu(mevcut) {
   const govde = `
     <div class="gp-alan"><label>Üyelik Adı</label>
-      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Gold Paket"></div>
+      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Gold Paket" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="uy-ikili">
       <div class="gp-alan uy-birimli"><label>Fiyatı</label>
-        <input type="text" inputmode="numeric" class="gp-inp" id="uyFiyat" value="${mevcut ? binlik(mevcut.fiyat) : ''}" placeholder="50.000"><span class="uy-birim">₺</span></div>
+        <input type="text" inputmode="numeric" class="gp-inp" id="uyFiyat" value="${mevcut ? binlik(mevcut.fiyat) : ''}" placeholder="50.000" autocomplete="off"><span class="uy-birim">₺</span></div>
       <div class="gp-alan"><label>Ders Sayısı</label>
-        <input type="text" inputmode="numeric" class="gp-inp" id="uyDers" value="${mevcut ? (Number(mevcut.dersSayisi) || '') : ''}" placeholder="15"></div>
+        <input type="text" inputmode="numeric" class="gp-inp" id="uyDers" value="${mevcut ? (Number(mevcut.dersSayisi) || '') : ''}" placeholder="15" autocomplete="off"></div>
     </div>
     <div class="gp-alan uy-birimli"><label>Geçerlilik Süresi</label>
-      <input type="text" inputmode="numeric" class="gp-inp" id="uyGun" value="${mevcut ? (Number(mevcut.gecerlilikGun) || '') : ''}" placeholder="60"><span class="uy-birim">gün</span></div>
+      <input type="text" inputmode="numeric" class="gp-inp" id="uyGun" value="${mevcut ? (Number(mevcut.gecerlilikGun) || '') : ''}" placeholder="60" autocomplete="off"><span class="uy-birim">gün</span></div>
     <div class="gp-alan" style="margin:0"><label>Kapsamı</label>
-      <input type="text" class="gp-inp" id="uyKapsam" value="${mevcut ? kacar(mevcut.kapsam || '') : ''}" placeholder="Örn. Grup Dersleri ve Özel Dersler"></div>`;
+      <input type="text" class="gp-inp" id="uyKapsam" value="${mevcut ? kacar(mevcut.kapsam || '') : ''}" placeholder="Örn. Grup Dersleri ve Özel Dersler" autocomplete="off" autocorrect="off" spellcheck="false"></div>`;
   modalAc(mevcut ? 'Üyelik Düzenle' : 'Yeni Üyelik', govde,
     `<button class="btn" id="uyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="uyKaydet">💾 Kaydet</button>`,
     `<span class="hr-rozet">🎟️ Üyelik</span>`);
