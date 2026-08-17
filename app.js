@@ -198,7 +198,7 @@ create policy "acik erisim" on public.yt_veri for all
 alter publication supabase_realtime add table public.yt_veri;`;
 
 const Bulut = {
-  client: null, aktif: false, kanal: null, beklet: null, sonImza: null, durum: 'kapali', hataMesaj: '',
+  client: null, aktif: false, kanal: null, beklet: null, sonImza: null, _sonNonce: null, durum: 'kapali', hataMesaj: '',
 
   // Varsayılan bağlantı — her cihazda otomatik; ayrıca elle de girilebilir
   VARSAYILAN: { url: 'https://crafkujmefxhbakgfxcb.supabase.co', anonKey: 'sb_publishable_Yvh-8kLSB_2nXcZk1VtYsQ_z5wzmdBV' },
@@ -237,7 +237,7 @@ const Bulut = {
   },
 
   paket() {
-    const d = { surum: 1, guncelleme: new Date().toISOString() };
+    const d = { surum: 1, guncelleme: new Date().toISOString(), _nonce: yeniId() };
     for (const k of KOLEKSIYONLAR) d[k] = DB._oku(k);
     d.ayarlar = DB.ayarOku();
     return d;
@@ -257,6 +257,7 @@ const Bulut = {
     if (!this.client) return;
     const paket = this.paket();
     this.sonImza = paket.guncelleme;   // echo yarışını önle: kendi imzamızı push'tan önce yaz
+    this._sonNonce = paket._nonce;     // realtime echo'yu nonce ile kesin ayıkla
     const { error } = await this.client.from('yt_veri').upsert({ id: 'ana', data: paket, guncelleme: paket.guncelleme });
     if (error) throw error;
   },
@@ -272,12 +273,13 @@ const Bulut = {
       if (this.kanal) this.client.removeChannel(this.kanal);
       this.kanal = this.client.channel('yt_veri_rt')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'yt_veri', filter: 'id=eq.ana' }, (p) => {
-          const g = p.new && p.new.guncelleme;
-          if (!g || g === this.sonImza) return;   // kendi yazdığımız değişiklik
-          this.sonImza = g;
-          if (!(p.new && p.new.data)) return;
+          const d = p.new && p.new.data;
+          if (!d) return;
+          // Kendi yazdığımız değişikliği kesin ayıkla (nonce; timestamp formatı sunucuda farklılaşabiliyor)
+          if (d._nonce && d._nonce === this._sonNonce) return;
+          this.sonImza = p.new.guncelleme;
           this._uzaktan = true;                    // bu apply push tetiklemesin
-          this.uygula(p.new.data);
+          this.uygula(d);
           veriYukle().then(() => {
             this._uzaktan = false;
             const r = SAYFALAR[State.aktifSayfa];  // sadece içerik yenile — menü/akordeon bozulmasın
@@ -294,7 +296,7 @@ const Bulut = {
     try {
       await this.baglan(cfg);
       const row = await this.cek();
-      if (row && row.data) { this.uygula(row.data); this.sonImza = row.guncelleme; }
+      if (row && row.data) { this.uygula(row.data); this.sonImza = row.guncelleme; this._sonNonce = row.data._nonce || null; }
       else { await this.gonder(); }
       this.realtimeKur();
       return true;
@@ -327,7 +329,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '78';
+const APP_SURUM = '79';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
