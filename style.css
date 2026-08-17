@@ -149,6 +149,8 @@ body.tema-koyu #girisEkrani{
 .kenar-logo .ad{font-weight:700;font-size:15.5px;line-height:1.1}
 .kenar-logo .ad small{display:block;font-weight:400;font-size:11px;color:#9db3a2;margin-top:2px}
 .kenar-menu{flex:1;overflow-y:auto;padding:10px 10px 20px}
+.kenar-surum{padding:11px 18px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#9db3a2;line-height:1.5}
+.kenar-surum b{display:block;color:#c7d3cb;font-weight:700;font-size:11.5px}
 .kenar-menu::-webkit-scrollbar{width:6px}
 .kenar-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
 .menu-grup{margin-top:3px}

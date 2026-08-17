@@ -321,8 +321,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '70';
-const APP_SURUM_TARIH = '3 Ağu 2026';
+const APP_SURUM = '71';
+const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -521,6 +521,7 @@ function menuCiz() {
     if (!acikti) grup.classList.add('acik');
   });
   $$('.menu-oge', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa));
+  if ($('#kenarSurum')) $('#kenarSurum').innerHTML = `<b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH}</span>`;
 }
 
 function menuBul(id) {
