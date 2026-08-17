@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '95';
+const APP_SURUM = '96';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '18:05';
+const APP_SURUM_SAAT = '18:13';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3744,47 +3744,25 @@ function paketAtaModal(o) {
   let egitmenId = o.egitmenId || egitmenler[0].id;
   let uyelikId = paketler[0].id;
   let secIdx = 0;   // seçili ders seçeneği
-  const eAd = (id) => { const e = egitmenler.find(x => x.id === id); return e ? egitmenKisaAd(e) : 'Seç'; };
-  const pAd = (id) => { const p = paketler.find(x => x.id === id); return p ? p.ad : 'Seç'; };
-  const secOzet = (p) => uyelikSecenekleri(p).map(s => Number(s.dersSayisi) || 0).join(' · ') + ' ders';
-  const eOgeler = () => egitmenler.map(e =>
-    `<div class="pa-oge ${egitmenId === e.id ? 'sec' : ''}" data-e="${e.id}"><span class="ogr-ea">${basHarf(e.ad)}</span>${kacar(egitmenKisaAd(e))}${egitmenId === e.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
-  const pOgeler = () => paketler.map(p =>
-    `<div class="pa-oge ${uyelikId === p.id ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${uyelikId === p.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
-  const secOgeler = () => {
+  const paketTrigIc = () => {
     const p = paketler.find(x => x.id === uyelikId);
+    if (!p) return `<span class="st-col"><span class="st-ph">Paket seçin</span></span><span class="st-ok">›</span>`;
     const secler = uyelikSecenekleri(p);
-    return secler.map((s, i) => `<div class="scip ${secIdx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${secIdx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('');
+    const s = secler[secIdx] || secler[0] || {};
+    return `<span class="pa-pk">🎟️</span><span class="st-col"><span class="st-nm">${kacar(p.ad)} — ${Number(s.dersSayisi) || 0} ders</span><span class="st-sub">${binlik(s.fiyat || 0)} ₺ · ${Number(p.gecerlilikGun) || 0} gün geçerli</span></span><span class="st-ok">›</span>`;
   };
 
   const govde = `
     <div class="gp-alan"><label>Eğitmen</label>
-      <div class="pa-dd">
-        <button type="button" class="pa-trig" id="paeTrig"><span id="paeAd">${kacar(eAd(egitmenId))}</span><span class="ok">▾</span></button>
-        <div class="pa-panel" id="paePanel" hidden>${eOgeler()}</div>
-      </div></div>
-    <div class="gp-alan"><label>Üyelik Paketi</label>
-      <div class="pa-dd">
-        <button type="button" class="pa-trig" id="papTrig"><span id="papAd">${kacar(pAd(uyelikId))}</span><span class="ok">▾</span></button>
-        <div class="pa-panel" id="papPanel" hidden>${pOgeler()}</div>
-      </div></div>
-    <div class="gp-alan" style="margin:0"><label>Ders Seçeneği</label>
-      <div class="sec-cip" id="paSecList">${secOgeler()}</div></div>`;
+      <button type="button" class="sec-trig" id="paeTrig">${egitmenTrigIc(egitmenId)}</button></div>
+    <div class="gp-alan" style="margin:0"><label>Üyelik Paketi</label>
+      <button type="button" class="sec-trig" id="papTrig">${paketTrigIc()}</button></div>`;
   modalAc('Ders Paketi Ata', govde,
     `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="paKaydet">💾 Öğrenciye Ekle</button>`,
     `<span class="hr-rozet">🎟️ Paket</span>`);
 
-  const secBagla = () => $$('#paSecList [data-si]').forEach(el => el.onclick = () => { secIdx = Number(el.dataset.si); $('#paSecList').innerHTML = secOgeler(); secBagla(); });
-  secBagla();
-  const kur = (trig, panel, ogelerFn, secFn) => {
-    const t = $(trig), p = $(panel);
-    t.onclick = () => { const ac = p.hidden; $$('.pa-panel').forEach(x => x.hidden = true); $$('.pa-trig').forEach(x => x.classList.remove('acik')); p.hidden = !ac; t.classList.toggle('acik', ac); };
-    const bagla = () => $$('[data-e],[data-p]', p).forEach(el => el.onclick = () => { secFn(el); p.hidden = true; t.classList.remove('acik'); });
-    p._yenile = () => { p.innerHTML = ogelerFn(); bagla(); };
-    bagla();
-  };
-  kur('#paeTrig', '#paePanel', eOgeler, (el) => { egitmenId = el.dataset.e; $('#paeAd').textContent = eAd(egitmenId); $('#paePanel')._yenile(); });
-  kur('#papTrig', '#papPanel', pOgeler, (el) => { uyelikId = el.dataset.p; secIdx = 0; $('#papAd').textContent = pAd(uyelikId); $('#papPanel')._yenile(); $('#paSecList').innerHTML = secOgeler(); secBagla(); });
+  $('#paeTrig').onclick = () => egitmenSecModal(egitmenId, (id) => { egitmenId = id; $('#paeTrig').innerHTML = egitmenTrigIc(egitmenId); });
+  $('#papTrig').onclick = () => paketSecModal(uyelikId, secIdx, (pid, sidx) => { uyelikId = pid; secIdx = sidx; $('#papTrig').innerHTML = paketTrigIc(); });
 
   $('#paIptal').onclick = modalKapat;
   $('#paKaydet').onclick = async () => {
@@ -3932,6 +3910,99 @@ function dersDusumGeriAl(ders) {
   ders.dusumler = [];
 }
 
+/* ---- Üst-kat seçim formları (ana modalın üzerinde açılır, kapanınca geri döner) ---- */
+function ustKatModal(baslik, rozet, govdeHTML, altHTML) {
+  const kap = document.createElement('div');
+  kap.className = 'modal-perde modal-ust-kat';
+  kap.innerHTML = `<div class="modal" role="dialog">
+    <div class="modal-ust"><h3>${kacar(baslik)}</h3>${rozet ? `<span class="hr-rozet">${rozet}</span>` : ''}<button class="modal-kapat" type="button">×</button></div>
+    <div class="modal-govde">${govdeHTML}</div>
+    ${altHTML ? `<div class="modal-alt">${altHTML}</div>` : ''}
+  </div>`;
+  document.body.appendChild(kap);
+  autofillKapatKur();
+  const kapat = () => kap.remove();
+  kap.querySelector('.modal-kapat').onclick = kapat;
+  kap.onclick = (e) => { if (e.target === kap) kapat(); };
+  return { kap, kapat, q: (s) => kap.querySelector(s), qq: (s) => Array.from(kap.querySelectorAll(s)) };
+}
+/* Eğitmen tetik-satırının iç görünümü */
+function egitmenTrigIc(id) {
+  const e = State.ortaklar.find(x => x.id === id);
+  if (!e) return `<span class="st-col"><span class="st-ph">Eğitmen seçin</span></span><span class="st-ok">›</span>`;
+  const pay = (e.payOrani != null && e.payOrani !== '') ? ` · %${e.payOrani} pay` : '';
+  return `<span class="ogr-av sm">${basHarf(e.ad)}</span><span class="st-col"><span class="st-nm">${kacar(egitmenKisaAd(e))}</span><span class="st-sub">Eğitmen${pay}</span></span><span class="st-ok">›</span>`;
+}
+/* Eğitmen Seç (tek seçim) */
+function egitmenSecModal(seciliId, onSec) {
+  const egitmenler = State.ortaklar.filter(x => x.aktif !== false);
+  const satir = (e) => {
+    const sc = e.id === seciliId;
+    const pay = (e.payOrani != null && e.payOrani !== '') ? ` · %${e.payOrani} pay` : '';
+    return `<button type="button" class="uys-uye ${sc ? 'sec-akt' : ''}" data-e="${e.id}"><span class="ogr-av">${basHarf(e.ad)}</span><span class="uys-uye-bilg"><span class="ad">${kacar(egitmenKisaAd(e))}</span><span class="alt">Eğitmen${pay}</span></span><span class="uys-ok">${sc ? '<span class="tik-yes">✓</span>' : '›'}</span></button>`;
+  };
+  const govde = `<div class="sec-liste">${egitmenler.map(satir).join('')}</div>`;
+  const m = ustKatModal('Eğitmen Seç', '👩‍🏫 Eğitmen', govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  m.q('[data-geri]').onclick = m.kapat;
+  m.qq('[data-e]').forEach(el => el.onclick = () => { onSec(el.dataset.e); m.kapat(); });
+}
+/* Öğrenci Seç (çoklu, aramalı) */
+function ogrenciSecModal(onceki, onKaydet) {
+  const ogrenciler = State.ogrenciler.filter(x => x.durum === 'ogrenci').slice()
+    .sort((a, b) => ogrenciTamAd(a).localeCompare(ogrenciTamAd(b), 'tr'));
+  const secili = new Set(onceki);
+  const chip = () => Array.from(secili).map(id => { const o = State.ogrenciler.find(x => x.id === id); return o ? `<span class="ds-chip">${kacar(ogrenciTamAd(o))} <span class="x" data-cx="${id}">✕</span></span>` : ''; }).join('');
+  const item = (o) => {
+    const mt = ogrenciMetrik(o);
+    const pk = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) + ' · ' : '';
+    return `<div class="ds-osat ${secili.has(o.id) ? 'sec' : ''}" data-o="${o.id}"><span class="ds-ochk">${secili.has(o.id) ? '✓' : ''}</span><span class="oav-mini">${basHarf(o.ad, o.soyad)}</span><span class="ds-obil"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${pk}${mt.kalanDers} ders kaldı</span></span></div>`;
+  };
+  const govde = `
+    <div class="ds-chipler" id="osChip">${chip()}</div>
+    <div class="uys-ara"><span>🔍</span><input type="text" id="osAra" placeholder="Öğrenci ara…"></div>
+    <div class="ds-oliste sec-liste-kaydir" id="osListe">${ogrenciler.map(item).join('')}</div>`;
+  const m = ustKatModal('Öğrenci Seç', '👥 Öğrenci', govde,
+    `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç (<span id="osSay">${secili.size}</span>)</button>`);
+  const bindListe = () => m.qq('#osListe [data-o]').forEach(el => el.onclick = () => { const id = el.dataset.o; if (secili.has(id)) secili.delete(id); else secili.add(id); m.q('#osSay').textContent = secili.size; chipYenile(); yenile(); });
+  const yenile = () => {
+    const q = (m.q('#osAra').value || '').trim().toLocaleLowerCase('tr');
+    const suz = ogrenciler.filter(o => ogrenciTamAd(o).toLocaleLowerCase('tr').includes(q));
+    m.q('#osListe').innerHTML = suz.length ? suz.map(item).join('') : `<div class="gp-bos" style="margin:8px 6px">Eşleşen öğrenci yok.</div>`;
+    bindListe();
+  };
+  const chipYenile = () => { m.q('#osChip').innerHTML = chip(); m.qq('#osChip [data-cx]').forEach(c => c.onclick = () => { secili.delete(c.dataset.cx); m.q('#osSay').textContent = secili.size; chipYenile(); yenile(); }); };
+  bindListe(); chipYenile();
+  m.q('#osAra').addEventListener('input', yenile);
+  m.q('[data-geri]').onclick = m.kapat;
+  m.q('[data-sec]').onclick = () => { onKaydet(secili); m.kapat(); };
+}
+/* Paket Seç (üyelik paketi + ders seçeneği) */
+function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
+  const paketler = State.uyelikler || [];
+  let pid = seciliPaketId || (paketler[0] && paketler[0].id);
+  let sidx = seciliSecIdx || 0;
+  const secOzet = (p) => uyelikSecenekleri(p).map(s => Number(s.dersSayisi) || 0).join(' · ') + ' ders';
+  const paketSatir = (p) => {
+    const sc = p.id === pid;
+    let ic = `<div class="pa-oge sec-oge ${sc ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${sc ? '<span class="pa-tik">✓</span>' : ''}</div>`;
+    if (sc) {
+      const secler = uyelikSecenekleri(p);
+      ic += `<div class="sec-mini-bas">Ders Seçeneği</div><div class="sec-cip">${secler.map((s, i) => `<div class="scip ${sidx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${sidx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('')}</div>`;
+    }
+    return ic;
+  };
+  const m = ustKatModal('Paket Seç', '🎟️ Paket', `<div class="sec-liste" id="psListe">${paketler.map(paketSatir).join('')}</div>`,
+    `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç</button>`);
+  const ciz = () => { m.q('#psListe').innerHTML = paketler.map(paketSatir).join(''); bagla(); };
+  const bagla = () => {
+    m.qq('#psListe [data-p]').forEach(el => el.onclick = () => { if (pid !== el.dataset.p) { pid = el.dataset.p; sidx = 0; ciz(); } });
+    m.qq('#psListe [data-si]').forEach(el => el.onclick = (ev) => { ev.stopPropagation(); sidx = Number(el.dataset.si); ciz(); });
+  };
+  bagla();
+  m.q('[data-geri]').onclick = m.kapat;
+  m.q('[data-sec]').onclick = () => { onSec(pid, sidx); m.kapat(); };
+}
+
 /* Ders Oluştur formu */
 function dersOlusturModal() {
   const egitmenler = State.ortaklar.filter(x => x.aktif !== false);
@@ -3944,23 +4015,15 @@ function dersOlusturModal() {
   const secili = new Set();
   let tarih = bugunISO();
   let saat = '10:00';
-  const eAd = (id) => { const e = egitmenler.find(x => x.id === id); return e ? egitmenKisaAd(e) : 'Seç'; };
-  const ogrItem = (o) => {
-    const m = ogrenciMetrik(o);
-    const paketAd = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) + ' · ' : '';
-    return `<div class="ds-osat ${secili.has(o.id) ? 'sec' : ''}" data-o="${o.id}"><span class="ds-ochk">${secili.has(o.id) ? '✓' : ''}</span><span class="oav-mini">${basHarf(o.ad, o.soyad)}</span><span class="ds-obil"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${paketAd}${m.kalanDers} ders kaldı</span></span></div>`;
-  };
-  const chipler = () => Array.from(secili).map(id => { const o = ogrenciler.find(x => x.id === id); return o ? `<span class="ds-chip">${kacar(ogrenciTamAd(o))} <span class="x" data-cx="${id}">✕</span></span>` : ''; }).join('');
+  const chipler = () => Array.from(secili).map(id => { const o = State.ogrenciler.find(x => x.id === id); return o ? `<span class="ds-chip">${kacar(ogrenciTamAd(o))} <span class="x" data-cx="${id}">✕</span></span>` : ''; }).join('');
 
   const govde = `
     <div class="gp-alan"><label>Ders Adı</label><input type="text" class="gp-inp" id="dsAd" placeholder="Örn. Reformer"></div>
     <div class="gp-alan"><label>Dersi Verecek Eğitmen</label>
-      <div class="pa-dd"><button type="button" class="pa-trig" id="dsETrig"><span id="dsEAd">${kacar(eAd(egitmenId))}</span><span class="ok">▾</span></button>
-        <div class="pa-panel" id="dsEPanel" hidden>${egitmenler.map(e => `<div class="pa-oge" data-e="${e.id}"><span class="ogr-ea">${basHarf(e.ad)}</span>${kacar(egitmenKisaAd(e))}</div>`).join('')}</div></div></div>
+      <button type="button" class="sec-trig" id="dsETrig">${egitmenTrigIc(egitmenId)}</button></div>
     <div class="gp-alan"><label>Dersi Alacak Öğrenci(ler)</label>
       <div class="ds-chipler" id="dsChipler">${chipler()}</div>
-      <div class="uys-ara"><span>🔍</span><input type="text" id="dsAra" placeholder="Öğrenci ara…"></div>
-      <div class="ds-oliste" id="dsListe">${ogrenciler.map(ogrItem).join('')}</div></div>
+      <button type="button" class="ekle-btn" id="dsOEkle">＋ Öğrenci Seç / Ekle</button></div>
     <div class="uy-ikili">
       <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
       <div class="gp-alan" style="margin:0"><label>Saat</label><input type="text" class="gp-inp" id="dsSaat" value="${saat}" inputmode="numeric" maxlength="5" style="text-align:center;letter-spacing:1px;font-weight:600"></div>
@@ -3970,20 +4033,11 @@ function dersOlusturModal() {
     `<span class="hr-rozet">📅 Ders</span>`);
   setTimeout(() => $('#dsAd').focus(), 50);
 
-  const eTrig = $('#dsETrig'), ePanel = $('#dsEPanel');
-  eTrig.onclick = () => { ePanel.hidden = !ePanel.hidden; eTrig.classList.toggle('acik', !ePanel.hidden); };
-  $$('[data-e]', ePanel).forEach(el => el.onclick = () => { egitmenId = el.dataset.e; $('#dsEAd').textContent = eAd(egitmenId); ePanel.hidden = true; eTrig.classList.remove('acik'); });
+  $('#dsETrig').onclick = () => egitmenSecModal(egitmenId, (id) => { egitmenId = id; $('#dsETrig').innerHTML = egitmenTrigIc(egitmenId); });
 
-  const listeYenile = () => {
-    const q = ($('#dsAra').value || '').trim().toLocaleLowerCase('tr');
-    const suz = ogrenciler.filter(o => ogrenciTamAd(o).toLocaleLowerCase('tr').includes(q));
-    $('#dsListe').innerHTML = suz.length ? suz.map(ogrItem).join('') : `<div class="gp-bos" style="margin:8px 6px">Eşleşen öğrenci yok.</div>`;
-    ogrBagla();
-  };
-  const chipYenile = () => { $('#dsChipler').innerHTML = chipler(); $$('[data-cx]').forEach(c => c.onclick = () => { secili.delete(c.dataset.cx); chipYenile(); listeYenile(); }); };
-  const ogrBagla = () => $$('#dsListe [data-o]').forEach(el => el.onclick = () => { const id = el.dataset.o; if (secili.has(id)) secili.delete(id); else secili.add(id); chipYenile(); listeYenile(); });
-  ogrBagla(); chipYenile();
-  $('#dsAra').addEventListener('input', listeYenile);
+  const chipYenile = () => { $('#dsChipler').innerHTML = chipler(); $$('#dsChipler [data-cx]').forEach(c => c.onclick = () => { secili.delete(c.dataset.cx); chipYenile(); }); };
+  chipYenile();
+  $('#dsOEkle').onclick = () => ogrenciSecModal(secili, (yeni) => { secili.clear(); yeni.forEach(id => secili.add(id)); chipYenile(); });
 
   $('#dsTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#dsTarihAd').textContent = fmtTarihUzun(tarih); });
   { const st = $('#dsSaat');

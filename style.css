@@ -775,6 +775,25 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .uys-uye-bilg .alt{font-size:11.5px;color:var(--metin-soluk);margin-top:1px}
 /* Paket ata — eğitmen/paket açılır seçici */
 .pa-dd{position:relative}
+/* Ayrı ekran açan seçim tetik-satırı (Eğitmen / Paket) + Öğrenci ekle butonu */
+.sec-trig{width:100%;display:flex;align-items:center;gap:11px;border:1px solid var(--kenar);background:#fff;border-radius:12px;padding:10px 13px;font-family:inherit;cursor:pointer;text-align:left;color:var(--metin)}
+.sec-trig:hover{border-color:var(--gold)}
+.sec-trig .st-ok{margin-left:auto;color:#a8792f;font-size:18px;font-weight:700}
+.sec-trig .st-ph{color:var(--metin-soluk);font-weight:600;font-size:14px}
+.sec-trig .st-col{display:flex;flex-direction:column;min-width:0}
+.sec-trig .st-nm{font-weight:700;font-size:14.5px;color:var(--metin)}
+.sec-trig .st-sub{font-size:11.5px;color:var(--metin-soluk);margin-top:1px}
+.ekle-btn{width:100%;border:1.5px dashed var(--kenar-koyu);background:#fff;border-radius:12px;padding:11px;font-family:inherit;font-weight:700;font-size:13.5px;color:#8a7a52;cursor:pointer}
+.ekle-btn:hover{border-color:var(--gold);color:#a8792f}
+.ogr-av.sm{width:34px;height:34px;font-size:12px}
+/* Üst-kat seçim listeleri */
+.sec-liste{display:flex;flex-direction:column;gap:9px}
+.sec-liste-kaydir{max-height:min(46vh,340px);overflow:auto;border:1px solid var(--kenar);border-radius:12px}
+.uys-uye.sec-akt{border-color:var(--gold);background:#fffdf5}
+.tik-yes{color:var(--yesil-para);font-weight:800;font-size:17px}
+.sec-oge{border:1px solid var(--kenar)}
+.sec-oge.sec{border-color:var(--gold)}
+.sec-mini-bas{font-size:12px;font-weight:700;color:var(--metin-soluk);margin:2px 2px 0}
 .pa-trig{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--kenar);background:#fff;border-radius:12px;padding:11px 13px;font-size:14.5px;font-weight:700;font-family:inherit;color:var(--metin);cursor:pointer}
 .pa-trig.acik{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,154,76,.15)}
 .pa-trig .ok{color:#a8792f}
