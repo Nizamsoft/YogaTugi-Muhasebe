@@ -56,6 +56,13 @@ function binlikBiciml(metin) {
   const rakam = String(metin == null ? '' : metin).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
   return rakam ? Number(rakam).toLocaleString('tr-TR') : '';
 }
+/* Telefon: baştaki 0 atılır, 10 haneye kırpılır, 505-033-41-27 (3-3-2-2) tireli */
+function telBiciml(metin) {
+  let d = String(metin == null ? '' : metin).replace(/\D/g, '');
+  if (d[0] === '0') d = d.slice(1);
+  d = d.slice(0, 10);
+  return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join('-');
+}
 
 /* --- Tutar giriş kutusu: yazarken canlı "5.000,12 ₺" biçimlendirme --- */
 function tutarBicimle(ham) {
@@ -352,9 +359,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '86';
+const APP_SURUM = '87';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '14:37';
+const APP_SURUM_SAAT = '14:55';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -481,7 +488,6 @@ const MENU = [
     { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
     { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
     { id: 'ayar-tanimlama',  ad: 'Tanımlamalar',    ikon: '🗂️', baslik: 'Tanımlamalar' },
-    { id: 'ayar-admin',      ad: 'Güncelleme',      ikon: '⟳', baslik: 'Güncelleme', sadeceAdmin: true },
   ]},
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
@@ -546,7 +552,11 @@ function menuCiz() {
     if (!acikti) grup.classList.add('acik');
   });
   $$('.menu-oge', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa));
-  if ($('#kenarSurum')) $('#kenarSurum').innerHTML = `<b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH} · ${APP_SURUM_SAAT}</span>`;
+  const ks = $('#kenarSurum');
+  if (ks) {
+    ks.innerHTML = `<div class="ks-bilg"><b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH} · ${APP_SURUM_SAAT}</span></div><button type="button" class="ks-guncelle" id="ksGuncelle" title="En güncel sürümü getir">⟳</button>`;
+    $('#ksGuncelle').onclick = () => enGuncelSurumuGetir();
+  }
 }
 
 function menuBul(id) {
@@ -3205,30 +3215,12 @@ function yeniKartLogoSec(dosya) {
   });
 }
 
-/* -------- AYARLAR: Admin Ayarları (sadece yönetici) -------- */
-SAYFALAR['ayar-admin'] = function () {
-  if (!adminMi()) {
-    ic().innerHTML = `<div class="kart">${bosBlok('Bu bölümü yalnızca yönetici (Admin) görüntüleyebilir.')}</div>`;
-    return;
-  }
-  ic().innerHTML = `
-    <div class="admin-kart">
-      <div class="admin-head"><span class="ai">🛡️</span><h3>Admin Ayarları</h3><span class="rz">SADECE YÖNETİCİ</span></div>
-      <div class="admin-body">
-        <div class="admin-satir"><span class="l">Uygulama Sürümü</span><span class="v">Sürüm ${APP_SURUM} · ${APP_SURUM_TARIH} · ${APP_SURUM_SAAT}</span></div>
-        <p class="admin-not">Yeni bir güncelleme yayınlandığında, en güncel hâli bu cihaza indirmek için aşağıdaki düğmeye basın. Eski sürüm önbellekte kalmaz, en yeni sürüm yüklenir.</p>
-        <button class="admin-guncelle" id="adGuncelle">⟳ En Güncel Sürümü Getir</button>
-        <p class="admin-alt">🔒 Verileriniz korunur — yalnızca uygulama dosyaları yenilenir.</p>
-      </div>
-    </div>`;
-  $('#adGuncelle').onclick = () => enGuncelSurumuGetir();
-};
-
 /* En güncel sürümü zorla getir: önbelleği/servis çalışanını temizle, taze index.html yükle.
-   localStorage'a (verilere) dokunmaz. */
+   localStorage'a (verilere) dokunmaz. Sol alttaki ⟳ düğmesinden çağrılır. */
 async function enGuncelSurumuGetir() {
-  const btn = $('#adGuncelle');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Güncelleniyor…'; }
+  const btn = $('#ksGuncelle');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; btn.classList.add('donuyor'); }
+  bildir('En güncel sürüm getiriliyor…', '');
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -3616,16 +3608,17 @@ function yeniUyeFormu() {
   const govde = `
     <div class="gp-alan"><label>Adı</label><input type="text" class="gp-inp" id="oAd" placeholder="Örn. Ayşe" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="gp-alan"><label>Soyadı</label><input type="text" class="gp-inp" id="oSoyad" placeholder="Örn. Yılmaz" autocomplete="off" autocorrect="off" spellcheck="false"></div>
-    <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="tel" class="gp-inp" id="oTel" placeholder="Örn. 0532 111 22 33" autocomplete="off"></div>`;
+    <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="numeric" class="gp-inp" id="oTel" placeholder="Örn. 505-033-41-27"></div>`;
   modalAc('Yeni Üye', govde,
     `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oDevam">Devam Et →</button>`,
     `<span class="hr-rozet">🌱 Yeni Üye</span>`);
   setTimeout(() => $('#oAd').focus(), 50);
+  { const tl = $('#oTel'); tl.addEventListener('input', () => { tl.value = telBiciml(tl.value); }); }
   $('#oIptal').onclick = modalKapat;
   $('#oDevam').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const veri = { ad, soyad: $('#oSoyad').value.trim(), telefon: $('#oTel').value.trim(), durum: 'potansiyel', egitmenId: null, paketler: [] };
+    const veri = { ad, soyad: $('#oSoyad').value.trim(), telefon: telBiciml($('#oTel').value), durum: 'potansiyel', egitmenId: null, paketler: [] };
     const y = await DB.ekle('ogrenciler', veri); State.ogrenciler.push(y);
     neYapmakModal(y);
   };
@@ -3732,16 +3725,17 @@ function ogrenciDuzenle(o) {
   const govde = `
     <div class="gp-alan"><label>Adı</label><input type="text" class="gp-inp" id="oAd" value="${kacar(o.ad || '')}" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="gp-alan"><label>Soyadı</label><input type="text" class="gp-inp" id="oSoyad" value="${kacar(o.soyad || '')}" autocomplete="off" autocorrect="off" spellcheck="false"></div>
-    <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="tel" class="gp-inp" id="oTel" value="${kacar(o.telefon || '')}" autocomplete="off"></div>`;
+    <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="numeric" class="gp-inp" id="oTel" value="${kacar(telBiciml(o.telefon || ''))}"></div>`;
   modalAc('Öğrenci Düzenle', govde,
     `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oKaydet">💾 Kaydet</button>`,
     `<span class="hr-rozet">👤 Öğrenci</span>`);
   setTimeout(() => $('#oAd').focus(), 50);
+  { const tl = $('#oTel'); tl.addEventListener('input', () => { tl.value = telBiciml(tl.value); }); }
   $('#oIptal').onclick = modalKapat;
   $('#oKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const guncel = { ad, soyad: $('#oSoyad').value.trim(), telefon: $('#oTel').value.trim() };
+    const guncel = { ad, soyad: $('#oSoyad').value.trim(), telefon: telBiciml($('#oTel').value) };
     await DB.guncelle('ogrenciler', o.id, guncel); Object.assign(o, guncel);
     modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['ogrenciler']();
   };
@@ -4305,8 +4299,36 @@ document.addEventListener('DOMContentLoaded', () => {
   ustCubukKur();
   girisKur();
   yakinlastirmaKapat();
+  autofillKapatKur();
   surumKontrol();
 });
+
+/* Tarayıcı otomatik-tamamlama / adres önerilerini tüm giriş alanlarında kapat.
+   autocomplete=new-password + readonly (odakta kaldırılır) — Chrome dahil güvenilir. */
+function autofillKapatKur() {
+  const disi = ['checkbox', 'radio', 'file', 'range', 'color', 'hidden', 'submit', 'button', 'reset'];
+  const uygula = (el) => {
+    if (!el || el.dataset.afk) return;
+    const t = (el.getAttribute('type') || 'text').toLowerCase();
+    el.dataset.afk = '1';
+    if (el.tagName === 'INPUT' && disi.includes(t)) return;
+    el.setAttribute('autocomplete', 'new-password');
+    el.setAttribute('autocorrect', 'off');
+    el.setAttribute('autocapitalize', 'off');
+    el.setAttribute('spellcheck', 'false');
+    if (t !== 'password') el.setAttribute('readonly', 'readonly');
+  };
+  const tara = (kok) => {
+    if (!kok || kok.nodeType !== 1) return;
+    if (kok.matches && kok.matches('input,textarea')) uygula(kok);
+    if (kok.querySelectorAll) kok.querySelectorAll('input,textarea').forEach(uygula);
+  };
+  tara(document.body);
+  try { new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(tara))).observe(document.body, { childList: true, subtree: true }); } catch {}
+  const ac = (e) => { const el = e.target; if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.dataset.afk && el.hasAttribute('readonly')) el.removeAttribute('readonly'); };
+  document.addEventListener('pointerdown', ac, true);
+  document.addEventListener('focusin', ac, true);
+}
 
 /* Otomatik sürüm kontrolü: taze index.html'i çek, daha yeni sürüm varsa
    önbelleği atlayarak kendini güncelle (ana ekrana eklenmiş cihazlar için).
