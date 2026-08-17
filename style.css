@@ -590,6 +590,38 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .tnm-kalem-arac{display:flex;gap:6px}
 .tnm-kalem-arac button{width:30px;height:30px;border-radius:9px;border:1px solid var(--kenar);background:#fff;font-size:13px;color:var(--metin-soluk);display:grid;place-items:center;cursor:pointer}
 .tnm-kalem-arac button:hover{border-color:var(--gold);color:#a8792f}
+/* Gider grup başlığı (liste) */
+.tnm-grup{max-width:560px;margin:0 auto 20px}
+.tnm-grup-bas{display:flex;align-items:center;gap:10px;margin:0 2px 11px}
+.tnm-grup-bas .ad{font-family:Georgia,"Times New Roman",serif;font-size:16px;font-weight:700}
+.tnm-grup-bas .say{font-size:11px;font-weight:800;color:#a8792f;background:#f6e6ad;border-radius:999px;padding:2px 9px}
+.tnm-grup-bas .cizgi{flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,#caa24e,transparent)}
+.tnm-grup .tnm-kalem{margin-bottom:9px}
+
+/* Gider Ekle — açılır grup seçici (satır içi) */
+.gd-dd{position:relative}
+.gd-trig{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--kenar);background:#fff;border-radius:12px;padding:12px 13px;font-size:15px;font-weight:700;font-family:inherit;color:var(--metin);cursor:pointer}
+.gd-trig.acik{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,154,76,.15)}
+.gd-trig .ok{color:#a8792f;transition:transform .2s}
+.gd-trig.acik .ok{transform:rotate(180deg)}
+.gd-panel{margin-top:8px;border-radius:15px;padding:2px;
+  background:linear-gradient(#fffdf7,#fffdf7) padding-box,linear-gradient(135deg,#d9b25a,#f6e6ad 40%,#c9992f 62%,#f7e9b4 82%,#b8860b) border-box;border:2px solid transparent;
+  box-shadow:0 18px 34px -18px rgba(120,90,20,.5);animation:tnmGir .2s ease both}
+.gd-ic{background:var(--kart);border-radius:12px;padding:5px}
+.gd-oge{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:9px;font-weight:700;font-size:14.5px;cursor:pointer}
+.gd-oge:hover{background:var(--gri)}
+.gd-oge.sec{background:linear-gradient(135deg,#fbf1d4,#f6e6ad);color:#a8792f}
+.gd-oge .tik{margin-left:auto;color:#a8792f;font-weight:800}
+.gd-nokta{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:linear-gradient(135deg,#d3a84a,#a8792f)}
+.gd-ay{height:1px;background:var(--kenar);margin:5px 8px}
+.gd-yeni{color:#a8792f;font-weight:800}
+.gd-yeni .art{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:#f6e6ad;font-size:15px}
+.gd-yenigrup{display:flex;gap:8px;padding:6px 6px 8px}
+.gd-yenigrup[hidden]{display:none}
+.gd-panel[hidden]{display:none}
+.gd-yenigrup .gp-inp{flex:1;padding:10px 12px}
+.gd-ekle{border:none;border-radius:11px;padding:0 15px;font-family:inherit;font-weight:800;color:#40320f;cursor:pointer;background:linear-gradient(135deg,#f2d98a,#d3a84a 55%,#c69133)}
 
 /* Ortak Hak Edişleri — ortak başına basit "fiş" kartı */
 .ortakkart .he-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:16px}

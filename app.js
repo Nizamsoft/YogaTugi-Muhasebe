@@ -21,7 +21,8 @@ const State = {
   musteriler: [],    // {id, ad, telefon, not}  — ders müşterileri (cari)
   dersler: [],       // {id, tarih, egitmenId, musteriId, ucret, aciklama}  — cari ders kaydı (kasa/para yok)
   odemeler: [],      // {id, musteriId, tarih, tutar, aciklama}  — müşteri tahsilatları (cari ödeme)
-  giderler: [],      // {id, ad}  — Tanımlamalar > Giderler (gider kalem isimleri)
+  giderler: [],      // {id, ad, grupId}  — Tanımlamalar > Giderler (gider kalem isimleri)
+  giderGruplari: [], // {id, ad}  — Gider grup başlıkları
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -138,7 +139,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler'];   // ortak (ad+foto) + Tanımlamalar > Giderler
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari'];   // ortak (ad+foto) + Giderler + grupları
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -326,7 +327,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '76';
+const APP_SURUM = '77';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -347,6 +348,7 @@ async function veriYukle() {
   else if (temizlik && window._Bulut) window._Bulut.itPlanla();
   State.ortaklar = temiz;
   State.giderler = DB._oku('giderler');
+  State.giderGruplari = DB._oku('giderGruplari');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
 }
@@ -3303,21 +3305,29 @@ SAYFALAR['ayar-tanimlama'] = function () {
   });
 };
 
-/* -------- Tanımlamalar: Giderler (gider kalem isimleri) -------- */
+/* -------- Tanımlamalar: Giderler (gruplu) -------- */
 SAYFALAR['tanim-gider'] = function () {
-  const list = State.giderler;
-  const rows = list.map(g => `<div class="tnm-kalem"><div class="tnm-kalem-ic">
+  const gruplar = State.giderGruplari;
+  const giderler = State.giderler;
+  const kalemHTML = (g) => `<div class="tnm-kalem"><div class="tnm-kalem-ic">
       <span class="tnm-nokta"></span><span class="tnm-kalem-ad">${kacar(g.ad)}</span>
       <span class="tnm-kalem-arac"><button type="button" data-gd="${g.id}" title="Düzenle">✎</button><button type="button" data-gs="${g.id}" title="Sil">🗑️</button></span>
-    </div></div>`).join('');
+    </div></div>`;
+  const bolumHTML = (ad, items) => !items.length ? '' : `<div class="tnm-grup">
+      <div class="tnm-grup-bas"><span class="ad">${kacar(ad)}</span><span class="say">${items.length}</span><span class="cizgi"></span></div>
+      ${items.map(kalemHTML).join('')}</div>`;
+  const bolumler = gruplar.map(gr => bolumHTML(gr.ad, giderler.filter(x => x.grupId === gr.id))).join('');
+  const grupsuz = giderler.filter(x => !x.grupId || !gruplar.some(g => g.id === x.grupId));
+  const bolumlerTam = bolumler + bolumHTML('Diğer', grupsuz);
+
   ic().innerHTML = `
     <div class="tnm-scr-ust">
       <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
       <button type="button" class="gp-ekle" id="gdEkle">＋ Gider Ekle</button>
     </div>
-    ${list.length === 0
+    ${giderler.length === 0
       ? `<div class="gp-bos" style="max-width:560px">Liste boş</div>`
-      : `<div class="tnm-liste">${rows}</div>`}`;
+      : `<div class="tnm-liste">${bolumlerTam}</div>`}`;
   $('#tnmGeri').onclick = () => git('ayar-tanimlama');
   $('#gdEkle').onclick = () => giderFormu();
   $$('[data-gd]').forEach(b => b.onclick = () => giderFormu(State.giderler.find(g => g.id === b.dataset.gd)));
@@ -3328,19 +3338,63 @@ SAYFALAR['tanim-gider'] = function () {
 };
 
 function giderFormu(mevcut) {
-  const govde = `<div class="gp-alan" style="margin:0"><label>Gider Adı</label>
-    <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira"></div>`;
+  let seciliGrup = mevcut ? (mevcut.grupId || null) : null;
+  const grupAdi = (id) => { const g = State.giderGruplari.find(x => x.id === id); return g ? g.ad : 'Grup seç'; };
+  const ogelerHTML = () => State.giderGruplari.map(g =>
+    `<div class="gd-oge ${seciliGrup === g.id ? 'sec' : ''}" data-grup="${g.id}"><span class="gd-nokta"></span>${kacar(g.ad)}${seciliGrup === g.id ? '<span class="tik">✓</span>' : ''}</div>`).join('');
+
+  const govde = `
+    <div class="gp-alan"><label>Gider Adı</label>
+      <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira"></div>
+    <div class="gp-alan" style="margin:0"><label>Grup</label>
+      <div class="gd-dd" id="gdDD">
+        <button type="button" class="gd-trig" id="gdTrig"><span id="gdSeciliAd">${kacar(grupAdi(seciliGrup))}</span><span class="ok">▾</span></button>
+        <div class="gd-panel" id="gdPanel" hidden><div class="gd-ic">
+          <div id="gdOgeler">${ogelerHTML()}</div>
+          ${State.giderGruplari.length ? '<div class="gd-ay"></div>' : ''}
+          <div class="gd-oge gd-yeni" id="gdYeni"><span class="art">＋</span>Yeni Grup</div>
+          <div class="gd-yenigrup" id="gdYeniGrup" hidden>
+            <input type="text" class="gp-inp" id="gdYeniAd" placeholder="Yeni grup adı…">
+            <button type="button" class="gd-ekle" id="gdYeniEkle">Ekle</button>
+          </div>
+        </div></div>
+      </div>
+    </div>`;
   modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', govde,
     `<button class="btn" id="gdIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gdKaydet">💾 Kaydet</button>`,
     `<span class="hr-rozet">📉 Gider</span>`);
+
   const inp = $('#gdAd'); setTimeout(() => inp.focus(), 50);
+  const panel = $('#gdPanel'), trig = $('#gdTrig');
+  const panelKapat = () => { panel.hidden = true; trig.classList.remove('acik'); $('#gdYeniGrup').hidden = true; };
+  const panelAc = () => { panel.hidden = false; trig.classList.add('acik'); };
+  trig.onclick = () => panel.hidden ? panelAc() : panelKapat();
+  const ogeleriBagla = () => $$('#gdOgeler .gd-oge').forEach(o => o.onclick = () => {
+    seciliGrup = o.dataset.grup; $('#gdSeciliAd').textContent = grupAdi(seciliGrup);
+    $('#gdOgeler').innerHTML = ogelerHTML(); ogeleriBagla(); panelKapat();
+  });
+  ogeleriBagla();
+  $('#gdYeni').onclick = () => { const yg = $('#gdYeniGrup'); yg.hidden = !yg.hidden; if (!yg.hidden) setTimeout(() => $('#gdYeniAd').focus(), 30); };
+  const grupEkle = async () => {
+    const ad = $('#gdYeniAd').value.trim();
+    if (!ad) return bildir('Grup adı girin.', 'hata');
+    const y = await DB.ekle('giderGruplari', { ad }); State.giderGruplari.push(y);
+    seciliGrup = y.id; $('#gdSeciliAd').textContent = ad;
+    $('#gdOgeler').innerHTML = ogelerHTML(); ogeleriBagla();
+    $('#gdYeniAd').value = ''; panelKapat();
+    bildir('Grup eklendi.', 'basari');
+  };
+  $('#gdYeniEkle').onclick = grupEkle;
+  $('#gdYeniAd').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); grupEkle(); } });
+
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') $('#gdKaydet').click(); });
   $('#gdIptal').onclick = modalKapat;
   $('#gdKaydet').onclick = async () => {
     const ad = inp.value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    if (mevcut) { await DB.guncelle('giderler', mevcut.id, { ad }); Object.assign(mevcut, { ad }); }
-    else { const y = await DB.ekle('giderler', { ad }); State.giderler.push(y); }
+    const veri = { ad, grupId: seciliGrup || null };
+    if (mevcut) { await DB.guncelle('giderler', mevcut.id, veri); Object.assign(mevcut, veri); }
+    else { const y = await DB.ekle('giderler', veri); State.giderler.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['tanim-gider']();
   };
 }
