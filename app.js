@@ -321,7 +321,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '67';
+const APP_SURUM = '68';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -681,6 +681,23 @@ function ortakFisKartHTML(r, i, duzenlenebilir) {
   </div>`;
 }
 
+/* Dashboard: altın varak kartı — büyük kare fotoğraf + isim + yalnızca Hak Ediş */
+function ortakAltinKartHTML(r, i) {
+  const avSinif = ['g', 'b', 'p', 'a'];
+  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const foto = r.o.foto
+    ? `<div class="altin-foto"><img src="${r.o.foto}" alt="${kacar(r.o.ad)}"></div>`
+    : `<div class="altin-foto ${avSinif[i % 4]}">${kacar(bas(r.o.ad))}</div>`;
+  return `<div class="altin-kart">
+    ${foto}
+    <div class="altin-isim">${kacar(r.o.ad)}</div>
+    <div class="altin-rol">Eğitmen</div>
+    <div class="altin-ayrac"></div>
+    <div class="altin-et">Hak Ediş</div>
+    <div class="altin-tt"${r.hakEdis < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.hakEdis)}</div>
+  </div>`;
+}
+
 /* Dashboard: "Ortak Hak Edişleri" kartı. Ortak girişi varsa yalnızca kendi kartı. */
 function ortakKartHTML(donem) {
   let rows = ortakHesapla(donem);
@@ -695,7 +712,7 @@ function ortakKartHTML(donem) {
       <button type="button" class="ok-ok" id="okIleri" title="Sonraki ay">›</button></div></div>
     ${rows.length === 0
       ? bosBlok(benim ? 'Bu ay kaydınız yok. Aylar arasında gezinebilirsiniz.' : 'Henüz ortak yok. “Ayarlar → Ortak Pay Oranı”ndan ekleyin.')
-      : `<div class="he-izgara">${rows.map((r, i) => ortakFisKartHTML(r, i, false)).join('')}</div>
+      : `<div class="altin-izgara">${rows.map((r, i) => ortakAltinKartHTML(r, i)).join('')}</div>
         ${benim ? '' : `<div class="ok-foot"><span class="k">Toplam Hak Ediş</span><span class="v">${TL(toplamHE)}</span></div>`}`
     }
   </div>`;
