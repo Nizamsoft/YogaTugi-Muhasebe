@@ -321,7 +321,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '68';
+const APP_SURUM = '69';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -457,16 +457,8 @@ const MENU = [
     { id: 'rapor-resmi',    ad: 'Resmi Muhasebe',        ikon: '🧾', baslik: 'Resmi Muhasebe Raporu' },
   ]},
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
-    { id: 'ayar-firma',     ad: 'Firma Bilgileri',   ikon: '🏢', baslik: 'Firma Bilgileri & Logo' },
-    { id: 'ayar-banka',     ad: 'Banka Ayarları',    ikon: '🏦', baslik: 'Banka Ayarları' },
-    { id: 'ayar-kk',        ad: 'Kredi Kartı Ayarları', ikon: '💳', baslik: 'Kredi Kartı Ayarları' },
-    { id: 'ayar-guvenlik',  ad: 'Giriş / Güvenlik',  ikon: '🔒', baslik: 'Giriş / Güvenlik', gizli: true },
-    { id: 'ayar-kullanici', ad: 'Kullanıcı Yetki',   ikon: '👤', baslik: 'Kullanıcı Yetkilendirme' },
-    { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
-    { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı' },
-    { id: 'ayar-yedek',     ad: 'Yedekleme',         ikon: '💾', baslik: 'Yedekleme' },
-    { id: 'ayar-bulut',     ad: 'Bulut Senkron',     ikon: '☁️', baslik: 'Bulut Senkron (Supabase)' },
-    { id: 'ayar-admin',     ad: 'Admin Ayarları',    ikon: '🛡️', baslik: 'Admin Ayarları', sadeceAdmin: true },
+    { id: 'ayar-firma',  ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
+    { id: 'ayar-ortak',  ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
   ]},
 ];
 
@@ -2849,82 +2841,38 @@ SAYFALAR['ayar-pay'] = function () {
 
 function ortakFormu(mevcut) {
   let fotoData = (mevcut && mevcut.foto) || null;
-  let aktif = !mevcut || mevcut.aktif !== false;
-  const avatarIc = () => fotoData ? `<img src="${fotoData}" alt="">` : `<span style="font-size:24px">📷</span>`;
+  const kareIc = () => fotoData ? `<img src="${fotoData}" alt="">` : `<span class="ph">📷</span>`;
   const govde = `
-    <div class="of-foto-satir">
-      <div class="of-foto" id="oFotoOnizle" title="Fotoğraf seç">${avatarIc()}</div>
-      <div class="of-foto-btns">
-        <button type="button" class="btn btn-kucuk" id="oFotoBtn">📷 Fotoğraf Seç</button>
-        <button type="button" class="btn btn-kucuk" id="oFotoSil" ${fotoData?'':'style="display:none"'}>Kaldır</button>
+    <div class="gp-logo-alan">
+      <div class="gp-logo-kare gp-ort-kare" id="oFotoOnizle" title="Fotoğraf seç">${kareIc()}</div>
+      <div class="gp-logo-btnlar">
+        <button type="button" class="gp-sec" id="oFotoBtn">📷 Fotoğraf Seç</button>
+        <button type="button" class="gp-kaldir" id="oFotoSil" ${fotoData ? '' : 'style="display:none"'}>Kaldır</button>
       </div>
       <input type="file" id="oFotoDosya" accept="image/*" hidden>
     </div>
-    <div class="form-alan"><label>Ad Soyad</label><input type="text" id="oAd" value="${mevcut?kacar(mevcut.ad):''}" placeholder="Örn. Ayşe Yılmaz"></div>
-    <div class="of-grup">
-      <div class="of-grup-bas">💰 Ücret Bilgileri</div>
-      <div class="of-row2">
-        <div class="form-alan"><label>Ders Ücreti (₺)</label><input type="number" id="oUcret" step="0.01" min="0" inputmode="decimal" value="${mevcut&&mevcut.dersUcreti?mevcut.dersUcreti:''}" placeholder="Örn. 300"></div>
-        <div class="form-alan"><label>Pay Oranı (%)</label><input type="number" id="oPay" step="0.01" min="0" max="100" inputmode="decimal" value="${mevcut?mevcut.payOrani:''}" placeholder="0"></div>
-      </div>
-    </div>
-    <div class="of-grup">
-      <div class="of-grup-bas">👤 Kişisel Bilgiler</div>
-      <div class="of-row2">
-        <div class="form-alan"><label>Telefon</label><input type="tel" id="oTel" value="${mevcut?kacar(mevcut.telefon||''):''}" placeholder="05..."></div>
-        <div class="form-alan"><label>E-posta</label><input type="email" id="oEp" value="${mevcut?kacar(mevcut.eposta||''):''}" placeholder="ornek@..."></div>
-      </div>
-    </div>
-    <div class="of-grup">
-      <div class="of-grup-bas">🔑 Giriş Bilgileri <span style="font-weight:600;text-transform:none;letter-spacing:0;opacity:.75">— ortak girince sadece kendi panelini görür</span></div>
-      <div class="of-row2">
-        <div class="form-alan"><label>Kullanıcı Adı</label><input type="text" id="oGiris" autocomplete="off" value="${mevcut?kacar(mevcut.girisAd||''):''}" placeholder="ör. irem"></div>
-        <div class="form-alan"><label>Şifre</label><input type="password" id="oSifre" autocomplete="new-password" placeholder="${mevcut&&mevcut.sifreHash?'••••• (değiştirmek için yaz)':'Şifre belirle'}"></div>
-      </div>
-    </div>
-    <div class="form-alan"><label>Durum</label>
-      <div class="of-seg">
-        <button type="button" class="of-seg-btn ${aktif?'on':''}" data-aktif="1">Aktif</button>
-        <button type="button" class="of-seg-btn ${aktif?'':'on'}" data-aktif="0">Pasif</button>
-      </div>
-    </div>`;
-  modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde, `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="oiKaydet">💾 Kaydet</button>`);
+    <div class="gp-alan" style="margin:0"><label>Ad Soyad</label><input type="text" class="gp-inp" id="oAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Ayşe Yılmaz"></div>`;
+  modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde,
+    `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oiKaydet">💾 Kaydet</button>`,
+    `<span class="hr-rozet">👥 Ortak</span>`);
   const sec = () => $('#oFotoDosya').click();
   $('#oFotoBtn').onclick = sec; $('#oFotoOnizle').onclick = sec;
-  $('#oFotoSil').onclick = () => { fotoData = null; $('#oFotoOnizle').innerHTML = avatarIc(); $('#oFotoSil').style.display = 'none'; };
+  $('#oFotoSil').onclick = () => { fotoData = null; $('#oFotoOnizle').innerHTML = kareIc(); $('#oFotoSil').style.display = 'none'; };
   $('#oFotoDosya').onchange = () => {
     const f = $('#oFotoDosya').files[0]; if (!f) return;
-    fotoKirp(f, (veri) => {
-      fotoData = veri;
-      $('#oFotoOnizle').innerHTML = `<img src="${veri}" alt="">`;
-      $('#oFotoSil').style.display = '';
-    });
+    fotoKirp(f, (veri) => { fotoData = veri; $('#oFotoOnizle').innerHTML = `<img src="${veri}" alt="">`; $('#oFotoSil').style.display = ''; });
     $('#oFotoDosya').value = '';
   };
-  $$('.of-seg-btn').forEach(b => b.onclick = () => {
-    aktif = b.dataset.aktif === '1';
-    $$('.of-seg-btn').forEach(x => x.classList.toggle('on', x.dataset.aktif === (aktif ? '1' : '0')));
-  });
   $('#oiIptal').onclick = modalKapat;
   $('#oiKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const girisAd = $('#oGiris').value.trim();
-    const sifre = $('#oSifre').value;
-    // Aynı kullanıcı adı başka ortakta veya admin'de olmasın
-    if (girisAd) {
-      if (girisAd.toLocaleLowerCase('tr') === SABIT_ADMIN.kullanici.toLocaleLowerCase('tr'))
-        return bildir('Bu kullanıcı adı yöneticiye ait, başka seçin.', 'hata');
-      if (State.ortaklar.some(o => o.id !== (mevcut && mevcut.id) && (o.girisAd || '').toLocaleLowerCase('tr') === girisAd.toLocaleLowerCase('tr')))
-        return bildir('Bu kullanıcı adı zaten kullanılıyor.', 'hata');
-    }
-    const veri = { ad, dersUcreti: parseFloat($('#oUcret').value) || 0, payOrani: parseFloat($('#oPay').value) || 0,
-      telefon: $('#oTel').value.trim(), eposta: $('#oEp').value.trim(), aktif, foto: fotoData || null, girisAd };
-    if (sifre) veri.sifreHash = await sifreHash(sifre);
-    else if (mevcut && mevcut.sifreHash) veri.sifreHash = mevcut.sifreHash;   // boş bırakılırsa mevcut şifre korunur
+    const veri = { ad, foto: fotoData || null, aktif: true };
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
-    else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
-    modalKapat(); bildir('Kaydedildi.', 'basari'); git(State.aktifSayfa || 'ayar-pay');
+    else { const y = await DB.ekle('ortaklar', { ...veri, dersUcreti: 0, payOrani: 0 }); State.ortaklar.push(y); }
+    modalKapat(); bildir('Kaydedildi.', 'basari');
+    const s = State.aktifSayfa;
+    if (s === 'ayar-ortak') SAYFALAR['ayar-ortak'](); else git(s || 'ayar-ortak');
   };
 }
 
@@ -3299,65 +3247,68 @@ async function enGuncelSurumuGetir() {
 /* -------- AYARLAR: Firma Bilgileri & Logo -------- */
 SAYFALAR['ayar-firma'] = function () {
   const a = State.ayarlar || {};
-  const v = (x) => kacar(a[x] || '');
   const logoVar = !!a.logoData;
   ic().innerHTML = `
-    <div class="bilgi-kutu"><span class="ikon">🏢</span><div>Firma bilgileri ve logo; giriş ekranında, menüde ve raporlarda kullanılır. Bilgiler bu tarayıcıda saklanır.</div></div>
-    <div class="izgara izgara-2">
-      <div class="kart">
-        <div class="kart-baslik"><h3>Firma Bilgileri</h3></div>
-        <div class="form-alan"><label>Firma Adı</label><input type="text" id="fAd" value="${v('firmaAd')}" placeholder="Green Village Pilates"></div>
-        <div class="form-alan"><label>Slogan / Alt Başlık</label><input type="text" id="fSlogan" value="${v('slogan')}" placeholder="Ön Muhasebe · Pilates Stüdyosu"></div>
-        <div class="form-satir">
-          <div class="form-alan"><label>Telefon</label><input type="text" id="fTel" value="${v('telefon')}"></div>
-          <div class="form-alan"><label>E-posta</label><input type="email" id="fEposta" value="${v('eposta')}"></div>
-        </div>
-        <div class="form-alan"><label>Adres</label><textarea id="fAdres" rows="2">${v('adres')}</textarea></div>
-        <div class="form-satir">
-          <div class="form-alan"><label>Vergi Dairesi</label><input type="text" id="fVd" value="${v('vergiDairesi')}"></div>
-          <div class="form-alan"><label>Vergi No</label><input type="text" id="fVn" value="${v('vergiNo')}"></div>
-        </div>
-        <div style="text-align:right;margin-top:6px"><button class="btn btn-ana" id="fKaydet">💾 Kaydet</button></div>
-      </div>
-
-      <div class="kart">
-        <div class="kart-baslik"><h3>Logo</h3></div>
-        <div style="text-align:center;margin-bottom:14px">
-          <div id="logoOnizleme" style="width:120px;height:120px;border-radius:22px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:var(--yesil-acik);overflow:hidden;border:1px solid var(--kenar)">
-            ${logoVar ? `<img src="${a.logoData}" alt="logo" style="width:100%;height:100%;object-fit:cover">`
-                      : `<span style="font-size:34px;font-weight:800;color:var(--yesil-koyu)">${kacar(monogram((State.ayarlar && State.ayarlar.firmaAd) || 'Green Village Pilates'))}</span>`}
+    <div class="gp-sar">
+      <div class="gp-kart"><div class="gp-ic">
+        <div class="gp-head"><div class="kk">Firma</div><h2>Firma Bilgileri</h2></div>
+        <div class="gp-logo-alan">
+          <div class="gp-logo-kare">
+            ${logoVar ? `<img src="${a.logoData}" alt="logo">` : `<span class="mono">${kacar(monogram(a.firmaAd || 'Green Village'))}</span>`}
           </div>
-        </div>
-        <div class="birak-alani" id="logoBirak">
-          <span class="ikon">🖼️</span><b>Logo seç</b> veya sürükle<br>
-          <span class="soluk">.jpeg · .jpg · .png · .webp · .svg</span>
+          <div class="gp-logo-btnlar">
+            <button type="button" class="gp-sec" id="logoSec">📷 Logo Seç</button>
+            ${logoVar ? `<button type="button" class="gp-kaldir" id="logoSil">Kaldır</button>` : ''}
+          </div>
           <input type="file" id="logoDosya" accept="image/*" hidden>
         </div>
-        ${logoVar ? `<button class="btn btn-kucuk" id="logoSil" style="margin-top:12px">🗑️ Logoyu Kaldır</button>` : ''}
-        <div class="bilgi-kutu" style="margin-top:14px"><span class="ikon">ℹ️</span><div>Logo tarayıcıya kaydedilir; ayrıca dosya olarak eklemek isterseniz repodaki <b>logos/</b> klasörünü de kullanabilirsiniz.</div></div>
-      </div>
+        <div class="gp-alan"><label>Firma Adı</label><input type="text" class="gp-inp" id="fAd" value="${kacar(a.firmaAd || '')}" placeholder="Green Village Pilates"></div>
+        <button type="button" class="gp-kaydet" id="fKaydet">💾 Kaydet</button>
+      </div></div>
     </div>`;
-
-  $('#fKaydet').onclick = () => {
-    const yeni = { ...State.ayarlar,
-      firmaAd: $('#fAd').value.trim(), slogan: $('#fSlogan').value.trim(),
-      telefon: $('#fTel').value.trim(), eposta: $('#fEposta').value.trim(),
-      adres: $('#fAdres').value.trim(), vergiDairesi: $('#fVd').value.trim(), vergiNo: $('#fVn').value.trim(),
-    };
-    DB.ayarYaz(yeni); firmaBilgileriUygula();
-    bildir('Firma bilgileri kaydedildi.', 'basari');
-  };
-
-  const birak = $('#logoBirak'), dosya = $('#logoDosya');
-  birak.onclick = () => dosya.click();
-  ['dragover', 'dragenter'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.add('uzerinde'); }));
-  ['dragleave', 'drop'].forEach(ev => birak.addEventListener(ev, e => { e.preventDefault(); birak.classList.remove('uzerinde'); }));
-  birak.addEventListener('drop', e => { if (e.dataTransfer.files[0]) logoDosyaIsle(e.dataTransfer.files[0]); });
+  const dosya = $('#logoDosya');
+  $('#logoSec').onclick = () => dosya.click();
   dosya.onchange = () => { if (dosya.files[0]) logoDosyaIsle(dosya.files[0]); };
   if ($('#logoSil')) $('#logoSil').onclick = () => {
     const yeni = { ...State.ayarlar }; delete yeni.logoData;
     DB.ayarYaz(yeni); firmaBilgileriUygula(); git('ayar-firma'); bildir('Logo kaldırıldı.', 'basari');
   };
+  $('#fKaydet').onclick = () => {
+    DB.ayarYaz({ ...State.ayarlar, firmaAd: $('#fAd').value.trim() });
+    firmaBilgileriUygula(); bildir('Kaydedildi.', 'basari');
+  };
+};
+
+/* -------- AYARLAR: Ortak Bilgileri (ad + logo) -------- */
+SAYFALAR['ayar-ortak'] = function () {
+  const list = State.ortaklar;
+  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const renk = ['f1', 'f2', 'f3', 'f4'];
+  const kartlar = list.map((o, i) => {
+    const foto = o.foto
+      ? `<div class="gp-ort-foto"><img src="${o.foto}" alt="${kacar(o.ad)}"></div>`
+      : `<div class="gp-ort-foto ${renk[i % renk.length]}">${kacar(bas(o.ad))}</div>`;
+    return `<div class="gp-ort-kart"><div class="gp-ort-ic">
+      <div class="gp-ort-arac"><button type="button" data-duzenle="${o.id}" title="Düzenle">✎</button><button type="button" data-sil="${o.id}" title="Sil">🗑️</button></div>
+      ${foto}
+      <div class="gp-ort-ad">${kacar(o.ad)}</div>
+    </div></div>`;
+  }).join('');
+  ic().innerHTML = `
+    <div class="gp-ort-ust">
+      <span class="say">👥 ${list.length} ortak</span>
+      <button type="button" class="gp-ekle" id="ortEkle">＋ Ortak Ekle</button>
+    </div>
+    ${list.length === 0
+      ? `<div class="gp-bos">Henüz ortak yok. “＋ Ortak Ekle” ile ekleyin.</div>`
+      : `<div class="gp-ort-grid">${kartlar}</div>`}`;
+  $('#ortEkle').onclick = () => ortakFormu();
+  $$('[data-duzenle]').forEach(b => b.onclick = () => ortakFormu(State.ortaklar.find(o => o.id === b.dataset.duzenle)));
+  $$('[data-sil]').forEach(b => b.onclick = () => onayModal('Ortak silinsin mi?', 'Bu işlem geri alınamaz.', async () => {
+    await DB.sil('ortaklar', b.dataset.sil);
+    State.ortaklar = State.ortaklar.filter(o => o.id !== b.dataset.sil);
+    bildir('Silindi.', 'basari'); SAYFALAR['ayar-ortak']();
+  }));
 };
 
 /* Yüklenen logoyu küçült (max 240px) ve ayarlara kaydet */
@@ -3527,19 +3478,10 @@ async function girisDogrula() {
   const sif = $('#gSif').value || '';
   const hata = $('#girisHata');
   const kulLc = kul.toLocaleLowerCase('tr');
-  // 1) Admin
-  if (kulLc === SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) {
-    const h = await sifreHash(sif);
-    if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
-    return girisYap(SABIT_ADMIN.kullanici);
-  }
-  // 2) Ortak girişi (kullanıcı adı + şifre ortak kaydında tanımlıysa)
-  const ortaklar = DB._oku('ortaklar');
-  const o = ortaklar.find(x => x.girisAd && x.sifreHash && x.girisAd.toLocaleLowerCase('tr') === kulLc);
-  if (!o) { hata.textContent = 'Kullanıcı adı hatalı.'; return; }
+  if (kulLc !== SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) { hata.textContent = 'Kullanıcı adı hatalı.'; return; }
   const h = await sifreHash(sif);
-  if (h !== o.sifreHash) { hata.textContent = 'Şifre hatalı.'; return; }
-  girisYapOrtak(o);
+  if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
+  girisYap(SABIT_ADMIN.kullanici);
 }
 
 async function girisYap(ad) {
