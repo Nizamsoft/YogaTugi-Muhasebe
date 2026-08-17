@@ -260,7 +260,7 @@ const Bulut = {
     this.sonImza = paket.guncelleme;
   },
   itPlanla() {
-    if (!this.aktif) return;
+    if (!this.aktif || this._uzaktan) return;   // uzaktan gelen veriyi geri gönderme (döngü engeli)
     clearTimeout(this.beklet);
     this.beklet = setTimeout(() => { this.gonder().catch(e => console.warn('Bulut gönderme hatası:', e.message)); }, 900);
   },
@@ -274,11 +274,14 @@ const Bulut = {
           const g = p.new && p.new.guncelleme;
           if (!g || g === this.sonImza) return;   // kendi yazdığımız değişiklik
           this.sonImza = g;
-          if (p.new && p.new.data) {
-            this.uygula(p.new.data);
-            veriYukle().then(() => { if (State.aktifSayfa) git(State.aktifSayfa); });
-            bildir('☁️ Veriler başka cihazdan güncellendi', '');
-          }
+          if (!(p.new && p.new.data)) return;
+          this._uzaktan = true;                    // bu apply push tetiklemesin
+          this.uygula(p.new.data);
+          veriYukle().then(() => {
+            this._uzaktan = false;
+            const r = SAYFALAR[State.aktifSayfa];  // sadece içerik yenile — menü/akordeon bozulmasın
+            if (r) try { r(); } catch {}
+          }).catch(() => { this._uzaktan = false; });
         }).subscribe();
     } catch (e) { console.warn('Realtime kurulamadı:', e.message); }
   },
@@ -323,7 +326,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '75';
+const APP_SURUM = '76';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
