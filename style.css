@@ -328,7 +328,8 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 
 /* --------- Modal --------- */
 .modal-perde{
-  position:fixed;inset:0;background:rgba(20,26,22,.55);z-index:200;
+  position:fixed;inset:0;background:rgba(22,26,20,.42);z-index:200;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
   display:flex;align-items:center;justify-content:center;padding:20px;
   animation:perdeGir .18s ease;
 }
@@ -451,7 +452,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   .icerik{padding-bottom:calc(86px + env(safe-area-inset-bottom, 0px))}
 
   /* Grup sheet (alttan açılan alt sayfa listesi) */
-  .sheet-perde{display:block;position:fixed;inset:0;background:rgba(30,26,18,.34);z-index:44;opacity:0;pointer-events:none;transition:opacity .22s}
+  .sheet-perde{display:block;position:fixed;inset:0;background:rgba(22,26,20,.34);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:44;opacity:0;pointer-events:none;transition:opacity .22s}
   body.sheet-acik .sheet-perde{opacity:1;pointer-events:auto}
   .alt-sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:46;background:var(--kart);
     border-radius:22px 22px 0 0;padding:14px 15px calc(18px + env(safe-area-inset-bottom, 0px));
@@ -823,7 +824,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .ds-obil .ad{font-weight:700;font-size:14px}
 .ds-obil .alt{font-size:11px;color:var(--metin-soluk);margin-top:1px}
 /* Seçici katmanı (takvim/saat) — form modalının üstünde */
-.picker-perde{position:fixed;inset:0;background:rgba(40,30,10,.42);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px}
+.picker-perde{position:fixed;inset:0;background:rgba(22,26,20,.42);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px}
 .picker-iptal,.picker-tamam{flex:1;border-radius:11px;padding:11px;font-weight:800;font-size:13.5px;font-family:inherit;cursor:pointer}
 .picker-iptal{border:1px solid var(--kenar);background:#fff;color:var(--metin-soluk)}
 .picker-tamam{border:none;color:#40320f;background:linear-gradient(135deg,#f2d98a,#d3a84a 55%,#c69133)}

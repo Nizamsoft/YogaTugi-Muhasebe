@@ -64,6 +64,21 @@ function telBiciml(metin) {
   return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join('-');
 }
 
+/* Saat: yazarken 3. rakamdan sonra "10:30" gibi ":" koyar (canlı) */
+function saatBiciml(metin) {
+  const d = String(metin == null ? '' : metin).replace(/\D/g, '').slice(0, 4);
+  if (d.length <= 2) return d;
+  return d.slice(0, 2) + ':' + d.slice(2);
+}
+/* Saat: kaydederken HH:MM'e tamamla, saat 0-23 / dakika 0-59 sınırla */
+function saatNormal(metin) {
+  const d = String(metin == null ? '' : metin).replace(/\D/g, '').slice(0, 4);
+  if (!d) return '10:00';
+  const s = Math.min(23, parseInt(d.slice(0, 2) || '0', 10) || 0);
+  const dk = Math.min(59, parseInt(d.slice(2) || '0', 10) || 0);
+  return String(s).padStart(2, '0') + ':' + String(dk).padStart(2, '0');
+}
+
 /* --- Tutar giriş kutusu: yazarken canlı "5.000,12 ₺" biçimlendirme --- */
 function tutarBicimle(ham) {
   ham = String(ham == null ? '' : ham).replace(/[^\d,]/g, '');   // sadece rakam + virgül
@@ -359,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '93';
+const APP_SURUM = '94';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '17:19';
+const APP_SURUM_SAAT = '17:46';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3669,9 +3684,9 @@ function neYapmakModal(o) {
   const govde = `
     <div class="ny-ust"><div class="ny-ik">✅</div><div class="ny-bilg"><h4>Potansiyel Müşteri Oluştu</h4><p>${kacar(o.ad)} ${kacar(o.soyad || '')} eklendi. Ne yapmak istersiniz?</p></div></div>
     <div class="uys-ikisec">
-      <button type="button" class="uys-opt" id="nySonra"><span class="uys-ik gri">🕒</span><span class="uys-metin"><span class="ad">Daha Sonra Devam Edeceğim</span><span class="alt">Potansiyel müşteri olarak beklet</span></span><span class="uys-ok">›</span></button>
       <button type="button" class="uys-opt" id="nyPaket"><span class="uys-ik">🎟️</span><span class="uys-metin"><span class="ad">Ben Ders Paketi Tanımlayacağım</span><span class="alt">Eğitmen + paket seç, öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
-      <button type="button" class="uys-opt pas" id="nyLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşterime Link Göndereceğim</span><span class="alt">Paketi kendi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>`;
+      <button type="button" class="uys-opt pas" id="nyLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşterime Link Göndereceğim</span><span class="alt">Paketi kendi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
+      <button type="button" class="uys-opt" id="nySonra"><span class="uys-ik gri">🕒</span><span class="uys-metin"><span class="ad">Daha Sonra Devam Edeceğim</span><span class="alt">Potansiyel müşteri olarak beklet</span></span><span class="uys-ok">›</span></button>`;
   modalAc('Potansiyel Müşteri Oluştu', govde, null, `<span class="hr-rozet">🌱 Yeni Üye</span>`);
   $('#nySonra').onclick = () => { modalKapat(); ogrenciAktifSekme = 'potansiyel'; bildir('Potansiyel müşterilere eklendi.', 'basari'); SAYFALAR['ogrenciler'](); };
   $('#nyPaket').onclick = () => paketAtaModal(o);
@@ -3711,12 +3726,11 @@ function islemSecModal(o) {
     <div class="is-soru">Ne yapmak istersiniz?</div>
     <div class="uys-ikisec">
       <button type="button" class="uys-opt uana" id="isPaket"><span class="uys-ik">🎟️</span><span class="uys-metin"><span class="ad">Ders Paketi Tanımla</span><span class="alt">Eğitmen ve paket seç → öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
-      <button type="button" class="uys-opt" id="isBeklet"><span class="uys-ik gri">🕒</span><span class="uys-metin"><span class="ad">Şimdilik Beklet</span><span class="alt">Potansiyel listesinde kalmaya devam etsin</span></span><span class="uys-ok">›</span></button>
       <button type="button" class="uys-opt pas" id="isLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşteriye Link Gönder</span><span class="alt">Paketi kendisi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
     </div>`;
-  modalAc('İşlem Seç', govde, null, `<span class="hr-rozet">👤 ${kacar(tamAd)}</span>`);
+  modalAc('İşlem Seç', govde, `<button class="btn" id="isVazgec" style="flex:1">Vazgeç</button>`, `<span class="hr-rozet">👤 ${kacar(tamAd)}</span>`);
   $('#isPaket').onclick = () => paketAtaModal(o);
-  $('#isBeklet').onclick = () => { modalKapat(); bildir('Potansiyel olarak beklemede.', ''); };
+  $('#isVazgec').onclick = modalKapat;
   $('#isLink').onclick = () => bildir('Bu bölüm yapım aşamasında.', '');
 }
 
@@ -3949,7 +3963,7 @@ function dersOlusturModal() {
       <div class="ds-oliste" id="dsListe">${ogrenciler.map(ogrItem).join('')}</div></div>
     <div class="uy-ikili">
       <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
-      <div class="gp-alan" style="margin:0"><label>Saat</label><button type="button" class="pa-trig" id="dsSaat"><span id="dsSaatAd">${saat}</span><span class="ok">🕐</span></button></div>
+      <div class="gp-alan" style="margin:0"><label>Saat</label><input type="text" class="gp-inp" id="dsSaat" value="${saat}" inputmode="numeric" maxlength="5" style="text-align:center;letter-spacing:1px;font-weight:600"></div>
     </div>`;
   modalAc('Ders Oluştur', govde,
     `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet">💾 Dersi Planla</button>`,
@@ -3972,12 +3986,16 @@ function dersOlusturModal() {
   $('#dsAra').addEventListener('input', listeYenile);
 
   $('#dsTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#dsTarihAd').textContent = fmtTarihUzun(tarih); });
-  $('#dsSaat').onclick = () => saatSecici(saat, (v) => { saat = v; $('#dsSaatAd').textContent = saat; });
+  { const st = $('#dsSaat');
+    st.addEventListener('focus', () => st.select());   // hazır "10:00" değerinin üzerine tak diye yazılsın
+    st.addEventListener('input', () => { st.value = saatBiciml(st.value); saat = st.value; });
+    st.addEventListener('blur', () => { st.value = saatNormal(st.value); saat = st.value; }); }
   $('#dsIptal').onclick = modalKapat;
   $('#dsKaydet').onclick = async () => {
     const ad = $('#dsAd').value.trim();
     if (!ad) return bildir('Ders adı girin.', 'hata');
     if (!secili.size) return bildir('En az bir öğrenci seçin.', 'hata');
+    saat = saatNormal($('#dsSaat').value);
     const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat, durum: 'bekliyor', dusumler: [] };
     const y = await DB.ekle('dersler', veri); State.dersler.push(y);
     modalKapat(); dersAktifSekme = 'bekliyor'; bildir('Ders planlandı.', 'basari'); SAYFALAR['dersler']();
@@ -4774,7 +4792,13 @@ function autofillKapatKur() {
     el.dataset.afk = '1';
     const t = (el.getAttribute('type') || 'text').toLowerCase();
     if (el.tagName === 'INPUT' && disi.includes(t)) return;
-    el.setAttribute('autocomplete', 'off');
+    if (t === 'password') return;   // giriş şifresi alanına dokunma (kayıt/otomatik giriş bozulmasın)
+    // type="tel"/"email" Chrome'un profil önerilerini (telefon/e-posta) güçlü tetikler →
+    // klavye ipucunu koruyarak metne indir, böylece öneri balonu çıkmaz
+    if (t === 'tel') { if (!el.getAttribute('inputmode')) el.setAttribute('inputmode', 'numeric'); el.setAttribute('type', 'text'); }
+    if (t === 'email') { if (!el.getAttribute('inputmode')) el.setAttribute('inputmode', 'email'); el.setAttribute('type', 'text'); }
+    // "new-password" en güvenilir yöntem: Chrome profil doldurmayı kapatır, metin alanında şifre üretici de çıkmaz
+    el.setAttribute('autocomplete', 'new-password');
     el.setAttribute('autocorrect', 'off');
     el.setAttribute('autocapitalize', 'off');
     el.setAttribute('spellcheck', 'false');
