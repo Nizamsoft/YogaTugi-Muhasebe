@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '96';
+const APP_SURUM = '97';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '18:13';
+const APP_SURUM_SAAT = '19:04';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3596,7 +3596,7 @@ SAYFALAR['ogrenciler'] = function () {
     const odemeHucre = m.kalanOdeme <= 0
       ? `<span class="ogr-metrik"><span class="rakam ogr-odendi">Ödendi</span>${barHTML(1, 1, 'odeme')}</span>`
       : `<span class="ogr-metrik"><span class="rakam ogr-altin">${binlik(m.kalanOdeme)}<span class="top"> / ${binlik(m.fiyatToplam)} ₺</span></span>${barHTML(m.fiyatToplam - m.kalanOdeme, m.fiyatToplam, 'odeme')}</span>`;
-    return `<tr>
+    return `<tr class="ogr-satir" data-odetay="${o.id}">
       <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-bilg"><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="ogr-tel">${kacar(o.telefon || '')}</span></span></span></td>
       <td data-l="Eğitmeni"><span class="ogr-egit"><span class="ogr-ea">${basHarf(egitmenAdiById(o.egitmenId))}</span>${kacar(egitmenAdiById(o.egitmenId))}</span></td>
       <td data-l="Paket">${paketRozet}</td>
@@ -3642,6 +3642,48 @@ SAYFALAR['ogrenciler'] = function () {
   $$('[data-osil]').forEach(b => b.onclick = () => onayModal('Kayıt silinsin mi?', 'Bu öğrenci ve tüm paketleri silinecek.', async () => {
     await DB.sil('ogrenciler', b.dataset.osil); State.ogrenciler = State.ogrenciler.filter(x => x.id !== b.dataset.osil);
     bildir('Silindi.', 'basari'); SAYFALAR['ogrenciler']();
+  }));
+  $$('[data-odetay]').forEach(tr => tr.onclick = (e) => { if (e.target.closest('button')) return; const o = State.ogrenciler.find(x => x.id === tr.dataset.odetay); if (o) ogrenciDetayModal(o); });
+};
+
+/* Öğrenci detayı: sahip olduğu üyelikler (paket paket) + paket iptal */
+function ogrenciDetayModal(o) {
+  const barHTML = (kullanilan, toplam, tur) => {
+    const y = toplam > 0 ? Math.max(0, Math.min(100, (kullanilan / toplam) * 100)) : 0;
+    return `<span class="ogr-bar ${tur}"><span style="width:${y}%"></span></span>`;
+  };
+  const govde = () => {
+    const paketler = o.paketler || [];
+    const kart = (p) => {
+      const dersT = Number(p.dersToplam) || 0, kalanD = Number(p.kalanDers) || 0;
+      const fiyat = Number(p.fiyat) || 0, kalanO = Number(p.kalanOdeme) || 0;
+      const odemeSat = kalanO <= 0
+        ? `<span class="pk-val ok2">Ödendi</span><span class="ogr-bar odeme"><span style="width:100%"></span></span>`
+        : `<span class="pk-val gold">${binlik(kalanO)} / ${binlik(fiyat)} ₺</span>${barHTML(fiyat - kalanO, fiyat, 'odeme')}`;
+      return `<div class="pkart">
+        <div class="pk-ust"><span class="pk-ad"><span class="pk-ic">🎟️</span>${kacar(p.paketAd || 'Paket')} — ${dersT} ders</span><button type="button" class="pk-iptal" data-piptal="${p.id}">🗑️ Paketi İptal</button></div>
+        <div class="pk-metrik">
+          <div><span class="pk-lbl">Kalan Ders</span><span class="pk-val">${kalanD} / ${dersT}</span>${barHTML(dersT - kalanD, dersT, 'ders')}</div>
+          <div><span class="pk-lbl">Kalan Ödeme</span>${odemeSat}</div>
+        </div></div>`;
+    };
+    const eg = egitmenAdiById(o.egitmenId);
+    return `<div class="kisi-blok"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="kisi-col"><span class="kisi-ad">${kacar(ogrenciTamAd(o))}</span><span class="kisi-alt">${kacar(telBiciml(o.telefon || '') || '—')}${eg && eg !== '—' ? ' · Eğitmen: ' + kacar(eg) : ''}</span></span></div>
+      <div class="sec-mini-bas">Üyelikleri (${paketler.length} paket)</div>
+      ${paketler.length ? paketler.map(kart).join('') : '<div class="gp-bos" style="margin:0">Bu öğrencinin paketi kalmadı.</div>'}`;
+  };
+  modalAc(ogrenciTamAd(o), govde(),
+    `<button class="btn" id="odetKapat" style="flex:1">Kapat</button>`,
+    `<span class="hr-rozet">🎓 Öğrenci</span>`);
+  $('#odetKapat').onclick = modalKapat;
+  $$('[data-piptal]').forEach(b => b.onclick = () => onayModal('Paket iptal edilsin mi?', 'Bu paket öğrenciden kaldırılacak.', async () => {
+    o.paketler = (o.paketler || []).filter(x => x.id !== b.dataset.piptal);
+    const guncel = { paketler: o.paketler };
+    if (!o.paketler.length) { guncel.durum = 'potansiyel'; o.durum = 'potansiyel'; }
+    await DB.guncelle('ogrenciler', o.id, guncel); Object.assign(o, guncel);
+    bildir('Paket iptal edildi.', 'basari');
+    SAYFALAR['ogrenciler']();
+    if (o.paketler.length) ogrenciDetayModal(o);   // onayModal detayı kapattı → güncel haliyle yeniden aç
   }));
 };
 
@@ -3865,7 +3907,8 @@ function durumPopup(ders, anker) {
   const pop = document.createElement('div');
   pop.className = 'drz-pop';
   pop.innerHTML = `<div class="drz-pop-cap">Durum seç</div>` + secenekler.map(([d, c, h, ad]) =>
-    `<button type="button" class="drz-opt ${ders.durum === d ? 'sec' : ''}" data-d="${d}"><span class="drz ${c}">${h}</span>${ad}</button>`).join('');
+    `<button type="button" class="drz-opt ${ders.durum === d ? 'sec' : ''}" data-d="${d}"><span class="drz ${c}">${h}</span>${ad}</button>`).join('')
+    + `<div class="drz-ay"></div><button type="button" class="drz-opt drz-sil" data-sil="1"><span class="drz-sil-ik">🗑️</span>Dersi Sil</button>`;
   document.body.appendChild(pop);
   const r = anker.getBoundingClientRect();
   let left = r.right - pop.offsetWidth; if (left < 8) left = 8;
@@ -3874,22 +3917,69 @@ function durumPopup(ders, anker) {
   const kapat = (e) => { if (!pop.contains(e.target) && e.target !== anker) { pop.remove(); document.removeEventListener('pointerdown', kapat, true); } };
   setTimeout(() => document.addEventListener('pointerdown', kapat, true), 0);
   pop.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { pop.remove(); document.removeEventListener('pointerdown', kapat, true); dersDurumDegistir(ders, b.dataset.d); });
+  pop.querySelector('[data-sil]').onclick = () => { pop.remove(); document.removeEventListener('pointerdown', kapat, true); dersSil(ders); };
+}
+/* Dersi tamamen sil (gerçekleştiyse düşen dersleri iade et) */
+function dersSil(ders) {
+  onayModal('Ders silinsin mi?', 'Bu ders kaydı kalıcı olarak silinecek. Gerçekleştiyse düşen dersler iade edilir.', async () => {
+    if (ders.durum === 'gerceklesti') dersDusumGeriAl(ders);
+    await DB.sil('dersler', ders.id);
+    State.dersler = State.dersler.filter(x => x.id !== ders.id);
+    bildir('Ders silindi.', 'basari'); SAYFALAR['dersler']();
+  });
 }
 
 function dersDurumDegistir(ders, yeni) {
   if (ders.durum === yeni) return;
   if (ders.durum === 'gerceklesti' && yeni !== 'gerceklesti') dersDusumGeriAl(ders);
+  // Grup dersi (birden çok öğrenci) gerçekleşiyorsa: önce kimler katıldı seçtir
+  if (yeni === 'gerceklesti' && (ders.ogrenciIds || []).length > 1) {
+    katilimModal(ders, (katilanlar) => {
+      dersDusumUygula(ders, katilanlar);
+      ders.durum = 'gerceklesti';
+      DB.guncelle('dersler', ders.id, { durum: 'gerceklesti', dusumler: ders.dusumler || [] });
+      bildir('Ders gerçekleşti — kalan dersler güncellendi.', 'basari');
+      SAYFALAR['dersler']();
+    });
+    return;
+  }
   if (yeni === 'gerceklesti') dersDusumUygula(ders);
   ders.durum = yeni;
   DB.guncelle('dersler', ders.id, { durum: ders.durum, dusumler: ders.dusumler || [] });
   bildir(yeni === 'gerceklesti' ? 'Ders gerçekleşti — kalan dersler güncellendi.' : yeni === 'iptal' ? 'Ders iptal edildi.' : 'Ders tekrar bekliyor.', yeni === 'iptal' ? '' : 'basari');
   SAYFALAR['dersler']();
 }
-/* Gerçekleşti: her öğrenciden 1 ders düş (en eski paketten — FIFO) */
-function dersDusumUygula(ders) {
+/* “Kimler katıldı?” — grup dersini gerçekleştirirken katılan öğrencileri seç */
+function katilimModal(ders, onOnay) {
+  const ogrenciler = (ders.ogrenciIds || []).map(id => State.ogrenciler.find(x => x.id === id)).filter(Boolean);
+  const secili = new Set(ogrenciler.map(o => o.id));   // varsayılan: hepsi katıldı
+  const item = (o) => {
+    const mt = ogrenciMetrik(o);
+    const pk = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) + ' · ' : '';
+    return `<div class="ds-osat ${secili.has(o.id) ? 'sec' : ''}" data-o="${o.id}"><span class="ds-ochk">${secili.has(o.id) ? '✓' : ''}</span><span class="oav-mini">${basHarf(o.ad, o.soyad)}</span><span class="ds-obil"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${pk}${mt.kalanDers} ders kaldı</span></span></div>`;
+  };
+  const govde = `
+    <div class="kt-bilgi"><b>${kacar(ders.dersAd || 'Ders')}</b> · ${fmtTarihUzun(ders.tarih)}${ders.saat ? ' · ' + kacar(ders.saat) : ''}</div>
+    <div class="ds-oliste sec-liste-kaydir" id="ktListe">${ogrenciler.map(item).join('')}</div>
+    <div class="kt-bilgi kt-not">İşaretli öğrencilerden 1’er ders düşülür. İşaretsiz kalan (gelmeyen) düşülmez.</div>`;
+  const m = ustKatModal('Kimler Katıldı?', '✅ Gerçekleşti', govde,
+    `<button class="btn" type="button" data-vaz>Vazgeç</button><button class="btn btn-ana" type="button" data-onay>Gerçekleştir (<span id="ktSay">${secili.size}</span>)</button>`);
+  m.qq('#ktListe [data-o]').forEach(el => el.onclick = () => {
+    const id = el.dataset.o;
+    if (secili.has(id)) secili.delete(id); else secili.add(id);
+    el.classList.toggle('sec', secili.has(id));
+    el.querySelector('.ds-ochk').textContent = secili.has(id) ? '✓' : '';
+    m.q('#ktSay').textContent = secili.size;
+  });
+  m.q('[data-vaz]').onclick = m.kapat;
+  m.q('[data-onay]').onclick = () => { m.kapat(); onOnay(Array.from(secili)); };
+}
+/* Gerçekleşti: katılan öğrencilerden 1 ders düş (en eski paketten — FIFO) */
+function dersDusumUygula(ders, katilanIds) {
   ders.dusumler = ders.dusumler || [];
   if (ders.dusumler.length) return;   // zaten uygulanmış
-  for (const oid of (ders.ogrenciIds || [])) {
+  const hedef = katilanIds || ders.ogrenciIds || [];
+  for (const oid of hedef) {
     const o = State.ogrenciler.find(x => x.id === oid); if (!o) continue;
     const uygun = (o.paketler || []).filter(p => (Number(p.kalanDers) || 0) > 0)
       .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')));
@@ -3976,31 +4066,43 @@ function ogrenciSecModal(onceki, onKaydet) {
   m.q('[data-geri]').onclick = m.kapat;
   m.q('[data-sec]').onclick = () => { onKaydet(secili); m.kapat(); };
 }
-/* Paket Seç (üyelik paketi + ders seçeneği) */
+/* Paket Seç — 2 adım: (1) paket seç → İlerle, (2) ders sayısı seç → Seç */
 function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
   const paketler = State.uyelikler || [];
   let pid = seciliPaketId || (paketler[0] && paketler[0].id);
   let sidx = seciliSecIdx || 0;
   const secOzet = (p) => uyelikSecenekleri(p).map(s => Number(s.dersSayisi) || 0).join(' · ') + ' ders';
-  const paketSatir = (p) => {
-    const sc = p.id === pid;
-    let ic = `<div class="pa-oge sec-oge ${sc ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${sc ? '<span class="pa-tik">✓</span>' : ''}</div>`;
-    if (sc) {
-      const secler = uyelikSecenekleri(p);
-      ic += `<div class="sec-mini-bas">Ders Seçeneği</div><div class="sec-cip">${secler.map((s, i) => `<div class="scip ${sidx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${sidx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('')}</div>`;
-    }
-    return ic;
+  const m = ustKatModal('Paket Seç', '🎟️ Paket · 1/2', '<div id="psGovde"></div>',
+    '<div id="psAlt" style="display:flex;gap:10px;width:100%"></div>');
+  const baslik = m.q('.modal-ust h3'), rozet = m.q('.hr-rozet'), govde = m.q('#psGovde'), alt = m.q('#psAlt');
+
+  const cizPaket = () => {
+    baslik.textContent = 'Paket Seç'; rozet.textContent = '🎟️ Paket · 1/2';
+    govde.className = 'sec-liste';
+    govde.innerHTML = paketler.map(p => {
+      const sc = p.id === pid;
+      return `<div class="pa-oge sec-oge ${sc ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${sc ? '<span class="pa-tik">✓</span>' : ''}</div>`;
+    }).join('');
+    alt.innerHTML = `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-ilerle style="flex:1">İlerle →</button>`;
+    govde.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { if (pid !== el.dataset.p) { pid = el.dataset.p; sidx = 0; } cizPaket(); });
+    alt.querySelector('[data-geri]').onclick = m.kapat;
+    alt.querySelector('[data-ilerle]').onclick = () => { if (!pid) return bildir('Paket seçin.', 'hata'); cizSayi(); };
   };
-  const m = ustKatModal('Paket Seç', '🎟️ Paket', `<div class="sec-liste" id="psListe">${paketler.map(paketSatir).join('')}</div>`,
-    `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç</button>`);
-  const ciz = () => { m.q('#psListe').innerHTML = paketler.map(paketSatir).join(''); bagla(); };
-  const bagla = () => {
-    m.qq('#psListe [data-p]').forEach(el => el.onclick = () => { if (pid !== el.dataset.p) { pid = el.dataset.p; sidx = 0; ciz(); } });
-    m.qq('#psListe [data-si]').forEach(el => el.onclick = (ev) => { ev.stopPropagation(); sidx = Number(el.dataset.si); ciz(); });
+  const cizSayi = () => {
+    const p = paketler.find(x => x.id === pid);
+    const secler = uyelikSecenekleri(p);
+    if (sidx >= secler.length) sidx = 0;
+    baslik.textContent = 'Ders Sayısı'; rozet.textContent = '🎟️ Paket · 2/2';
+    govde.className = '';
+    govde.innerHTML = `<div class="pa-oge sec-oge sec" style="margin-bottom:12px"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${Number(p.gecerlilikGun) || 0} gün geçerli</span></span></div>
+      <div class="sec-mini-bas">Kaç derslik alsın?</div>
+      <div class="sec-cip" id="psSecList">${secler.map((s, i) => `<div class="scip ${sidx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${sidx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('')}</div>`;
+    alt.innerHTML = `<button class="btn" type="button" data-geri2 style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-sec style="flex:1">Seç</button>`;
+    govde.querySelectorAll('[data-si]').forEach(el => el.onclick = () => { sidx = Number(el.dataset.si); cizSayi(); });
+    alt.querySelector('[data-geri2]').onclick = cizPaket;
+    alt.querySelector('[data-sec]').onclick = () => { onSec(pid, sidx); m.kapat(); };
   };
-  bagla();
-  m.q('[data-geri]').onclick = m.kapat;
-  m.q('[data-sec]').onclick = () => { onSec(pid, sidx); m.kapat(); };
+  cizPaket();
 }
 
 /* Ders Oluştur formu */
