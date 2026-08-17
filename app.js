@@ -321,7 +321,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '72';
+const APP_SURUM = '73';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -447,15 +447,6 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
-  { id: 'hesaplar', ad: 'Hesaplar', ikon: '🗂️', baslik: 'Hesaplar' },
-  { id: 'hesap-ortak', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar Hesabı' },
-  { grup: 'Raporlar', ikon: '📊', ogeler: [
-    { id: 'rapor-karzarar', ad: 'Kar / Zarar Raporu',    ikon: '⚖️', baslik: 'Kar / Zarar Raporu' },
-    { id: 'rapor-hakedis',  ad: 'Ortak Hak Ediş',        ikon: '🥧', baslik: 'Ortak Hak Ediş Raporu' },
-    { id: 'rapor-gelir',    ad: 'Gelirler Raporu',       ikon: '📈', baslik: 'Gelirler Raporu' },
-    { id: 'rapor-gider',    ad: 'Giderler Raporu',       ikon: '📉', baslik: 'Giderler Raporu' },
-    { id: 'rapor-resmi',    ad: 'Resmi Muhasebe',        ikon: '🧾', baslik: 'Resmi Muhasebe Raporu' },
-  ]},
   { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
     { id: 'ayar-firma',  ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
     { id: 'ayar-ortak',  ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
@@ -3550,10 +3541,7 @@ function ustCubukKur() {
 
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
-  { tip: 'sayfa', id: 'hesap-ortak', ad: 'Ortaklar', ikon: '🤝' },
-  { tip: 'sayfa', id: 'hesaplar',  ad: 'Hesaplar', ikon: '🗂️' },
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
-  { tip: 'grup',  grup: 'Raporlar', ad: 'Raporlar', ikon: '📈' },
   { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
