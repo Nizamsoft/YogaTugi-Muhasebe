@@ -197,8 +197,17 @@ alter publication supabase_realtime add table public.yt_veri;`;
 const Bulut = {
   client: null, aktif: false, kanal: null, beklet: null, sonImza: null, durum: 'kapali', hataMesaj: '',
 
-  ayarOku() { try { return JSON.parse(localStorage.getItem('yt_supabase')) || null; } catch { return null; } },
-  ayarKaydet(cfg) { if (cfg) localStorage.setItem('yt_supabase', JSON.stringify(cfg)); else localStorage.removeItem('yt_supabase'); },
+  // Varsayılan bağlantı — her cihazda otomatik; ayrıca elle de girilebilir
+  VARSAYILAN: { url: 'https://crafkujmefxhbakgfxcb.supabase.co', anonKey: 'sb_publishable_Yvh-8kLSB_2nXcZk1VtYsQ_z5wzmdBV' },
+  ayarOku() {
+    if (localStorage.getItem('yt_bulut_kapali')) return null;   // kullanıcı elle kaldırdıysa
+    try { const c = JSON.parse(localStorage.getItem('yt_supabase')); if (c && c.url && c.anonKey) return c; } catch {}
+    return (this.VARSAYILAN.url && this.VARSAYILAN.anonKey) ? this.VARSAYILAN : null;
+  },
+  ayarKaydet(cfg) {
+    if (cfg) { localStorage.setItem('yt_supabase', JSON.stringify(cfg)); localStorage.removeItem('yt_bulut_kapali'); }
+    else { localStorage.removeItem('yt_supabase'); localStorage.setItem('yt_bulut_kapali', '1'); }   // varsayılana geri dönmesin
+  },
 
   async kutuphane() {
     if (window.supabase && window.supabase.createClient) return window.supabase;
@@ -312,7 +321,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '66';
+const APP_SURUM = '67';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
