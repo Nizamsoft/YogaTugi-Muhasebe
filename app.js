@@ -360,9 +360,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '90';
+const APP_SURUM = '91';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '16:38';
+const APP_SURUM_SAAT = '16:55';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3478,22 +3478,22 @@ function uyelikFormu(mevcut) {
   if (!secenekler.length) secenekler.push({ dersSayisi: 0, fiyat: 0 });
 
   const satirHTML = (s, i) => `<div class="sec-row" data-i="${i}">
-      <div class="ders-alan"><input type="text" inputmode="numeric" class="gp-inp sec-ders" value="${s.dersSayisi || ''}" placeholder="4" autocomplete="off"><span class="sec-k">ders</span></div>
+      <div class="ders-alan"><input type="text" inputmode="numeric" class="gp-inp sec-ders" value="${s.dersSayisi || ''}" autocomplete="off"><span class="sec-k">ders</span></div>
       <span class="sec-esit">=</span>
-      <div class="fiyat-alan"><input type="text" inputmode="numeric" class="gp-inp sec-fiyat" value="${s.fiyat ? binlik(s.fiyat) : ''}" placeholder="8.000" autocomplete="off"><span class="sec-k">₺</span></div>
+      <div class="fiyat-alan"><input type="text" inputmode="numeric" class="gp-inp sec-fiyat" value="${s.fiyat ? binlik(s.fiyat) : ''}" autocomplete="off"><span class="sec-k">₺</span></div>
       <button type="button" class="sec-sil" title="Sil">🗑️</button>
     </div>`;
 
   const govde = `
     <div class="gp-alan"><label>Paket Adı</label>
-      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Single" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="gp-alan"><label>Ders Seçeneği</label>
       <div id="uySecList">${secenekler.map(satirHTML).join('')}</div>
       <button type="button" class="sec-ekle" id="uySecEkle">＋ Seçenek Ekle</button></div>
     <div class="gp-alan uy-birimli"><label>Geçerlilik Süresi</label>
-      <input type="text" inputmode="numeric" class="gp-inp" id="uyGun" value="${mevcut ? (Number(mevcut.gecerlilikGun) || '') : ''}" placeholder="60" autocomplete="off"><span class="uy-birim">gün</span></div>
+      <input type="text" inputmode="numeric" class="gp-inp" id="uyGun" value="${mevcut ? (Number(mevcut.gecerlilikGun) || '') : ''}" autocomplete="off"><span class="uy-birim">gün</span></div>
     <div class="gp-alan" style="margin:0"><label>Açıklama</label>
-      <textarea class="gp-inp" id="uyAciklama" rows="2" placeholder="Örn. Grup dersleri ve özel dersler dahildir" autocomplete="off" autocorrect="off" spellcheck="false">${mevcut ? kacar(uyelikAciklama(mevcut)) : ''}</textarea></div>`;
+      <textarea class="gp-inp" id="uyAciklama" rows="2" autocomplete="off" autocorrect="off" spellcheck="false">${mevcut ? kacar(uyelikAciklama(mevcut)) : ''}</textarea></div>`;
   modalAc(mevcut ? 'Üyelik Düzenle' : 'Yeni Üyelik', govde,
     `<button class="btn" id="uyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="uyKaydet">💾 Kaydet</button>`,
     `<span class="hr-rozet">🎟️ Üyelik</span>`);
@@ -3511,10 +3511,14 @@ function uyelikFormu(mevcut) {
       };
     });
   };
-  const cizSatirlar = () => { $('#uySecList').innerHTML = secenekler.map(satirHTML).join(''); satirlariBagla(); };
+  const cizSatirlar = (animSon) => {
+    $('#uySecList').innerHTML = secenekler.map(satirHTML).join('');
+    if (animSon) { const rows = $$('#uySecList .sec-row'); if (rows.length) rows[rows.length - 1].classList.add('sec-gir'); }
+    satirlariBagla();
+  };
   satirlariBagla();
   $('#uyGun').addEventListener('input', () => { $('#uyGun').value = $('#uyGun').value.replace(/\D/g, ''); });
-  $('#uySecEkle').onclick = () => { secenekler.push({ dersSayisi: 0, fiyat: 0 }); cizSatirlar(); const sonlar = $$('#uySecList .sec-ders'); if (sonlar.length) sonlar[sonlar.length - 1].focus(); };
+  $('#uySecEkle').onclick = () => { secenekler.push({ dersSayisi: 0, fiyat: 0 }); cizSatirlar(true); const sonlar = $$('#uySecList .sec-ders'); if (sonlar.length) sonlar[sonlar.length - 1].focus(); };
 
   $('#uyIptal').onclick = modalKapat;
   $('#uyKaydet').onclick = async () => {
@@ -4645,9 +4649,17 @@ function autofillKapatKur() {
   };
   tara(document.body);
   try { new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(tara))).observe(document.body, { childList: true, subtree: true }); } catch {}
-  const ac = (e) => { const el = e.target; if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.dataset.afk && el.hasAttribute('readonly')) el.removeAttribute('readonly'); };
-  document.addEventListener('pointerdown', ac, true);
-  document.addEventListener('focusin', ac, true);
+  const yazilabilir = (el) => el && el.dataset && el.dataset.afk && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && (el.getAttribute('type') || 'text').toLowerCase() !== 'password';
+  // Odak anında alan readonly kalır (tarayıcı önerisi çıkamaz), bir tick sonra
+  // yazılabilir olur; odaktan çıkınca tekrar kilitlenir → öneri her seferinde engellenir.
+  document.addEventListener('focusin', (e) => {
+    const el = e.target;
+    if (yazilabilir(el) && el.hasAttribute('readonly')) setTimeout(() => { if (document.activeElement === el) el.removeAttribute('readonly'); }, 0);
+  }, true);
+  document.addEventListener('focusout', (e) => {
+    const el = e.target;
+    if (yazilabilir(el)) el.setAttribute('readonly', 'readonly');
+  }, true);
 }
 
 /* Otomatik sürüm kontrolü: taze index.html'i çek, daha yeni sürüm varsa

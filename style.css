@@ -330,11 +330,16 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .modal-perde{
   position:fixed;inset:0;background:rgba(20,26,22,.55);z-index:200;
   display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:perdeGir .18s ease;
 }
 .modal{
   background:var(--kart);border-radius:16px;box-shadow:var(--golge-buyuk);
   width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+  animation:modalGir .2s cubic-bezier(.2,.7,.3,1);
 }
+@keyframes perdeGir{from{opacity:0}to{opacity:1}}
+@keyframes modalGir{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.modal-perde,.modal{animation:none}}
 .modal-ust-kat{z-index:210}   /* üst üste açılan ikinci modal (yeni kalem) */
 .modal-dar{max-width:400px}
 .modal-ust{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--kenar)}
@@ -659,6 +664,15 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .sec-row .sec-sil:hover{border-color:#e4c3bd}
 .sec-ekle{width:100%;border:1px dashed #d9c691;background:#fffdf5;border-radius:11px;padding:10px;font-family:inherit;font-weight:800;font-size:13px;color:#a8792f;cursor:pointer;margin-top:2px}
 .sec-ekle:hover{background:#fdf6e3}
+.sec-row.sec-gir{animation:secGir .22s cubic-bezier(.2,.7,.3,1)}
+@keyframes secGir{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+/* Açılır menü / popup / seçici yumuşak açılış */
+@keyframes acilGir{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.pa-panel:not([hidden]),.gd-panel:not([hidden]){animation:acilGir .16s ease;transform-origin:top center}
+.drz-pop{animation:acilGir .16s ease;transform-origin:top center}
+.picker-perde{animation:perdeGir .18s ease}
+.picker-perde .tsz,.picker-perde .ssz{animation:modalGir .2s cubic-bezier(.2,.7,.3,1)}
+@media (prefers-reduced-motion:reduce){.sec-row.sec-gir,.pa-panel,.gd-panel,.drz-pop,.picker-perde,.picker-perde .tsz,.picker-perde .ssz{animation:none}}
 /* Ders seçeneği çipleri (öğrenciye paket atarken) */
 .sec-cip{display:flex;flex-direction:column;gap:8px}
 .scip{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--kenar);background:#fff;border-radius:12px;padding:12px 14px;cursor:pointer}
