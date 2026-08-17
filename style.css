@@ -629,6 +629,11 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .uk-ad{font-family:Georgia,"Times New Roman",serif;font-size:18px;font-weight:700;color:var(--metin)}
 .uk-fiyat{margin:14px 0 4px;font-weight:800;font-size:26px;color:#a8792f;letter-spacing:.5px}
 .uk-fiyat small{font-size:14px;font-weight:700}
+.uk-secler{margin:14px 0 4px;display:flex;flex-direction:column;gap:7px}
+.uk-sec{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fffefb,#fdf6ea);border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+.uk-sec .d{font-weight:800;font-size:14px;color:var(--metin)}
+.uk-sec .d small{color:var(--metin-soluk);font-weight:600}
+.uk-sec .f{font-weight:800;color:#a8792f;font-size:14.5px}
 .uk-ay{height:1px;background:var(--line);margin:12px 0}
 .uk-satir{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;padding:5px 0;color:var(--metin)}
 .uk-satir .e{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:13px;background:var(--gri-acik,#f2ead9);flex:0 0 auto}
@@ -643,6 +648,27 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .uy-ikili .gp-alan{flex:1}
 .uy-birimli{position:relative}
 .uy-birim{position:absolute;right:13px;bottom:12px;font-size:13.5px;font-weight:700;color:var(--metin-soluk);pointer-events:none}
+/* Üyelik formu — ders seçeneği satırları */
+.sec-row{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.sec-row .ders-alan{width:82px;position:relative;flex:0 0 auto}
+.sec-row .fiyat-alan{flex:1;position:relative}
+.sec-row .gp-inp{padding-right:38px}
+.sec-row .sec-k{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:var(--metin-soluk);pointer-events:none}
+.sec-row .sec-esit{font-weight:800;color:#a8792f;font-size:16px;flex:0 0 auto}
+.sec-row .sec-sil{width:36px;height:42px;border:1px solid var(--kenar);background:#fff;border-radius:10px;color:#b1483f;font-size:14px;cursor:pointer;flex:0 0 auto}
+.sec-row .sec-sil:hover{border-color:#e4c3bd}
+.sec-ekle{width:100%;border:1px dashed #d9c691;background:#fffdf5;border-radius:11px;padding:10px;font-family:inherit;font-weight:800;font-size:13px;color:#a8792f;cursor:pointer;margin-top:2px}
+.sec-ekle:hover{background:#fdf6e3}
+/* Ders seçeneği çipleri (öğrenciye paket atarken) */
+.sec-cip{display:flex;flex-direction:column;gap:8px}
+.scip{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--kenar);background:#fff;border-radius:12px;padding:12px 14px;cursor:pointer}
+.scip:hover{border-color:#e4cf94}
+.scip.sec{border-color:var(--gold);background:linear-gradient(135deg,#fbf1d4,#f6e6ad)}
+.scip .d{font-weight:800;font-size:15px;color:var(--metin)}
+.scip .d small{color:var(--metin-soluk);font-weight:600;font-size:12.5px}
+.scip-sag{display:flex;align-items:center;gap:8px}
+.scip .f{font-weight:800;color:#a8792f;font-size:15px}
+.scip .tik{color:#a8792f;font-weight:800}
 
 /* ============ Öğrenciler ============ */
 .ogr-sayfa{max-width:880px;margin:0}

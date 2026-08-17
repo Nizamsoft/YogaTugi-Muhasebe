@@ -360,9 +360,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '89';
+const APP_SURUM = '90';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '16:20';
+const APP_SURUM_SAAT = '16:38';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3429,18 +3429,30 @@ function giderFormu(mevcut) {
   };
 }
 
+/* Üyelik ders seçenekleri — yeni yapı {secenekler:[{dersSayisi,fiyat}]}; eski
+   {dersSayisi,fiyat} kayıtları da normalize edilir. */
+function uyelikSecenekleri(u) {
+  if (u && Array.isArray(u.secenekler) && u.secenekler.length) return u.secenekler;
+  if (u && (Number(u.dersSayisi) || Number(u.fiyat))) return [{ dersSayisi: Number(u.dersSayisi) || 0, fiyat: Number(u.fiyat) || 0 }];
+  return [];
+}
+function uyelikAciklama(u) { return u ? (u.aciklama != null ? u.aciklama : (u.kapsam || '')) : ''; }
+
 /* -------- Tanımlamalar: Üyelikler (ders/üyelik paketleri) -------- */
 SAYFALAR['tanim-uyelik'] = function () {
   const uyelikler = State.uyelikler;
-  const kartHTML = (u) => `<div class="uk"><div class="uk-ic">
+  const kartHTML = (u) => {
+    const secler = uyelikSecenekleri(u);
+    const acik = uyelikAciklama(u);
+    return `<div class="uk"><div class="uk-ic">
       <div class="uk-bas"><span class="uk-ik">🎟️</span><span class="uk-ad">${kacar(u.ad)}</span></div>
-      <div class="uk-fiyat">${binlik(u.fiyat)} <small>₺</small></div>
+      <div class="uk-secler">${secler.map(s => `<div class="uk-sec"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="f">${binlik(s.fiyat)} ₺</span></div>`).join('') || '<div class="uk-sec"><span class="d ogr-soluk">Seçenek yok</span></div>'}</div>
       <div class="uk-ay"></div>
-      <div class="uk-satir"><span class="e">📚</span><span><b>${Number(u.dersSayisi) || 0}</b> Ders</span></div>
       <div class="uk-satir"><span class="e">⏳</span><span><b>${Number(u.gecerlilikGun) || 0}</b> Gün geçerli</span></div>
-      ${u.kapsam ? `<div class="uk-satir"><span class="e">🎯</span><span class="uk-kapsam">${kacar(u.kapsam)}</span></div>` : ''}
+      ${acik ? `<div class="uk-satir"><span class="e">📝</span><span class="uk-kapsam">${kacar(acik)}</span></div>` : ''}
       <div class="uk-arac"><button type="button" class="duz" data-ud="${u.id}">✎ Düzenle</button><button type="button" data-us="${u.id}">🗑️ Sil</button></div>
     </div></div>`;
+  };
 
   ic().innerHTML = `
     <div class="uk-sayfa">
@@ -3462,40 +3474,60 @@ SAYFALAR['tanim-uyelik'] = function () {
 };
 
 function uyelikFormu(mevcut) {
+  const secenekler = mevcut ? uyelikSecenekleri(mevcut).map(s => ({ dersSayisi: Number(s.dersSayisi) || 0, fiyat: Number(s.fiyat) || 0 })) : [{ dersSayisi: 0, fiyat: 0 }];
+  if (!secenekler.length) secenekler.push({ dersSayisi: 0, fiyat: 0 });
+
+  const satirHTML = (s, i) => `<div class="sec-row" data-i="${i}">
+      <div class="ders-alan"><input type="text" inputmode="numeric" class="gp-inp sec-ders" value="${s.dersSayisi || ''}" placeholder="4" autocomplete="off"><span class="sec-k">ders</span></div>
+      <span class="sec-esit">=</span>
+      <div class="fiyat-alan"><input type="text" inputmode="numeric" class="gp-inp sec-fiyat" value="${s.fiyat ? binlik(s.fiyat) : ''}" placeholder="8.000" autocomplete="off"><span class="sec-k">₺</span></div>
+      <button type="button" class="sec-sil" title="Sil">🗑️</button>
+    </div>`;
+
   const govde = `
-    <div class="gp-alan"><label>Üyelik Adı</label>
-      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Gold Paket" autocomplete="off" autocorrect="off" spellcheck="false"></div>
-    <div class="uy-ikili">
-      <div class="gp-alan uy-birimli"><label>Fiyatı</label>
-        <input type="text" inputmode="numeric" class="gp-inp" id="uyFiyat" value="${mevcut ? binlik(mevcut.fiyat) : ''}" placeholder="50.000" autocomplete="off"><span class="uy-birim">₺</span></div>
-      <div class="gp-alan"><label>Ders Sayısı</label>
-        <input type="text" inputmode="numeric" class="gp-inp" id="uyDers" value="${mevcut ? (Number(mevcut.dersSayisi) || '') : ''}" placeholder="15" autocomplete="off"></div>
-    </div>
+    <div class="gp-alan"><label>Paket Adı</label>
+      <input type="text" class="gp-inp" id="uyAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Single" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan"><label>Ders Seçeneği</label>
+      <div id="uySecList">${secenekler.map(satirHTML).join('')}</div>
+      <button type="button" class="sec-ekle" id="uySecEkle">＋ Seçenek Ekle</button></div>
     <div class="gp-alan uy-birimli"><label>Geçerlilik Süresi</label>
       <input type="text" inputmode="numeric" class="gp-inp" id="uyGun" value="${mevcut ? (Number(mevcut.gecerlilikGun) || '') : ''}" placeholder="60" autocomplete="off"><span class="uy-birim">gün</span></div>
-    <div class="gp-alan" style="margin:0"><label>Kapsamı</label>
-      <input type="text" class="gp-inp" id="uyKapsam" value="${mevcut ? kacar(mevcut.kapsam || '') : ''}" placeholder="Örn. Grup Dersleri ve Özel Dersler" autocomplete="off" autocorrect="off" spellcheck="false"></div>`;
+    <div class="gp-alan" style="margin:0"><label>Açıklama</label>
+      <textarea class="gp-inp" id="uyAciklama" rows="2" placeholder="Örn. Grup dersleri ve özel dersler dahildir" autocomplete="off" autocorrect="off" spellcheck="false">${mevcut ? kacar(uyelikAciklama(mevcut)) : ''}</textarea></div>`;
   modalAc(mevcut ? 'Üyelik Düzenle' : 'Yeni Üyelik', govde,
     `<button class="btn" id="uyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="uyKaydet">💾 Kaydet</button>`,
     `<span class="hr-rozet">🎟️ Üyelik</span>`);
-
   setTimeout(() => $('#uyAd').focus(), 50);
-  // Fiyat: yazdıkça binlik nokta
-  const fy = $('#uyFiyat');
-  fy.addEventListener('input', () => { fy.value = binlikBiciml(fy.value); });
-  // Ders sayısı / gün: yalnızca rakam
-  ['uyDers', 'uyGun'].forEach(id => { const el = $('#' + id); el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, ''); }); });
+
+  const satirlariBagla = () => {
+    $$('#uySecList .sec-row').forEach(row => {
+      const i = Number(row.dataset.i);
+      const dersEl = $('.sec-ders', row), fiyatEl = $('.sec-fiyat', row);
+      dersEl.oninput = () => { dersEl.value = dersEl.value.replace(/\D/g, ''); secenekler[i].dersSayisi = Number(dersEl.value) || 0; };
+      fiyatEl.oninput = () => { fiyatEl.value = binlikBiciml(fiyatEl.value); secenekler[i].fiyat = Number((fiyatEl.value || '').replace(/\D/g, '')) || 0; };
+      $('.sec-sil', row).onclick = () => {
+        if (secenekler.length <= 1) { secenekler[0] = { dersSayisi: 0, fiyat: 0 }; } else { secenekler.splice(i, 1); }
+        cizSatirlar();
+      };
+    });
+  };
+  const cizSatirlar = () => { $('#uySecList').innerHTML = secenekler.map(satirHTML).join(''); satirlariBagla(); };
+  satirlariBagla();
+  $('#uyGun').addEventListener('input', () => { $('#uyGun').value = $('#uyGun').value.replace(/\D/g, ''); });
+  $('#uySecEkle').onclick = () => { secenekler.push({ dersSayisi: 0, fiyat: 0 }); cizSatirlar(); const sonlar = $$('#uySecList .sec-ders'); if (sonlar.length) sonlar[sonlar.length - 1].focus(); };
 
   $('#uyIptal').onclick = modalKapat;
   $('#uyKaydet').onclick = async () => {
     const ad = $('#uyAd').value.trim();
-    if (!ad) return bildir('Üyelik adı girin.', 'hata');
+    if (!ad) return bildir('Paket adı girin.', 'hata');
+    const temizSec = secenekler.filter(s => (Number(s.dersSayisi) || 0) > 0).map(s => ({ dersSayisi: Number(s.dersSayisi) || 0, fiyat: Number(s.fiyat) || 0 }));
+    if (!temizSec.length) return bildir('En az bir ders seçeneği girin (ders sayısı).', 'hata');
     const veri = {
       ad,
-      fiyat: Number(($('#uyFiyat').value || '').replace(/\D/g, '')) || 0,
-      dersSayisi: Number($('#uyDers').value) || 0,
+      secenekler: temizSec,
       gecerlilikGun: Number($('#uyGun').value) || 0,
-      kapsam: $('#uyKapsam').value.trim(),
+      aciklama: $('#uyAciklama').value.trim(),
+      fiyat: undefined, dersSayisi: undefined, kapsam: undefined,   // eski alanları temizle
     };
     if (mevcut) { await DB.guncelle('uyelikler', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('uyelikler', veri); State.uyelikler.push(y); }
@@ -3692,12 +3724,19 @@ function paketAtaModal(o) {
 
   let egitmenId = o.egitmenId || egitmenler[0].id;
   let uyelikId = paketler[0].id;
+  let secIdx = 0;   // seçili ders seçeneği
   const eAd = (id) => { const e = egitmenler.find(x => x.id === id); return e ? egitmenKisaAd(e) : 'Seç'; };
   const pAd = (id) => { const p = paketler.find(x => x.id === id); return p ? p.ad : 'Seç'; };
+  const secOzet = (p) => uyelikSecenekleri(p).map(s => Number(s.dersSayisi) || 0).join(' · ') + ' ders';
   const eOgeler = () => egitmenler.map(e =>
     `<div class="pa-oge ${egitmenId === e.id ? 'sec' : ''}" data-e="${e.id}"><span class="ogr-ea">${basHarf(e.ad)}</span>${kacar(egitmenKisaAd(e))}${egitmenId === e.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
   const pOgeler = () => paketler.map(p =>
-    `<div class="pa-oge ${uyelikId === p.id ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${binlik(p.fiyat)} ₺ · ${Number(p.dersSayisi) || 0} Ders · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${uyelikId === p.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
+    `<div class="pa-oge ${uyelikId === p.id ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${uyelikId === p.id ? '<span class="pa-tik">✓</span>' : ''}</div>`).join('');
+  const secOgeler = () => {
+    const p = paketler.find(x => x.id === uyelikId);
+    const secler = uyelikSecenekleri(p);
+    return secler.map((s, i) => `<div class="scip ${secIdx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${secIdx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('');
+  };
 
   const govde = `
     <div class="gp-alan"><label>Eğitmen</label>
@@ -3705,15 +3744,19 @@ function paketAtaModal(o) {
         <button type="button" class="pa-trig" id="paeTrig"><span id="paeAd">${kacar(eAd(egitmenId))}</span><span class="ok">▾</span></button>
         <div class="pa-panel" id="paePanel" hidden>${eOgeler()}</div>
       </div></div>
-    <div class="gp-alan" style="margin:0"><label>Üyelik Paketi</label>
+    <div class="gp-alan"><label>Üyelik Paketi</label>
       <div class="pa-dd">
         <button type="button" class="pa-trig" id="papTrig"><span id="papAd">${kacar(pAd(uyelikId))}</span><span class="ok">▾</span></button>
         <div class="pa-panel" id="papPanel" hidden>${pOgeler()}</div>
-      </div></div>`;
+      </div></div>
+    <div class="gp-alan" style="margin:0"><label>Ders Seçeneği</label>
+      <div class="sec-cip" id="paSecList">${secOgeler()}</div></div>`;
   modalAc('Ders Paketi Ata', govde,
     `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="paKaydet">💾 Öğrenciye Ekle</button>`,
     `<span class="hr-rozet">🎟️ Paket</span>`);
 
+  const secBagla = () => $$('#paSecList [data-si]').forEach(el => el.onclick = () => { secIdx = Number(el.dataset.si); $('#paSecList').innerHTML = secOgeler(); secBagla(); });
+  secBagla();
   const kur = (trig, panel, ogelerFn, secFn) => {
     const t = $(trig), p = $(panel);
     t.onclick = () => { const ac = p.hidden; $$('.pa-panel').forEach(x => x.hidden = true); $$('.pa-trig').forEach(x => x.classList.remove('acik')); p.hidden = !ac; t.classList.toggle('acik', ac); };
@@ -3722,16 +3765,20 @@ function paketAtaModal(o) {
     bagla();
   };
   kur('#paeTrig', '#paePanel', eOgeler, (el) => { egitmenId = el.dataset.e; $('#paeAd').textContent = eAd(egitmenId); $('#paePanel')._yenile(); });
-  kur('#papTrig', '#papPanel', pOgeler, (el) => { uyelikId = el.dataset.p; $('#papAd').textContent = pAd(uyelikId); $('#papPanel')._yenile(); });
+  kur('#papTrig', '#papPanel', pOgeler, (el) => { uyelikId = el.dataset.p; secIdx = 0; $('#papAd').textContent = pAd(uyelikId); $('#papPanel')._yenile(); $('#paSecList').innerHTML = secOgeler(); secBagla(); });
 
   $('#paIptal').onclick = modalKapat;
   $('#paKaydet').onclick = async () => {
     const uy = paketler.find(x => x.id === uyelikId);
     if (!uy) return bildir('Paket seçin.', 'hata');
+    const secler = uyelikSecenekleri(uy);
+    const sec = secler[secIdx] || secler[0];
+    if (!sec) return bildir('Ders seçeneği seçin.', 'hata');
+    const dersAdet = Number(sec.dersSayisi) || 0;
     const paket = {
       id: yeniId(), uyelikId: uy.id, paketAd: uy.ad,
-      dersToplam: Number(uy.dersSayisi) || 0, kalanDers: Number(uy.dersSayisi) || 0,
-      fiyat: Number(uy.fiyat) || 0, kalanOdeme: Number(uy.fiyat) || 0,
+      dersToplam: dersAdet, kalanDers: dersAdet,
+      fiyat: Number(sec.fiyat) || 0, kalanOdeme: Number(sec.fiyat) || 0,
       tarih: new Date().toISOString(),
     };
     const guncel = { egitmenId, durum: 'ogrenci', paketler: [...(o.paketler || []), paket] };
