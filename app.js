@@ -256,9 +256,9 @@ const Bulut = {
   async gonder() {
     if (!this.client) return;
     const paket = this.paket();
+    this.sonImza = paket.guncelleme;   // echo yarışını önle: kendi imzamızı push'tan önce yaz
     const { error } = await this.client.from('yt_veri').upsert({ id: 'ana', data: paket, guncelleme: paket.guncelleme });
     if (error) throw error;
-    this.sonImza = paket.guncelleme;
   },
   itPlanla() {
     if (!this.aktif || this._uzaktan) return;   // uzaktan gelen veriyi geri gönderme (döngü engeli)
@@ -327,7 +327,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '77';
+const APP_SURUM = '78';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -3338,7 +3338,7 @@ SAYFALAR['tanim-gider'] = function () {
 };
 
 function giderFormu(mevcut) {
-  let seciliGrup = mevcut ? (mevcut.grupId || null) : null;
+  let seciliGrup = mevcut ? (mevcut.grupId || null) : (State.giderGruplari[0] ? State.giderGruplari[0].id : null);
   const grupAdi = (id) => { const g = State.giderGruplari.find(x => x.id === id); return g ? g.ad : 'Grup seç'; };
   const ogelerHTML = () => State.giderGruplari.map(g =>
     `<div class="gd-oge ${seciliGrup === g.id ? 'sec' : ''}" data-grup="${g.id}"><span class="gd-nokta"></span>${kacar(g.ad)}${seciliGrup === g.id ? '<span class="tik">✓</span>' : ''}</div>`).join('');
