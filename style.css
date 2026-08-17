@@ -507,6 +507,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .ortakkart .altin-ayrac{width:46px;height:2px;margin:12px auto 11px;border-radius:2px;background:linear-gradient(90deg,transparent,#caa24e,transparent)}
 .ortakkart .altin-et{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--metin-soluk);font-weight:700}
 .ortakkart .altin-tt{font-size:22px;font-weight:800;color:var(--yesil-para);margin-top:3px;font-variant-numeric:tabular-nums}
+.ortakkart .altin-kart.altin-sade{padding-bottom:17px}
 @media(max-width:560px){
   .ortakkart .altin-izgara{grid-template-columns:1fr 1fr;gap:11px;padding:13px}
   .ortakkart .altin-kart{padding:10px 10px 13px}

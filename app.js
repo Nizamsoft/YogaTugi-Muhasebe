@@ -137,7 +137,8 @@ function modalKapat() { $('#modalKap').innerHTML = ''; }
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['hesaplar', 'islemler', 'ortaklar', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
+const KOLEKSIYONLAR = ['ortaklar'];   // sadeleştirildi: yalnızca ortak (ad + foto)
+const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler', 'dersler', 'odemeler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
 const DB = {
@@ -321,7 +322,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '73';
+const APP_SURUM = '74';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -331,25 +332,18 @@ function aktifOrtakId() { return (State.kullanici && State.kullanici.ortakId) ||
 
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
-  const [hesaplar, islemler, ortaklar, komisyonlar, karPayi, kullanicilar, potansiyel, musteriler, dersler, odemeler] = await Promise.all(
-    KOLEKSIYONLAR.map(k => DB.listele(k))
-  );
-  State.hesaplar = hesaplar;
-  State.islemler = islemler.sort((a, b) => (b.tarih || '').localeCompare(a.tarih || ''));
-  State.ortaklar = ortaklar;
-  State.komisyonlar = komisyonlar;
-  State.karPayi = karPayi;
-  State.kullanicilar = kullanicilar;
-  State.potansiyel = potansiyel || [];
-  State.musteriler = musteriler || [];
-  State.dersler = dersler || [];
-  State.odemeler = odemeler || [];
-  // Tahsilatların yazılacağı 'Ders Geliri' gelir kalemi her zaman bulunsun
-  if (!State.hesaplar.some(h => h.tip === 'gelir' && h.ad === 'Ders Geliri')) {
-    const k = await DB.ekle('hesaplar', { ad: 'Ders Geliri', tip: 'gelir', aktif: true });
-    State.hesaplar.push(k);
-  }
-  await kayitNoMigrasyon();
+  // Eski koleksiyonları temizle — yalnızca ortak adı + fotoğrafı kalsın
+  let temizlik = false;
+  ESKI_KOLEKSIYONLAR.forEach(k => { if (localStorage.getItem('yt_' + k) !== null) { localStorage.removeItem('yt_' + k); temizlik = true; } });
+  // Ortakları sadeleştir (id + ad + foto)
+  const ham = DB._oku('ortaklar');
+  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false }));
+  const degisti = JSON.stringify(ham) !== JSON.stringify(temiz);
+  if (degisti) DB._yaz('ortaklar', temiz);   // bu aynı zamanda buluta temiz veriyi gönderir
+  else if (temizlik && window._Bulut) window._Bulut.itPlanla();
+  State.ortaklar = temiz;
+  State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
+  State.kullanicilar = []; State.potansiyel = []; State.musteriler = []; State.dersler = []; State.odemeler = [];
 }
 
 /* Kayıt No — her işleme benzersiz sıralı numara. Eski kayıtlar için tek seferlik doldurulur. */
@@ -554,50 +548,23 @@ const ic = () => $('#icerik');
 
 /* -------- DASHBOARD -------- */
 SAYFALAR.dashboard = function () {
-  const donem = buAy();
-  const ay = Hesapla.donemOzet(donem);
-  const gun = Hesapla.gunOzet(bugunISO());
-
-  const paraHesaplar = State.hesaplar.filter(h => HESAP_TIPLERI[h.tip]?.para);
-  const toplamVarlik = paraHesaplar.filter(h => h.tip !== 'krediKarti')
-    .reduce((s, h) => s + Hesapla.paraHesapBakiye(h.id), 0);
-
+  const list = State.ortaklar.filter(o => o.aktif !== false);
+  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const renk = ['g', 'b', 'p', 'a'];
+  const kartlar = list.map((o, i) => {
+    const foto = o.foto
+      ? `<div class="altin-foto"><img src="${o.foto}" alt="${kacar(o.ad)}"></div>`
+      : `<div class="altin-foto ${renk[i % 4]}">${kacar(bas(o.ad))}</div>`;
+    return `<div class="altin-kart altin-sade">${foto}<div class="altin-isim">${kacar(o.ad)}</div><div class="altin-rol">Eğitmen</div></div>`;
+  }).join('');
   ic().innerHTML = `
-    <div class="izgara izgara-4 dash-ozet" style="margin-bottom:18px">
-      <div class="kart ozet gelir">
-        <div class="ikon-daire">📈</div>
-        <div class="etiket">Bu Ay Gelir</div>
-        <div class="deger pozitif">${TL(ay.gelir)}</div>
-        <div class="alt-bilgi">Bugün: ${TL(gun.gelir)}</div>
-      </div>
-      <div class="kart ozet gider">
-        <div class="ikon-daire">📉</div>
-        <div class="etiket">Bu Ay Gider</div>
-        <div class="deger negatif">${TL(ay.gider)}</div>
-        <div class="alt-bilgi">Bugün: ${TL(gun.gider)}</div>
-      </div>
-      <div class="kart ozet kar">
-        <div class="ikon-daire">⚖️</div>
-        <div class="etiket">Bu Ay Net Kar</div>
-        <div class="deger ${ay.netKar >= 0 ? 'pozitif' : 'negatif'}">${TL(ay.netKar)}</div>
-        <div class="alt-bilgi">${donemAdi(donem)}</div>
-      </div>
-      <div class="kart ozet pay">
-        <div class="ikon-daire">🥧</div>
-        <div class="etiket">Toplam Nakit Varlık</div>
-        <div class="deger">${TL(toplamVarlik)}</div>
-        <div class="alt-bilgi">${paraHesaplar.filter(h=>h.tip!=='krediKarti').length} hesap</div>
-      </div>
-    </div>
-
-    ${ortakKartHTML(_okDonem || donem)}
-  `;
-  $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
-  const okD = _okDonem || donem;
-  if ($('#okGeri')) $('#okGeri').onclick = () => { _okDonem = donemKaydir(okD, -1); SAYFALAR.dashboard(); };
-  if ($('#okIleri')) $('#okIleri').onclick = () => { _okDonem = donemKaydir(okD, +1); SAYFALAR.dashboard(); };
+    <div class="ortakkart">
+      <div class="ok-head"><h3>🤝 Ekibimiz</h3><span class="dn">${list.length} ortak</span></div>
+      ${list.length === 0
+        ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Bilgileri”nden ekleyin.')
+        : `<div class="altin-izgara">${kartlar}</div>`}
+    </div>`;
 };
-let _okDonem = null;   // Dashboard "Ortak Hak Edişleri" kartında görüntülenen dönem
 
 /* Ortak başına hesaplama: ders geliri, eşit gider payı, hak ediş */
 /* Müşteri ödemelerini derslere dağıt (FIFO: en eski ders önce kapanır).
@@ -2861,7 +2828,7 @@ function ortakFormu(mevcut) {
     if (!ad) return bildir('Ad girin.', 'hata');
     const veri = { ad, foto: fotoData || null, aktif: true };
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
-    else { const y = await DB.ekle('ortaklar', { ...veri, dersUcreti: 0, payOrani: 0 }); State.ortaklar.push(y); }
+    else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari');
     const s = State.aktifSayfa;
     if (s === 'ayar-ortak') SAYFALAR['ayar-ortak'](); else git(s || 'ayar-ortak');
@@ -3374,10 +3341,6 @@ async function uygulamayiBaslat() {
   await veriYukle();
   menuCiz();
   git('dashboard');
-  // Henüz veri yoksa ve başlangıç seçilmemişse hoş geldin ekranı
-  if (State.hesaplar.length === 0 && !localStorage.getItem('yt_baslangic')) {
-    hosgeldinModal();
-  }
 }
 
 /* İlk açılış: örnek verilerle mi boş mu başlansın? */
@@ -3522,12 +3485,12 @@ function ustCubukKur() {
   if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); if ($('#temaBtn')) $('#temaBtn').textContent = '☀️'; }
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
-  $('#yedekBtn').onclick = yedekModal;
+  if ($('#yedekBtn')) $('#yedekBtn').onclick = yedekModal;
 
-  // Mobil: kullanıcıya dokununca açılan menü (Yedek / Tema / Çıkış)
+  // Mobil: kullanıcıya dokununca açılan menü (Tema / Çıkış)
   const km = $('#kulMenu');
   $('#kullaniciBlok').onclick = (e) => { e.stopPropagation(); km.classList.toggle('gizli'); };
-  $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
+  if ($('#kmYedek')) $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
   $('#kmTema').onclick = () => { temaDegistir(); };
   $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
   document.addEventListener('click', (e) => {
@@ -3772,7 +3735,6 @@ async function verileriSifirla() {
   await veriYukle();
   git('dashboard');
   bildir('Tüm veriler sıfırlandı.', 'basari');
-  setTimeout(hosgeldinModal, 400);
 }
 
 /* Firma bilgilerini arayüze uygula (ad, slogan, logo, başlık) */
