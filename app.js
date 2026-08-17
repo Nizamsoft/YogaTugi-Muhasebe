@@ -147,7 +147,7 @@ const DB = {
 
   _anahtar(kol) { return 'yt_' + kol; },
   _oku(kol) { try { return JSON.parse(localStorage.getItem(this._anahtar(kol))) || []; } catch { return []; } },
-  _yaz(kol, dizi) { localStorage.setItem(this._anahtar(kol), JSON.stringify(dizi)); },
+  _yaz(kol, dizi) { localStorage.setItem(this._anahtar(kol), JSON.stringify(dizi)); if (window._Bulut) window._Bulut.itPlanla(); },
 
   async listele(kol) { return this._oku(kol); },
 
@@ -177,8 +177,120 @@ const DB = {
 
   // ---- Ayarlar (firma bilgileri, logo, güvenlik) — tekil nesne ----
   ayarOku() { try { return JSON.parse(localStorage.getItem('yt_ayarlar')) || {}; } catch { return {}; } },
-  ayarYaz(obj) { State.ayarlar = obj; localStorage.setItem('yt_ayarlar', JSON.stringify(obj)); },
+  ayarYaz(obj) { State.ayarlar = obj; localStorage.setItem('yt_ayarlar', JSON.stringify(obj)); if (window._Bulut) window._Bulut.itPlanla(); },
 };
+
+/* ==========================================================
+   2b) BULUT SENKRON (Supabase) — tüm veri tek JSON satırında paylaşılır
+   ========================================================== */
+const BULUT_SQL = `create table if not exists public.yt_veri (
+  id text primary key,
+  data jsonb,
+  guncelleme timestamptz default now()
+);
+alter table public.yt_veri enable row level security;
+drop policy if exists "acik erisim" on public.yt_veri;
+create policy "acik erisim" on public.yt_veri for all
+  to anon using (true) with check (true);
+alter publication supabase_realtime add table public.yt_veri;`;
+
+const Bulut = {
+  client: null, aktif: false, kanal: null, beklet: null, sonImza: null, durum: 'kapali', hataMesaj: '',
+
+  ayarOku() { try { return JSON.parse(localStorage.getItem('yt_supabase')) || null; } catch { return null; } },
+  ayarKaydet(cfg) { if (cfg) localStorage.setItem('yt_supabase', JSON.stringify(cfg)); else localStorage.removeItem('yt_supabase'); },
+
+  async kutuphane() {
+    if (window.supabase && window.supabase.createClient) return window.supabase;
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.onload = res;
+      s.onerror = () => rej(new Error('Supabase kütüphanesi yüklenemedi (internet bağlantısını kontrol edin).'));
+      document.head.appendChild(s);
+    });
+    if (!window.supabase || !window.supabase.createClient) throw new Error('Supabase kütüphanesi yüklenemedi.');
+    return window.supabase;
+  },
+
+  async baglan(cfg) {
+    const lib = await this.kutuphane();
+    this.client = lib.createClient(cfg.url, cfg.anonKey, { auth: { persistSession: false } });
+    this.aktif = true; this.durum = 'bagli'; this.hataMesaj = '';
+    return this.client;
+  },
+  kapat() {
+    try { if (this.kanal && this.client) this.client.removeChannel(this.kanal); } catch {}
+    this.client = null; this.kanal = null; this.aktif = false; this.durum = 'kapali';
+  },
+
+  paket() {
+    const d = { surum: 1, guncelleme: new Date().toISOString() };
+    for (const k of KOLEKSIYONLAR) d[k] = DB._oku(k);
+    d.ayarlar = DB.ayarOku();
+    return d;
+  },
+  uygula(data) {
+    if (!data) return;
+    for (const k of KOLEKSIYONLAR) if (Array.isArray(data[k])) localStorage.setItem('yt_' + k, JSON.stringify(data[k]));
+    if (data.ayarlar) localStorage.setItem('yt_ayarlar', JSON.stringify(data.ayarlar));
+  },
+
+  async cek() {
+    const { data, error } = await this.client.from('yt_veri').select('data,guncelleme').eq('id', 'ana').maybeSingle();
+    if (error) throw error;
+    return data;   // {data, guncelleme} | null
+  },
+  async gonder() {
+    if (!this.client) return;
+    const paket = this.paket();
+    const { error } = await this.client.from('yt_veri').upsert({ id: 'ana', data: paket, guncelleme: paket.guncelleme });
+    if (error) throw error;
+    this.sonImza = paket.guncelleme;
+  },
+  itPlanla() {
+    if (!this.aktif) return;
+    clearTimeout(this.beklet);
+    this.beklet = setTimeout(() => { this.gonder().catch(e => console.warn('Bulut gönderme hatası:', e.message)); }, 900);
+  },
+
+  realtimeKur() {
+    if (!this.client) return;
+    try {
+      if (this.kanal) this.client.removeChannel(this.kanal);
+      this.kanal = this.client.channel('yt_veri_rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'yt_veri', filter: 'id=eq.ana' }, (p) => {
+          const g = p.new && p.new.guncelleme;
+          if (!g || g === this.sonImza) return;   // kendi yazdığımız değişiklik
+          this.sonImza = g;
+          if (p.new && p.new.data) {
+            this.uygula(p.new.data);
+            veriYukle().then(() => { if (State.aktifSayfa) git(State.aktifSayfa); });
+            bildir('☁️ Veriler başka cihazdan güncellendi', '');
+          }
+        }).subscribe();
+    } catch (e) { console.warn('Realtime kurulamadı:', e.message); }
+  },
+
+  // Açılışta bağlıysa buluttan çek; bulut boşsa yereli gönder
+  async baslangicSenkron() {
+    const cfg = this.ayarOku();
+    if (!cfg || !cfg.url || !cfg.anonKey) return false;
+    try {
+      await this.baglan(cfg);
+      const row = await this.cek();
+      if (row && row.data) { this.uygula(row.data); this.sonImza = row.guncelleme; }
+      else { await this.gonder(); }
+      this.realtimeKur();
+      return true;
+    } catch (e) {
+      this.durum = 'hata'; this.hataMesaj = e.message;
+      console.warn('Bulut başlangıç senkron hatası:', e.message);
+      return false;
+    }
+  },
+};
+window._Bulut = Bulut;
 
 /* Şifre özeti (SHA-256; yoksa basit yedek). Not: yerel kilit, tam güvenlik değildir. */
 async function sifreHash(metin) {
@@ -200,7 +312,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '65';
+const APP_SURUM = '66';
 const APP_SURUM_TARIH = '3 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -344,6 +456,7 @@ const MENU = [
     { id: 'ayar-komisyon',  ad: 'Komisyon Ayarları', ikon: '％', baslik: 'Komisyon Ayarları' },
     { id: 'ayar-pay',       ad: 'Ortak Pay Oranı',   ikon: '🥧', baslik: 'Ortak Pay Oranı' },
     { id: 'ayar-yedek',     ad: 'Yedekleme',         ikon: '💾', baslik: 'Yedekleme' },
+    { id: 'ayar-bulut',     ad: 'Bulut Senkron',     ikon: '☁️', baslik: 'Bulut Senkron (Supabase)' },
     { id: 'ayar-admin',     ad: 'Admin Ayarları',    ikon: '🛡️', baslik: 'Admin Ayarları', sadeceAdmin: true },
   ]},
 ];
@@ -3283,6 +3396,7 @@ async function uygulamayiBaslat() {
   $('#kullaniciAd').textContent = ad;
   $('#kullaniciRol').textContent = adminMi() ? 'Yönetici' : 'Ortak';
   $('#kullaniciRozet').textContent = (ad[0] || '?').toLocaleUpperCase('tr');
+  await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   menuCiz();
   git('dashboard');
@@ -3539,6 +3653,100 @@ SAYFALAR['ayar-yedek'] = function () {
   $('#yedSil').onclick = () => onayModal('Tüm veriler silinsin mi?',
     'Bu işlem geri alınamaz. Önce yedek almanız önerilir.', verileriSifirla);
 };
+
+/* Ayarlar > Bulut Senkron (Supabase) */
+SAYFALAR['ayar-bulut'] = function () {
+  const cfg = Bulut.ayarOku() || {};
+  const bagli = Bulut.aktif;
+  const durumHTML = bagli
+    ? `<div class="bulut-durum on">🟢 Bağlı — veriler bu proje ile eşitleniyor</div>`
+    : (Bulut.durum === 'hata'
+      ? `<div class="bulut-durum hata">🔴 Bağlantı hatası: ${kacar(Bulut.hataMesaj || '')}</div>`
+      : `<div class="bulut-durum">⚪ Bağlı değil (yalnızca bu cihazda saklanıyor)</div>`);
+  ic().innerHTML = `
+    <div class="bilgi-kutu"><span class="ikon">☁️</span><div>Bulut senkron açıkken <b>telefon ve bilgisayar aynı veriyi</b> paylaşır; birinde yaptığın değişiklik diğerinde görünür. Ücretsiz bir <b>Supabase</b> projesi yeterli. Aşağıdaki “Nasıl kurulur?” adımlarını izle, sonra 2 değeri yapıştır.</div></div>
+    <div class="kart" style="max-width:640px">
+      ${durumHTML}
+      <div class="form-alan" style="margin-top:12px"><label>Project URL</label>
+        <input type="text" id="sbUrl" autocomplete="off" spellcheck="false" value="${kacar(cfg.url || '')}" placeholder="https://xxxxx.supabase.co"></div>
+      <div class="form-alan"><label>anon public key</label>
+        <input type="text" id="sbKey" autocomplete="off" spellcheck="false" value="${kacar(cfg.anonKey || '')}" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-ana" id="sbBaglan">🔌 Bağlan & Kaydet</button>
+        <button class="btn" id="sbCek" ${bagli ? '' : 'disabled'}>⬇️ Buluttan Yükle</button>
+        <button class="btn" id="sbGonder" ${bagli ? '' : 'disabled'}>⬆️ Buluta Gönder</button>
+        <button class="btn btn-kirmizi" id="sbKaldir" ${cfg.url ? '' : 'disabled'}>Bağlantıyı Kaldır</button>
+      </div>
+    </div>
+    <details class="kart" style="max-width:640px;margin-top:14px">
+      <summary style="cursor:pointer;font-weight:800;font-size:15px">📖 Nasıl kurulur? (adım adım)</summary>
+      <ol style="line-height:1.95;padding-left:22px;margin:12px 0">
+        <li><b>supabase.com</b> → <b>Start your project</b> → GitHub veya e-posta ile giriş yap.</li>
+        <li><b>New project</b> → bir isim ver, güçlü bir <b>Database Password</b> belirle (bir yere not al), en yakın bölgeyi seç → <b>Create new project</b> (1–2 dk kurulur).</li>
+        <li>Sol menü → <b>SQL Editor</b> → <b>+ New query</b> → aşağıdaki kodu yapıştır → <b>Run</b> (bir kez).</li>
+        <li>Sol alt → <b>Project Settings ⚙️</b> → <b>API</b> → <b>Project URL</b> ve <b>Project API keys → anon public</b> değerini kopyala.</li>
+        <li>Bu ikisini yukarıya yapıştır → <b>Bağlan & Kaydet</b>.</li>
+        <li>Aynısını <b>diğer cihazında</b> da yap (aynı URL + anahtar). Artık veriler otomatik eşitlenir. 🎉</li>
+      </ol>
+      <div style="font-weight:800;margin:8px 0 6px">Çalıştırılacak SQL:</div>
+      <pre id="sbSql" style="background:var(--gri);border:1px solid var(--kenar);border-radius:10px;padding:12px;overflow:auto;font-size:12px;line-height:1.5;white-space:pre-wrap">${kacar(BULUT_SQL)}</pre>
+      <button class="btn btn-kucuk" id="sbSqlKopya" style="margin-top:8px">📋 SQL’i Kopyala</button>
+      <div class="bilgi-kutu uyari" style="margin-top:14px"><span class="ikon">⚠️</span><div><b>Güvenlik notu:</b> Bu basit kurulumda projenin URL + anahtarını bilen herkes verilere erişebilir. Linkini ve anahtarını yalnızca güvendiğin kişilerle paylaş. Daha sıkı güvenlik gerekirse söyle, kullanıcı-bazlı kimlik doğrulama ekleriz.</div></div>
+    </details>`;
+
+  const durumYaz = (metin, hata) => { const d = $('.bulut-durum'); if (d) { d.className = 'bulut-durum' + (hata ? ' hata' : ''); d.textContent = metin; } };
+
+  $('#sbBaglan').onclick = async () => {
+    const url = ($('#sbUrl').value || '').trim().replace(/\/+$/, '');
+    const key = ($('#sbKey').value || '').trim();
+    if (!/^https:\/\/.+\.supabase\.co$/i.test(url)) return bildir('Geçerli bir Project URL girin (https://...supabase.co).', 'hata');
+    if (key.length < 30) return bildir('anon public anahtarını yapıştırın.', 'hata');
+    durumYaz('🔄 Bağlanıyor…');
+    try {
+      Bulut.ayarKaydet({ url, anonKey: key });
+      await Bulut.baglan({ url, anonKey: key });
+      const row = await Bulut.cek();
+      const yerelDolu = KOLEKSIYONLAR.some(k => DB._oku(k).length);
+      if (row && row.data && yerelDolu) {
+        bulutYonModal(row);   // iki tarafta da veri var → yön sor
+      } else if (row && row.data) {
+        Bulut.uygula(row.data); Bulut.sonImza = row.guncelleme; await veriYukle(); Bulut.realtimeKur();
+        bildir('Bağlandı — veriler buluttan indirildi.', 'basari'); git('ayar-bulut');
+      } else {
+        await Bulut.gonder(); Bulut.realtimeKur();
+        bildir('Bağlandı — bu cihazdaki veriler buluta yüklendi.', 'basari'); git('ayar-bulut');
+      }
+    } catch (e) { Bulut.durum = 'hata'; Bulut.hataMesaj = e.message; durumYaz('🔴 ' + e.message, true); bildir('Bağlantı hatası. Tabloyu (SQL) çalıştırdınız mı?', 'hata'); }
+  };
+  if ($('#sbCek')) $('#sbCek').onclick = async () => {
+    try { const row = await Bulut.cek(); if (!row || !row.data) return bildir('Bulutta veri yok.', 'hata');
+      Bulut.uygula(row.data); Bulut.sonImza = row.guncelleme; await veriYukle(); bildir('Buluttan indirildi.', 'basari'); git('ayar-bulut');
+    } catch (e) { bildir('Hata: ' + e.message, 'hata'); }
+  };
+  if ($('#sbGonder')) $('#sbGonder').onclick = async () => {
+    try { await Bulut.gonder(); bildir('Buluta gönderildi.', 'basari'); } catch (e) { bildir('Hata: ' + e.message, 'hata'); }
+  };
+  if ($('#sbKaldir')) $('#sbKaldir').onclick = () => onayModal('Bulut bağlantısı kaldırılsın mı?',
+    'Veriler silinmez; sadece bu cihaz buluttan ayrılır (yerelde kalır).', () => {
+      Bulut.kapat(); Bulut.ayarKaydet(null); bildir('Bağlantı kaldırıldı.', 'basari'); git('ayar-bulut');
+    });
+  $('#sbSqlKopya').onclick = async () => {
+    try { await navigator.clipboard.writeText(BULUT_SQL); bildir('SQL kopyalandı.', 'basari'); }
+    catch { const t = $('#sbSql'); const r = document.createRange(); r.selectNode(t); getSelection().removeAllRanges(); getSelection().addRange(r); bildir('SQL seçildi, kopyalayın (Ctrl+C).', ''); }
+  };
+};
+
+/* İlk bağlantıda iki tarafta da veri varsa hangi yön kullanılsın? */
+function bulutYonModal(row) {
+  modalAc('Bulutta da veri var', `<p style="font-size:14px;line-height:1.6">Hem bu cihazda hem bulutta veri bulunuyor. Hangisi geçerli olsun?</p>
+    <div style="display:flex;flex-direction:column;gap:11px;margin-top:8px">
+      <button class="btn btn-ana" id="byIndir" style="justify-content:center;padding:13px">⬇️ Buluttakini kullan <span class="soluk" style="margin-left:5px">(bu cihazdaki değişir)</span></button>
+      <button class="btn" id="byGonder" style="justify-content:center;padding:13px">⬆️ Bu cihazdakini kullan <span class="soluk" style="margin-left:5px">(buluttaki değişir)</span></button>
+    </div>`, `<button class="btn" id="byIptal">Vazgeç</button>`);
+  $('#byIptal').onclick = modalKapat;
+  $('#byIndir').onclick = async () => { modalKapat(); Bulut.uygula(row.data); Bulut.sonImza = row.guncelleme; await veriYukle(); Bulut.realtimeKur(); bildir('Buluttaki veriler yüklendi.', 'basari'); git('ayar-bulut'); };
+  $('#byGonder').onclick = async () => { modalKapat(); await Bulut.gonder(); Bulut.realtimeKur(); bildir('Bu cihazdaki veriler buluta yazıldı.', 'basari'); git('ayar-bulut'); };
+}
 
 function yedekModal() {
   const adet = State.hesaplar.length + State.islemler.length + State.ortaklar.length;

@@ -480,6 +480,11 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .ortakkart .ok-foot .v{font-size:20px;font-weight:800;white-space:nowrap}
 .ortakkart .bos-tablo{border:none}
 
+/* Bulut senkron durum rozeti */
+.bulut-durum{font-size:13px;font-weight:700;border-radius:10px;padding:10px 12px;background:var(--gri);border:1px solid var(--kenar);color:var(--metin-soluk)}
+.bulut-durum.on{background:var(--yesil-acik);border-color:color-mix(in srgb,#7ba97e 30%,var(--kenar));color:var(--yesil-koyu)}
+.bulut-durum.hata{background:#fbeaea;border-color:#e6b8b3;color:var(--kirmizi)}
+
 /* Ortak Hak Edişleri — ortak başına basit "fiş" kartı */
 .ortakkart .he-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:16px}
 .ortakkart .he-kart{border:1px solid var(--kenar);border-radius:15px;background:var(--kart);overflow:hidden}
