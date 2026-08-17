@@ -329,7 +329,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '79';
+const APP_SURUM = '80';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -3311,25 +3311,27 @@ SAYFALAR['ayar-tanimlama'] = function () {
 SAYFALAR['tanim-gider'] = function () {
   const gruplar = State.giderGruplari;
   const giderler = State.giderler;
-  const kalemHTML = (g) => `<div class="tnm-kalem"><div class="tnm-kalem-ic">
-      <span class="tnm-nokta"></span><span class="tnm-kalem-ad">${kacar(g.ad)}</span>
-      <span class="tnm-kalem-arac"><button type="button" data-gd="${g.id}" title="Düzenle">✎</button><button type="button" data-gs="${g.id}" title="Sil">🗑️</button></span>
-    </div></div>`;
+  const kalemHTML = (g) => `<div class="tnm-row">
+      <span class="tnm-nokta"></span><span class="tnm-row-ad">${kacar(g.ad)}</span>
+      <span class="tnm-row-arac"><button type="button" data-gd="${g.id}" title="Düzenle">✎</button><button type="button" data-gs="${g.id}" title="Sil">🗑️</button></span>
+    </div>`;
   const bolumHTML = (ad, items) => !items.length ? '' : `<div class="tnm-grup">
-      <div class="tnm-grup-bas"><span class="ad">${kacar(ad)}</span><span class="say">${items.length}</span><span class="cizgi"></span></div>
-      ${items.map(kalemHTML).join('')}</div>`;
+      <div class="tnm-grup-bas"><span class="rk">📁</span><span class="ad">${kacar(ad)}</span><span class="say">${items.length}</span><span class="cizgi"></span></div>
+      <div class="tnm-grup-liste">${items.map(kalemHTML).join('')}</div></div>`;
   const bolumler = gruplar.map(gr => bolumHTML(gr.ad, giderler.filter(x => x.grupId === gr.id))).join('');
   const grupsuz = giderler.filter(x => !x.grupId || !gruplar.some(g => g.id === x.grupId));
   const bolumlerTam = bolumler + bolumHTML('Diğer', grupsuz);
 
   ic().innerHTML = `
-    <div class="tnm-scr-ust">
-      <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
-      <button type="button" class="gp-ekle" id="gdEkle">＋ Gider Ekle</button>
-    </div>
-    ${giderler.length === 0
-      ? `<div class="gp-bos" style="max-width:560px">Liste boş</div>`
-      : `<div class="tnm-liste">${bolumlerTam}</div>`}`;
+    <div class="tnm-kol">
+      <div class="tnm-scr-ust">
+        <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
+        <button type="button" class="gp-ekle" id="gdEkle">＋ Gider Ekle</button>
+      </div>
+      ${giderler.length === 0
+        ? `<div class="gp-bos">Liste boş</div>`
+        : `<div class="tnm-kagit">${bolumlerTam}</div>`}
+    </div>`;
   $('#tnmGeri').onclick = () => git('ayar-tanimlama');
   $('#gdEkle').onclick = () => giderFormu();
   $$('[data-gd]').forEach(b => b.onclick = () => giderFormu(State.giderler.find(g => g.id === b.dataset.gd)));
