@@ -329,7 +329,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '80';
+const APP_SURUM = '81';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -3290,14 +3290,16 @@ SAYFALAR['ayar-ortak'] = function () {
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
-  { id: 'gider', ad: 'Giderler', ikon: '📉' },
+  { id: 'gider', ad: 'Giderler', ikon: '📉', alt: 'Gider kalemleri ve grupları' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
   ic().innerHTML = `
     <div class="tnm-hub">
-      <div class="tnm-tiles">
-        ${TANIMLAR.map(t => `<button type="button" class="tnm-tile" data-tanim="${t.id}">
-          <div class="tnm-tile-ic"><div class="tnm-ic">${t.ikon}</div><div class="tnm-ad">${kacar(t.ad)}</div></div>
+      <div class="tnm-menu">
+        ${TANIMLAR.map(t => `<button type="button" class="tnm-row2" data-tanim="${t.id}">
+          <span class="tnm-ik">${t.ikon}</span>
+          <span class="tnm-metin"><span class="tnm-ad">${kacar(t.ad)}</span><span class="tnm-alt">${kacar(t.alt || '')}</span></span>
+          <span class="tnm-ok">›</span>
         </button>`).join('')}
       </div>
     </div>`;
