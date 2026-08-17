@@ -321,7 +321,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '71';
+const APP_SURUM = '72';
 const APP_SURUM_TARIH = '17 Ağu 2026';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -3269,7 +3269,12 @@ SAYFALAR['ayar-firma'] = function () {
     </div>`;
   const dosya = $('#logoDosya');
   $('#logoSec').onclick = () => dosya.click();
-  dosya.onchange = () => { if (dosya.files[0]) logoDosyaIsle(dosya.files[0]); };
+  dosya.onchange = () => {
+    const f = dosya.files[0]; if (!f) return;
+    // Yakınlaştır/kırp aracı ile kareye oturt (logo her yerde net görünür)
+    fotoKirp(f, (veri) => { DB.ayarYaz({ ...State.ayarlar, logoData: veri }); firmaBilgileriUygula(); git('ayar-firma'); bildir('Logo kaydedildi.', 'basari'); });
+    dosya.value = '';
+  };
   if ($('#logoSil')) $('#logoSil').onclick = () => {
     const yeni = { ...State.ayarlar }; delete yeni.logoData;
     DB.ayarYaz(yeni); firmaBilgileriUygula(); git('ayar-firma'); bildir('Logo kaldırıldı.', 'basari');
@@ -3806,6 +3811,35 @@ function firmaBilgileriUygula() {
   }
   document.title = ad + ' — Ön Muhasebe';
   logoUygula();
+  faviconUygula();
+}
+
+/* Sekme ikonu (favicon) + iOS/Android ana ekran ikonu — yüklenen logo */
+let _maniURL = null;
+function faviconUygula() {
+  const a = State.ayarlar || {};
+  const src = a.logoData;
+  if (!src) return;   // logo yoksa index.html'deki varsayılan kalır
+  const linkAta = (rel) => {
+    let l = document.querySelector(`link[rel="${rel}"]`);
+    if (!l) { l = document.createElement('link'); l.rel = rel; document.head.appendChild(l); }
+    l.href = src;
+  };
+  linkAta('icon');
+  linkAta('apple-touch-icon');
+  try {
+    const ad = (a.firmaAd || 'Green Village Pilates').trim();
+    const mani = {
+      name: ad, short_name: (ad.split(/\s+/)[0] || ad).slice(0, 12),
+      start_url: '.', display: 'standalone', background_color: '#efe6d6', theme_color: '#e7ddca',
+      icons: [{ src, sizes: '240x240', type: 'image/jpeg', purpose: 'any' }],
+    };
+    if (_maniURL) URL.revokeObjectURL(_maniURL);
+    _maniURL = URL.createObjectURL(new Blob([JSON.stringify(mani)], { type: 'application/manifest+json' }));
+    let ml = document.querySelector('link[rel="manifest"]');
+    if (!ml) { ml = document.createElement('link'); ml.rel = 'manifest'; document.head.appendChild(ml); }
+    ml.href = _maniURL;
+  } catch {}
 }
 
 /* Giriş ekranı markası: logo (wordmark/yüklenen) varsa göster ve metin başlığı gizle */
