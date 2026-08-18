@@ -612,6 +612,110 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
   .dsh-c-strip .cell:nth-child(n+2){border-top:1px solid rgba(120,90,20,.1)}
 }
 
+/* ============ Gösterge Paneli — 4 kart + 3 sütun ============ */
+.dsh4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:4px 0 18px}
+.d4{position:relative;border-radius:18px;padding:15px 17px;overflow:hidden;box-shadow:0 16px 32px -20px rgba(74,58,28,.5);border:1px solid rgba(255,255,255,.5)}
+.d4 .ust{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.d4 .ik{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 12px -7px rgba(0,0,0,.3)}
+.d4 .lbl{font-size:11px;font-weight:800;color:rgba(255,255,255,.92);text-transform:uppercase;letter-spacing:.3px}
+.d4 .val{font-family:Georgia,serif;font-weight:800;font-size:22px;color:#fff;font-variant-numeric:tabular-nums;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+.d4 .alt{font-size:10.5px;color:rgba(255,255,255,.72);margin-top:3px}
+.d4 .ring{position:absolute;right:-24px;top:-24px;width:92px;height:92px;border-radius:50%;border:2px solid rgba(255,255,255,.14);pointer-events:none}
+.d4.hak{background:linear-gradient(135deg,#3f6f4a,#5a9668)}.d4.hak .ik{background:rgba(255,255,255,.18)}
+.d4.bnk{background:linear-gradient(135deg,#3a5c86,#5f83b6)}.d4.bnk .ik{background:rgba(255,255,255,.18)}
+.d4.ksa{background:linear-gradient(135deg,#2f8f5b,#63b587)}.d4.ksa .ik{background:rgba(255,255,255,.18)}
+.d4.krt{background:linear-gradient(135deg,#a2453d,#c8756b)}.d4.krt .ik{background:rgba(255,255,255,.18)}
+.dsh3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;align-items:start}
+.blok-bas{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;color:#5a4a24;margin:0 2px 10px}
+.blok-bas .ln{flex:1;height:1px;background:linear-gradient(90deg,rgba(198,154,76,.4),transparent)}
+body.tema-koyu .blok-bas{color:var(--gold)}
+.dsh3 .panel{background:var(--kart);border:1px solid var(--kenar);border-radius:18px;overflow:hidden;box-shadow:0 14px 30px -18px rgba(74,58,28,.36)}
+.panel-bas{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;background:linear-gradient(180deg,#fbf4e4,#f4e9d1);border-bottom:1px solid var(--kenar)}
+body.tema-koyu .panel-bas{background:linear-gradient(180deg,#2c2a20,#26241b)}
+.panel-bas .t{display:flex;align-items:center;gap:8px;font-weight:800;font-size:12.5px;color:#5a4a24}
+body.tema-koyu .panel-bas .t{color:var(--metin)}
+.panel-bas .t .ik{width:25px;height:25px;border-radius:8px;background:rgba(198,154,76,.16);display:grid;place-items:center;font-size:14px}
+.panel-bas .link{font-size:10.5px;font-weight:700;color:#8a6a2a;cursor:pointer;white-space:nowrap}
+body.tema-koyu .panel-bas .link{color:var(--gold)}
+.drs{display:flex;align-items:center;gap:11px;padding:11px 15px;border-top:1px solid var(--kenar);cursor:pointer;transition:background .14s}
+.drs:hover{background:rgba(198,154,76,.07)}
+.drs .gun{flex:0 0 auto;width:52px;text-align:center}
+.drs .gun .g{font-family:Georgia,serif;font-weight:800;font-size:15px;color:#3f6f4a;line-height:1}
+.drs .gun.yarin .g{color:#8a6a2a}
+body.tema-koyu .drs .gun .g{color:#8fce9a}body.tema-koyu .drs .gun.yarin .g{color:#e6c574}
+.drs .gun .a{font-size:9px;color:var(--metin-soluk);font-weight:700;text-transform:uppercase;margin-top:2px}
+.drs .orta{flex:1;min-width:0}
+.drs .orta .bd{font-weight:700;font-size:12px;line-height:1.25}
+.drs .orta .alt{font-size:10.5px;color:var(--metin-soluk);margin-top:1px}
+.drs .chv{color:#c9a94e;font-weight:800;flex:0 0 auto}
+.drs-gun-et{padding:6px 15px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#8a6a2a;background:rgba(198,154,76,.07);border-top:1px solid var(--kenar)}
+body.tema-koyu .drs-gun-et{color:var(--gold)}
+.drs-bos{padding:22px 16px;text-align:center;font-size:12.5px;color:var(--metin-soluk)}
+.ogr-st{display:flex;align-items:center;gap:11px;padding:15px;border-top:1px solid var(--kenar);cursor:pointer;transition:background .14s}
+.ogr-st:first-child{border-top:none}
+.ogr-st:hover{background:rgba(198,154,76,.07)}
+.ogr-st .ik{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.ogr-st.akt .ik{background:linear-gradient(135deg,#dff0e2,#bfe0c6)}
+.ogr-st.pot .ik{background:linear-gradient(135deg,#f6eccf,#e8d59b)}
+.ogr-st.pas .ik{background:linear-gradient(135deg,#f6dcd9,#e6b8b3)}
+.ogr-st .lbl{font-weight:800;font-size:12.5px}
+.ogr-st .alt{font-size:10.5px;color:var(--metin-soluk);margin-top:1px}
+.ogr-st .say{margin-left:auto;font-family:Georgia,serif;font-weight:800;font-size:24px;font-variant-numeric:tabular-nums}
+.ogr-st.akt .say{color:#2f8f5b}.ogr-st.pot .say{color:#a8792f}.ogr-st.pas .say{color:#c0483f}
+@media(max-width:900px){.dsh4{grid-template-columns:1fr 1fr}.dsh3{grid-template-columns:1fr}}
+@media(max-width:440px){.dsh4{grid-template-columns:1fr}}
+
+/* ============ Giderler Raporu ============ */
+.gr-ust{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.gr-ay{display:inline-flex;align-items:center;gap:4px;background:var(--kart);border:1px solid var(--kenar);border-radius:12px;padding:5px 6px;box-shadow:0 6px 16px -12px rgba(74,58,28,.4)}
+.gr-ay button{width:32px;height:32px;border:none;background:transparent;color:var(--gold);font-size:17px;cursor:pointer;border-radius:8px;font-family:inherit}
+.gr-ay button:hover{background:rgba(198,154,76,.14)}
+.gr-ay .ay{font-weight:800;font-size:14px;min-width:120px;text-align:center;color:var(--metin)}
+.gr-karsi{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(198,154,76,.5);background:linear-gradient(180deg,#fffefb,#f6ecd6);color:#8a6a2a;font-weight:800;font-size:12.5px;padding:9px 16px;border-radius:12px;cursor:pointer;font-family:inherit;box-shadow:0 6px 16px -12px rgba(120,90,20,.6)}
+body.tema-koyu .gr-karsi{background:linear-gradient(180deg,#2c2a20,#26241b);color:var(--gold)}
+.gr-karsi.acik{background:linear-gradient(135deg,#c99a2e,#e9c66b);color:#fff;border-color:#c99a2e;box-shadow:0 8px 18px -8px rgba(198,154,76,.7)}
+.gr-karsi .sw{width:30px;height:17px;border-radius:999px;background:rgba(120,90,20,.28);position:relative;transition:.18s;flex:0 0 auto}
+.gr-karsi.acik .sw{background:rgba(255,255,255,.5)}
+.gr-karsi .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.gr-karsi.acik .sw::after{left:15px}
+.gr-kutu{background:var(--kart);border:1px solid var(--kenar);border-radius:18px;overflow:hidden;box-shadow:0 16px 34px -22px rgba(74,58,28,.4)}
+.gr-grp{border-top:1px solid var(--kenar)}.gr-grp:first-child{border-top:none}
+.gr-grpbas{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(180deg,#fbf4e4,#f4e9d1);cursor:pointer}
+body.tema-koyu .gr-grpbas{background:linear-gradient(180deg,#2c2a20,#26241b)}
+.gr-grpbas .ad{display:flex;align-items:center;gap:9px;font-weight:800;font-size:13.5px;color:#5a4a24}
+body.tema-koyu .gr-grpbas .ad{color:var(--metin)}
+.gr-grpbas .ad .ik{width:26px;height:26px;border-radius:8px;background:rgba(198,154,76,.16);display:grid;place-items:center;font-size:14px}
+.gr-grpbas .top{font-family:Georgia,serif;font-weight:800;font-size:15px;color:#c0483f;font-variant-numeric:tabular-nums}
+.gr-sat{display:flex;align-items:center;justify-content:space-between;padding:11px 18px 11px 34px;border-top:1px solid var(--kenar);cursor:pointer;transition:background .14s}
+.gr-sat:hover{background:rgba(198,154,76,.08)}
+.gr-sat .ad{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--metin)}
+.gr-sat .ad .nk{width:6px;height:6px;border-radius:50%;background:#c9a94e;flex:0 0 auto}
+.gr-sat .sag{display:flex;align-items:center;gap:12px}
+.gr-sat .tut{font-family:Georgia,serif;font-weight:800;font-size:13.5px;color:#c0483f;font-variant-numeric:tabular-nums}
+.gr-sat .cnt{font-size:11px;color:var(--metin-soluk);font-weight:700}
+.gr-sat .chev{color:#c9a94e;font-size:15px;opacity:.55}
+.gr-dip{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#2f3b30,#26302a);color:#f3ecd8}
+.gr-dip .k{font-weight:800;font-size:13.5px;letter-spacing:.4px}
+.gr-dip .v{font-family:Georgia,serif;font-weight:800;font-size:22px;background:linear-gradient(135deg,#fff,#f6e6ad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.krs-tablo{width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px}
+.krs-tablo th,.krs-tablo td{padding:11px 14px;text-align:right}
+.krs-tablo th:first-child,.krs-tablo td:first-child{text-align:left}
+.krs-tablo thead th{background:linear-gradient(180deg,#fbf4e4,#f2e6cd);color:#5a4a24;font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--kenar)}
+body.tema-koyu .krs-tablo thead th{background:linear-gradient(180deg,#2c2a20,#26241b);color:var(--metin)}
+.krs-tablo th.gun{color:#2f8f5b}
+.krs-grpbas td{background:#f7efe0;font-weight:800;color:#5a4a24;border-top:1px solid var(--kenar)}
+body.tema-koyu .krs-grpbas td{background:#2a271d;color:var(--metin)}
+.krs-tablo tbody td{border-top:1px solid var(--kenar);font-variant-numeric:tabular-nums}
+.krs-tablo tbody td.num{font-family:Georgia,serif;font-weight:700;color:#7a5a20}
+body.tema-koyu .krs-tablo tbody td.num{color:#cdba86}
+.krs-tablo tbody td.num.guncel{color:#c0483f;font-weight:800}
+.krs-tablo tbody tr:hover td{background:rgba(198,154,76,.06)}
+.krs-dip td{background:linear-gradient(135deg,#2f3b30,#26302a);color:#f3ecd8;font-family:Georgia,serif;font-weight:800;font-size:14px}
+.krs-dip td:first-child{font-family:inherit;letter-spacing:.4px}
+.gk-detay-kap{padding:2px}
+.gk-detay-kap .ogr-tablo tfoot td{font-weight:800;background:rgba(198,154,76,.08);border-top:2px solid var(--kum)}
+@media(max-width:560px){.gr-ust{gap:10px}.gr-ay .ay{min-width:104px}}
+
 /* ============ Ayarlar — Gold Premium ============ */
 .gp-sar{display:flex;justify-content:center;padding:6px 0}
 .gp-anim{animation:tnmGir .4s ease both}
