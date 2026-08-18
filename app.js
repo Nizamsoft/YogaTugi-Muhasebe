@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '108';
+const APP_SURUM = '109';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '12:28';
+const APP_SURUM_SAAT = '12:49';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3261,9 +3261,9 @@ SAYFALAR['ayar-firma'] = function () {
   const a = State.ayarlar || {};
   const logoVar = !!a.logoData;
   ic().innerHTML = `
-    <div class="gp-sar">
-      <button type="button" class="tnm-geri" id="fbGeri" style="margin-bottom:12px">‹ Tanımlamalar</button>
-      <div class="gp-kart"><div class="gp-ic">
+    <div class="tnm-kol">
+      <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="fbGeri">‹ Tanımlamalar</button></div>
+      <div class="gp-kart gp-anim"><div class="gp-ic">
         <div class="gp-head"><div class="kk">Firma</div><h2>Firma Bilgileri</h2></div>
         <div class="gp-logo-alan">
           <div class="gp-logo-kare">
@@ -3314,14 +3314,13 @@ SAYFALAR['ayar-ortak'] = function () {
     </div></div>`;
   }).join('');
   ic().innerHTML = `
-    <button type="button" class="tnm-geri" id="obGeri" style="margin-bottom:12px">‹ Tanımlamalar</button>
-    <div class="gp-ort-ust">
-      <span class="say">👥 ${list.length} ortak</span>
+    <div class="tnm-scr-ust">
+      <button type="button" class="tnm-geri" id="obGeri">‹ Tanımlamalar</button>
       <button type="button" class="gp-ekle" id="ortEkle">＋ Ortak Ekle</button>
     </div>
     ${list.length === 0
       ? `<div class="gp-bos">Henüz ortak yok. “＋ Ortak Ekle” ile ekleyin.</div>`
-      : `<div class="gp-ort-grid">${kartlar}</div>`}`;
+      : `<div class="gp-ort-grid gp-anim">${kartlar}</div>`}`;
   $('#obGeri').onclick = () => git('ayar-tanimlama');
   $('#ortEkle').onclick = () => ortakFormu();
   $$('[data-duzenle]').forEach(b => b.onclick = () => ortakFormu(State.ortaklar.find(o => o.id === b.dataset.duzenle)));
@@ -3643,8 +3642,12 @@ function egitmenAv(id, cls) {
 
 SAYFALAR['ogrenciler'] = function () {
   const hepsi = State.ogrenciler || [];
-  const ogr = hepsi.filter(o => o.durum === 'ogrenci');
+  const bitmis = (o) => { const m = ogrenciMetrik(o); return m.dersToplam > 0 && m.kalanDers <= 0; };
+  const ogrAll = hepsi.filter(o => o.durum === 'ogrenci');
+  const ogr = ogrAll.filter(o => !bitmis(o));
+  const pasif = ogrAll.filter(o => bitmis(o));
   const pot = hepsi.filter(o => o.durum !== 'ogrenci');
+  if (ogrenciAktifSekme === 'pasif' && !pasif.length) ogrenciAktifSekme = 'ogrenci';
 
   const barHTML = (kullanilan, toplam, tur) => {
     const y = toplam > 0 ? Math.max(0, Math.min(100, (kullanilan / toplam) * 100)) : 0;
@@ -3674,6 +3677,18 @@ SAYFALAR['ogrenciler'] = function () {
       <td data-l="Görüşülen Tarih">${tarihKisa(o.olusturma)}</td>
       <td class="sag"><span class="ogr-arac"><button type="button" class="ogr-ata" data-oata="${o.id}">Paket Ata</button><button type="button" data-osil="${o.id}" title="Sil">🗑️</button></span></td>
     </tr>`;
+  const pasifSatir = (o) => {
+    const m = ogrenciMetrik(o);
+    const paketler = o.paketler || [];
+    const sonPaket = paketler.length ? `<span class="ogr-pk">${kacar(paketler[paketler.length - 1].paketAd)}</span>` : '<span class="ogr-soluk">—</span>';
+    return `<tr class="ogr-satir" data-odetay="${o.id}">
+      <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-bilg"><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="ogr-tel">${kacar(o.telefon || '')}</span></span></span></td>
+      <td data-l="Eğitmeni"><span class="ogr-egit">${egitmenAv(o.egitmenId, 'ogr-ea')}${kacar(egitmenAdiById(o.egitmenId))}</span></td>
+      <td data-l="Son Paket">${sonPaket}</td>
+      <td data-l="Kalan Ders" class="sag"><span class="ogr-metrik"><span class="rakam">${m.kalanDers}<span class="top"> / ${m.dersToplam}</span></span><span class="ogr-bar bitti"><span style="width:100%"></span></span></span></td>
+      <td class="sag"><span class="ogr-arac"><button type="button" class="ogr-ata" data-oata="${o.id}">Paket Ata</button><button type="button" data-osil="${o.id}" title="Sil">🗑️</button></span></td>
+    </tr>`;
+  };
 
   const ogrenciTablo = ogr.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
@@ -3685,17 +3700,25 @@ SAYFALAR['ogrenciler'] = function () {
         <thead><tr><th>Öğrenci</th><th>Tel</th><th>Görüşülen Tarih</th><th></th></tr></thead>
         <tbody>${pot.map(potSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Bekleyen potansiyel müşteri yok.</div>`;
+  const pasifTablo = pasif.length
+    ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Son Paket</th><th class="sag">Kalan Ders</th><th></th></tr></thead>
+        <tbody>${pasif.map(pasifSatir).join('')}</tbody></table></div></div>`
+    : `<div class="gp-bos">Dersi biten pasif öğrenci yok.</div>`;
 
+  const govde = ogrenciAktifSekme === 'potansiyel' ? potTablo
+    : ogrenciAktifSekme === 'pasif' ? pasifTablo : ogrenciTablo;
   ic().innerHTML = `
     <div class="ogr-sayfa">
       <div class="ogr-ust">
         <div class="ogr-seg">
-          <button type="button" class="${ogrenciAktifSekme === 'ogrenci' ? 'sec' : ''}" data-sekme="ogrenci">Öğrenciler <span class="rk">${ogr.length}</span></button>
-          <button type="button" class="${ogrenciAktifSekme === 'potansiyel' ? 'sec' : ''}" data-sekme="potansiyel">Potansiyel <span class="rk">${pot.length}</span></button>
+          <button type="button" class="seg-akt ${ogrenciAktifSekme === 'ogrenci' ? 'sec' : ''}" data-sekme="ogrenci">Aktif <span class="rk">${ogr.length}</span></button>
+          <button type="button" class="seg-pot ${ogrenciAktifSekme === 'potansiyel' ? 'sec' : ''}" data-sekme="potansiyel">Potansiyel <span class="rk">${pot.length}</span></button>
+          <button type="button" class="seg-pas ${ogrenciAktifSekme === 'pasif' ? 'sec' : ''}" data-sekme="pasif">Pasif <span class="rk">${pasif.length}</span></button>
         </div>
         <button type="button" class="gp-ekle" id="yeniUyelikBtn">＋ Yeni Üyelik Oluştur</button>
       </div>
-      ${ogrenciAktifSekme === 'ogrenci' ? ogrenciTablo : potTablo}
+      ${govde}
     </div>`;
 
   $('#yeniUyelikBtn').onclick = yeniUyelikBaslat;
@@ -5113,7 +5136,10 @@ const KL_GUNCELLEME = [
   { q: 'solda açılan sayfalar', not: 'Sol menü açık/sıcak temaya çevrildi; “Ayarlar” grubu kaldırılıp Firma Bilgileri, Ortak Bilgileri, Üyelikler ve Giderler tek “Tanımlamalar” sayfasında toplandı.' },
   { q: 'ortakların ilgili ay', not: 'Yeni “Ortaklar” sayfası eklendi: ay seçimli büyük kare kartlar; tıkla-aç ile Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacağı, Giderler Payı (eşit bölüşüm), Komisyon (0) ve Verilecek Pay (tahsilat − gider − komisyon). Ortak fotoğrafları isimlerin yanında da gösteriliyor.' },
   { q: 'altın çerçeve', not: 'Kapalı karttaki “Verilecek Pay” özeti alt alta dizildi (tutar taşmıyor). Bir kart açıkken yanındaki kapalı kartların altında kalan beyazlık giderildi (kartlar esnemiyor). Akordeon: aynı anda tek ortak açık; açık olanın etrafı altın çerçeve, başkasına tıklayınca o kapanıp tıklanan açılıyor.' },
+  { q: 'açılan yapıdaki', not: 'Açık ortak kartındaki “Verilecek Pay” kutusu da alt alta dizildi (etiket üstte, tutar altta büyük ve ortalı) → büyük tutarlar taşmıyor.' },
   { q: 'sığmamış', not: 'Kapalı karttaki “Verilecek Pay” özeti alt alta dizildi (tutar taşmıyor). Bir kart açıkken yanındaki kapalı kartların altında kalan beyazlık giderildi. Akordeon: aynı anda tek ortak açık ve etrafı altın çerçeve.' },
+  { q: 'tanımlamalar düğmesi', not: 'Firma ve Ortak Bilgileri sayfaları Üyelikler/Giderler gibi sola hizalandı ve açılışta tnmGir animasyonuyla geliyor. Firma’daki kocaman/hatalı “‹ Tanımlamalar” düğmesi, Üyelikler’deki gibi küçük hap düğmeye çevrildi.' },
+  { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
