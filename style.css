@@ -997,6 +997,17 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .gs-oge.sec{background:linear-gradient(135deg,#fbf1d4,#f6e6ad);color:#a8792f}
 .gs-nokta{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:linear-gradient(135deg,#d3a84a,#a8792f)}
 .gs-oge .tik{margin-left:auto;color:#2f8f5b;font-weight:800}
+/* Gider modalı: form ile seç ekranı AYNI boyutta kalsın (kutu oynamaz) + kayma animasyonu */
+.gd-flow{height:clamp(316px,52vh,462px);display:flex;flex-direction:column;gap:13px}
+.gd-flow-form{overflow-y:auto;overflow-x:hidden}
+.gd-flow-form.gd-geri{animation:gdGeri .22s ease}
+.gd-flow-sec{overflow:hidden}
+.gd-flow-sec.gd-anim{animation:gdIleri .22s ease}
+.gd-flow-sec .gs-liste{flex:1;max-height:none}
+.gs-geri-btn{width:100%;justify-content:center;padding:12px 16px;font-size:15px;font-weight:800;color:#a8792f}
+@keyframes gdIleri{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes gdGeri{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.gd-flow-sec.gd-anim,.gd-flow-form.gd-geri{animation:none}}
 .od-tutar{font-weight:800;color:#4e7a52}
 .od-borc{font-weight:800;color:#b1483f}
 .od-borc.ok{color:#4e7a52}

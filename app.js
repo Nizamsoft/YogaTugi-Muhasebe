@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '116';
+const APP_SURUM = '117';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '15:01';
+const APP_SURUM_SAAT = '15:16';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4546,12 +4546,13 @@ SAYFALAR['giderler'] = function () {
 function giderKayitFormu() {
   // Form durumu tek yerde tutulur; "Gider Seç" ayrı ekrana geçince kaybolmaz
   const st = { tarih: bugunISO(), secId: null, secAd: '', secGrupAd: '', aciklama: '', sekli: 'banka', tutar: '', ortak: null };
-  giderFormCiz(st);
+  modalAc('Yeni Gider', giderFormGovde(st), giderFormAlt(), `<span class="hr-rozet">📉 Gider</span>`);
+  giderFormBagla(st, false);
 }
-function giderFormCiz(st) {
+function giderFormGovde(st) {
   const ortakChip = (o) => `<span class="kisi-chip ${(o && st.ortak === o.id) || (!o && !st.ortak) ? 'sec' : ''}" data-ortk="${o ? o.id : ''}">${o ? kacar(egitmenKisaAd(o)) : '👥 Tüm ortaklar'}</span>`;
-  const govde = `
-    <div class="gp-alan"><label>Tarih</label><input type="date" class="gp-inp" id="gkTarih" value="${st.tarih}"></div>
+  return `<div class="gd-flow gd-flow-form">
+    <div class="gp-alan"><label>Tarih</label><button type="button" class="pa-trig" id="gkTarih"><span id="gkTarihAd">${fmtTarihUzun(st.tarih)}</span><span class="ok">📅</span></button></div>
     <div class="gp-alan"><label>Gider Grubu</label>
       <button type="button" class="gd-trig" id="gkTrig"><span id="gkSecAd" class="${st.secId ? '' : 'gd-soluk'}">${st.secId ? kacar(st.secAd) : 'Gider seç…'}</span><span class="ok">›</span></button>
     </div>
@@ -4562,10 +4563,15 @@ function giderFormCiz(st) {
     <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="gkTutar" value="${kacar(st.tutar)}" inputmode="numeric" placeholder="0 ₺" style="text-align:right;font-weight:700" autocomplete="off"></div>
     <div class="gp-alan" style="margin:0"><label>Giderin Ait Olduğu Kişi</label>
       <div class="kisi-sat" id="gkKisi">${ortakChip(null)}${State.ortaklar.filter(o => o.aktif !== false).map(ortakChip).join('')}</div>
-    </div>`;
-  modalAc('Yeni Gider', govde, `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet">💾 Kaydet</button>`, `<span class="hr-rozet">📉 Gider</span>`);
-  const oku = () => { st.tarih = $('#gkTarih').value || bugunISO(); st.aciklama = $('#gkAciklama').value; st.tutar = $('#gkTutar').value; };
-  $('#gkTrig').onclick = () => { oku(); giderSecCiz(st); };   // form aynı boyutta "Gider Seç" ekranına dönüşür
+    </div>
+  </div>`;
+}
+function giderFormAlt() { return `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet">💾 Kaydet</button>`; }
+function giderFormBagla(st, geri) {
+  if (geri) { const f = $('.gd-flow-form'); if (f) f.classList.add('gd-geri'); }
+  const oku = () => { st.aciklama = $('#gkAciklama').value; st.tutar = $('#gkTutar').value; };
+  $('#gkTarih').onclick = () => tarihSecici(st.tarih, (iso) => { st.tarih = iso; $('#gkTarihAd').textContent = fmtTarihUzun(iso); });
+  $('#gkTrig').onclick = () => { oku(); giderSecAc(st); };   // form aynı boyutta "Gider Seç" ekranına dönüşür (animasyonlu)
   $('#gkSekli').onclick = (e) => { const b = e.target.closest('[data-sek]'); if (!b) return; st.sekli = b.dataset.sek; $$('#gkSekli button').forEach(x => x.classList.toggle('sec', x === b)); };
   $('#gkKisi').onclick = (e) => { const c = e.target.closest('[data-ortk]'); if (!c) return; st.ortak = c.dataset.ortk || null; $$('#gkKisi .kisi-chip').forEach(x => x.classList.toggle('sec', x === c)); };
   tutarKutusuBagla($('#gkTutar'));
@@ -4582,31 +4588,39 @@ function giderFormCiz(st) {
     modalKapat(); bildir('Gider kaydedildi.', 'basari'); SAYFALAR['giderler']();
   };
 }
-function giderSecCiz(st) {
+function giderSecListe(st, filtre) {
   const gruplar = State.giderGruplari, giderler = State.giderler;
-  const listeHTML = (filtre) => {
-    const f = (filtre || '').toLocaleLowerCase('tr');
-    const uy = (it) => !f || (it.ad || '').toLocaleLowerCase('tr').includes(f);
-    const kalem = (it) => `<div class="gs-oge ${st.secId === it.id ? 'sec' : ''}" data-gk="${it.id}"><span class="gs-nokta"></span>${kacar(it.ad)}${st.secId === it.id ? '<span class="tik">✓</span>' : ''}</div>`;
-    let html = '';
-    gruplar.forEach(gr => { const its = giderler.filter(x => x.grupId === gr.id && uy(x)); if (its.length) html += `<div class="gs-grp">📁 ${kacar(gr.ad)}</div>` + its.map(kalem).join(''); });
-    const grupsuz = giderler.filter(x => (!x.grupId || !gruplar.some(g => g.id === x.grupId)) && uy(x));
-    if (grupsuz.length) html += `<div class="gs-grp">📁 Diğer</div>` + grupsuz.map(kalem).join('');
-    return html || '<div class="gd-bos">Sonuç yok. “Tanımlamalar › Giderler”den ekleyebilirsin.</div>';
-  };
-  const govde = `
-    <button type="button" class="gs-geri" id="gsGeri">‹ Gider Ekle</button>
-    <div class="gs-ara"><span class="gs-ara-ik">🔍</span><input type="text" id="gsAra" placeholder="Gider ara…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
-    <div class="gs-liste" id="gsListe">${listeHTML('')}</div>`;
-  modalAc('Gider Seç', govde, null, `<span class="hr-rozet">📉 Gider</span>`);
-  $('#gsGeri').onclick = () => giderFormCiz(st);
-  $('#gsAra').addEventListener('input', () => { $('#gsListe').innerHTML = listeHTML($('#gsAra').value); });
+  const f = (filtre || '').toLocaleLowerCase('tr');
+  const uy = (it) => !f || (it.ad || '').toLocaleLowerCase('tr').includes(f);
+  const kalem = (it) => `<div class="gs-oge ${st.secId === it.id ? 'sec' : ''}" data-gk="${it.id}"><span class="gs-nokta"></span>${kacar(it.ad)}${st.secId === it.id ? '<span class="tik">✓</span>' : ''}</div>`;
+  let html = '';
+  gruplar.forEach(gr => { const its = giderler.filter(x => x.grupId === gr.id && uy(x)); if (its.length) html += `<div class="gs-grp">📁 ${kacar(gr.ad)}</div>` + its.map(kalem).join(''); });
+  const grupsuz = giderler.filter(x => (!x.grupId || !gruplar.some(g => g.id === x.grupId)) && uy(x));
+  if (grupsuz.length) html += `<div class="gs-grp">📁 Diğer</div>` + grupsuz.map(kalem).join('');
+  return html || '<div class="gd-bos">Sonuç yok. “Tanımlamalar › Giderler”den ekleyebilirsin.</div>';
+}
+// Kutuyu yeniden yaratmadan yalnızca içerik değişir → boyut sabit kalır, geçiş animasyonlu
+function giderSecAc(st) {
+  const u = $('#modalKap .modal-ust h3'); if (u) u.textContent = 'Gider Seç';
+  $('#modalKap .modal-govde').innerHTML = `<div class="gd-flow gd-flow-sec gd-anim">
+      <div class="gs-ara"><span class="gs-ara-ik">🔍</span><input type="text" id="gsAra" placeholder="Gider ara…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+      <div class="gs-liste" id="gsListe">${giderSecListe(st, '')}</div></div>`;
+  $('#modalKap .modal-alt').innerHTML = `<button class="btn gs-geri-btn" id="gsGeri">‹ Gider Ekle</button>`;
+  $('#gsGeri').onclick = () => giderFormAc(st);
+  $('#gsAra').addEventListener('input', () => { $('#gsListe').innerHTML = giderSecListe(st, $('#gsAra').value); });
   $('#gsListe').onclick = (e) => {
     const o = e.target.closest('[data-gk]'); if (!o) return;
     const it = State.giderler.find(x => x.id === o.dataset.gk); if (!it) return;
     st.secId = it.id; st.secAd = it.ad; const gr = State.giderGruplari.find(g => g.id === it.grupId); st.secGrupAd = gr ? gr.ad : '';
-    giderFormCiz(st);
+    giderFormAc(st);
   };
+  setTimeout(() => { const a = $('#gsAra'); if (a) a.focus(); }, 60);
+}
+function giderFormAc(st) {
+  const u = $('#modalKap .modal-ust h3'); if (u) u.textContent = 'Yeni Gider';
+  $('#modalKap .modal-govde').innerHTML = giderFormGovde(st);
+  $('#modalKap .modal-alt').innerHTML = giderFormAlt();
+  giderFormBagla(st, true);
 }
 
 function odemeAlModal() {
@@ -5344,6 +5358,9 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'takvim uygulamaya özel', not: 'Gider formundaki tarih alanı, Dersler/Tahsilatlar’daki gibi uygulamaya özel takvime çevrildi (native tarih kutusu kaldırıldı). Bundan sonra formlarda bu takvim kullanılacak (Prompt kurallarına 10. madde olarak eklendi).' },
+  { q: 'tık diye', not: 'Gider Seç ekranı artık “tık” diye değil, kayarak (animasyonlu) açılıp kapanıyor.' },
+  { q: 'aynısı gibi dursun', not: 'Gider Ekle ile Gider Seç ekranları artık birebir aynı boyutta (kutu yeniden yaratılmıyor, gövde sabit yükseklikte, ikisinde de aynı yükseklikte footer var) — geçişte kutu oynamıyor.' },
   { q: 'gider seçilirken genişleme olmasın', not: 'Gider Grubu seçimi artık formu genişletmiyor; “Gider Ekle” ile aynı boyutta ayrı bir “Gider Seç” ekranına dönüşüyor (arama + gruplu liste). Seçince forma geri dönülüyor ve girilen tarih/açıklama/ödeme/tutar/kişi korunuyor.' },
   { q: 'prompt oluştur düğmesi yeni ile kontrolünkü ayrı', not: 'Kontrol Listesi’nde Prompt butonu sekmeye göre ayrıldı: Kontrol sekmesinde “Kontrol Promptu” (yalnız sorunlar + düzeltmeler), Yeni sekmesinde “Yeni İstek Promptu” (yalnız yeni istekler). Birine basınca ikisi birden gelmiyor.' },
   { q: 'giderleri herkes yönetebilir', not: 'Giderler sayfası artık yalnızca admine özel değil; ortaklar da girip gider ekleyip yönetebiliyor.' },
@@ -5568,6 +5585,7 @@ function klPromptKopyala() {
   t += '7) Uygulama aşırı hızlı ve çok akıcı çalışsın.\n';
   t += '8) Formlarda Enter’a basınca bir sonraki alana/girişe geçilsin.\n';
   t += '9) Yaptığın her düzeltme/güncellemeyi ilgili maddenin altına “Yapılan Güncelleme: ...” olarak yaz.\n';
+  t += '10) Formlarda tarih için uygulamaya özel takvimi (Dersler/Giderler’deki gibi) kullan; native tarih kutusu kullanma. Ayrı seçim ekranları form ile AYNI boyutta ve animasyonlu (kayarak) açılsın; kutu oynamasın.\n';
   if (sorunlar.length || yeniIstekler.length || dongu.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
   const tasindi = tab === 'yeni' ? yeniIstekler.length : dongu.length;
   const tamam = () => bildir(tasindi ? (tab === 'yeni' ? `Kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : `Kopyalandı — ${tasindi} geri bildirim döngüye eklendi.`) : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
