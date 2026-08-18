@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '124';
+const APP_SURUM = '125';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '17:40';
+const APP_SURUM_SAAT = '18:15';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -637,7 +637,6 @@ const ic = () => $('#icerik');
 let dashDonem = buAy();   // Gösterge Paneli'nde görüntülenen dönem
 SAYFALAR.dashboard = function () {
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
-  const renk = ['g', 'b', 'p', 'a'];
 
   /* --- Metrikler: kendini gör (varsayılan) veya tüm ortaklar --- */
   const veri = ortakAyHesap(dashDonem);
@@ -657,64 +656,52 @@ SAYFALAR.dashboard = function () {
   };
   const eksi = (n) => n ? '−' + TL(n) : TL(0);
 
-  /* --- Sol kişi kartı --- */
+  /* --- Hero kişi (sol) --- */
   const benimOrtak = benim ? State.ortaklar.find(o => o.id === benim) : null;
   let kisiFotoIc, kisiIsim, kisiRol;
   if (!hepsi && benimOrtak) {
-    kisiIsim = benimOrtak.ad; kisiRol = 'Eğitmen';
+    kisiIsim = benimOrtak.ad; kisiRol = 'Eğitmen · ' + donemAdi(dashDonem);
     kisiFotoIc = benimOrtak.foto ? `<img src="${benimOrtak.foto}" alt="${kacar(benimOrtak.ad)}">` : kacar(bas(benimOrtak.ad));
   } else {
     const a = State.ayarlar || {};
     kisiIsim = (a.firmaAd || '').trim() || 'Green Village Pilates';
-    kisiRol = 'Tüm Ekip';
+    kisiRol = 'Tüm Ekip · ' + donemAdi(dashDonem);
     kisiFotoIc = a.logoData ? `<img src="${a.logoData}" alt="logo">` : 'GV';
   }
 
-  /* --- Metrik kartı --- */
-  const kart = (sayfa, ik, ikCls, lbl, val, valCls, ipuc) =>
-    `<div class="mk" data-git="${sayfa}"><div class="mk-ic"><span class="git">${ipuc} ›</span><div class="ik ${ikCls}">${ik}</div><div class="lbl">${lbl}</div><div class="val ${valCls}">${val}</div></div></div>`;
-  const mgrid = `
-    ${kart('ogrenciler', '👥', 'i-yesil',   'Aktif Öğrenci',   M.aktifOgrenci,     'v-koyu',    'Öğrenciler')}
-    ${kart('dersler',    '📅', 'i-mavi',    'Verdiği Ders',    M.verdigiDers,      'v-koyu',    'Dersler')}
-    ${kart('odemeler',   '✅', 'i-yesil',   'Tahsil Edilen',   TL(M.tahsil),       'v-yesil',   'Tahsilat')}
-    ${kart('ogrenciler', '⏳', 'i-gold',    'Kalan Alacak',    TL(M.kalanAlacak),  'v-gold',    'Öğrenciler')}
-    ${kart('giderler',   '➗', 'i-kirmizi', 'Giderler Payı',   eksi(M.giderPayi),  'v-kirmizi', 'Giderler')}
-    ${kart('odemeler',   '🏦', 'i-kirmizi', 'Komisyon Gideri', eksi(M.komisyon),   'v-kirmizi', 'Tahsilat')}
-    <div class="mk hero" data-git="ortaklar"><div class="mk-ic"><div class="sol"><div class="ik">💰</div><div><div class="lbl">Verilecek Pay</div><div class="val"${M.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(M.verilecek)}</div></div></div><span class="git" style="position:static;opacity:.75">Ortaklar ›</span></div></div>`;
-
-  /* --- Ekibimiz (mevcut) --- */
-  let list = State.ortaklar.filter(o => o.aktif !== false);
-  if (!adminMi()) list = list.filter(o => o.id === benId());
-  const ekipKartlar = list.map((o, i) => {
-    const foto = o.foto
-      ? `<div class="altin-foto"><img src="${o.foto}" alt="${kacar(o.ad)}"></div>`
-      : `<div class="altin-foto ${renk[i % 4]}">${kacar(bas(o.ad))}</div>`;
-    return `<div class="altin-kart altin-sade">${foto}<div class="altin-isim">${kacar(o.ad)}</div><div class="altin-rol">Eğitmen</div></div>`;
-  }).join('');
+  /* --- İstatistik hücresi (Verilecek Pay hariç 6 metrik) --- */
+  const hucre = (sayfa, ik, ikCls, renkCls, lbl, val, valCls) =>
+    `<div class="cell c-${renkCls}" data-git="${sayfa}"><div class="ik ${ikCls}">${ik}</div><div><div class="lbl">${lbl}</div><div class="val ${valCls}">${val}</div></div><span class="chev">›</span></div>`;
+  const serit = `
+    ${hucre('ogrenciler', '👥', 'i-yesil',   'yesil',   'Aktif Öğrenci',   M.aktifOgrenci,     'v-koyu')}
+    ${hucre('dersler',    '📅', 'i-mavi',    'mavi',    'Verdiği Ders',    M.verdigiDers,      'v-koyu')}
+    ${hucre('odemeler',   '✅', 'i-yesil',   'yesil',   'Tahsil Edilen',   TL(M.tahsil),       'v-yesil')}
+    ${hucre('ogrenciler', '⏳', 'i-gold',    'gold',    'Kalan Alacak',    TL(M.kalanAlacak),  'v-gold')}
+    ${hucre('giderler',   '➗', 'i-kirmizi', 'kirmizi', 'Giderler Payı',   eksi(M.giderPayi),  'v-kirmizi')}
+    ${hucre('odemeler',   '🏦', 'i-kirmizi', 'kirmizi', 'Komisyon Gideri', eksi(M.komisyon),   'v-kirmizi')}`;
 
   ic().innerHTML = `
-    <div class="dsh-top">
-      <div class="dsh-kisi">
-        <div class="dsh-foto"><div class="ic">${kisiFotoIc}</div></div>
-        <div class="dsh-isim">${kacar(kisiIsim)}</div>
-        <div class="dsh-rol">${kacar(kisiRol)}</div>
-      </div>
-      <div class="dsh-sag">
-        <div class="dsh-sagust">
-          <span class="dsh-baslik">Aylık Özet</span>
-          <div class="dsh-arac">
-            ${ortakGosterBtnHTML()}
-            <div class="ay-nav"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(dashDonem)}</span><button type="button" data-ay="1">›</button></div>
-          </div>
+    <div class="dsh-c">
+      <div class="dsh-c-bar">
+        <span class="dsh-c-title">Aylık Özet</span>
+        <div class="dsh-c-arac">
+          ${ortakGosterBtnHTML()}
+          <div class="ay-nav"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(dashDonem)}</span><button type="button" data-ay="1">›</button></div>
         </div>
-        <div class="mgrid">${mgrid}</div>
       </div>
-    </div>
-    <div class="ortakkart" style="margin-top:20px">
-      <div class="ok-head"><h3>🤝 Ekibimiz</h3><span class="dn">${list.length} ortak</span></div>
-      ${list.length === 0
-        ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Bilgileri”nden ekleyin.')
-        : `<div class="altin-izgara">${ekipKartlar}</div>`}
+      <div class="dsh-c-hero" data-git="ortaklar">
+        <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
+        <div class="l">
+          <div class="foto"><div class="ic">${kisiFotoIc}</div></div>
+          <div><div class="ad">${kacar(kisiIsim)}</div><div class="rol">${kacar(kisiRol)}</div></div>
+        </div>
+        <div class="r">
+          <div class="et">💰 Verilecek Pay</div>
+          <div class="vv"${M.verilecek < 0 ? ' style="color:#ffb9b0;-webkit-text-fill-color:#ffb9b0"' : ''}>${TL(M.verilecek)}</div>
+          <div class="alt">Tahsilat − Giderler − Komisyon</div>
+        </div>
+      </div>
+      <div class="dsh-c-strip">${serit}</div>
     </div>`;
 
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
@@ -5471,7 +5458,7 @@ const KL_GUNCELLEME = [
   { q: 'dersler kartları', not: 'Dersler durumları renkli kelime hapı oldu (Planlanan sarı · Gerçekleşen yeşil · İptal kırmızı) ve sekmeler renklendirildi; seçili olan parlıyor + altın çerçeve.' },
   { q: 'pasifte kimse yokken', not: 'Pasif sekmesini boşken otomatik Aktif’e çeviren davranış kaldırıldı. Artık Pasif’e basınca sekme Pasif’te kalıyor ve “Pasif öğrenci yok.” mesajı gösteriliyor.' },
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
-  { q: 'aktif öğrenci', not: 'Gösterge Paneli yeniden tasarlandı: solda gold çerçeveli kişi fotoğrafı + adı (Eğitmen), sağda kompakt premium gold metrik kartları — Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri ve altta geniş “Verilecek Pay”. Üstte ay seçimi ve (ortak girişinde) “Ortakları göster” anahtarı var: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı gelir (admin hep hepsini görür). Her karta tıklayınca ilgili sayfaya gidiyor (Öğrenciler/Dersler/Tahsilatlar/Giderler/Ortaklar). Altta mevcut “Ekibimiz” kartları duruyor.' },
+  { q: 'aktif öğrenci', not: 'Gösterge Paneli “Spotlight + İstatistik Şeridi” (C) tasarımıyla yeniden yapıldı — düz/kaba kartlar kaldırıldı, alttaki “Ekibimiz” bölümü çıkarıldı. Üstte büyük koyu hero: solda gold çerçeveli kişi (ad + rol/ay), sağda “Verilecek Pay” altın gradyan yazıyla + altında “Tahsilat − Giderler − Komisyon”; köşede ince altın halkalar. Altında tek panelde 6 istatistik hücresi (Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri) — her hücrede kategori renginde sol vurgu şeridi, üstüne gelince › oku. Karta/satıra tıkla → ilgili sayfa; hero → Ortaklar. Ay seçimi + (ortak girişinde) “Ortakları göster” anahtarı: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı; admin hep hepsini görür.' },
   { q: 'ders takibi', not: 'Sol menü Ana ▸ Alt başlık olarak gruplandı: Gösterge Paneli (tekil, üstte öne çıkan) · Ders Takibi ▸ Dersler/Öğrenciler · Muhasebe ▸ Tahsilatlar/Giderler/Ortaklar · Ayarlar ▸ Tanımlamalar (yalnızca admin). Görsel iyileştirme: açık grubun başlığı altın tonlu zemin + sol altın şerit; alt öğeleri bağlayan ince altın kılavuz çizgisi ve her öğede altın nokta; seçili öğe yeşil. Gruplar akordeon (birine basınca açılır, diğeri kapanır); bir alt sayfaya gidince grubu otomatik açılır.' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
 ];
