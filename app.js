@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '109';
+const APP_SURUM = '110';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '12:49';
+const APP_SURUM_SAAT = '13:03';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5139,6 +5139,8 @@ const KL_GUNCELLEME = [
   { q: 'açılan yapıdaki', not: 'Açık ortak kartındaki “Verilecek Pay” kutusu da alt alta dizildi (etiket üstte, tutar altta büyük ve ortalı) → büyük tutarlar taşmıyor.' },
   { q: 'sığmamış', not: 'Kapalı karttaki “Verilecek Pay” özeti alt alta dizildi (tutar taşmıyor). Bir kart açıkken yanındaki kapalı kartların altında kalan beyazlık giderildi. Akordeon: aynı anda tek ortak açık ve etrafı altın çerçeve.' },
   { q: 'tanımlamalar düğmesi', not: 'Firma ve Ortak Bilgileri sayfaları Üyelikler/Giderler gibi sola hizalandı ve açılışta tnmGir animasyonuyla geliyor. Firma’daki kocaman/hatalı “‹ Tanımlamalar” düğmesi, Üyelikler’deki gibi küçük hap düğmeye çevrildi.' },
+  { q: 'akışı anlatarak', not: 'Kontrol Listesi artık döngü çalışıyor: her madde İstek → Yapıldı → Geri bildirim → Yapıldı… zinciri olarak birikiyor. ✗ ile açıklama eklersin, “Prompt Kopyala” bu zinciri konuşma gibi (İSTEK/YAPILDI/GERİ BİLDİRİM) anlatarak üretir; ✓ ile onaylayana kadar döngü sürer.' },
+  { q: 'döngü gitsin', not: 'Kontrol Listesi artık döngü çalışıyor: madde İstek → Yapıldı → Geri bildirim zinciri olarak birikiyor; Prompt Kopyala akışı anlatarak üretiyor, ✓ onaya kadar sürüyor.' },
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
 ];
 function klGuncellemeBul(metin) {
@@ -5146,8 +5148,21 @@ function klGuncellemeBul(metin) {
   const e = KL_GUNCELLEME.find(x => n.includes(x.q));
   return e ? e.not : '';
 }
+// Bir "yeni istek" maddesinin döngü zinciri: Yapıldı + (Geri bildirim → Yapıldı)…
+// (ilk İSTEK satırı satırın kendi metnidir, buraya dahil değil)
+function klZincir(y) {
+  const z = [];
+  const y0 = klGuncellemeBul(y.metin); if (y0) z.push({ rol: 'yapildi', metin: y0 });
+  (y.geriler || []).forEach(g => {
+    const gm = typeof g === 'string' ? g : (g && g.metin) || '';
+    if (!gm) return;
+    z.push({ rol: 'geri', metin: gm });
+    const yg = klGuncellemeBul(gm); if (yg) z.push({ rol: 'yapildi', metin: yg });
+  });
+  return z;
+}
 let KL_DURUM = {};       // {id:{d:'ok'|'no', n:'not'}}
-let KL_YENI = [];        // [{id, baslik, metin}] — kullanıcının eklediği istekler
+let KL_YENI = [];        // [{id, baslik, metin, geriler:[], gonderildi}] — kullanıcının eklediği istekler + döngü
 let KL_TAB = 'kontrol';  // 'kontrol' | 'yeni'
 let KL_GOSTER = false;   // tamamlananları göster (varsayılan gizli)
 function klYukle() {
@@ -5162,7 +5177,7 @@ function klGonderilen() { return KL_YENI.filter(y => y.gonderildi); }       // K
 function klGruplar() {   // yerleşik gruplar + Kontrol'e taşınan "Yeni Eklenenler"
   const gruplar = KONTROL_LISTE.map(g => ({ ad: g.ad, ikon: g.ikon, maddeler: g.maddeler.map(m => ({ id: m[0], metin: m[1], alt: m[2] || '' })) }));
   const gond = klGonderilen();
-  if (gond.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: gond.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true, gun: klGuncellemeBul(y.metin) })) });
+  if (gond.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: gond.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true, zincir: klZincir(y) })) });
   return gruplar;
 }
 function klSayac() {
@@ -5186,10 +5201,15 @@ function kontrolAc() { kontrolKur(); klCiz(); document.body.classList.add('kl-ac
 function kontrolKapat() { document.body.classList.remove('kl-acik'); }
 function klRowHTML(md) {
   const d = KL_DURUM[md.id] || {}; const durum = d.d || '';
+  const zincir = (md.zincir || []).map(t => t.rol === 'yapildi'
+    ? `<div class="kl-tur yap"><span class="rol">✅ Yapıldı</span>${kacar(t.metin)}</div>`
+    : `<div class="kl-tur ger"><span class="rol">↩ Geri bildirim</span>${kacar(t.metin)}</div>`).join('');
+  const yerTut = md.yeni ? 'Yeni geri bildirim ekle…' : 'Sorunu kısaca yaz…';
+  const istekEt = md.yeni ? '<span class="kl-tur-rol istek">İstek</span>' : '';
   return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}" data-id="${md.id}">
-      <span class="kl-mt">${kacar(md.metin)}${md.yeni ? '<span class="kl-yroz">yeni</span>' : ''}${md.alt ? `<small>${kacar(md.alt)}</small>` : ''}</span>
-      <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var">✗</button></span>
-    </div>${durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="Sorunu kısaca yaz…" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}${md.gun ? `<div class="kl-gun"><b>✅ Yapılan Güncelleme:</b> ${kacar(md.gun)}</div>` : ''}`;
+      <span class="kl-mt">${istekEt}${kacar(md.metin)}${md.yeni ? '<span class="kl-yroz">yeni</span>' : ''}${md.alt ? `<small>${kacar(md.alt)}</small>` : ''}</span>
+      <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor / Onayla">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var / Geri bildirim">✗</button></span>
+    </div>${zincir}${durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="${yerTut}" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}`;
 }
 function klKontrolGovde() {
   const html = klGruplar().map(g => {
@@ -5286,19 +5306,31 @@ function klCiz() {
   }
 }
 function klPromptKopyala() {
-  const sorunlar = [], yeniIstekler = [];
+  const sorunlar = [], yeniIstekler = [], dongu = [];
   const durumOf = (id) => (KL_DURUM[id] && KL_DURUM[id].d) || '';
   for (const g of KONTROL_LISTE) for (const [id, metin] of g.maddeler) { if (durumOf(id) === 'no') sorunlar.push({ grup: g.ad, metin, not: (KL_DURUM[id].n || '').trim() }); }
   for (const y of KL_YENI) {
     if (!y.gonderildi) { yeniIstekler.push({ grup: y.baslik || 'Genel', metin: y.metin }); continue; }   // bekleyen → yeni istek
-    if (durumOf(y.id) === 'no') sorunlar.push({ grup: y.baslik || 'Yeni', metin: y.metin, not: (KL_DURUM[y.id].n || '').trim() });
+    const geri = durumOf(y.id) === 'no' ? (KL_DURUM[y.id].n || '').trim() : '';
+    if (geri) dongu.push({ y, geri });   // ✗ + açıklama → döngünün yeni geri bildirimi
   }
   const s = klSayac();
   let t = `GREEN VILLAGE PILATES — KONTROL RAPORU (Sürüm ${APP_SURUM})\n`;
-  t += `Çalışıyor: ${s.ok}/${s.top} · Sorun: ${sorunlar.length} · Yeni istek: ${yeniIstekler.length}\n`;
+  t += `Çalışıyor: ${s.ok}/${s.top} · Sorun: ${sorunlar.length} · Yeni istek: ${yeniIstekler.length} · Düzeltme: ${dongu.length}\n`;
   if (sorunlar.length) { t += '\nSORUNLAR:\n'; sorunlar.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}${x.not ? ` — ${x.not}` : ''}\n`; }); }
   if (yeniIstekler.length) { t += '\nYENİ İSTEKLER:\n'; yeniIstekler.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}\n`; }); }
-  if (!sorunlar.length && !yeniIstekler.length) t += '\nİşaretli sorun/istek yok. ✓\n';
+  if (dongu.length) {
+    t += '\nDÜZELTMELER (döngü — istek → yapıldı → geri bildirim):\n';
+    dongu.forEach((x, i) => {
+      t += `\n${i + 1}) [${x.y.baslik || 'Genel'}]\n`;
+      t += `   İSTEK: ${x.y.metin}\n`;
+      klZincir(x.y).forEach(tr => { t += `   ${tr.rol === 'yapildi' ? 'YAPILDI' : 'GERİ BİLDİRİM'}: ${tr.metin}\n`; });
+      t += `   GERİ BİLDİRİM: ${x.geri}\n`;
+      t += `   → Lütfen son geri bildirimi uygula.\n`;
+    });
+    t += '\n(Bu maddeler bir döngüdür: ben ✓ ile onaylayana kadar İSTEK → YAPILDI → GERİ BİLDİRİM olarak sürer.)\n';
+  }
+  if (!sorunlar.length && !yeniIstekler.length && !dongu.length) t += '\nİşaretli sorun/istek yok. ✓\n';
   t += '\nKURALLAR (her düzeltmede uy):\n';
   t += '1) Önce tasarımı (önizleme) ilet, onay alınca kodla.\n';
   t += '2) Sıcak yeşil/kum/gold temayı ve mevcut tasarımı bozma.\n';
@@ -5309,13 +5341,16 @@ function klPromptKopyala() {
   t += '7) Uygulama aşırı hızlı ve çok akıcı çalışsın.\n';
   t += '8) Formlarda Enter’a basınca bir sonraki alana/girişe geçilsin.\n';
   t += '9) Yaptığın her düzeltme/güncellemeyi ilgili maddenin altına “Yapılan Güncelleme: ...” olarak yaz.\n';
-  if (sorunlar.length || yeniIstekler.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
-  const tasindi = yeniIstekler.length;
-  const tamam = () => bildir(tasindi ? `Rapor kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
+  if (sorunlar.length || yeniIstekler.length || dongu.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
+  const tasindi = yeniIstekler.length + dongu.length;
+  const tamam = () => bildir(tasindi ? `Rapor kopyalandı — ${tasindi} madde döngüye/Kontrol’e taşındı.` : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(tamam).catch(() => klPromptGoster(t));
   else klPromptGoster(t);
-  // Prompt oluşturulunca bekleyen istekler Kontrol'e (Yeni Eklenenler) kayar
-  if (tasindi) { KL_YENI.forEach(y => { if (!y.gonderildi) y.gonderildi = true; }); klYeniKaydet(); klCiz(); }
+  // Prompt oluşturulunca: bekleyen istekler Kontrol'e kayar; döngü geri bildirimleri zincire eklenir
+  let degisti = false;
+  KL_YENI.forEach(y => { if (!y.gonderildi) { y.gonderildi = true; degisti = true; } });
+  dongu.forEach(x => { x.y.geriler = x.y.geriler || []; x.y.geriler.push(x.geri); delete KL_DURUM[x.y.id]; degisti = true; });
+  if (degisti) { klYeniKaydet(); klKaydet(); klCiz(); }
 }
 function klPromptGoster(t) {
   modalAc('Kontrol Raporu', `<textarea class="gp-inp" id="klRapor" style="width:100%;box-sizing:border-box;min-height:220px;font-family:monospace;font-size:12px">${kacar(t)}</textarea><p class="soluk" style="font-size:12px;margin-top:8px">Metni seç, kopyala ve sohbete yapıştır.</p>`, `<button class="btn" id="klRaporKapat">Kapat</button>`);
