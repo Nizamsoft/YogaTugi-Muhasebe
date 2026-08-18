@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '118';
+const APP_SURUM = '119';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '15:33';
+const APP_SURUM_SAAT = '15:50';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5359,6 +5359,8 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'grup başlığında gitsin', not: 'Kontrol Listesi yeniden düzenlendi: “Yeni Eklenenler” yığını kaldırıldı; yeni maddeler artık kendi ANA başlığının grubuna giriyor (yerleşik grup varsa ona ekleniyor, yeni başlık kendi grubu oluyor). Ana başlık altında ALT başlık kademesi var. Ayrıca maddenin “akışı” (İstek→Yapıldı→Geri bildirim + not) madde içinde akordeon oldu: madde kapalı gelir, üstüne basınca akış açılır; ✗’e basınca otomatik açılıp not kutusu gelir. Başlıklar sabit. Yeni eklerken Ana + Alt başlık seçiliyor.' },
+  { q: 'o kısımlar daralsın', not: 'Maddenin altındaki akış (cevap/geçmiş) artık akordeon: kapalı gelir, maddeye basınca açılır. Başlıklar daralmıyor.' },
   { q: 'aynı boyutta olsun', not: 'Tüm veri-giriş ve seçim pencereleri tek standart boya getirildi (Gider, Ders, Tahsilat, Yeni Üyelik/Üye, Paket Ata/Seç, Üye Seç, Ortak/Üyelik/Gider tanımı, Kullanıcı Girişi, Öğrenci Düzenle/Detay). Adımlar arası artık büyüyüp küçülmüyor; footer düğmeleri de eşit yükseklikte. Gider formu bu boyla yeterince uzadığı için “Giderin Ait Olduğu Kişi” alanı artık kaydırmasız görünüyor. Küçük “Sil?/Onay” kutuları küçük kaldı. (Prompt’a 11. kural olarak eklendi.)' },
   { q: 'altta kalmış', not: 'Formlar standart (daha uzun) boya alındığı için Gider formundaki “Ait Olduğu Kişi” alanı artık altta sıkışmıyor, tam görünüyor; tüm formlar aynı boyutta.' },
   { q: 'takvim uygulamaya özel', not: 'Gider formundaki tarih alanı, Dersler/Tahsilatlar’daki gibi uygulamaya özel takvime çevrildi (native tarih kutusu kaldırıldı). Bundan sonra formlarda bu takvim kullanılacak (Prompt kurallarına 10. madde olarak eklendi).' },
@@ -5405,7 +5407,8 @@ function klZincir(y) {
   return z;
 }
 let KL_DURUM = {};       // {id:{d:'ok'|'no', n:'not'}}
-let KL_YENI = [];        // [{id, baslik, metin, geriler:[], gonderildi}] — kullanıcının eklediği istekler + döngü
+let KL_ACIK = new Set(); // akışı açık maddeler (id) — madde içi akordeon
+let KL_YENI = [];        // [{id, baslik, altBaslik, metin, geriler:[], gonderildi}] — kullanıcının eklediği istekler + döngü
 let KL_TAB = 'kontrol';  // 'kontrol' | 'yeni'
 let KL_GOSTER = false;   // tamamlananları göster (varsayılan gizli)
 function klYukle() {
@@ -5417,11 +5420,20 @@ function klKaydet() { try { localStorage.setItem('yt_kontrol', JSON.stringify(KL
 function klYeniKaydet() { try { localStorage.setItem('yt_kontrol_yeni', JSON.stringify(KL_YENI)); } catch {} }
 function klBekleyen() { return KL_YENI.filter(y => !y.gonderildi); }        // Yeni sekmesindeki (henüz prompt'a verilmemiş)
 function klGonderilen() { return KL_YENI.filter(y => y.gonderildi); }       // Kontrol'e taşınmış
-function klGruplar() {   // yerleşik gruplar + Kontrol'e taşınan "Yeni Eklenenler"
-  const gruplar = KONTROL_LISTE.map(g => ({ ad: g.ad, ikon: g.ikon, maddeler: g.maddeler.map(m => ({ id: m[0], metin: m[1], alt: m[2] || '' })) }));
-  const gond = klGonderilen();
-  if (gond.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: gond.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true, zincir: klZincir(y) })) });
-  return gruplar;
+function klGruplar() {   // Ana başlık → Alt başlık → maddeler (yeni istekler kendi grubuna girer)
+  const anaMap = new Map();
+  const anaEkle = (ad, ikon) => {
+    if (!anaMap.has(ad)) anaMap.set(ad, { ad, ikon: ikon || '✨', altMap: new Map(), altSira: [] });
+    const a = anaMap.get(ad); if (ikon && a.ikon === '✨') a.ikon = ikon; return a;
+  };
+  const altEkle = (ana, altAd, md) => {
+    const key = altAd || '';
+    if (!ana.altMap.has(key)) { ana.altMap.set(key, []); ana.altSira.push(key); }
+    ana.altMap.get(key).push(md);
+  };
+  for (const g of KONTROL_LISTE) { const ana = anaEkle(g.ad, g.ikon); for (const m of g.maddeler) altEkle(ana, '', { id: m[0], metin: m[1], alt: m[2] || '' }); }
+  for (const y of klGonderilen()) { const ana = anaEkle(y.baslik || 'Genel', '✨'); altEkle(ana, y.altBaslik || '', { id: y.id, metin: y.metin, yeni: true, zincir: klZincir(y) }); }
+  return [...anaMap.values()].map(a => ({ ad: a.ad, ikon: a.ikon, altlar: a.altSira.map(k => ({ alt: k, maddeler: a.altMap.get(k) })) }));
 }
 function klSayac() {
   let top = 0, ok = 0, no = 0;
@@ -5448,26 +5460,35 @@ function klRowHTML(md) {
     ? `<div class="kl-tur yap"><span class="rol">✅ Yapıldı</span>${kacar(t.metin)}</div>`
     : `<div class="kl-tur ger"><span class="rol">↩ Geri bildirim</span>${kacar(t.metin)}</div>`).join('');
   const yerTut = md.yeni ? 'Yeni geri bildirim ekle…' : 'Sorunu kısaca yaz…';
+  const noteHTML = durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="${yerTut}" rows="2">${kacar(d.n || '')}</textarea></div>` : '';
+  const akisHTML = (zincir || noteHTML) ? `<div class="kl-akis">${zincir}${noteHTML}</div>` : '';
+  const acilir = !!akisHTML;                       // altında akış/not var mı → açılabilir
+  const acik = acilir && KL_ACIK.has(md.id);
   const istekEt = md.yeni ? '<span class="kl-tur-rol istek">İstek</span>' : '';
-  return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}" data-id="${md.id}">
-      <span class="kl-mt">${istekEt}${kacar(md.metin)}${md.yeni ? '<span class="kl-yroz">yeni</span>' : ''}${md.alt ? `<small>${kacar(md.alt)}</small>` : ''}</span>
-      <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor / Onayla">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var / Geri bildirim">✗</button></span>
-    </div>${zincir}${durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="${yerTut}" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}`;
+  const akisRoz = (md.zincir && md.zincir.length) ? '<span class="kl-akis-say">akış</span>' : '';
+  const ok = acilir ? '<span class="kl-rok">›</span>' : '<span class="kl-rok bos"></span>';
+  return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}${acik ? ' acik' : ''}${acilir ? ' acilir' : ''}" data-id="${md.id}">
+      <div class="kl-rbas"${acilir ? ` data-rowtgl="${md.id}"` : ''}>${ok}<span class="kl-mt">${istekEt}${kacar(md.metin)}${md.yeni ? '<span class="kl-yroz">yeni</span>' : ''}${md.alt ? `<small>${kacar(md.alt)}</small>` : ''}</span>${akisRoz}
+        <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor / Onayla">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var / Geri bildirim">✗</button></span>
+      </div>${akisHTML}</div>`;
 }
 function klKontrolGovde() {
+  const durumOf = (id) => (KL_DURUM[id] && KL_DURUM[id].d) || '';
   const html = klGruplar().map(g => {
-    let go = 0; const top = g.maddeler.length;
-    const rows = g.maddeler.map(md => {
-      const durum = (KL_DURUM[md.id] && KL_DURUM[md.id].d) || '';
-      if (durum === 'ok') go++;
-      if (durum === 'ok' && !KL_GOSTER) return '';   // tamamlananları gizle
-      return klRowHTML(md);
-    }).join('');
+    const tumMd = g.altlar.reduce((s, a) => s.concat(a.maddeler), []);
+    const top = tumMd.length;
+    let go = 0, gn = 0; tumMd.forEach(md => { const dd = durumOf(md.id); if (dd === 'ok') go++; else if (dd === 'no') gn++; });
     if (top > 0 && go === top && !KL_GOSTER) return '';   // tümü biten grubu gizle
-    let gn = 0; for (const md of g.maddeler) if ((KL_DURUM[md.id] && KL_DURUM[md.id].d) === 'no') gn++;
+    const altHTML = g.altlar.map(a => {
+      const rows = a.maddeler.map(md => { const dd = durumOf(md.id); if (dd === 'ok' && !KL_GOSTER) return ''; return klRowHTML(md); }).join('');
+      if (!rows) return '';
+      const altBas = a.alt ? `<div class="kl-alt">${kacar(a.alt)}<span class="kl-alt-cz"></span></div>` : '';
+      return altBas + rows;
+    }).join('');
+    if (!altHTML) return '';
     const kalan = top - go;
     const say = `✓${go}${gn ? ` · ✗${gn}` : ''}${kalan > 0 ? ` · ${kalan} kaldı` : ''}`;
-    return `<div class="kl-grp"><div class="kl-grp-bas">${g.ikon} ${kacar(g.ad)} <span class="kl-gsay">${say}</span></div>${rows}</div>`;
+    return `<div class="kl-grp"><div class="kl-grp-bas">${g.ikon} ${kacar(g.ad)} <span class="kl-gsay">${say}</span></div>${altHTML}</div>`;
   }).join('');
   return html || '<div class="kl-bos2">Hepsi tamamlandı 🎉<br>“Tamamlananları göster”i açabilirsin.</div>';
 }
@@ -5478,12 +5499,17 @@ function klYeniGovde() {
     + ozel.map(b => `<option value="${kacar(b)}">✨ ${kacar(b)}</option>`).join('');
   const bekleyen = klBekleyen();
   const liste = bekleyen.length
-    ? bekleyen.map(y => `<div class="kl-yit" data-yid="${y.id}"><span class="kl-ycol"><span class="kl-ybas">${kacar(y.baslik || 'Genel')}</span><span class="kl-ytxt">${kacar(y.metin)}</span></span><span class="kl-yarac"><button type="button" data-yduz="${y.id}" title="Düzenle">✎</button><button type="button" data-ysil="${y.id}" title="Sil">🗑️</button></span></div>`).join('')
+    ? bekleyen.map(y => `<div class="kl-yit" data-yid="${y.id}"><span class="kl-ycol"><span class="kl-ybas">${kacar(y.baslik || 'Genel')}${y.altBaslik ? ' › ' + kacar(y.altBaslik) : ''}</span><span class="kl-ytxt">${kacar(y.metin)}</span></span><span class="kl-yarac"><button type="button" data-yduz="${y.id}" title="Düzenle">✎</button><button type="button" data-ysil="${y.id}" title="Sil">🗑️</button></span></div>`).join('')
     : '<div class="kl-bos2">Henüz istek yok.<br>Ekle → “Prompt Kopyala” ile Kontrol’e geçer.</div>';
+  const altlar = [...new Set(KL_YENI.map(y => (y.altBaslik || '').trim()).filter(Boolean))];
+  const altOpts = altlar.map(a => `<option value="${kacar(a)}">${kacar(a)}</option>`).join('');
   return `<div class="kl-yform">
-    <label class="kl-lbl">Başlık (grup)</label>
-    <select class="kl-sel" id="klYbaslik"><option value="__yeni">＋ Yeni Başlık…</option>${opts}</select>
-    <input type="text" class="kl-inp" id="klYbaslikYeni" placeholder="Yeni başlık adı…" hidden>
+    <label class="kl-lbl">Ana Başlık (grup)</label>
+    <select class="kl-sel" id="klYbaslik"><option value="__yeni">＋ Yeni Ana Başlık…</option>${opts}</select>
+    <input type="text" class="kl-inp" id="klYbaslikYeni" placeholder="Yeni ana başlık adı…" hidden>
+    <label class="kl-lbl">Alt Başlık <span style="font-weight:600;text-transform:none;color:var(--metin-soluk)">(opsiyonel)</span></label>
+    <select class="kl-sel" id="klYalt"><option value="">(Alt başlık yok)</option>${altOpts}<option value="__yeni">＋ Yeni Alt Başlık…</option></select>
+    <input type="text" class="kl-inp" id="klYaltYeni" placeholder="Yeni alt başlık adı…" hidden>
     <label class="kl-lbl">Ne istiyorsun?</label>
     <textarea class="kl-ta" id="klYmetin" placeholder="Örn. Derslere “tekrarla” butonu ekle; aynı ders ertesi hafta otomatik oluşsun."></textarea>
     <button type="button" class="kl-ekle" id="klYekle">＋ İsteği Ekle</button>
@@ -5518,26 +5544,40 @@ function klCiz() {
   const tgl = document.getElementById('klTgl');
   if (tgl) tgl.onclick = () => { KL_GOSTER = !KL_GOSTER; localStorage.setItem('yt_kontrol_goster', KL_GOSTER ? '1' : '0'); klCiz(); };
   // Kontrol: ✓/✗ + not
-  panel.querySelectorAll('.kl-ib').forEach(b => b.onclick = () => {
+  panel.querySelectorAll('.kl-ib').forEach(b => b.onclick = (e) => {
+    e.stopPropagation();   // satır akordeonunu tetikleme
     const id = b.closest('.kl-row').dataset.id, k = b.dataset.k;
     const cur = (KL_DURUM[id] && KL_DURUM[id].d) || '';
     if (cur === k) delete KL_DURUM[id]; else KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: k });
+    if (KL_DURUM[id] && KL_DURUM[id].d === 'no') KL_ACIK.add(id);   // ✗ → akış açılsın (not yazılır)
     klKaydet(); klCiz();
     if (KL_DURUM[id] && KL_DURUM[id].d === 'no') { const ta = panel.querySelector(`[data-note="${id}"]`); if (ta) ta.focus(); }
+  });
+  // Madde akordeonu: başlığa basınca akış aç/kapa (yumuşak, yeniden çizmeden)
+  panel.querySelectorAll('[data-rowtgl]').forEach(el => el.onclick = (e) => {
+    if (e.target.closest('.kl-ib')) return;
+    const id = el.dataset.rowtgl, row = el.closest('.kl-row');
+    if (KL_ACIK.has(id)) KL_ACIK.delete(id); else KL_ACIK.add(id);
+    row.classList.toggle('acik');
   });
   panel.querySelectorAll('[data-note]').forEach(ta => ta.addEventListener('input', () => { const id = ta.dataset.note; KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: 'no', n: ta.value }); klKaydet(); }));
   // Yeni: form + istek yönetimi
   const sel = document.getElementById('klYbaslik');
   if (sel) {
     const yb = document.getElementById('klYbaslikYeni');
+    const alt = document.getElementById('klYalt');
+    const altYeni = document.getElementById('klYaltYeni');
     const senk = () => { yb.hidden = sel.value !== '__yeni'; };
-    senk();   // açılışta seçili değere göre başlık kutusunu göster/gizle (hata düzeltmesi)
+    const senkAlt = () => { altYeni.hidden = alt.value !== '__yeni'; };
+    senk(); senkAlt();
     sel.onchange = () => { senk(); if (!yb.hidden) yb.focus(); };
+    alt.onchange = () => { senkAlt(); if (!altYeni.hidden) altYeni.focus(); };
     document.getElementById('klYekle').onclick = () => {
       const baslik = sel.value === '__yeni' ? (yb.value.trim() || 'Genel') : sel.value;
+      const altBaslik = alt.value === '__yeni' ? altYeni.value.trim() : (alt.value || '');
       const metin = document.getElementById('klYmetin').value.trim();
       if (!metin) return bildir('Ne istediğini yaz.', 'hata');
-      KL_YENI.push({ id: 'kly_' + yeniId(), baslik, metin });
+      KL_YENI.push({ id: 'kly_' + yeniId(), baslik, altBaslik, metin });
       klYeniKaydet(); klCiz();
     };
     panel.querySelectorAll('[data-ysil]').forEach(b => b.onclick = () => { const id = b.dataset.ysil; KL_YENI = KL_YENI.filter(x => x.id !== id); delete KL_DURUM[id]; klYeniKaydet(); klKaydet(); klCiz(); });
@@ -5545,8 +5585,13 @@ function klCiz() {
       const y = KL_YENI.find(x => x.id === b.dataset.yduz); if (!y) return;
       KL_YENI = KL_YENI.filter(x => x.id !== y.id); delete KL_DURUM[y.id]; klYeniKaydet(); klKaydet(); KL_TAB = 'yeni'; klCiz();
       const sel2 = document.getElementById('klYbaslik'), yb2 = document.getElementById('klYbaslikYeni'), mt2 = document.getElementById('klYmetin');
+      const alt2 = document.getElementById('klYalt'), altY2 = document.getElementById('klYaltYeni');
       const bilinen = Array.from(sel2.options).some(o => o.value === y.baslik);
       if (bilinen) { sel2.value = y.baslik; yb2.hidden = true; } else { sel2.value = '__yeni'; yb2.hidden = false; yb2.value = y.baslik; }
+      const ab = y.altBaslik || '';
+      if (!ab) { alt2.value = ''; altY2.hidden = true; }
+      else if (Array.from(alt2.options).some(o => o.value === ab)) { alt2.value = ab; altY2.hidden = true; }
+      else { alt2.value = '__yeni'; altY2.hidden = false; altY2.value = ab; }
       mt2.value = y.metin; mt2.focus();
     });
   }
@@ -5556,7 +5601,7 @@ function klPromptKopyala() {
   const sorunlar = [], yeniIstekler = [], dongu = [];
   const durumOf = (id) => (KL_DURUM[id] && KL_DURUM[id].d) || '';
   if (tab === 'yeni') {
-    for (const y of KL_YENI) if (!y.gonderildi) yeniIstekler.push({ grup: y.baslik || 'Genel', metin: y.metin });
+    for (const y of KL_YENI) if (!y.gonderildi) yeniIstekler.push({ grup: (y.baslik || 'Genel') + (y.altBaslik ? ' › ' + y.altBaslik : ''), metin: y.metin });
   } else {
     for (const g of KONTROL_LISTE) for (const [id, metin] of g.maddeler) { if (durumOf(id) === 'no') sorunlar.push({ grup: g.ad, metin, not: (KL_DURUM[id].n || '').trim() }); }
     for (const y of KL_YENI) { if (!y.gonderildi) continue; const geri = durumOf(y.id) === 'no' ? (KL_DURUM[y.id].n || '').trim() : ''; if (geri) dongu.push({ y, geri }); }
@@ -5569,7 +5614,7 @@ function klPromptKopyala() {
   if (dongu.length) {
     t += '\nDÜZELTMELER (döngü — istek → yapıldı → geri bildirim):\n';
     dongu.forEach((x, i) => {
-      t += `\n${i + 1}) [${x.y.baslik || 'Genel'}]\n`;
+      t += `\n${i + 1}) [${(x.y.baslik || 'Genel') + (x.y.altBaslik ? ' › ' + x.y.altBaslik : '')}]\n`;
       t += `   İSTEK: ${x.y.metin}\n`;
       klZincir(x.y).forEach(tr => { t += `   ${tr.rol === 'yapildi' ? 'YAPILDI' : 'GERİ BİLDİRİM'}: ${tr.metin}\n`; });
       t += `   GERİ BİLDİRİM: ${x.geri}\n`;

@@ -1686,8 +1686,21 @@ body.kl-acik .kl-fab{opacity:0;pointer-events:none}
 .kl-grp{margin-top:8px}
 .kl-grp-bas{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:#a8792f;text-transform:uppercase;letter-spacing:.3px;padding:8px 2px 4px}
 .kl-gsay{color:var(--metin-soluk);letter-spacing:0;font-size:11px}
-.kl-row{display:flex;align-items:center;gap:9px;padding:9px 3px;border-top:1px solid var(--kenar);font-size:13px}
+.kl-row{border-top:1px solid var(--kenar);font-size:13px}
 .kl-grp .kl-row:first-of-type{border-top:none}
+.kl-rbas{display:flex;align-items:center;gap:9px;padding:9px 3px}
+.kl-row.acilir .kl-rbas{cursor:pointer}
+.kl-rok{flex:0 0 auto;width:12px;text-align:center;color:#a8792f;font-size:13px;font-weight:800;transition:transform .2s}
+.kl-rok.bos{visibility:hidden}
+.kl-row.acik .kl-rok{transform:rotate(90deg)}
+.kl-akis-say{flex:0 0 auto;font-size:10px;font-weight:700;color:var(--metin-soluk);background:#f2ead9;border-radius:999px;padding:1px 8px}
+.kl-akis{display:none;padding:0 3px 4px 24px}
+.kl-row.acik .kl-akis{display:block;animation:klAkis .2s ease}
+@keyframes klAkis{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.kl-row.acik .kl-akis{animation:none}}
+/* alt başlık (ana grup içinde) */
+.kl-alt{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:800;color:#a8792f;text-transform:uppercase;letter-spacing:.4px;padding:9px 3px 3px}
+.kl-alt-cz{flex:1;height:1px;background:var(--kenar)}
 .kl-mt{flex:1;min-width:0}
 .kl-mt small{display:block;font-size:11px;color:var(--metin-soluk);margin-top:1px}
 .kl-row.ok .kl-mt{color:var(--metin-soluk);text-decoration:line-through}
