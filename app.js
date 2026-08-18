@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '106';
+const APP_SURUM = '107';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '12:00';
+const APP_SURUM_SAAT = '12:15';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -503,6 +503,7 @@ const MENU = [
   { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
   { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
   { id: 'odemeler', ad: 'Ödemeler', ikon: '💰', baslik: 'Ödemeler' },
+  { id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar' },
   { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: '🗂️', baslik: 'Tanımlamalar' },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
@@ -3331,6 +3332,56 @@ SAYFALAR['ayar-ortak'] = function () {
   }));
 };
 
+/* -------- ORTAKLAR: aylık pay / hakediş -------- */
+let ortakDonem = buAy();
+let ortakAcikSet = new Set();
+function ogrenciEgitmenId(oid) { const o = State.ogrenciler.find(x => x.id === oid); return o ? o.egitmenId : null; }
+function ortakAyHesap(donem) {
+  const aktif = State.ortaklar.filter(o => o.aktif !== false);
+  const ayGider = (State.giderler || []).filter(g => donemStr(g.tarih) === donem).reduce((s, g) => s + (Number(g.tutar) || 0), 0);
+  const giderPayi = aktif.length ? ayGider / aktif.length : 0;   // eşit bölüşüm
+  return aktif.map(o => {
+    const dersler = (State.dersler || []).filter(d => d.egitmenId === o.id && d.durum === 'gerceklesti' && donemStr(d.tarih) === donem);
+    const ogrSet = new Set();
+    dersler.forEach(d => { const kk = (d.dusumler && d.dusumler.length) ? d.dusumler.map(x => x.ogrenciId) : (d.ogrenciIds || []); kk.forEach(id => ogrSet.add(id)); });
+    const tahsil = (State.odemeler || []).filter(od => donemStr(od.tarih) === donem && ogrenciEgitmenId(od.ogrenciId) === o.id).reduce((s, od) => s + (Number(od.tutar) || 0), 0);
+    const kalanAlacak = State.ogrenciler.filter(x => x.egitmenId === o.id).reduce((s, x) => s + (x.paketler || []).reduce((a, p) => a + (Number(p.kalanOdeme) || 0), 0), 0);
+    const komisyon = 0;
+    const verilecek = tahsil - giderPayi - komisyon;
+    return { o, aktifOgrenci: ogrSet.size, verdigiDers: dersler.length, tahsil, kalanAlacak, giderPayi, komisyon, verilecek };
+  });
+}
+SAYFALAR['ortaklar'] = function () {
+  const veri = ortakAyHesap(ortakDonem);
+  const kart = (r, i) => {
+    const acik = ortakAcikSet.has(r.o.id);
+    const foto = r.o.foto ? `<img src="${r.o.foto}" alt="${kacar(r.o.ad)}">` : `<span class="ok-mono">${basHarf(r.o.ad)}</span>`;
+    const eksi = (n) => n ? '−' + TL(n) : TL(0);
+    const detay = `<div class="ok-detay">
+        <div class="ok-sr"><span class="et">👥 Aktif Öğrenci</span><span class="v">${r.aktifOgrenci}</span></div>
+        <div class="ok-sr"><span class="et">📅 Verdiği Ders</span><span class="v">${r.verdigiDers}</span></div>
+        <div class="ok-sr"><span class="et">✅ Tahsil Edilen</span><span class="v green">${TL(r.tahsil)}</span></div>
+        <div class="ok-sr"><span class="et">⏳ Kalan Alacağı</span><span class="v gold">${TL(r.kalanAlacak)}</span></div>
+        <div class="ok-sr"><span class="et">➗ Giderler Payı</span><span class="v red">${eksi(r.giderPayi)}</span></div>
+        <div class="ok-sr"><span class="et">🏦 Komisyon Gideri</span><span class="v red">${eksi(r.komisyon)}</span></div>
+        <div class="ok-sonuc"><span class="k">💰 Verilecek Pay</span><span class="v"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>
+      </div>`;
+    const ozet = `<div class="ok-ozet"><span class="lbl">💰 Verilecek Pay</span><span class="val"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>`;
+    return `<div class="ok-kart f${i % 4} ${acik ? 'acik' : ''}" data-ok="${r.o.id}">
+      <div class="ok-kare"><div class="ok-foto">${foto}</div><span class="ok-isim">${kacar(r.o.ad)}</span></div>
+      ${acik ? detay : ozet}
+    </div>`;
+  };
+  ic().innerHTML = `
+    <div class="ortk-ust">
+      <span class="ortk-bas">Ortaklar</span>
+      <div class="ay-nav"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(ortakDonem)}</span><button type="button" data-ay="1">›</button></div>
+    </div>
+    ${veri.length ? `<div class="ok-grid">${veri.map(kart).join('')}</div>` : `<div class="gp-bos">Henüz ortak yok. Tanımlamalar › Ortak Bilgileri’nden ekleyin.</div>`}`;
+  $$('[data-ay]').forEach(b => b.onclick = () => { ortakDonem = donemKaydir(ortakDonem, Number(b.dataset.ay)); SAYFALAR['ortaklar'](); });
+  $$('[data-ok]').forEach(c => c.onclick = () => { const id = c.dataset.ok; if (ortakAcikSet.has(id)) ortakAcikSet.delete(id); else ortakAcikSet.add(id); SAYFALAR['ortaklar'](); });
+};
+
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
   { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: '🏢', alt: 'Ad, logo, slogan' },
@@ -3583,6 +3634,12 @@ function ogrenciMetrik(o) {
   }, { kalanDers: 0, dersToplam: 0, kalanOdeme: 0, fiyatToplam: 0 });
 }
 function egitmenAdiById(id) { const o = State.ortaklar.find(x => x.id === id); return o ? egitmenKisaAd(o) : '—'; }
+/* Eğitmen avatarı — fotoğrafı varsa görsel, yoksa baş harfler (isim geçen her yerde) */
+function egitmenAv(id, cls) {
+  const o = State.ortaklar.find(x => x.id === id);
+  if (o && o.foto) return `<span class="${cls} av-foto"><img src="${o.foto}" alt=""></span>`;
+  return `<span class="${cls}">${basHarf(o ? o.ad : '—')}</span>`;
+}
 
 SAYFALAR['ogrenciler'] = function () {
   const hepsi = State.ogrenciler || [];
@@ -3604,7 +3661,7 @@ SAYFALAR['ogrenciler'] = function () {
       : `<span class="ogr-metrik"><span class="rakam ogr-altin">${binlik(m.kalanOdeme)}<span class="top"> / ${binlik(m.fiyatToplam)} ₺</span></span>${barHTML(m.fiyatToplam - m.kalanOdeme, m.fiyatToplam, 'odeme')}</span>`;
     return `<tr class="ogr-satir" data-odetay="${o.id}">
       <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-bilg"><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="ogr-tel">${kacar(o.telefon || '')}</span></span></span></td>
-      <td data-l="Eğitmeni"><span class="ogr-egit"><span class="ogr-ea">${basHarf(egitmenAdiById(o.egitmenId))}</span>${kacar(egitmenAdiById(o.egitmenId))}</span></td>
+      <td data-l="Eğitmeni"><span class="ogr-egit">${egitmenAv(o.egitmenId, 'ogr-ea')}${kacar(egitmenAdiById(o.egitmenId))}</span></td>
       <td data-l="Paket">${paketRozet}</td>
       <td data-l="Kalan Ders" class="sag"><span class="ogr-metrik"><span class="rakam">${m.kalanDers}<span class="top"> / ${m.dersToplam}</span></span>${barHTML(m.dersToplam - m.kalanDers, m.dersToplam, 'ders')}</span></td>
       <td data-l="Kalan Ödeme" class="sag">${odemeHucre}</td>
@@ -3878,7 +3935,7 @@ SAYFALAR['dersler'] = function () {
     const e = State.ortaklar.find(x => x.id === d.egitmenId);
     const [c, h] = drzHarf[d.durum] || ['b', 'B'];
     return `<tr>
-      <td data-l="Eğitmen"><span class="ogr-egit"><span class="ogr-ea">${basHarf(e ? e.ad : '—')}</span>${kacar(e ? egitmenKisaAd(e) : '—')}</span></td>
+      <td data-l="Eğitmen"><span class="ogr-egit">${egitmenAv(e ? e.id : null, 'ogr-ea')}${kacar(e ? egitmenKisaAd(e) : '—')}</span></td>
       <td data-l="Öğrenci">${ogrHucre(d)}</td>
       <td data-l="Tarih">${fmtTarihUzun(d.tarih)}</td>
       <td data-l="Saat">${kacar(d.saat || '')}</td>
@@ -4029,7 +4086,7 @@ function egitmenTrigIc(id) {
   const e = State.ortaklar.find(x => x.id === id);
   if (!e) return `<span class="st-col"><span class="st-ph">Eğitmen seçin</span></span><span class="st-ok">›</span>`;
   const pay = (e.payOrani != null && e.payOrani !== '') ? ` · %${e.payOrani} pay` : '';
-  return `<span class="ogr-av sm">${basHarf(e.ad)}</span><span class="st-col"><span class="st-nm">${kacar(egitmenKisaAd(e))}</span><span class="st-sub">Eğitmen${pay}</span></span><span class="st-ok">›</span>`;
+  return `${egitmenAv(e.id, 'ogr-av sm')}<span class="st-col"><span class="st-nm">${kacar(egitmenKisaAd(e))}</span><span class="st-sub">Eğitmen${pay}</span></span><span class="st-ok">›</span>`;
 }
 /* Eğitmen Seç (tek seçim) */
 function egitmenSecModal(seciliId, onSec) {
@@ -4037,7 +4094,7 @@ function egitmenSecModal(seciliId, onSec) {
   const satir = (e) => {
     const sc = e.id === seciliId;
     const pay = (e.payOrani != null && e.payOrani !== '') ? ` · %${e.payOrani} pay` : '';
-    return `<button type="button" class="uys-uye ${sc ? 'sec-akt' : ''}" data-e="${e.id}"><span class="ogr-av">${basHarf(e.ad)}</span><span class="uys-uye-bilg"><span class="ad">${kacar(egitmenKisaAd(e))}</span><span class="alt">Eğitmen${pay}</span></span><span class="uys-ok">${sc ? '<span class="tik-yes">✓</span>' : '›'}</span></button>`;
+    return `<button type="button" class="uys-uye ${sc ? 'sec-akt' : ''}" data-e="${e.id}">${egitmenAv(e.id, 'ogr-av')}<span class="uys-uye-bilg"><span class="ad">${kacar(egitmenKisaAd(e))}</span><span class="alt">Eğitmen${pay}</span></span><span class="uys-ok">${sc ? '<span class="tik-yes">✓</span>' : '›'}</span></button>`;
   };
   const govde = `<div class="sec-liste">${egitmenler.map(satir).join('')}</div>`;
   const m = ustKatModal('Eğitmen Seç', '👩‍🏫 Eğitmen', govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
@@ -4272,7 +4329,7 @@ SAYFALAR['odemeler'] = function () {
     const kb = borcSonrasi(od);
     return `<tr>
       <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o ? o.ad : '?', o ? o.soyad : '')}</span><span class="ogr-ad">${o ? kacar(ogrenciTamAd(o)) : '—'}</span></span></td>
-      <td data-l="Eğitmeni"><span class="ogr-egit"><span class="ogr-ea">${basHarf(e ? e.ad : '—')}</span>${e ? kacar(egitmenKisaAd(e)) : '—'}</span></td>
+      <td data-l="Eğitmeni"><span class="ogr-egit">${egitmenAv(e ? e.id : null, 'ogr-ea')}${e ? kacar(egitmenKisaAd(e)) : '—'}</span></td>
       <td data-l="Ödediği Tarih">${fmtTarihUzun(od.tarih)}</td>
       <td data-l="Ödeme Türü"><span class="od-tur ${turSinif[od.tur] || 'nakit'}">${ODEME_TURLERI[od.tur] || od.tur}</span></td>
       <td data-l="Ödediği Tutar" class="sag od-tutar">${binlik(od.tutar)} ₺</td>
@@ -4627,6 +4684,7 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
   { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: '📅' },
   { tip: 'sayfa', id: 'odemeler', ad: 'Ödemeler', ikon: '💰' },
+  { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: '🗂️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
@@ -5050,6 +5108,16 @@ const KONTROL_LISTE = [
     ['gen_panel', 'Kontrol paneli', 'Bu panel açılıp kapanmalı; işaretlerin uygulamayı kapatıp açınca durmalı.'],
   ]},
 ];
+/* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
+const KL_GUNCELLEME = [
+  { q: 'solda açılan sayfalar', not: 'Sol menü açık/sıcak temaya çevrildi; “Ayarlar” grubu kaldırılıp Firma Bilgileri, Ortak Bilgileri, Üyelikler ve Giderler tek “Tanımlamalar” sayfasında toplandı.' },
+  { q: 'ortakların ilgili ay', not: 'Yeni “Ortaklar” sayfası eklendi: ay seçimli büyük kare kartlar; tıkla-aç ile Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacağı, Giderler Payı (eşit bölüşüm), Komisyon (0) ve Verilecek Pay (tahsilat − gider − komisyon). Ortak fotoğrafları isimlerin yanında da gösteriliyor.' },
+];
+function klGuncellemeBul(metin) {
+  const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
+  const e = KL_GUNCELLEME.find(x => n.includes(x.q));
+  return e ? e.not : '';
+}
 let KL_DURUM = {};       // {id:{d:'ok'|'no', n:'not'}}
 let KL_YENI = [];        // [{id, baslik, metin}] — kullanıcının eklediği istekler
 let KL_TAB = 'kontrol';  // 'kontrol' | 'yeni'
@@ -5066,7 +5134,7 @@ function klGonderilen() { return KL_YENI.filter(y => y.gonderildi); }       // K
 function klGruplar() {   // yerleşik gruplar + Kontrol'e taşınan "Yeni Eklenenler"
   const gruplar = KONTROL_LISTE.map(g => ({ ad: g.ad, ikon: g.ikon, maddeler: g.maddeler.map(m => ({ id: m[0], metin: m[1], alt: m[2] || '' })) }));
   const gond = klGonderilen();
-  if (gond.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: gond.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true })) });
+  if (gond.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: gond.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true, gun: klGuncellemeBul(y.metin) })) });
   return gruplar;
 }
 function klSayac() {
@@ -5093,7 +5161,7 @@ function klRowHTML(md) {
   return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}" data-id="${md.id}">
       <span class="kl-mt">${kacar(md.metin)}${md.yeni ? '<span class="kl-yroz">yeni</span>' : ''}${md.alt ? `<small>${kacar(md.alt)}</small>` : ''}</span>
       <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var">✗</button></span>
-    </div>${durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="Sorunu kısaca yaz…" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}`;
+    </div>${durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="Sorunu kısaca yaz…" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}${md.gun ? `<div class="kl-gun"><b>✅ Yapılan Güncelleme:</b> ${kacar(md.gun)}</div>` : ''}`;
 }
 function klKontrolGovde() {
   const html = klGruplar().map(g => {
@@ -5212,6 +5280,7 @@ function klPromptKopyala() {
   t += '6) Gereksiz açıklama/yorum yazma; kısa ve öz ol.\n';
   t += '7) Uygulama aşırı hızlı ve çok akıcı çalışsın.\n';
   t += '8) Formlarda Enter’a basınca bir sonraki alana/girişe geçilsin.\n';
+  t += '9) Yaptığın her düzeltme/güncellemeyi ilgili maddenin altına “Yapılan Güncelleme: ...” olarak yaz.\n';
   if (sorunlar.length || yeniIstekler.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
   const tasindi = yeniIstekler.length;
   const tamam = () => bildir(tasindi ? `Rapor kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
