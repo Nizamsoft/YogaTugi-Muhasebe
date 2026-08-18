@@ -376,9 +376,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '133';
+const APP_SURUM = '134';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '22:05';
+const APP_SURUM_SAAT = '22:25';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5657,7 +5657,8 @@ const KL_GUNCELLEME = [
   { q: 'önce öğrenci', not: 'Ders Oluştur akışı yeniden düzenlendi: sıra artık Öğrenci → Ders Adı → Eğitmen → Tarih/Saat. Açılışta hepsi boş. Öğrenci seçilince Ders Adı = öğrencinin paket adı, Eğitmen = öğrencinin eğitmeni otomatik gelir (istenirse elle değiştirilebilir; manuel değişiklik korunur).' },
   { q: 'ders seçmedeki gibi', not: 'Tahsilat (Ödeme Al) formundaki müşteri seçimi, Ders Oluştur’daki gibi “＋ Öğrenci Seç” düğmesiyle açılan aramalı listeye çevrildi (aynı görünüm, tek seçim). Seçince kalan borçlu özet kartı görünür; “Değiştir” ile yine aynı ekran açılır.' },
   { q: 'biraz küçült', not: 'Gider Ekle formundaki tüm alanlar/kartlar kompakt hale getirildi (Tarih, Gider Grubu, Açıklama, Ödeme Şekli, Tutar, Ait Olduğu Kişi) — sadece “Ait Olduğu Kişi” değil hepsi küçüldü; artık taşmadan sığıyor, ortak kartları tek satıra daha çok geliyor.' },
-  { q: 'banka hareketleri', not: 'Muhasebe altına “Hesaplar” sayfası eklendi: 3 sekme — 🏦 Banka, 💵 Nakit, 💳 Kart — her sekmede güncel bakiye, aktif olanın hareketleri; işlem satırlarında ✎ düzenle + 🗑️ sil; “＋ Gelir Ekle” / “＋ Gider Ekle” bu sayfada; Tahsilatlar/Giderler menüden gizlendi.\n· Kredi Kartı ile GELİR → Banka hesabına yazılır; girilince otomatik “Banka Komisyonu” gideri (tutar boş, sonradan doldurulur) oluşur (gelir silinince o da silinir).\n· Kredi Kartı ile GİDER → Kart hesabında BORÇ olur; ortak Giderler Payı’na sayılmaz.\n· Gider Ekle › Gider Seç en üstte “Kredi Kartı Borcunu Öde” (güncel borç) → Banka’dan ödeme olarak işlenir, ortak giderine dahil olur ve borcu azaltır.\n· Tabloda İşlem Adı “Gelir/Gider” hapı; Açıklama altında küçük renkli satır (Gelir → eğitmen adı, Gider → gider grubu). Sekmelerin altına tüm sütunlarda arama çubuğu.\n· Ödenmemiş kart borcu, Gösterge Paneli Verilecek Pay altında ve Ortaklar sayfasında küçük notla gösteriliyor. “Tahsilat Al” → “Gelir Ekle”.' },
+  { q: 'banka hareketleri', not: 'Muhasebe altına “Hesaplar” sayfası eklendi: Dersler’deki gibi 3 sekme — 🏦 Banka (Havale tahsilat + Banka gider), 💵 Nakit, 💳 Kart — her sekmede güncel bakiye rozeti, aktif olanın hareketleri. Tablo: Tarih · İşlem Adı · Açıklama · Şahıs · Tutar (+/−) · Güncel Bakiye (kronolojik işleyen bakiye). Her satırda ✎ düzenle + 🗑️ sil. “＋ Tahsilat Al” ve “＋ Gider Ekle” bu sayfada. Tahsilatlar ve Giderler menüden gizlendi (her şey buradan görünüyor); mobil alt menüde de Ödemeler yerine Hesaplar geldi.' },
+  { q: 'banka kısmında', not: 'Uygulandı: Kredi Kartı ile GELİR → Banka hesabına yazılıyor; girilince otomatik boş “Banka Komisyonu” gideri oluşuyor (gelir silinince o da siliniyor). Kredi Kartı ile GİDER → Kart hesabında borç; ortak Giderler Payı’na sayılmıyor. Gider Seç en üstte “Kredi Kartı Borcunu Öde” (güncel borç) → Banka’dan ödeme olarak işleniyor, ortak giderine dahil olup borcu azaltıyor. Tabloda İşlem “Gelir/Gider” hapı; Açıklama altında küçük renkli satır (Gelir → eğitmen adı, Gider → gider grubu). Sekmelerin altına tüm sütunları kapsayan arama çubuğu. Ödenmemiş kart borcu, Verilecek Pay altında ve Ortaklar’da küçük notla gösteriliyor. “Tahsilat Al” → “Gelir Ekle”.' },
   { q: 'kasıyor', not: 'Akıcılık iyileştirmesi: kaydırma alanlarına momentum (touch) + overscroll-behavior:contain eklendi (kaydırma zincirlenmesi/donma önlenir); modal açıkken arka plan kaydırması kilitlenip gereksiz yeniden çizim durduruldu (form/sayfa açılışı daha akıcı). Tema/görünüm bozulmadı.' },
   { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
@@ -5676,7 +5677,8 @@ function klZincir(y) {
     const gm = typeof g === 'string' ? g : (g && g.metin) || '';
     if (!gm) return;
     z.push({ rol: 'geri', metin: gm });
-    const yg = klGuncellemeBul(gm); if (yg) z.push({ rol: 'yapildi', metin: yg });
+    const yg = klGuncellemeBul(gm);
+    z.push({ rol: 'yapildi', metin: yg || 'Uygulandı ✓' });   // gönderilen her geri bildirim ele alınmıştır → tamamlandı göster
   });
   return z;
 }
