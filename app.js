@@ -376,9 +376,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '135';
+const APP_SURUM = '136';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '22:55';
+const APP_SURUM_SAAT = '23:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4619,6 +4619,7 @@ const HESAP_TANIM = {
   nakit: { ad: 'Nakit', ik: '💵', tahsil: ['nakit'],          gider: 'nakit', cls: 'hs-nakit' },
   kart:  { ad: 'Kart',  ik: '💳', tahsil: [],                 gider: 'kart',  cls: 'hs-kart' },
 };
+const HS_TUR_AD = { havale: 'Havale', kart: 'Kredi Kartı', nakit: 'Nakit' };
 /* Ödenmemiş kredi kartı borcu (kart giderleri − kart borç ödemeleri) */
 function kartBorcu() {
   const gid = State.giderKayitlari || [];
@@ -4630,21 +4631,24 @@ function kartBorcu() {
 function hesapHareketleri(hesap) {
   const t = HESAP_TANIM[hesap];
   const har = [];
-  // Gelir → İlgili Ortak = öğrencinin eğitmeni; Açıklama = paket, alt satır = dersi alan öğrenci
+  // Gelir → Açıklama = ödeme türü (Havale/Kredi Kartı/Nakit), alt satır = paket - öğrenci; İlgili Ortak = eğitmen
   (State.odemeler || []).filter(o => t.tahsil.includes(o.tur || 'nakit')).forEach(o => {
     const og = State.ogrenciler.find(x => x.id === o.ogrenciId);
     const eg = og ? State.ortaklar.find(x => x.id === og.egitmenId) : null;
     const pk = (og && og.paketler && og.paketler[0]) ? og.paketler[0].paketAd : '';
-    har.push({ tip: 'tahsilat', tarih: o.tarih, ilgiliId: eg ? eg.id : null, ilgiliAd: eg ? egitmenKisaAd(eg) : '—', aciklama: pk || '', altYazi: og ? ogrenciTamAd(og) : '', altTip: 'ogr', tutar: Number(o.tutar) || 0, ref: o });
+    const paketOgr = [pk, og ? ogrenciTamAd(og) : ''].filter(Boolean).join(' - ');
+    har.push({ tip: 'tahsilat', tarih: o.tarih, ilgiliId: eg ? eg.id : null, ilgiliAd: eg ? egitmenKisaAd(eg) : '—', aciklama: HS_TUR_AD[o.tur || 'nakit'] || 'Gelir', altYazi: paketOgr, altTip: 'ogr', tutar: Number(o.tutar) || 0, ref: o });
   });
   (State.giderKayitlari || []).filter(g => (g.odemeSekli || 'nakit') === t.gider).forEach(g => {
     if (g.kkOdeme) {   // Kredi Kartı Borç Ödemesi (Banka'da gider)
       har.push({ tip: 'gider', tarih: g.tarih, ilgiliId: null, ilgiliAd: 'Tüm ortaklar', aciklama: '', altYazi: 'Kredi Kartı Borç Ödemesi', altTip: 'gr', tutar: -(Number(g.tutar) || 0), ref: g });
-    } else if (g.kaynakOdemeId) {   // otomatik Banka Komisyonu → kaynak gelirden öğrenci + eğitmen
+    } else if (g.kaynakOdemeId) {   // otomatik Banka Komisyonu → kaynak gelirden paket-öğrenci + eğitmen
       const src = (State.odemeler || []).find(o => o.id === g.kaynakOdemeId);
       const og = src ? State.ogrenciler.find(x => x.id === src.ogrenciId) : null;
       const eg = og ? State.ortaklar.find(x => x.id === og.egitmenId) : null;
-      har.push({ tip: 'gider', tarih: g.tarih, ilgiliId: eg ? eg.id : null, ilgiliAd: eg ? egitmenKisaAd(eg) : '—', aciklama: og ? ogrenciTamAd(og) : '', altYazi: g.giderAd || 'Banka Komisyonu', altTip: 'gr', tutar: -(Number(g.tutar) || 0), ref: g });
+      const pk = (og && og.paketler && og.paketler[0]) ? og.paketler[0].paketAd : '';
+      const paketOgr = [pk, og ? ogrenciTamAd(og) : ''].filter(Boolean).join(' - ');
+      har.push({ tip: 'gider', tarih: g.tarih, ilgiliId: eg ? eg.id : null, ilgiliAd: eg ? egitmenKisaAd(eg) : '—', aciklama: paketOgr, altYazi: g.giderAd || 'Banka Komisyonu', altTip: 'gr', tutar: -(Number(g.tutar) || 0), ref: g });
     } else {
       const ort = g.ortakId ? State.ortaklar.find(x => x.id === g.ortakId) : null;
       har.push({ tip: 'gider', tarih: g.tarih, ilgiliId: g.ortakId || null, ilgiliAd: ort ? egitmenKisaAd(ort) : 'Tüm ortaklar', aciklama: g.aciklama || '', altYazi: g.giderAd || g.grupAd || '', altTip: 'gr', tutar: -(Number(g.tutar) || 0), ref: g });
@@ -4670,10 +4674,11 @@ SAYFALAR['hesap-defter'] = function () {
     const rtip = h.tip === 'tahsilat' ? 'tahsilat' : 'gider';   // düzenle/sil yönlendirmesi
     const alt = h.altYazi ? `<div class="hs-alt ${h.altTip}">${h.altTip === 'ogr' ? '🎓 ' : '📁 '}${kacar(h.altYazi)}</div>` : '';
     const ortHucre = h.ilgiliId ? `<span class="ogr-egit">${egitmenAv(h.ilgiliId, 'ogr-ea')}${kacar(h.ilgiliAd)}</span>` : `<span class="gid-tum">👥 ${kacar(h.ilgiliAd)}</span>`;
+    const ana = h.aciklama ? (h.tip === 'tahsilat' ? `<span class="hs-tur">${kacar(h.aciklama)}</span>` : kacar(h.aciklama)) : '<span class="ogr-soluk">—</span>';
     return `<tr>
       <td data-l="Tarih">${fmtTarihUzun(h.tarih)}</td>
       <td data-l="İşlem Adı"><span class="isl-tur ${HS_PILL_CLS[h.tip]}">${HS_PILL_AD[h.tip]}</span></td>
-      <td data-l="Açıklama">${h.aciklama ? kacar(h.aciklama) : '<span class="ogr-soluk">—</span>'}${alt}</td>
+      <td data-l="Açıklama">${ana}${alt}</td>
       <td data-l="İlgili Ortak">${ortHucre}</td>
       <td data-l="Tutar" class="sag"><span class="hs-art ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span></td>
       <td data-l="Güncel Bakiye" class="sag"><span class="hs-bak">${binlik(h.bakiye)} ₺</span></td>
@@ -4785,7 +4790,7 @@ function giderFormGovde(st) {
     <div class="gp-alan"><label>Ödeme Şekli</label>
       <div class="ods-seg" id="gkSekli">${['banka', 'nakit', 'kart'].map(k => `<button type="button" class="${st.sekli === k ? 'sec' : ''}" data-sek="${k}">${ODEME_SEKLI[k]}</button>`).join('')}</div>
     </div>
-    <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="gkTutar" value="${kacar(st.tutar)}" inputmode="numeric" placeholder="0 ₺" style="text-align:right;font-weight:700" autocomplete="off"></div>
+    <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="gkTutar" value="${kacar(st.tutar)}" inputmode="numeric" placeholder="0 ₺" style="font-weight:700" autocomplete="off"></div>
     <div class="gp-alan" style="margin:0"><label>Giderin Ait Olduğu Kişi</label>
       <div class="kisi-sat" id="gkKisi">${ortakChip(null)}${State.ortaklar.filter(o => o.aktif !== false).map(ortakChip).join('')}</div>
     </div>
@@ -4800,6 +4805,12 @@ function giderFormBagla(st, geri) {
   $('#gkSekli').onclick = (e) => { const b = e.target.closest('[data-sek]'); if (!b) return; st.sekli = b.dataset.sek; $$('#gkSekli button').forEach(x => x.classList.toggle('sec', x === b)); };
   $('#gkKisi').onclick = (e) => { const c = e.target.closest('[data-ortk]'); if (!c) return; st.ortak = c.dataset.ortk || null; $$('#gkKisi .kisi-chip').forEach(x => x.classList.toggle('sec', x === c)); };
   tutarKutusuBagla($('#gkTutar'));
+  // Otomatik Banka Komisyonu: yalnızca Tutar değiştirilebilir, diğer alanlar kilitli
+  if (st.otoKomisyon) {
+    ['gkTarih', 'gkAciklama', 'gkSekli', 'gkKisi'].forEach(id => { const el = $('#' + id); if (el) { el.style.pointerEvents = 'none'; el.style.opacity = '.6'; } });
+    const ac = $('#gkAciklama'); if (ac) ac.setAttribute('readonly', '');
+    setTimeout(() => { const tt = $('#gkTutar'); if (tt) { tt.focus(); if (tt.select) tt.select(); } }, 60);
+  }
   $('#gkAciklama').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#gkTutar').focus(); } });
   $('#gkTutar').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#gkKaydet').click(); } });
   $('#gkIptal').onclick = modalKapat;
@@ -5669,6 +5680,7 @@ const KL_GUNCELLEME = [
   { q: 'ders seçmedeki gibi', not: 'Tahsilat (Ödeme Al) formundaki müşteri seçimi, Ders Oluştur’daki gibi “＋ Öğrenci Seç” düğmesiyle açılan aramalı listeye çevrildi (aynı görünüm, tek seçim). Seçince kalan borçlu özet kartı görünür; “Değiştir” ile yine aynı ekran açılır.' },
   { q: 'biraz küçült', not: 'Gider Ekle formundaki tüm alanlar/kartlar kompakt hale getirildi (Tarih, Gider Grubu, Açıklama, Ödeme Şekli, Tutar, Ait Olduğu Kişi) — sadece “Ait Olduğu Kişi” değil hepsi küçüldü; artık taşmadan sığıyor, ortak kartları tek satıra daha çok geliyor.' },
   { q: 'banka hareketleri', not: 'Muhasebe altına “Hesaplar” sayfası eklendi: Dersler’deki gibi 3 sekme — 🏦 Banka (Havale tahsilat + Banka gider), 💵 Nakit, 💳 Kart — her sekmede güncel bakiye rozeti, aktif olanın hareketleri. Tablo: Tarih · İşlem Adı · Açıklama · Şahıs · Tutar (+/−) · Güncel Bakiye (kronolojik işleyen bakiye). Her satırda ✎ düzenle + 🗑️ sil. “＋ Tahsilat Al” ve “＋ Gider Ekle” bu sayfada. Tahsilatlar ve Giderler menüden gizlendi (her şey buradan görünüyor); mobil alt menüde de Ödemeler yerine Hesaplar geldi.' },
+  { q: 'havale mi kredi kartı', not: 'Uygulandı: Hesaplar tablosunda Gelir satırında Açıklama üstte ödeme türü (Havale / Kredi Kartı / Nakit), altında küçük 🎓 “paket - öğrenci” (ör. Single - Kerem Güllü). Komisyon satırında üstte “paket - öğrenci”, altında 📁 Banka Komisyonu. Aynı düzen Nakit ve Kart defterlerinde de. Gider formunda Tutar artık soldan yazılıyor (sağdan başlama kaldırıldı). Banka Komisyonunu ✎ ile açınca yalnızca Tutar değiştirilebiliyor (tarih/açıklama/ödeme şekli/kişi kilitli).' },
   { q: 'ilgili ortak diyelim', not: 'Uygulandı: Hesaplar tablosunda “Şahıs” sütunu “İlgili Ortak” oldu (3 tabloda da) — geliri kazanan/gideri üstlenen ortağın avatarı + adı; ortak yoksa “👥 Tüm ortaklar”. Açıklama’da ders(paket) altında küçük yeşil dersi alan öğrenci adı (🎓). Komisyon satırında Açıklama = geliri alan öğrenci, altında “📁 Banka Komisyonu”; İlgili Ortak = o eğitmen. Komisyonu ✎ ile açınca gider grubu “Banka Komisyonu” dolu ve kilitli geliyor (boş-gelme hatası düzeltildi), tutarı elle yazıyorsun. Aynı düzen Nakit ve Kart tablolarında da; arama ilgili ortağı da kapsıyor.' },
   { q: 'banka kısmında', not: 'Uygulandı: Kredi Kartı ile GELİR → Banka hesabına yazılıyor; girilince otomatik boş “Banka Komisyonu” gideri oluşuyor (gelir silinince o da siliniyor). Kredi Kartı ile GİDER → Kart hesabında borç; ortak Giderler Payı’na sayılmıyor. Gider Seç en üstte “Kredi Kartı Borcunu Öde” (güncel borç) → Banka’dan ödeme olarak işleniyor, ortak giderine dahil olup borcu azaltıyor. Tabloda İşlem “Gelir/Gider” hapı; Açıklama altında küçük renkli satır (Gelir → eğitmen adı, Gider → gider grubu). Sekmelerin altına tüm sütunları kapsayan arama çubuğu. Ödenmemiş kart borcu, Verilecek Pay altında ve Ortaklar’da küçük notla gösteriliyor. “Tahsilat Al” → “Gelir Ekle”.' },
   { q: 'kasıyor', not: 'Akıcılık iyileştirmesi: kaydırma alanlarına momentum (touch) + overscroll-behavior:contain eklendi (kaydırma zincirlenmesi/donma önlenir); modal açıkken arka plan kaydırması kilitlenip gereksiz yeniden çizim durduruldu (form/sayfa açılışı daha akıcı). Tema/görünüm bozulmadı.' },

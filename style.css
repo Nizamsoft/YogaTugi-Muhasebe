@@ -815,6 +815,7 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 .hs-art{font-weight:800;font-variant-numeric:tabular-nums}
 .hs-art.a{color:#2f8f5b}.hs-art.e{color:#c0483f}
 .hs-bak{font-weight:800;font-variant-numeric:tabular-nums;color:var(--metin)}
+.hs-tur{font-weight:700}
 .hs-alt{font-size:11px;font-weight:700;margin-top:2px}
 .hs-alt.eg{color:#4f7452}.hs-alt.ogr{color:#4f7452}.hs-alt.gr{color:#a8792f}
 .gd-trig.gd-kilit{cursor:default;opacity:.92}
