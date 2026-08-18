@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '111';
+const APP_SURUM = '112';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '13:07';
+const APP_SURUM_SAAT = '13:11';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3946,7 +3946,7 @@ SAYFALAR['dersler'] = function () {
   const say = { bekliyor: 0, gerceklesti: 0, iptal: 0 };
   hepsi.forEach(d => { if (say[d.durum] != null) say[d.durum]++; });
   const liste = hepsi.filter(d => d.durum === dersAktifSekme).sort((a, b) => (a.tarih + a.saat).localeCompare(b.tarih + b.saat));
-  const drzHarf = { bekliyor: ['b', 'B'], gerceklesti: ['g', 'G'], iptal: ['i', 'İ'] };
+  const drzBilgi = { bekliyor: ['b', 'Planlanan'], gerceklesti: ['g', 'Gerçekleşen'], iptal: ['i', 'İptal'] };
   const ogrHucre = (d) => {
     const ids = d.ogrenciIds || [];
     if (!ids.length) return '<span class="ogr-soluk">—</span>';
@@ -3955,13 +3955,13 @@ SAYFALAR['dersler'] = function () {
   };
   const satir = (d) => {
     const e = State.ortaklar.find(x => x.id === d.egitmenId);
-    const [c, h] = drzHarf[d.durum] || ['b', 'B'];
+    const [c, ad] = drzBilgi[d.durum] || ['b', 'Planlanan'];
     return `<tr>
       <td data-l="Eğitmen"><span class="ogr-egit">${egitmenAv(e ? e.id : null, 'ogr-ea')}${kacar(e ? egitmenKisaAd(e) : '—')}</span></td>
       <td data-l="Öğrenci">${ogrHucre(d)}</td>
       <td data-l="Tarih">${fmtTarihUzun(d.tarih)}</td>
       <td data-l="Saat">${kacar(d.saat || '')}</td>
-      <td data-l="Durum"><button type="button" class="drz ${c}" data-drz="${d.id}" title="Durumu değiştir">${h}</button></td>
+      <td data-l="Durum"><button type="button" class="drzk ${c}" data-drz="${d.id}" title="Durumu değiştir">${ad}</button></td>
     </tr>`;
   };
   const bosMetin = dersAktifSekme === 'bekliyor' ? 'Planlanan ders yok. “＋ Ders Oluştur” ile başlayın.'
@@ -3970,9 +3970,9 @@ SAYFALAR['dersler'] = function () {
     <div class="ders-sayfa">
       <div class="ogr-ust">
         <div class="ogr-seg">
-          <button type="button" class="${dersAktifSekme === 'bekliyor' ? 'sec' : ''}" data-dsek="bekliyor">Planlanan <span class="rk">${say.bekliyor}</span></button>
-          <button type="button" class="${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
-          <button type="button" class="${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
+          <button type="button" class="seg-pln ${dersAktifSekme === 'bekliyor' ? 'sec' : ''}" data-dsek="bekliyor">Planlanan <span class="rk">${say.bekliyor}</span></button>
+          <button type="button" class="seg-grc ${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
+          <button type="button" class="seg-ipt ${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
         </div>
         <button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button>
       </div>
@@ -5140,6 +5140,8 @@ const KL_GUNCELLEME = [
   { q: 'tanımlamalar düğmesi', not: 'Firma ve Ortak Bilgileri sayfaları Üyelikler/Giderler gibi sola hizalandı ve açılışta tnmGir animasyonuyla geliyor. Firma’daki kocaman/hatalı “‹ Tanımlamalar” düğmesi, Üyelikler’deki gibi küçük hap düğmeye çevrildi.' },
   { q: 'akışı anlatarak', not: 'Kontrol Listesi artık döngü çalışıyor: her madde İstek → Yapıldı → Geri bildirim → Yapıldı… zinciri olarak birikiyor. ✗ ile açıklama eklersin, “Prompt Kopyala” bu zinciri konuşma gibi (İSTEK/YAPILDI/GERİ BİLDİRİM) anlatarak üretir; ✓ ile onaylayana kadar döngü sürer.' },
   { q: 'döngü gitsin', not: 'Kontrol Listesi artık döngü çalışıyor: madde İstek → Yapıldı → Geri bildirim zinciri olarak birikiyor; Prompt Kopyala akışı anlatarak üretiyor, ✓ onaya kadar sürüyor.' },
+  { q: 'planlanan sarı', not: 'Dersler durum sütunundaki tek harf (B/G/İ), Ödeme türü hapı gibi renkli kelime hapına çevrildi: Planlanan sarı, Gerçekleşen yeşil, İptal kırmızı. Üstteki sekmeler de aynı renklerde; seçili olan parlıyor ve altın çerçeve alıyor. Hapa basınca yine durum değiştirme menüsü açılıyor.' },
+  { q: 'dersler kartları', not: 'Dersler durumları renkli kelime hapı oldu (Planlanan sarı · Gerçekleşen yeşil · İptal kırmızı) ve sekmeler renklendirildi; seçili olan parlıyor + altın çerçeve.' },
   { q: 'pasifte kimse yokken', not: 'Pasif sekmesini boşken otomatik Aktif’e çeviren davranış kaldırıldı. Artık Pasif’e basınca sekme Pasif’te kalıyor ve “Pasif öğrenci yok.” mesajı gösteriliyor.' },
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
 ];
