@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '100';
+const APP_SURUM = '101';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '19:41';
+const APP_SURUM_SAAT = '11:13';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3786,13 +3786,14 @@ function paketAtaModal(o) {
   if (!paketler.length) return bildir('Önce üyelik paketi tanımlayın: Tanımlamalar › Üyelikler.', 'hata');
 
   let egitmenId = o.egitmenId || egitmenler[0].id;
-  let uyelikId = paketler[0].id;
-  let secIdx = 0;   // seçili ders seçeneği
+  let uyelikId = null;   // paket varsayılan olarak SEÇİLİ DEĞİL
+  let secIdx = -1;       // ders seçeneği de SEÇİLİ DEĞİL
   const paketTrigIc = () => {
     const p = paketler.find(x => x.id === uyelikId);
     if (!p) return `<span class="st-col"><span class="st-ph">Paket seçin</span></span><span class="st-ok">›</span>`;
+    if (secIdx < 0) return `<span class="pa-pk">🎟️</span><span class="st-col"><span class="st-nm">${kacar(p.ad)}</span><span class="st-sub" style="color:#b06a43;font-weight:700">Ders sayısı seçilmedi — dokun</span></span><span class="st-ok">›</span>`;
     const secler = uyelikSecenekleri(p);
-    const s = secler[secIdx] || secler[0] || {};
+    const s = secler[secIdx] || {};
     return `<span class="pa-pk">🎟️</span><span class="st-col"><span class="st-nm">${kacar(p.ad)} — ${Number(s.dersSayisi) || 0} ders</span><span class="st-sub">${binlik(s.fiyat || 0)} ₺ · ${Number(p.gecerlilikGun) || 0} gün geçerli</span></span><span class="st-ok">›</span>`;
   };
 
@@ -3812,8 +3813,9 @@ function paketAtaModal(o) {
   $('#paKaydet').onclick = async () => {
     const uy = paketler.find(x => x.id === uyelikId);
     if (!uy) return bildir('Paket seçin.', 'hata');
+    if (secIdx < 0) return bildir('Önce ders sayısını seçin (Üyelik Paketi’ne dokun).', 'hata');
     const secler = uyelikSecenekleri(uy);
-    const sec = secler[secIdx] || secler[0];
+    const sec = secler[secIdx];
     if (!sec) return bildir('Ders seçeneği seçin.', 'hata');
     const dersAdet = Number(sec.dersSayisi) || 0;
     const paket = {
@@ -4071,8 +4073,8 @@ function ogrenciSecModal(onceki, onKaydet) {
 /* Paket Seç — 2 adım: (1) paket seç → İlerle, (2) ders sayısı seç → Seç */
 function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
   const paketler = State.uyelikler || [];
-  let pid = seciliPaketId || (paketler[0] && paketler[0].id);
-  let sidx = seciliSecIdx || 0;
+  let pid = seciliPaketId || null;   // paket varsayılan: seçili değil
+  let sidx = (typeof seciliSecIdx === 'number' && seciliSecIdx >= 0) ? seciliSecIdx : -1;   // ders sayısı varsayılan: seçili değil
   const secOzet = (p) => uyelikSecenekleri(p).map(s => Number(s.dersSayisi) || 0).join(' · ') + ' ders';
   const m = ustKatModal('Paket Seç', '🎟️ Paket · 1/2', '<div id="psGovde"></div>',
     '<div id="psAlt" style="display:flex;gap:10px;width:100%"></div>');
@@ -4086,23 +4088,23 @@ function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
       return `<div class="pa-oge sec-oge ${sc ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${sc ? '<span class="pa-tik">✓</span>' : ''}</div>`;
     }).join('');
     alt.innerHTML = `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-ilerle style="flex:1">İlerle →</button>`;
-    govde.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { if (pid !== el.dataset.p) { pid = el.dataset.p; sidx = 0; } cizPaket(); });
+    govde.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { if (pid !== el.dataset.p) { pid = el.dataset.p; sidx = -1; } cizPaket(); });
     alt.querySelector('[data-geri]').onclick = m.kapat;
     alt.querySelector('[data-ilerle]').onclick = () => { if (!pid) return bildir('Paket seçin.', 'hata'); cizSayi(); };
   };
   const cizSayi = () => {
     const p = paketler.find(x => x.id === pid);
     const secler = uyelikSecenekleri(p);
-    if (sidx >= secler.length) sidx = 0;
+    if (sidx >= secler.length) sidx = -1;
     baslik.textContent = 'Ders Sayısı'; rozet.textContent = '🎟️ Paket · 2/2';
     govde.className = '';
     govde.innerHTML = `<div class="pa-oge sec-oge sec" style="margin-bottom:12px"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${Number(p.gecerlilikGun) || 0} gün geçerli</span></span></div>
-      <div class="sec-mini-bas">Kaç derslik alsın?</div>
+      <div class="sec-mini-bas">Kaç derslik alsın? ${sidx < 0 ? '<span style="color:#b06a43;font-weight:700">(bir seçenek seç)</span>' : ''}</div>
       <div class="sec-cip" id="psSecList">${secler.map((s, i) => `<div class="scip ${sidx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${sidx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('')}</div>`;
     alt.innerHTML = `<button class="btn" type="button" data-geri2 style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-sec style="flex:1">Seç</button>`;
     govde.querySelectorAll('[data-si]').forEach(el => el.onclick = () => { sidx = Number(el.dataset.si); cizSayi(); });
     alt.querySelector('[data-geri2]').onclick = cizPaket;
-    alt.querySelector('[data-sec]').onclick = () => { onSec(pid, sidx); m.kapat(); };
+    alt.querySelector('[data-sec]').onclick = () => { if (sidx < 0) return bildir('Ders sayısını seçin.', 'hata'); onSec(pid, sidx); m.kapat(); };
   };
   cizPaket();
 }
@@ -5117,8 +5119,15 @@ function klPromptKopyala() {
   if (sorunlar.length) {
     t += 'SORUNLAR:\n';
     sorunlar.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}${x.not ? ` — ${x.not}` : ''}\n`; });
-    t += '\nLütfen bu maddeleri düzelt ve her birine tek tek ne yaptığını yaz.';
-  } else t += 'İşaretli sorun yok. ✓';
+  } else t += 'İşaretli sorun yok. ✓\n';
+  t += '\nKURALLAR (her düzeltmede uy):\n';
+  t += '1) Önce tasarımı (önizleme) ilet, onay alınca kodla.\n';
+  t += '2) Sıcak yeşil/kum/gold temayı ve mevcut tasarımı bozma.\n';
+  t += '3) Hiçbir metin kutusunda Chrome otomatik-tamamlama (autofill) çıkmasın.\n';
+  t += '4) Geçişler ve açılışlar akıcı, hafif animasyonlu ve 3B derinlik hissi versin (abartısız).\n';
+  t += '5) Programın mevcut yapısını bozma; işleyişi zorlaştırma, sade ve kolay kalsın.\n';
+  t += '6) Gereksiz açıklama/yorum yazma; kısa ve öz ol.\n';
+  if (sorunlar.length) t += '\nLütfen bu maddeleri düzelt ve her birine tek tek ne yaptığını yaz.';
   const tamam = () => bildir('Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(tamam).catch(() => klPromptGoster(t));
   else klPromptGoster(t);
