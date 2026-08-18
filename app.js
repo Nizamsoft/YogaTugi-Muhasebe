@@ -96,11 +96,31 @@ function tutarSayi(str) {
   str = String(str == null ? '' : str).replace(/[^\d,]/g, '').replace(',', '.');
   return parseFloat(str) || 0;
 }
-/* Bir input'u tutar kutusu yap: canlı biçimlendir, başlangıç değerini de biçimle */
+/* Bir input'u tutar kutusu yap: canlı biçimlendir + imleç " ₺" ekine takılmadan silinebilsin */
 function tutarKutusuBagla(el, baslangic) {
   if (!el) return;
   if (baslangic != null && baslangic !== '') el.value = tutarBicimle(String(baslangic).replace('.', ','));
-  el.addEventListener('input', () => { el.value = tutarBicimle(el.value); });
+  const ekOnce = (v) => v.endsWith(' ₺') ? v.length - 2 : v.length;   // " ₺" ekinden önceki konum
+  el.addEventListener('input', () => {
+    const eski = el.value, sel = el.selectionStart || 0;
+    const solRakam = eski.slice(0, sel).replace(/\D/g, '').length;   // imleç solundaki rakam sayısı
+    const yeni = tutarBicimle(el.value);
+    el.value = yeni;
+    let pos = 0, say = 0;
+    if (solRakam > 0) { for (let i = 0; i < yeni.length; i++) { if (/\d/.test(yeni[i]) && ++say === solRakam) { pos = i + 1; break; } } if (say < solRakam) pos = ekOnce(yeni); }
+    if (pos > ekOnce(yeni)) pos = ekOnce(yeni);
+    try { el.setSelectionRange(pos, pos); } catch {}
+  });
+  el.addEventListener('keydown', (e) => {
+    if (e.key !== 'Backspace' || el.selectionStart !== el.selectionEnd) return;
+    const ekBas = ekOnce(el.value);
+    if (el.selectionStart >= ekBas && ekBas > 0) {   // imleç " ₺" ekinde → son rakamı sil
+      e.preventDefault();
+      el.value = tutarBicimle(el.value.slice(0, ekBas - 1));
+      const p = ekOnce(el.value);
+      try { el.setSelectionRange(p, p); } catch {}
+    }
+  });
 }
 /* Tarih satırı: görünmez <input type=date> değişince görünen metni (28 Tem 2026) günceller */
 function tarihGostergeBagla() {
@@ -376,9 +396,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '136';
+const APP_SURUM = '137';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '23:20';
+const APP_SURUM_SAAT = '23:55';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3411,10 +3431,18 @@ function ogrenciEgitmenId(oid) { const o = State.ogrenciler.find(x => x.id === o
 function ortakAyHesap(donem) {
   const aktif = State.ortaklar.filter(o => o.aktif !== false);
   // Kredi Kartı giderleri henüz borç → ortak giderine sayılmaz (ödendiğinde Banka'ya "Kredi Kartı Borç Ödemesi" olarak girer ve sayılır)
-  const gk = (State.giderKayitlari || []).filter(g => donemStr(g.tarih) === donem && (g.odemeSekli || 'nakit') !== 'kart');
+  const gkTum = (State.giderKayitlari || []).filter(g => donemStr(g.tarih) === donem && (g.odemeSekli || 'nakit') !== 'kart');
+  const gk = gkTum.filter(g => !g.otoKomisyon);          // normal giderler (paylaşılan/tek ortak)
   const paylasilan = gk.filter(g => !g.ortakId).reduce((s, g) => s + (Number(g.tutar) || 0), 0);   // Tüm ortaklar → eşit bölünür
   const ortakGider = {}; gk.filter(g => g.ortakId).forEach(g => { ortakGider[g.ortakId] = (ortakGider[g.ortakId] || 0) + (Number(g.tutar) || 0); });   // tek ortağa yazılan
   const paylasilanPay = aktif.length ? paylasilan / aktif.length : 0;
+  // Banka Komisyonu → yalnızca geliri kazanan eğitmene ait (Komisyon Gideri), bölünmez
+  const komisyonMap = {};
+  gkTum.filter(g => g.otoKomisyon).forEach(g => {
+    const src = (State.odemeler || []).find(o => o.id === g.kaynakOdemeId);
+    const eg = src ? ogrenciEgitmenId(src.ogrenciId) : (g.ortakId || null);
+    if (eg) komisyonMap[eg] = (komisyonMap[eg] || 0) + (Number(g.tutar) || 0);
+  });
   return aktif.map(o => {
     const giderPayi = paylasilanPay + (ortakGider[o.id] || 0);
     const dersler = (State.dersler || []).filter(d => d.egitmenId === o.id && d.durum === 'gerceklesti' && donemStr(d.tarih) === donem);
@@ -3422,7 +3450,7 @@ function ortakAyHesap(donem) {
     dersler.forEach(d => { const kk = (d.dusumler && d.dusumler.length) ? d.dusumler.map(x => x.ogrenciId) : (d.ogrenciIds || []); kk.forEach(id => ogrSet.add(id)); });
     const tahsil = (State.odemeler || []).filter(od => donemStr(od.tarih) === donem && ogrenciEgitmenId(od.ogrenciId) === o.id).reduce((s, od) => s + (Number(od.tutar) || 0), 0);
     const kalanAlacak = State.ogrenciler.filter(x => x.egitmenId === o.id).reduce((s, x) => s + (x.paketler || []).reduce((a, p) => a + (Number(p.kalanOdeme) || 0), 0), 0);
-    const komisyon = 0;
+    const komisyon = komisyonMap[o.id] || 0;
     const verilecek = tahsil - giderPayi - komisyon;
     return { o, aktifOgrenci: ogrSet.size, verdigiDers: dersler.length, tahsil, kalanAlacak, giderPayi, komisyon, verilecek };
   });
@@ -5682,6 +5710,8 @@ const KL_GUNCELLEME = [
   { q: 'banka hareketleri', not: 'Muhasebe altına “Hesaplar” sayfası eklendi: Dersler’deki gibi 3 sekme — 🏦 Banka (Havale tahsilat + Banka gider), 💵 Nakit, 💳 Kart — her sekmede güncel bakiye rozeti, aktif olanın hareketleri. Tablo: Tarih · İşlem Adı · Açıklama · Şahıs · Tutar (+/−) · Güncel Bakiye (kronolojik işleyen bakiye). Her satırda ✎ düzenle + 🗑️ sil. “＋ Tahsilat Al” ve “＋ Gider Ekle” bu sayfada. Tahsilatlar ve Giderler menüden gizlendi (her şey buradan görünüyor); mobil alt menüde de Ödemeler yerine Hesaplar geldi.' },
   { q: 'havale mi kredi kartı', not: 'Uygulandı: Hesaplar tablosunda Gelir satırında Açıklama üstte ödeme türü (Havale / Kredi Kartı / Nakit), altında küçük 🎓 “paket - öğrenci” (ör. Single - Kerem Güllü). Komisyon satırında üstte “paket - öğrenci”, altında 📁 Banka Komisyonu. Aynı düzen Nakit ve Kart defterlerinde de. Gider formunda Tutar artık soldan yazılıyor (sağdan başlama kaldırıldı). Banka Komisyonunu ✎ ile açınca yalnızca Tutar değiştirilebiliyor (tarih/açıklama/ödeme şekli/kişi kilitli).' },
   { q: 'ilgili ortak diyelim', not: 'Uygulandı: Hesaplar tablosunda “Şahıs” sütunu “İlgili Ortak” oldu (3 tabloda da) — geliri kazanan/gideri üstlenen ortağın avatarı + adı; ortak yoksa “👥 Tüm ortaklar”. Açıklama’da ders(paket) altında küçük yeşil dersi alan öğrenci adı (🎓). Komisyon satırında Açıklama = geliri alan öğrenci, altında “📁 Banka Komisyonu”; İlgili Ortak = o eğitmen. Komisyonu ✎ ile açınca gider grubu “Banka Komisyonu” dolu ve kilitli geliyor (boş-gelme hatası düzeltildi), tutarı elle yazıyorsun. Aynı düzen Nakit ve Kart tablolarında da; arama ilgili ortağı da kapsıyor.' },
+  { q: 'herkesden komisyon', not: 'Düzeltildi: Banka Komisyonu artık yalnızca o geliri kazanan eğitmenin “🏦 Komisyon Gideri” satırına yazılıyor; eskiden tüm ortakların “Giderler Payı”na eşit bölünüyordu — artık bölünmüyor, sadece ilgili ortaktan düşüyor. (Örn. öğrencisi kartla ödeyen Tuba’nın komisyonu yalnız Tuba’ya işleniyor, diğerlerinde 0.)' },
+  { q: 'tl amblemine takılıyor', not: 'Düzeltildi: Gider (ve diğer) tutar kutularında rakam silme sorunu giderildi. Eskiden “300”ü “30” yapmaya çalışınca imleç sondaki “ ₺” amblemine takılıp siliyı engelliyordu; artık Backspace “ ₺”yi atlayıp rakamı siliyor ve imleç doğru rakamın yanında kalıyor.' },
   { q: 'banka kısmında', not: 'Uygulandı: Kredi Kartı ile GELİR → Banka hesabına yazılıyor; girilince otomatik boş “Banka Komisyonu” gideri oluşuyor (gelir silinince o da siliniyor). Kredi Kartı ile GİDER → Kart hesabında borç; ortak Giderler Payı’na sayılmıyor. Gider Seç en üstte “Kredi Kartı Borcunu Öde” (güncel borç) → Banka’dan ödeme olarak işleniyor, ortak giderine dahil olup borcu azaltıyor. Tabloda İşlem “Gelir/Gider” hapı; Açıklama altında küçük renkli satır (Gelir → eğitmen adı, Gider → gider grubu). Sekmelerin altına tüm sütunları kapsayan arama çubuğu. Ödenmemiş kart borcu, Verilecek Pay altında ve Ortaklar’da küçük notla gösteriliyor. “Tahsilat Al” → “Gelir Ekle”.' },
   { q: 'kasıyor', not: 'Akıcılık iyileştirmesi: kaydırma alanlarına momentum (touch) + overscroll-behavior:contain eklendi (kaydırma zincirlenmesi/donma önlenir); modal açıkken arka plan kaydırması kilitlenip gereksiz yeniden çizim durduruldu (form/sayfa açılışı daha akıcı). Tema/görünüm bozulmadı.' },
   { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
