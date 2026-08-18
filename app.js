@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '110';
+const APP_SURUM = '111';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '13:03';
+const APP_SURUM_SAAT = '13:07';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3647,7 +3647,6 @@ SAYFALAR['ogrenciler'] = function () {
   const ogr = ogrAll.filter(o => !bitmis(o));
   const pasif = ogrAll.filter(o => bitmis(o));
   const pot = hepsi.filter(o => o.durum !== 'ogrenci');
-  if (ogrenciAktifSekme === 'pasif' && !pasif.length) ogrenciAktifSekme = 'ogrenci';
 
   const barHTML = (kullanilan, toplam, tur) => {
     const y = toplam > 0 ? Math.max(0, Math.min(100, (kullanilan / toplam) * 100)) : 0;
@@ -3704,7 +3703,7 @@ SAYFALAR['ogrenciler'] = function () {
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
         <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Son Paket</th><th class="sag">Kalan Ders</th><th></th></tr></thead>
         <tbody>${pasif.map(pasifSatir).join('')}</tbody></table></div></div>`
-    : `<div class="gp-bos">Dersi biten pasif öğrenci yok.</div>`;
+    : `<div class="gp-bos">Pasif öğrenci yok.<br><small>Dersi/üyeliği biten öğrenciler burada otomatik görünür.</small></div>`;
 
   const govde = ogrenciAktifSekme === 'potansiyel' ? potTablo
     : ogrenciAktifSekme === 'pasif' ? pasifTablo : ogrenciTablo;
@@ -5141,6 +5140,7 @@ const KL_GUNCELLEME = [
   { q: 'tanımlamalar düğmesi', not: 'Firma ve Ortak Bilgileri sayfaları Üyelikler/Giderler gibi sola hizalandı ve açılışta tnmGir animasyonuyla geliyor. Firma’daki kocaman/hatalı “‹ Tanımlamalar” düğmesi, Üyelikler’deki gibi küçük hap düğmeye çevrildi.' },
   { q: 'akışı anlatarak', not: 'Kontrol Listesi artık döngü çalışıyor: her madde İstek → Yapıldı → Geri bildirim → Yapıldı… zinciri olarak birikiyor. ✗ ile açıklama eklersin, “Prompt Kopyala” bu zinciri konuşma gibi (İSTEK/YAPILDI/GERİ BİLDİRİM) anlatarak üretir; ✓ ile onaylayana kadar döngü sürer.' },
   { q: 'döngü gitsin', not: 'Kontrol Listesi artık döngü çalışıyor: madde İstek → Yapıldı → Geri bildirim zinciri olarak birikiyor; Prompt Kopyala akışı anlatarak üretiyor, ✓ onaya kadar sürüyor.' },
+  { q: 'pasifte kimse yokken', not: 'Pasif sekmesini boşken otomatik Aktif’e çeviren davranış kaldırıldı. Artık Pasif’e basınca sekme Pasif’te kalıyor ve “Pasif öğrenci yok.” mesajı gösteriliyor.' },
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
 ];
 function klGuncellemeBul(metin) {
