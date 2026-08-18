@@ -84,29 +84,32 @@ h1,h2,h3,h4{line-height:1.25}
     radial-gradient(80% 50% at 50% 112%,rgba(123,169,126,.22),transparent 60%),
     linear-gradient(180deg,#2c3b2f,#232d27);
 }
-.giris-orta{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:352px;animation:girisGir .5s ease both}
+.giris-orta{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px;animation:girisGir .5s ease both}
 @keyframes girisGir{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* dış çerçeve: yazı-logo + form birlikte, tek panel */
+.giris-cerceve{width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;border:1.5px solid rgba(224,192,106,.5);border-radius:26px;padding:40px 24px 34px;
+  background:linear-gradient(180deg,rgba(247,233,180,.05),rgba(0,0,0,.10));
+  box-shadow:0 24px 48px -26px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.15)}
+#girisGovde{width:100%}
 .giris-wm{font-family:'Quicksand',"Segoe UI",system-ui,sans-serif;font-weight:600;font-size:31px;line-height:1.04;color:#f3ecd8;text-align:center;text-shadow:0 2px 12px rgba(0,0,0,.35)}
 .giris-wm small{display:block}
-.giris-orn{display:flex;align-items:center;justify-content:center;gap:9px;margin:11px 0 22px}
+.giris-orn{display:flex;align-items:center;justify-content:center;gap:9px;margin:13px 0 30px}
 .giris-orn .l{width:46px;height:1.5px;background:linear-gradient(90deg,transparent,#e0c06a)}
 .giris-orn .l.r{background:linear-gradient(90deg,#e0c06a,transparent)}
 .giris-orn .d{color:#e0c06a;font-size:11px}
-.giris-kart{width:100%;border-radius:22px;padding:1.5px;background:linear-gradient(135deg,#e6c574,#c9992f 45%,#8a6417 70%,#e6c574);box-shadow:0 26px 50px -22px rgba(0,0,0,.6)}
-.giris-kart-ic{background:linear-gradient(180deg,rgba(38,48,40,.72),rgba(30,38,32,.84));backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border-radius:20px;padding:22px 22px 20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-.giris-alan{display:flex;align-items:center;gap:10px;border:1px solid rgba(224,192,106,.35);border-radius:13px;padding:11px 13px;background:rgba(20,26,21,.5);box-shadow:inset 0 1px 3px rgba(0,0,0,.25);margin-top:12px}
+.giris-alan{display:flex;align-items:center;gap:10px;border:1px solid rgba(224,192,106,.35);border-radius:13px;padding:13px 14px;background:rgba(20,26,21,.5);box-shadow:inset 0 1px 3px rgba(0,0,0,.25);margin-top:15px}
 .giris-alan.ilk{margin-top:0}
 .giris-alan:focus-within{border-color:#e0c06a;box-shadow:inset 0 1px 3px rgba(0,0,0,.25),0 0 0 2px rgba(224,192,106,.25)}
 .giris-ik{width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;background:linear-gradient(135deg,#f7e6ad,#e6c574);color:#8a6417;font-size:13px}
 .giris-alan input{border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:#f3ecd8;flex:1;min-width:0}
 .giris-alan input::placeholder{color:#9aa895}
 .giris-hata{color:#f0a08f;font-size:12.5px;margin:10px 2px 0;min-height:16px}
-.btn-giris{position:relative;overflow:hidden;width:100%;margin-top:16px;border:none;border-radius:14px;padding:14px;font-weight:800;font-size:15.5px;color:#40320f;cursor:pointer;font-family:inherit;
+.btn-giris{position:relative;overflow:hidden;width:100%;margin-top:26px;border:none;border-radius:14px;padding:15px;font-weight:800;font-size:15.5px;color:#40320f;cursor:pointer;font-family:inherit;
   background:linear-gradient(135deg,#f7e08a,#e6bb4e 45%,#cf9a2f);box-shadow:0 12px 24px -10px rgba(200,150,40,.8),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s}
 .btn-giris::after{content:"";position:absolute;top:0;left:-45%;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);animation:girisSh 3.4s ease-in-out infinite}
 @keyframes girisSh{0%,62%{left:-45%}100%{left:130%}}
 .btn-giris:active{transform:translateY(1px)}
-.giris-guv{margin-top:13px;font-size:11px;color:#c8b98f;text-align:center}
+.giris-guv{margin-top:16px;font-size:11px;color:#c8b98f;text-align:center}
 .giris-yuk{display:flex;flex-direction:column;align-items:center;padding-top:4px;animation:girisGir .3s ease both}
 .giris-ring{width:52px;height:52px;border-radius:50%;border:4px solid rgba(224,192,106,.22);border-top-color:#e0c06a;animation:girisSpin 1s linear infinite}
 @keyframes girisSpin{to{transform:rotate(360deg)}}

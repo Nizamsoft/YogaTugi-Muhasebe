@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '121';
+const APP_SURUM = '122';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '16:24';
+const APP_SURUM_SAAT = '16:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4849,13 +4849,11 @@ function girisGovdeCiz() {
   }
   if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }   // eski oturum → admin
   govde.innerHTML = `
-    <div class="giris-kart"><div class="giris-kart-ic">
-      <div class="giris-alan ilk"><span class="giris-ik">👤</span><input type="text" id="gKul" placeholder="Kullanıcı Adı :" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-      <div class="giris-alan"><span class="giris-ik">🔒</span><input type="password" id="gSif" placeholder="Şifre :" autocomplete="new-password"></div>
-      <div class="giris-hata" id="girisHata"></div>
-      <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>
-      <div class="giris-guv">🔒 Güvenli giriş</div>
-    </div></div>`;
+    <div class="giris-alan ilk"><span class="giris-ik">👤</span><input type="text" id="gKul" placeholder="Kullanıcı Adı :" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+    <div class="giris-alan"><span class="giris-ik">🔒</span><input type="password" id="gSif" placeholder="Şifre :" autocomplete="new-password"></div>
+    <div class="giris-hata" id="girisHata"></div>
+    <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>
+    <div class="giris-guv">🔒 Güvenli giriş</div>`;
   $('#girisBtn').onclick = girisDogrula;
   const gk = $('#gKul'), gs = $('#gSif');
   gk.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gs.focus(); } });
