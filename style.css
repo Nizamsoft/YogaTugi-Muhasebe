@@ -522,6 +522,54 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   .ortakkart .altin-tt{font-size:18px}
 }
 
+/* ==== Gösterge Paneli — kişi solda, metrik kartları sağda ==== */
+.dsh-top{display:flex;gap:20px;align-items:flex-start}
+.dsh-kisi{width:170px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:9px;padding-top:32px}
+.dsh-foto{width:150px;height:150px;border-radius:24px;padding:3px;background:linear-gradient(135deg,#d9b25a,#f6e6ad 30%,#c9992f 55%,#f7e9b4 78%,#b8860b);box-shadow:0 16px 30px -14px rgba(120,90,20,.55)}
+.dsh-foto .ic{width:100%;height:100%;border-radius:21px;overflow:hidden;background:linear-gradient(135deg,#e6efe4,#cfe0cf);display:grid;place-items:center;font-size:50px;font-weight:800;color:#4f7452;font-family:Georgia,serif}
+.dsh-foto .ic img{width:100%;height:100%;object-fit:cover}
+.dsh-isim{font-family:Georgia,serif;font-size:18px;font-weight:800;color:var(--metin);text-align:center;line-height:1.15}
+.dsh-rol{font-size:11.5px;color:var(--metin-soluk)}
+.dsh-sag{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.dsh-sagust{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.dsh-baslik{font-weight:800;color:var(--metin);font-size:14px}
+.dsh-arac{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.mk{position:relative;border-radius:15px;padding:1.1px;background:linear-gradient(150deg,#e6d5a2,#f7edcf 35%,#dcc079 70%,#efe1b3);cursor:pointer;box-shadow:0 11px 22px -16px rgba(120,90,20,.4);transition:transform .15s,box-shadow .15s}
+.mk:hover{transform:translateY(-2px);box-shadow:0 18px 30px -16px rgba(120,90,20,.5)}
+.mk-ic{background:linear-gradient(180deg,#fffefb,#fbf4e4);border-radius:14px;padding:11px 12px;position:relative}
+.mk .ik{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:16px;margin-bottom:7px;box-shadow:0 4px 10px -6px rgba(120,90,20,.4)}
+.mk .lbl{font-size:11px;font-weight:800;color:var(--metin-soluk)}
+.mk .val{font-family:Georgia,serif;font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.mk .git{position:absolute;top:10px;right:11px;color:#a8792f;font-size:11px;font-weight:700;opacity:.65}
+.mk .i-yesil{background:linear-gradient(135deg,#cfe8cf,#a9cfaa)}
+.mk .i-gold{background:linear-gradient(135deg,#f7e6ad,#e6c574)}
+.mk .i-mavi{background:linear-gradient(135deg,#d6e2f2,#b6c9e6)}
+.mk .i-kirmizi{background:linear-gradient(135deg,#f0cfcc,#e0a9a3)}
+.mk .v-yesil{color:#2f8f5b}.mk .v-gold{color:#a8792f}.mk .v-kirmizi{color:#c0483f}.mk .v-koyu{color:var(--metin)}
+.mk.hero{grid-column:1/4;padding:1.6px;background:linear-gradient(135deg,#d9b25a,#f6e6ad 30%,#c9992f 55%,#f7e9b4 78%,#b8860b)}
+.mk.hero .mk-ic{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f2f9f2,#e3f0e4);border-radius:13px;padding:12px 16px}
+.mk.hero .sol{display:flex;align-items:center;gap:12px}
+.mk.hero .ik{margin:0;width:42px;height:42px;font-size:20px;background:linear-gradient(135deg,#fffefb,#f6e6ad)}
+.mk.hero .lbl{font-size:12px;color:#356b45}
+.mk.hero .val{font-size:25px;color:#2f8f5b;margin:1px 0 0}
+body.tema-koyu .mk-ic{background:linear-gradient(180deg,#2b3630,#232d27)}
+body.tema-koyu .mk.hero .mk-ic{background:linear-gradient(135deg,#26332a,#212b25)}
+body.tema-koyu .dsh-foto .ic{background:linear-gradient(135deg,#33463a,#28352c);color:#bfe0c2}
+@media(max-width:720px){
+  .dsh-top{flex-direction:column;align-items:stretch}
+  .dsh-kisi{flex-direction:row;width:auto;gap:14px;padding-top:0;align-items:center;justify-content:flex-start}
+  .dsh-foto{width:88px;height:88px;border-radius:18px}
+  .dsh-foto .ic{border-radius:15px;font-size:30px}
+  .dsh-isim{text-align:left;font-size:17px}
+  .mgrid{grid-template-columns:1fr 1fr}
+  .mk.hero{grid-column:1/3}
+}
+@media(max-width:460px){
+  .mgrid{grid-template-columns:1fr 1fr;gap:9px}
+  .mk .val{font-size:16px}
+}
+
 /* ============ Ayarlar — Gold Premium ============ */
 .gp-sar{display:flex;justify-content:center;padding:6px 0}
 .gp-anim{animation:tnmGir .4s ease both}

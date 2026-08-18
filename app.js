@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '122';
+const APP_SURUM = '123';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '16:40';
+const APP_SURUM_SAAT = '17:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -628,24 +628,92 @@ const SAYFALAR = {};
 const ic = () => $('#icerik');
 
 /* -------- DASHBOARD -------- */
+let dashDonem = buAy();   // Gösterge Paneli'nde görüntülenen dönem
 SAYFALAR.dashboard = function () {
-  let list = State.ortaklar.filter(o => o.aktif !== false);
-  if (!adminMi()) list = list.filter(o => o.id === benId());   // ortak: yalnızca kendini görür
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   const renk = ['g', 'b', 'p', 'a'];
-  const kartlar = list.map((o, i) => {
+
+  /* --- Metrikler: kendini gör (varsayılan) veya tüm ortaklar --- */
+  const veri = ortakAyHesap(dashDonem);
+  const benim = benId();
+  const hepsi = hepsiniGor();                         // admin || "Ortakları göster" açık
+  let satirlar = veri;
+  if (!hepsi && benim) satirlar = veri.filter(r => r.o.id === benim);
+  const topla = (f) => satirlar.reduce((s, r) => s + (Number(f(r)) || 0), 0);
+  const M = {
+    aktifOgrenci: topla(r => r.aktifOgrenci),
+    verdigiDers:  topla(r => r.verdigiDers),
+    tahsil:       topla(r => r.tahsil),
+    kalanAlacak:  topla(r => r.kalanAlacak),
+    giderPayi:    topla(r => r.giderPayi),
+    komisyon:     topla(r => r.komisyon),
+    verilecek:    topla(r => r.verilecek),
+  };
+  const eksi = (n) => n ? '−' + TL(n) : TL(0);
+
+  /* --- Sol kişi kartı --- */
+  const benimOrtak = benim ? State.ortaklar.find(o => o.id === benim) : null;
+  let kisiFotoIc, kisiIsim, kisiRol;
+  if (!hepsi && benimOrtak) {
+    kisiIsim = benimOrtak.ad; kisiRol = 'Eğitmen';
+    kisiFotoIc = benimOrtak.foto ? `<img src="${benimOrtak.foto}" alt="${kacar(benimOrtak.ad)}">` : kacar(bas(benimOrtak.ad));
+  } else {
+    const a = State.ayarlar || {};
+    kisiIsim = (a.firmaAd || '').trim() || 'Green Village Pilates';
+    kisiRol = 'Tüm Ekip';
+    kisiFotoIc = a.logoData ? `<img src="${a.logoData}" alt="logo">` : 'GV';
+  }
+
+  /* --- Metrik kartı --- */
+  const kart = (sayfa, ik, ikCls, lbl, val, valCls, ipuc) =>
+    `<div class="mk" data-git="${sayfa}"><div class="mk-ic"><span class="git">${ipuc} ›</span><div class="ik ${ikCls}">${ik}</div><div class="lbl">${lbl}</div><div class="val ${valCls}">${val}</div></div></div>`;
+  const mgrid = `
+    ${kart('ogrenciler', '👥', 'i-yesil',   'Aktif Öğrenci',   M.aktifOgrenci,     'v-koyu',    'Öğrenciler')}
+    ${kart('dersler',    '📅', 'i-mavi',    'Verdiği Ders',    M.verdigiDers,      'v-koyu',    'Dersler')}
+    ${kart('odemeler',   '✅', 'i-yesil',   'Tahsil Edilen',   TL(M.tahsil),       'v-yesil',   'Tahsilat')}
+    ${kart('ogrenciler', '⏳', 'i-gold',    'Kalan Alacak',    TL(M.kalanAlacak),  'v-gold',    'Öğrenciler')}
+    ${kart('giderler',   '➗', 'i-kirmizi', 'Giderler Payı',   eksi(M.giderPayi),  'v-kirmizi', 'Giderler')}
+    ${kart('odemeler',   '🏦', 'i-kirmizi', 'Komisyon Gideri', eksi(M.komisyon),   'v-kirmizi', 'Tahsilat')}
+    <div class="mk hero" data-git="ortaklar"><div class="mk-ic"><div class="sol"><div class="ik">💰</div><div><div class="lbl">Verilecek Pay</div><div class="val"${M.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(M.verilecek)}</div></div></div><span class="git" style="position:static;opacity:.75">Ortaklar ›</span></div></div>`;
+
+  /* --- Ekibimiz (mevcut) --- */
+  let list = State.ortaklar.filter(o => o.aktif !== false);
+  if (!adminMi()) list = list.filter(o => o.id === benId());
+  const ekipKartlar = list.map((o, i) => {
     const foto = o.foto
       ? `<div class="altin-foto"><img src="${o.foto}" alt="${kacar(o.ad)}"></div>`
       : `<div class="altin-foto ${renk[i % 4]}">${kacar(bas(o.ad))}</div>`;
     return `<div class="altin-kart altin-sade">${foto}<div class="altin-isim">${kacar(o.ad)}</div><div class="altin-rol">Eğitmen</div></div>`;
   }).join('');
+
   ic().innerHTML = `
-    <div class="ortakkart">
+    <div class="dsh-top">
+      <div class="dsh-kisi">
+        <div class="dsh-foto"><div class="ic">${kisiFotoIc}</div></div>
+        <div class="dsh-isim">${kacar(kisiIsim)}</div>
+        <div class="dsh-rol">${kacar(kisiRol)}</div>
+      </div>
+      <div class="dsh-sag">
+        <div class="dsh-sagust">
+          <span class="dsh-baslik">Aylık Özet</span>
+          <div class="dsh-arac">
+            ${ortakGosterBtnHTML()}
+            <div class="ay-nav"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(dashDonem)}</span><button type="button" data-ay="1">›</button></div>
+          </div>
+        </div>
+        <div class="mgrid">${mgrid}</div>
+      </div>
+    </div>
+    <div class="ortakkart" style="margin-top:20px">
       <div class="ok-head"><h3>🤝 Ekibimiz</h3><span class="dn">${list.length} ortak</span></div>
       ${list.length === 0
         ? bosBlok('Henüz ortak yok. “Ayarlar → Ortak Bilgileri”nden ekleyin.')
-        : `<div class="altin-izgara">${kartlar}</div>`}
+        : `<div class="altin-izgara">${ekipKartlar}</div>`}
     </div>`;
+
+  $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
+  $$('[data-ay]').forEach(b => b.onclick = () => { dashDonem = donemKaydir(dashDonem, Number(b.dataset.ay)); SAYFALAR.dashboard(); });
+  ortakGosterBtnBagla(() => SAYFALAR.dashboard());
 };
 
 /* Ortak başına hesaplama: ders geliri, eşit gider payı, hak ediş */
@@ -5397,6 +5465,7 @@ const KL_GUNCELLEME = [
   { q: 'dersler kartları', not: 'Dersler durumları renkli kelime hapı oldu (Planlanan sarı · Gerçekleşen yeşil · İptal kırmızı) ve sekmeler renklendirildi; seçili olan parlıyor + altın çerçeve.' },
   { q: 'pasifte kimse yokken', not: 'Pasif sekmesini boşken otomatik Aktif’e çeviren davranış kaldırıldı. Artık Pasif’e basınca sekme Pasif’te kalıyor ve “Pasif öğrenci yok.” mesajı gösteriliyor.' },
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
+  { q: 'aktif öğrenci', not: 'Gösterge Paneli yeniden tasarlandı: solda gold çerçeveli kişi fotoğrafı + adı (Eğitmen), sağda kompakt premium gold metrik kartları — Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri ve altta geniş “Verilecek Pay”. Üstte ay seçimi ve (ortak girişinde) “Ortakları göster” anahtarı var: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı gelir (admin hep hepsini görür). Her karta tıklayınca ilgili sayfaya gidiyor (Öğrenciler/Dersler/Tahsilatlar/Giderler/Ortaklar). Altta mevcut “Ekibimiz” kartları duruyor.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
