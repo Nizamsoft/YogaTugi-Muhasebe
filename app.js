@@ -179,8 +179,9 @@ function modalAc(baslik, govdeHTML, altHTML, basAksesuar) {
     </div>`;
   $('#modalKapat').onclick = modalKapat;
   $('#modalPerde').onclick = e => { if (e.target.id === 'modalPerde') modalKapat(); };
+  document.body.classList.add('govde-kilit');   // arka plan kaymasın → açılış/kaydırma akıcı
 }
-function modalKapat() { $('#modalKap').innerHTML = ''; }
+function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.remove('govde-kilit'); }
 
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
@@ -375,9 +376,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '130';
+const APP_SURUM = '131';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '20:05';
+const APP_SURUM_SAAT = '20:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4308,6 +4309,34 @@ function ogrenciSecModal(onceki, onKaydet) {
   m.q('[data-geri]').onclick = m.kapat;
   m.q('[data-sec]').onclick = () => { onKaydet(secili); m.kapat(); };
 }
+/* Öğrenci Seç (tek seçim, aramalı) — Ders seçmedeki görünümle aynı */
+function ogrenciTekSecModal(seciliId, onSec) {
+  const ogrenciler = State.ogrenciler.filter(x => x.durum === 'ogrenci').slice()
+    .sort((a, b) => ogrenciTamAd(a).localeCompare(ogrenciTamAd(b), 'tr'));
+  let sel = seciliId || null;
+  const item = (o) => {
+    const mt = ogrenciMetrik(o);
+    const pk = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) + ' · ' : '';
+    const borc = mt.kalanOdeme > 0 ? 'Kalan borç: ' + binlik(mt.kalanOdeme) + ' ₺' : 'Borç yok';
+    return `<div class="ds-osat ${sel === o.id ? 'sec' : ''}" data-o="${o.id}"><span class="ds-ochk">${sel === o.id ? '✓' : ''}</span><span class="oav-mini">${basHarf(o.ad, o.soyad)}</span><span class="ds-obil"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${pk}${borc}</span></span></div>`;
+  };
+  const govde = `
+    <div class="uys-ara"><span>🔍</span><input type="text" id="tsAra" placeholder="Öğrenci ara…"></div>
+    <div class="ds-oliste sec-liste-kaydir" id="tsListe">${ogrenciler.map(item).join('')}</div>`;
+  const m = ustKatModal('Öğrenci Seç', '👥 Öğrenci', govde,
+    `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç</button>`);
+  const bindListe = () => m.qq('#tsListe [data-o]').forEach(el => el.onclick = () => { sel = el.dataset.o; yenile(); });
+  const yenile = () => {
+    const q = (m.q('#tsAra').value || '').trim().toLocaleLowerCase('tr');
+    const suz = ogrenciler.filter(o => ogrenciTamAd(o).toLocaleLowerCase('tr').includes(q));
+    m.q('#tsListe').innerHTML = suz.length ? suz.map(item).join('') : `<div class="gp-bos" style="margin:8px 6px">Eşleşen öğrenci yok.</div>`;
+    bindListe();
+  };
+  bindListe();
+  m.q('#tsAra').addEventListener('input', yenile);
+  m.q('[data-geri]').onclick = m.kapat;
+  m.q('[data-sec]').onclick = () => { if (!sel) return bildir('Öğrenci seçin.', 'hata'); onSec(sel); m.kapat(); };
+}
 /* Paket Seç — 2 adım: (1) paket seç → İlerle, (2) ders sayısı seç → Seç */
 function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
   const paketler = State.uyelikler || [];
@@ -4355,19 +4384,20 @@ function dersOlusturModal() {
   if (!egitmenler.length) return bildir('Önce eğitmen (ortak) ekleyin: Ayarlar › Ortak Bilgileri.', 'hata');
   if (!ogrenciler.length) return bildir('Önce paketli öğrenci ekleyin (Öğrenciler).', 'hata');
 
-  let egitmenId = egitmenler[0].id;
+  let egitmenId = '';   // boş başla — öğrenci seçilince otomatik gelir
   const secili = new Set();
   let tarih = bugunISO();
   let saat = '10:00';
+  let otoAd = '', otoEg = '';   // son otomatik doldurulan değerler (manuel düzenleme korunur)
   const chipler = () => Array.from(secili).map(id => { const o = State.ogrenciler.find(x => x.id === id); return o ? `<span class="ds-chip">${kacar(ogrenciTamAd(o))} <span class="x" data-cx="${id}">✕</span></span>` : ''; }).join('');
 
   const govde = `
-    <div class="gp-alan"><label>Ders Adı</label><input type="text" class="gp-inp" id="dsAd" placeholder="Örn. Reformer"></div>
-    <div class="gp-alan"><label>Dersi Verecek Eğitmen</label>
-      <button type="button" class="sec-trig" id="dsETrig">${egitmenTrigIc(egitmenId)}</button></div>
     <div class="gp-alan"><label>Dersi Alacak Öğrenci(ler)</label>
       <div class="ds-chipler" id="dsChipler">${chipler()}</div>
       <button type="button" class="ekle-btn" id="dsOEkle">＋ Öğrenci Seç / Ekle</button></div>
+    <div class="gp-alan"><label>Ders Adı</label><input type="text" class="gp-inp" id="dsAd" placeholder="Öğrenci seçilince gelir…"></div>
+    <div class="gp-alan"><label>Dersi Verecek Eğitmen</label>
+      <button type="button" class="sec-trig" id="dsETrig">${egitmenTrigIc(egitmenId)}</button></div>
     <div class="uy-ikili">
       <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
       <div class="gp-alan" style="margin:0"><label>Saat</label><input type="text" class="gp-inp" id="dsSaat" value="${saat}" inputmode="numeric" maxlength="5" style="text-align:center;letter-spacing:1px;font-weight:600"></div>
@@ -4375,13 +4405,22 @@ function dersOlusturModal() {
   modalAc('Ders Oluştur', govde,
     `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet">💾 Dersi Planla</button>`,
     `<span class="hr-rozet">📅 Ders</span>`);
-  setTimeout(() => $('#dsAd').focus(), 50);
 
-  $('#dsETrig').onclick = () => egitmenSecModal(egitmenId, (id) => { egitmenId = id; $('#dsETrig').innerHTML = egitmenTrigIc(egitmenId); });
+  // Öğrenci seçilince: Ders Adı = öğrencinin paketi, Eğitmen = öğrencinin eğitmeni (manuel değişiklik korunur)
+  const otoDoldur = () => {
+    const ilk = State.ogrenciler.find(x => x.id === Array.from(secili)[0]); if (!ilk) return;
+    const pk = (ilk.paketler && ilk.paketler[0]) ? (ilk.paketler[0].paketAd || '') : '';
+    const ad = $('#dsAd');
+    if (ad && pk && (ad.value.trim() === '' || ad.value.trim() === otoAd)) { ad.value = pk; otoAd = pk; }
+    if (ilk.egitmenId && (egitmenId === '' || egitmenId === otoEg)) { egitmenId = ilk.egitmenId; otoEg = ilk.egitmenId; $('#dsETrig').innerHTML = egitmenTrigIc(egitmenId); }
+  };
+
+  $('#dsETrig').onclick = () => egitmenSecModal(egitmenId, (id) => { egitmenId = id; otoEg = ''; $('#dsETrig').innerHTML = egitmenTrigIc(egitmenId); });
 
   const chipYenile = () => { $('#dsChipler').innerHTML = chipler(); $$('#dsChipler [data-cx]').forEach(c => c.onclick = () => { secili.delete(c.dataset.cx); chipYenile(); }); };
   chipYenile();
-  $('#dsOEkle').onclick = () => ogrenciSecModal(secili, (yeni) => { secili.clear(); yeni.forEach(id => secili.add(id)); chipYenile(); });
+  $('#dsOEkle').onclick = () => ogrenciSecModal(secili, (yeni) => { secili.clear(); yeni.forEach(id => secili.add(id)); chipYenile(); otoDoldur(); });
+  $('#dsAd').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#dsSaat').focus(); } });
 
   $('#dsTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#dsTarihAd').textContent = fmtTarihUzun(tarih); });
   { const st = $('#dsSaat');
@@ -4612,7 +4651,7 @@ function giderKayitFormu() {
 }
 function giderFormGovde(st) {
   const ortakChip = (o) => `<span class="kisi-chip ${(o && st.ortak === o.id) || (!o && !st.ortak) ? 'sec' : ''}" data-ortk="${o ? o.id : ''}">${o ? kacar(egitmenKisaAd(o)) : '👥 Tüm ortaklar'}</span>`;
-  return `<div class="gd-flow gd-flow-form">
+  return `<div class="gd-flow gd-flow-form gd-kompakt">
     <div class="gp-alan"><label>Tarih</label><button type="button" class="pa-trig" id="gkTarih"><span id="gkTarihAd">${fmtTarihUzun(st.tarih)}</span><span class="ok">📅</span></button></div>
     <div class="gp-alan"><label>Gider Grubu</label>
       <button type="button" class="gd-trig" id="gkTrig"><span id="gkSecAd" class="${st.secId ? '' : 'gd-soluk'}">${st.secId ? kacar(st.secAd) : 'Gider seç…'}</span><span class="ok">›</span></button>
@@ -4693,15 +4732,9 @@ function odemeAlModal() {
   let tarih = bugunISO();
   let tur = 'nakit';
   const borcMetin = (o) => { const m = ogrenciMetrik(o); return m.kalanOdeme > 0 ? 'Kalan borç: ' + binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'; };
-  const mItem = (o) => {
-    const m = ogrenciMetrik(o);
-    const pk = (o.paketler && o.paketler[0]) ? kacar(o.paketler[0].paketAd) : '';
-    return `<button type="button" class="od-msat" data-o="${o.id}"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="od-bilg"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${pk}</span></span><span class="od-brc ${m.kalanOdeme > 0 ? '' : 'ok'}">${m.kalanOdeme > 0 ? binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'}</span></button>`;
-  };
   const musteriAlanHTML = () => {
     if (!seciliId) {
-      return `<div class="uys-ara"><span>🔍</span><input type="text" id="odAra" placeholder="Öğrenci ara…"></div>
-        <div class="od-mliste" id="odListe">${ogrenciler.map(mItem).join('')}</div>`;
+      return `<button type="button" class="ekle-btn" id="odSecBtn">＋ Öğrenci Seç</button>`;
     }
     const o = ogrenciler.find(x => x.id === seciliId);
     return `<div class="od-mus-sec"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="od-bilg"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${borcMetin(o)}</span></span><button type="button" class="od-deg" id="odDeg">Değiştir</button></div>`;
@@ -4716,20 +4749,10 @@ function odemeAlModal() {
     `<button class="btn" id="odIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="odKaydet">💾 Ödemeyi Kaydet</button>`,
     `<span class="hr-rozet od-rozet">💰 Ödeme</span>`);
 
+  const musSec = () => ogrenciTekSecModal(seciliId, (id) => { seciliId = id; $('#odMus').innerHTML = musteriAlanHTML(); musBagla(); });
   const musBagla = () => {
-    if (!seciliId) {
-      const listeYenile = () => {
-        const q = ($('#odAra').value || '').trim().toLocaleLowerCase('tr');
-        const suz = ogrenciler.filter(o => ogrenciTamAd(o).toLocaleLowerCase('tr').includes(q));
-        $('#odListe').innerHTML = suz.length ? suz.map(mItem).join('') : `<div class="gp-bos" style="margin:8px 6px">Eşleşen öğrenci yok.</div>`;
-        satBagla();
-      };
-      const satBagla = () => $$('#odListe [data-o]').forEach(el => el.onclick = () => { seciliId = el.dataset.o; $('#odMus').innerHTML = musteriAlanHTML(); musBagla(); });
-      satBagla();
-      const ara = $('#odAra'); if (ara) ara.addEventListener('input', listeYenile);
-    } else {
-      $('#odDeg').onclick = () => { seciliId = null; $('#odMus').innerHTML = musteriAlanHTML(); musBagla(); };
-    }
+    if (!seciliId) { $('#odSecBtn').onclick = musSec; }
+    else { $('#odDeg').onclick = musSec; }
   };
   musBagla();
   const tut = $('#odTutar'); tut.addEventListener('input', () => { tut.value = binlikBiciml(tut.value); });
@@ -5473,6 +5496,11 @@ const KL_GUNCELLEME = [
   { q: 'ders takibi', not: 'Sol menü Ana ▸ Alt başlık olarak gruplandı: Gösterge Paneli (tekil, üstte öne çıkan) · Ders Takibi ▸ Dersler/Öğrenciler · Muhasebe ▸ Tahsilatlar/Giderler/Ortaklar · Ayarlar ▸ Tanımlamalar (yalnızca admin). Görsel iyileştirme: açık grubun başlığı altın tonlu zemin + sol altın şerit; alt öğeleri bağlayan ince altın kılavuz çizgisi ve her öğede altın nokta; seçili öğe yeşil. Gruplar akordeon (birine basınca açılır, diğeri kapanır); bir alt sayfaya gidince grubu otomatik açılır.' },
   { q: 'tek kodlama', not: 'Kontrol Listesi promptuna hızlandırıcı kurallar eklendi: (14) Toplu ilerle — birden çok madde varsa tek kontrol · tek kodlama · tek push; önizlemeler tek mesajda toplu, onaylananlar tek sürümde yayına. (15) Görsel olmayan işlerde (mantık/veri/metin/hata/yeniden adlandırma) önizleme atlanır. (16) Gereksiz ara-onay sorulmaz. (17) Toplu önizleme tek görselde sunulur. (18) “Tümünü onaylıyorum” kısayolu. (19) Sürüm/saat her yayında otomatik artar. (20) Riskli olmayan metin/kopya düzeltmeleri biriktirilip tek seferde uygulanır.' },
   { q: 'aynı ölçüde', not: 'Sayfa sekmeleri (Öğrenciler: Aktif/Potansiyel/Pasif · Dersler: Planlanan/Gerçekleşen/İptal) hepsi eşit sabit genişliğe (150px) getirildi — hem sayfa içinde hem sayfalar arasında aynı ölçüde. Ayrıca sağdaki aksiyon düğmeleri (＋ Yeni Üyelik Oluştur / Ders Oluştur / Tahsilat Al / Gider Ekle) de eşit genişliğe (176px, ortalı) getirildi. Dar ekranda sekmeler satırı eşit bölüşür, düğmeler tam genişlik olur.' },
+  { q: 'ayırt edilemiyor', not: 'Seçili sekme belirginleştirildi: seçili olmayan sekmeler soluklaştırıldı (grileşir + saydamlaşır), seçili olan tam renkli + gold çerçeveli ve hafif büyük duruyor. Artık hangisinin seçili olduğu net.' },
+  { q: 'önce öğrenci', not: 'Ders Oluştur akışı yeniden düzenlendi: sıra artık Öğrenci → Ders Adı → Eğitmen → Tarih/Saat. Açılışta hepsi boş. Öğrenci seçilince Ders Adı = öğrencinin paket adı, Eğitmen = öğrencinin eğitmeni otomatik gelir (istenirse elle değiştirilebilir; manuel değişiklik korunur).' },
+  { q: 'ders seçmedeki gibi', not: 'Tahsilat (Ödeme Al) formundaki müşteri seçimi, Ders Oluştur’daki gibi “＋ Öğrenci Seç” düğmesiyle açılan aramalı listeye çevrildi (aynı görünüm, tek seçim). Seçince kalan borçlu özet kartı görünür; “Değiştir” ile yine aynı ekran açılır.' },
+  { q: 'biraz küçült', not: 'Gider Ekle formundaki tüm alanlar/kartlar kompakt hale getirildi (Tarih, Gider Grubu, Açıklama, Ödeme Şekli, Tutar, Ait Olduğu Kişi) — sadece “Ait Olduğu Kişi” değil hepsi küçüldü; artık taşmadan sığıyor, ortak kartları tek satıra daha çok geliyor.' },
+  { q: 'kasıyor', not: 'Akıcılık iyileştirmesi: kaydırma alanlarına momentum (touch) + overscroll-behavior:contain eklendi (kaydırma zincirlenmesi/donma önlenir); modal açıkken arka plan kaydırması kilitlenip gereksiz yeniden çizim durduruldu (form/sayfa açılışı daha akıcı). Tema/görünüm bozulmadı.' },
   { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
 ];

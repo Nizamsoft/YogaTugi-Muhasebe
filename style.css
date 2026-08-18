@@ -62,6 +62,11 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 .icerik{overflow-x:hidden}
+/* ---- Akıcılık (performans) ---- */
+html{-webkit-overflow-scrolling:touch}
+body.govde-kilit{overflow:hidden}                 /* modal açıkken arka plan repaint'i durur */
+.modal-govde,.kenar-menu,.sec-liste-kaydir,.uys-liste,.ds-oliste,.gs-liste,.od-mliste,.sec-liste{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.modal-perde,.modal-ust-kat,.picker-perde,.sheet-perde,.kl-perde,.alt-sheet{overscroll-behavior:contain}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 a{color:var(--yesil-koyu);text-decoration:none}
 h1,h2,h3,h4{line-height:1.25}
@@ -779,8 +784,8 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 .ogr-seg button.seg-akt{background:linear-gradient(135deg,#6fa877,#527f59);color:#fff}
 .ogr-seg button.seg-pot{background:linear-gradient(135deg,#e0b544,#c69327);color:#40320f}
 .ogr-seg button.seg-pas{background:linear-gradient(135deg,#d67c6e,#bf4b3d);color:#fff}
-.ogr-seg button:not(.sec){filter:brightness(.93) saturate(.92)}
-.ogr-seg button.sec{border-color:#d9b25a;filter:brightness(1.06);transform:translateY(-1px) scale(1.03)}
+.ogr-seg button:not(.sec){filter:grayscale(.62) opacity(.45)}
+.ogr-seg button.sec{border-color:#d9b25a;filter:brightness(1.05);transform:translateY(-1px) scale(1.05)}
 .ogr-seg button.sec.seg-akt{background:linear-gradient(135deg,#7ec284,#4f8f58);color:#fff;box-shadow:0 9px 20px -7px rgba(79,116,82,.75)}
 .ogr-seg button.sec.seg-pot{background:linear-gradient(135deg,#f7dd7f,#e0ac35);color:#40320f;box-shadow:0 9px 20px -7px rgba(200,150,40,.7)}
 .ogr-seg button.sec.seg-pas{background:linear-gradient(135deg,#ef8f7f,#d24d3d);color:#fff;box-shadow:0 9px 20px -7px rgba(192,72,63,.7)}
@@ -1089,6 +1094,15 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 /* Gider modalı: form ile seç ekranı AYNI boyutta kalsın (kutu oynamaz) + kayma animasyonu */
 .gd-flow{height:100%;display:flex;flex-direction:column;gap:13px}
 .gd-flow .gp-alan{margin:0}
+/* Kompakt gider formu — tüm alanlar küçültülür (hepsi sığsın) */
+.gd-kompakt{gap:9px}
+.gd-kompakt label{font-size:10px;margin:0 0 4px 2px}
+.gd-kompakt .gp-inp{padding:9px 12px;font-size:13.5px;border-radius:11px}
+.gd-kompakt .pa-trig,.gd-kompakt .gd-trig{padding:8px 11px;font-size:13px;border-radius:10px}
+.gd-kompakt .ods-seg{padding:4px}
+.gd-kompakt .ods-seg button{padding:7px 4px;font-size:11.5px}
+.gd-kompakt .kisi-sat{gap:6px}
+.gd-kompakt .kisi-chip{font-size:11px;padding:5px 9px}
 .gd-flow-form{overflow-y:auto;overflow-x:hidden}
 .gd-flow-form.gd-geri{animation:gdGeri .22s ease}
 .gd-flow-sec{overflow:hidden}
