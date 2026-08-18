@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '125';
+const APP_SURUM = '126';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '18:15';
+const APP_SURUM_SAAT = '18:45';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4789,7 +4789,7 @@ SAYFALAR['ayar-guvenlik'] = function () {
         <button class="btn" id="gvCikis">⏻ Oturumu Kapat</button>
       </div>
     </div>`;
-  $('#gvCikis').onclick = () => $('#cikisBtn').click();
+  $('#gvCikis').onclick = () => cikisYap();
 };
 
 /* Onay modalı */
@@ -4811,16 +4811,11 @@ async function uygulamayiBaslat() {
   if (gy) gy.classList.remove('gizli');
   const simdi = () => (window.performance && performance.now) ? performance.now() : 0;
   const t0 = simdi();
-  // Kullanıcı bilgisi (uygulama gizliyken hazırlanır)
-  const ep = State.kullanici?.email || 'yerel@yogatugi.com';
-  const ad = State.kullanici?.ad || ep.split('@')[0];
-  $('#kullaniciAd').textContent = ad;
-  $('#kullaniciRol').textContent = adminMi() ? 'Yönetici' : 'Ortak';
-  $('#kullaniciRozet').textContent = (ad[0] || '?').toLocaleUpperCase('tr');
   ortakGoster = false;   // her girişte varsayılan: ortak yalnızca kendini görür (admin zaten hepsini)
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   menuCiz();
+  kullaniciBilgiCiz();   // tepe paneli: görsel + ad soyad (ortaklar yüklendikten sonra)
   kontrolKur();
   git('dashboard');
   const bekle = Math.max(0, 900 - (simdi() - t0));   // en az ~0.9sn göster (premium his)
@@ -4975,9 +4970,25 @@ function temaDegistir() {
 }
 function kulMenuKapat() { $('#kulMenu').classList.add('gizli'); }
 
+/* Tepe paneli: kullanıcı görseli + ad soyad + rol (çip + menü başlığı) */
+function kullaniciBilgiCiz() {
+  const k = State.kullanici || {};
+  const admin = adminMi();
+  const ortak = k.ortakId ? State.ortaklar.find(o => o.id === k.ortakId) : null;
+  const ad = admin ? 'Yönetici' : (ortak?.ad || k.ad || 'Kullanıcı');
+  const rol = admin ? 'Admin' : 'Eğitmen';
+  const bas = (s) => (s || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  let ic;
+  if (!admin && ortak?.foto) ic = `<img src="${ortak.foto}" alt="${kacar(ad)}">`;
+  else if (admin && State.ayarlar?.logoData) ic = `<img src="${State.ayarlar.logoData}" alt="logo">`;
+  else ic = kacar(bas(ad));
+  const setHTML = (id, v) => { const el = $('#' + id); if (el) el.innerHTML = v; };
+  const setTxt = (id, v) => { const el = $('#' + id); if (el) el.textContent = v; };
+  setHTML('kullaniciFoto', ic); setTxt('kullaniciAd', ad); setTxt('kullaniciRol', rol);
+  setHTML('kmFoto', ic); setTxt('kmAd', ad); setTxt('kmRol', rol);
+}
+
 function ustCubukKur() {
-  $('#cikisBtn').onclick = cikisYap;
-  $('#temaBtn').onclick = temaDegistir;
   if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); if ($('#temaBtn')) $('#temaBtn').textContent = '☀️'; }
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
@@ -5460,6 +5471,7 @@ const KL_GUNCELLEME = [
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
   { q: 'aktif öğrenci', not: 'Gösterge Paneli “Spotlight + İstatistik Şeridi” (C) tasarımıyla yeniden yapıldı — düz/kaba kartlar kaldırıldı, alttaki “Ekibimiz” bölümü çıkarıldı. Üstte büyük koyu hero: solda gold çerçeveli kişi (ad + rol/ay), sağda “Verilecek Pay” altın gradyan yazıyla + altında “Tahsilat − Giderler − Komisyon”; köşede ince altın halkalar. Altında tek panelde 6 istatistik hücresi (Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri) — her hücrede kategori renginde sol vurgu şeridi, üstüne gelince › oku. Karta/satıra tıkla → ilgili sayfa; hero → Ortaklar. Ay seçimi + (ortak girişinde) “Ortakları göster” anahtarı: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı; admin hep hepsini görür.' },
   { q: 'ders takibi', not: 'Sol menü Ana ▸ Alt başlık olarak gruplandı: Gösterge Paneli (tekil, üstte öne çıkan) · Ders Takibi ▸ Dersler/Öğrenciler · Muhasebe ▸ Tahsilatlar/Giderler/Ortaklar · Ayarlar ▸ Tanımlamalar (yalnızca admin). Görsel iyileştirme: açık grubun başlığı altın tonlu zemin + sol altın şerit; alt öğeleri bağlayan ince altın kılavuz çizgisi ve her öğede altın nokta; seçili öğe yeşil. Gruplar akordeon (birine basınca açılır, diğeri kapanır); bir alt sayfaya gidince grubu otomatik açılır.' },
+  { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
 ];
 function klGuncellemeBul(metin) {
