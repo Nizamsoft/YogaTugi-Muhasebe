@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '105';
+const APP_SURUM = '106';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '11:50';
+const APP_SURUM_SAAT = '12:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5168,7 +5168,9 @@ function klCiz() {
   const sel = document.getElementById('klYbaslik');
   if (sel) {
     const yb = document.getElementById('klYbaslikYeni');
-    sel.onchange = () => { yb.hidden = sel.value !== '__yeni'; if (!yb.hidden) yb.focus(); };
+    const senk = () => { yb.hidden = sel.value !== '__yeni'; };
+    senk();   // açılışta seçili değere göre başlık kutusunu göster/gizle (hata düzeltmesi)
+    sel.onchange = () => { senk(); if (!yb.hidden) yb.focus(); };
     document.getElementById('klYekle').onclick = () => {
       const baslik = sel.value === '__yeni' ? (yb.value.trim() || 'Genel') : sel.value;
       const metin = document.getElementById('klYmetin').value.trim();
