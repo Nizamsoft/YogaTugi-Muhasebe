@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '117';
+const APP_SURUM = '118';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '15:16';
+const APP_SURUM_SAAT = '15:33';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4735,6 +4735,7 @@ SAYFALAR['ayar-guvenlik'] = function () {
 function onayModal(baslik, mesaj, onaylandi) {
   modalAc(baslik, `<p style="font-size:14px;line-height:1.6">${mesaj || 'Emin misiniz?'}</p>`,
     `<button class="btn" id="onIptal">Vazgeç</button><button class="btn btn-kirmizi" id="onEvet">Evet, Sil</button>`);
+  const m = $('#modalKap .modal'); if (m) m.classList.add('modal-kucuk');   // onay kutuları küçük kalır
   $('#onIptal').onclick = modalKapat;
   $('#onEvet').onclick = () => { modalKapat(); onaylandi(); };
 }
@@ -5358,6 +5359,8 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'aynı boyutta olsun', not: 'Tüm veri-giriş ve seçim pencereleri tek standart boya getirildi (Gider, Ders, Tahsilat, Yeni Üyelik/Üye, Paket Ata/Seç, Üye Seç, Ortak/Üyelik/Gider tanımı, Kullanıcı Girişi, Öğrenci Düzenle/Detay). Adımlar arası artık büyüyüp küçülmüyor; footer düğmeleri de eşit yükseklikte. Gider formu bu boyla yeterince uzadığı için “Giderin Ait Olduğu Kişi” alanı artık kaydırmasız görünüyor. Küçük “Sil?/Onay” kutuları küçük kaldı. (Prompt’a 11. kural olarak eklendi.)' },
+  { q: 'altta kalmış', not: 'Formlar standart (daha uzun) boya alındığı için Gider formundaki “Ait Olduğu Kişi” alanı artık altta sıkışmıyor, tam görünüyor; tüm formlar aynı boyutta.' },
   { q: 'takvim uygulamaya özel', not: 'Gider formundaki tarih alanı, Dersler/Tahsilatlar’daki gibi uygulamaya özel takvime çevrildi (native tarih kutusu kaldırıldı). Bundan sonra formlarda bu takvim kullanılacak (Prompt kurallarına 10. madde olarak eklendi).' },
   { q: 'tık diye', not: 'Gider Seç ekranı artık “tık” diye değil, kayarak (animasyonlu) açılıp kapanıyor.' },
   { q: 'aynısı gibi dursun', not: 'Gider Ekle ile Gider Seç ekranları artık birebir aynı boyutta (kutu yeniden yaratılmıyor, gövde sabit yükseklikte, ikisinde de aynı yükseklikte footer var) — geçişte kutu oynamıyor.' },
@@ -5586,6 +5589,7 @@ function klPromptKopyala() {
   t += '8) Formlarda Enter’a basınca bir sonraki alana/girişe geçilsin.\n';
   t += '9) Yaptığın her düzeltme/güncellemeyi ilgili maddenin altına “Yapılan Güncelleme: ...” olarak yaz.\n';
   t += '10) Formlarda tarih için uygulamaya özel takvimi (Dersler/Giderler’deki gibi) kullan; native tarih kutusu kullanma. Ayrı seçim ekranları form ile AYNI boyutta ve animasyonlu (kayarak) açılsın; kutu oynamasın.\n';
+  t += '11) Yeni form/açılır pencere oluştururken standart form boyunu kullan; tüm formlar aynı boyutta olsun ve adımlar arası büyüyüp küçülmesin (yalnız küçük “Sil?/Onay” kutuları küçük kalır).\n';
   if (sorunlar.length || yeniIstekler.length || dongu.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
   const tasindi = tab === 'yeni' ? yeniIstekler.length : dongu.length;
   const tamam = () => bildir(tasindi ? (tab === 'yeni' ? `Kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : `Kopyalandı — ${tasindi} geri bildirim döngüye eklendi.`) : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
