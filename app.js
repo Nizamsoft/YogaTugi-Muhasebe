@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '102';
+const APP_SURUM = '103';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '11:16';
+const APP_SURUM_SAAT = '11:31';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5045,81 +5045,154 @@ const KONTROL_LISTE = [
     ['gen_panel', 'Kontrol paneli', 'Bu panel açılıp kapanmalı; işaretlerin uygulamayı kapatıp açınca durmalı.'],
   ]},
 ];
-let KL_DURUM = {};
-function klYukle() { try { KL_DURUM = JSON.parse(localStorage.getItem('yt_kontrol') || '{}') || {}; } catch { KL_DURUM = {}; } }
-function klKaydet() { try { localStorage.setItem('yt_kontrol', JSON.stringify(KL_DURUM)); } catch { /* dolu olabilir */ } }
+let KL_DURUM = {};       // {id:{d:'ok'|'no', n:'not'}}
+let KL_YENI = [];        // [{id, baslik, metin}] — kullanıcının eklediği istekler
+let KL_TAB = 'kontrol';  // 'kontrol' | 'yeni'
+let KL_GOSTER = false;   // tamamlananları göster (varsayılan gizli)
+function klYukle() {
+  try { KL_DURUM = JSON.parse(localStorage.getItem('yt_kontrol') || '{}') || {}; } catch { KL_DURUM = {}; }
+  try { KL_YENI = JSON.parse(localStorage.getItem('yt_kontrol_yeni') || '[]') || []; } catch { KL_YENI = []; }
+  KL_GOSTER = localStorage.getItem('yt_kontrol_goster') === '1';
+}
+function klKaydet() { try { localStorage.setItem('yt_kontrol', JSON.stringify(KL_DURUM)); } catch {} }
+function klYeniKaydet() { try { localStorage.setItem('yt_kontrol_yeni', JSON.stringify(KL_YENI)); } catch {} }
+function klGruplar() {   // yerleşik gruplar + kullanıcının eklediği "Yeni Eklenenler"
+  const gruplar = KONTROL_LISTE.map(g => ({ ad: g.ad, ikon: g.ikon, maddeler: g.maddeler.map(m => ({ id: m[0], metin: m[1], alt: m[2] || '' })) }));
+  if (KL_YENI.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: KL_YENI.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true })) });
+  return gruplar;
+}
 function klSayac() {
   let top = 0, ok = 0, no = 0;
-  for (const g of KONTROL_LISTE) for (const md of g.maddeler) { top++; const d = KL_DURUM[md[0]]; if (d && d.d === 'ok') ok++; else if (d && d.d === 'no') no++; }
+  const say = (id) => { top++; const d = KL_DURUM[id]; if (d && d.d === 'ok') ok++; else if (d && d.d === 'no') no++; };
+  for (const g of KONTROL_LISTE) for (const m of g.maddeler) say(m[0]);
+  for (const y of KL_YENI) say(y.id);
   return { top, ok, no };
 }
 function kontrolKur() {
   if (document.getElementById('klPanel')) return;
   klYukle();
-  const fab = document.createElement('button');
-  fab.id = 'klFab'; fab.className = 'kl-fab'; fab.type = 'button';
-  fab.innerHTML = '✅ <span>Kontrol</span>';
-  fab.onclick = kontrolAc;
   const perde = document.createElement('div');
   perde.id = 'klPerde'; perde.className = 'kl-perde'; perde.onclick = kontrolKapat;
   const panel = document.createElement('aside');
   panel.id = 'klPanel'; panel.className = 'kl-panel';
-  document.body.appendChild(fab);
   document.body.appendChild(perde);
   document.body.appendChild(panel);
 }
 function kontrolAc() { kontrolKur(); klCiz(); document.body.classList.add('kl-acik'); }
 function kontrolKapat() { document.body.classList.remove('kl-acik'); }
+function klRowHTML(md) {
+  const d = KL_DURUM[md.id] || {}; const durum = d.d || '';
+  return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}" data-id="${md.id}">
+      <span class="kl-mt">${kacar(md.metin)}${md.yeni ? '<span class="kl-yroz">yeni</span>' : ''}${md.alt ? `<small>${kacar(md.alt)}</small>` : ''}</span>
+      <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var">✗</button></span>
+    </div>${durum === 'no' ? `<div class="kl-note"><textarea data-note="${md.id}" placeholder="Sorunu kısaca yaz…" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}`;
+}
+function klKontrolGovde() {
+  const html = klGruplar().map(g => {
+    let go = 0; const top = g.maddeler.length;
+    const rows = g.maddeler.map(md => {
+      const durum = (KL_DURUM[md.id] && KL_DURUM[md.id].d) || '';
+      if (durum === 'ok') go++;
+      if (durum === 'ok' && !KL_GOSTER) return '';   // tamamlananları gizle
+      return klRowHTML(md);
+    }).join('');
+    if (top > 0 && go === top && !KL_GOSTER) return '';   // tümü biten grubu gizle
+    let gn = 0; for (const md of g.maddeler) if ((KL_DURUM[md.id] && KL_DURUM[md.id].d) === 'no') gn++;
+    const kalan = top - go;
+    const say = `✓${go}${gn ? ` · ✗${gn}` : ''}${kalan > 0 ? ` · ${kalan} kaldı` : ''}`;
+    return `<div class="kl-grp"><div class="kl-grp-bas">${g.ikon} ${kacar(g.ad)} <span class="kl-gsay">${say}</span></div>${rows}</div>`;
+  }).join('');
+  return html || '<div class="kl-bos2">Hepsi tamamlandı 🎉<br>“Tamamlananları göster”i açabilirsin.</div>';
+}
+function klYeniGovde() {
+  const opts = KONTROL_LISTE.map(g => `<option value="${kacar(g.ad)}">${g.ikon} ${kacar(g.ad)}</option>`).join('');
+  const liste = KL_YENI.length
+    ? KL_YENI.map(y => `<div class="kl-yit" data-yid="${y.id}"><span class="kl-ycol"><span class="kl-ybas">${kacar(y.baslik || 'Genel')}</span><span class="kl-ytxt">${kacar(y.metin)}</span></span><span class="kl-yarac"><button type="button" data-yduz="${y.id}" title="Düzenle">✎</button><button type="button" data-ysil="${y.id}" title="Sil">🗑️</button></span></div>`).join('')
+    : '<div class="kl-bos2">Henüz istek yok.</div>';
+  return `<div class="kl-yform">
+    <label class="kl-lbl">Başlık (grup)</label>
+    <select class="kl-sel" id="klYbaslik"><option value="__yeni">＋ Yeni Başlık…</option>${opts}</select>
+    <input type="text" class="kl-inp" id="klYbaslikYeni" placeholder="Yeni başlık adı…" hidden>
+    <label class="kl-lbl">Ne istiyorsun?</label>
+    <textarea class="kl-ta" id="klYmetin" placeholder="Örn. Derslere “tekrarla” butonu ekle; aynı ders ertesi hafta otomatik oluşsun."></textarea>
+    <button type="button" class="kl-ekle" id="klYekle">＋ İsteği Ekle</button>
+    <label class="kl-lbl" style="margin-top:16px">Eklenen istekler (prompt’a girer, Kontrol’de test edilir)</label>
+    <div id="klYliste">${liste}</div>
+  </div>`;
+}
 function klCiz() {
   const panel = document.getElementById('klPanel'); if (!panel) return;
   const s = klSayac();
   const yuzde = s.top ? Math.round(s.ok / s.top * 100) : 0;
-  const grupHTML = KONTROL_LISTE.map(g => {
-    let go = 0, gn = 0;
-    const rows = g.maddeler.map(([id, metin, alt]) => {
-      const d = KL_DURUM[id] || {};
-      const durum = d.d || '';
-      if (durum === 'ok') go++; else if (durum === 'no') gn++;
-      return `<div class="kl-row ${durum === 'ok' ? 'ok' : ''}" data-id="${id}">
-        <span class="kl-mt">${kacar(metin)}${alt ? `<small>${kacar(alt)}</small>` : ''}</span>
-        <span class="kl-ibs"><button type="button" class="kl-ib ok ${durum === 'ok' ? 'sec' : ''}" data-k="ok" title="Çalışıyor">✓</button><button type="button" class="kl-ib no ${durum === 'no' ? 'sec' : ''}" data-k="no" title="Sorun var">✗</button></span>
-      </div>${durum === 'no' ? `<div class="kl-note"><textarea data-note="${id}" placeholder="Sorunu kısaca yaz…" rows="2">${kacar(d.n || '')}</textarea></div>` : ''}`;
-    }).join('');
-    return `<div class="kl-grp"><div class="kl-grp-bas">${g.ikon} ${kacar(g.ad)} <span class="kl-gsay">✓${go}${gn ? ` · ✗${gn}` : ''}</span></div>${rows}</div>`;
-  }).join('');
-  const oncekiGovde = panel.querySelector('.kl-govde');
-  const kaydirmaTop = oncekiGovde ? oncekiGovde.scrollTop : 0;   // yeniden çizince kaydırma başa dönmesin
+  const onceki = panel.querySelector('.kl-govde'); const kaydir = onceki ? onceki.scrollTop : 0;
+  const kontrolAktif = KL_TAB === 'kontrol';
+  const ustHTML = kontrolAktif
+    ? `<div class="kl-ozet"><span class="kl-yz">${s.ok}/${s.top}</span><span class="kl-pbar"><span style="width:${yuzde}%"></span></span>${s.no ? `<span class="kl-sr">✗ ${s.no}</span>` : ''}</div>
+       <div class="kl-tgl" id="klTgl"><span class="kl-sw ${KL_GOSTER ? 'on' : ''}"><i></i></span> Tamamlananları göster</div>`
+    : '';
   panel.innerHTML = `
     <div class="kl-bas"><span class="kl-ik">✅</span><span class="kl-t">Kontrol Listesi</span><button type="button" class="kl-x" id="klKapat" title="Kapat">✕</button></div>
-    <div class="kl-ozet"><span class="kl-yz">${s.ok}/${s.top}</span><span class="kl-pbar"><span style="width:${yuzde}%"></span></span>${s.no ? `<span class="kl-sr">✗ ${s.no}</span>` : ''}</div>
-    <div class="kl-govde">${grupHTML}</div>
+    <div class="kl-tabs">
+      <button type="button" class="kl-tab ${kontrolAktif ? 'sec' : ''}" data-tab="kontrol"><span class="tt">🔍 Kontrol</span><span class="ts">${s.ok}/${s.top}${s.no ? ` · ✗${s.no}` : ''}</span></button>
+      <button type="button" class="kl-tab ${!kontrolAktif ? 'sec' : ''}" data-tab="yeni"><span class="tt">＋ Yeni</span><span class="ts">${KL_YENI.length} istek</span></button>
+    </div>
+    ${ustHTML}
+    <div class="kl-govde">${kontrolAktif ? klKontrolGovde() : klYeniGovde()}</div>
     <div class="kl-alt"><button type="button" class="kl-prompt" id="klPrompt">📋 Prompt Kopyala</button><button type="button" class="kl-sifir" id="klSifir" title="Tümünü sıfırla">↺</button></div>`;
-  { const yeniGovde = panel.querySelector('.kl-govde'); if (yeniGovde) yeniGovde.scrollTop = kaydirmaTop; }
+  { const g = panel.querySelector('.kl-govde'); if (g) g.scrollTop = kaydir; }
   document.getElementById('klKapat').onclick = kontrolKapat;
   document.getElementById('klPrompt').onclick = klPromptKopyala;
-  document.getElementById('klSifir').onclick = () => onayModal('Tüm işaretler silinsin mi?', 'Bütün ✓ / ✗ işaretleri ve notlar sıfırlanır.', () => { KL_DURUM = {}; klKaydet(); klCiz(); });
+  document.getElementById('klSifir').onclick = () => onayModal('Tümü sıfırlansın mı?', 'Bütün ✓/✗ işaretleri, notlar ve eklenen istekler silinir.', () => { KL_DURUM = {}; KL_YENI = []; klKaydet(); klYeniKaydet(); klCiz(); });
+  panel.querySelectorAll('.kl-tab').forEach(b => b.onclick = () => { KL_TAB = b.dataset.tab; klCiz(); });
+  const tgl = document.getElementById('klTgl');
+  if (tgl) tgl.onclick = () => { KL_GOSTER = !KL_GOSTER; localStorage.setItem('yt_kontrol_goster', KL_GOSTER ? '1' : '0'); klCiz(); };
+  // Kontrol: ✓/✗ + not
   panel.querySelectorAll('.kl-ib').forEach(b => b.onclick = () => {
     const id = b.closest('.kl-row').dataset.id, k = b.dataset.k;
     const cur = (KL_DURUM[id] && KL_DURUM[id].d) || '';
-    if (cur === k) delete KL_DURUM[id];
-    else KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: k });
+    if (cur === k) delete KL_DURUM[id]; else KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: k });
     klKaydet(); klCiz();
     if (KL_DURUM[id] && KL_DURUM[id].d === 'no') { const ta = panel.querySelector(`[data-note="${id}"]`); if (ta) ta.focus(); }
   });
-  panel.querySelectorAll('[data-note]').forEach(ta => ta.addEventListener('input', () => {
-    const id = ta.dataset.note; KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: 'no', n: ta.value }); klKaydet();
-  }));
+  panel.querySelectorAll('[data-note]').forEach(ta => ta.addEventListener('input', () => { const id = ta.dataset.note; KL_DURUM[id] = Object.assign({}, KL_DURUM[id], { d: 'no', n: ta.value }); klKaydet(); }));
+  // Yeni: form + istek yönetimi
+  const sel = document.getElementById('klYbaslik');
+  if (sel) {
+    const yb = document.getElementById('klYbaslikYeni');
+    sel.onchange = () => { yb.hidden = sel.value !== '__yeni'; if (!yb.hidden) yb.focus(); };
+    document.getElementById('klYekle').onclick = () => {
+      const baslik = sel.value === '__yeni' ? (yb.value.trim() || 'Genel') : sel.value;
+      const metin = document.getElementById('klYmetin').value.trim();
+      if (!metin) return bildir('Ne istediğini yaz.', 'hata');
+      KL_YENI.push({ id: 'kly_' + yeniId(), baslik, metin });
+      klYeniKaydet(); klCiz();
+    };
+    panel.querySelectorAll('[data-ysil]').forEach(b => b.onclick = () => { const id = b.dataset.ysil; KL_YENI = KL_YENI.filter(x => x.id !== id); delete KL_DURUM[id]; klYeniKaydet(); klKaydet(); klCiz(); });
+    panel.querySelectorAll('[data-yduz]').forEach(b => b.onclick = () => {
+      const y = KL_YENI.find(x => x.id === b.dataset.yduz); if (!y) return;
+      KL_YENI = KL_YENI.filter(x => x.id !== y.id); delete KL_DURUM[y.id]; klYeniKaydet(); klKaydet(); KL_TAB = 'yeni'; klCiz();
+      const sel2 = document.getElementById('klYbaslik'), yb2 = document.getElementById('klYbaslikYeni'), mt2 = document.getElementById('klYmetin');
+      const bilinen = Array.from(sel2.options).some(o => o.value === y.baslik);
+      if (bilinen) { sel2.value = y.baslik; yb2.hidden = true; } else { sel2.value = '__yeni'; yb2.hidden = false; yb2.value = y.baslik; }
+      mt2.value = y.metin; mt2.focus();
+    });
+  }
 }
 function klPromptKopyala() {
-  const sorunlar = [];
-  for (const g of KONTROL_LISTE) for (const [id, metin] of g.maddeler) { const d = KL_DURUM[id]; if (d && d.d === 'no') sorunlar.push({ grup: g.ad, metin, not: (d.n || '').trim() }); }
+  const sorunlar = [], yeniIstekler = [];
+  const durumOf = (id) => (KL_DURUM[id] && KL_DURUM[id].d) || '';
+  for (const g of KONTROL_LISTE) for (const [id, metin] of g.maddeler) { if (durumOf(id) === 'no') sorunlar.push({ grup: g.ad, metin, not: (KL_DURUM[id].n || '').trim() }); }
+  for (const y of KL_YENI) {
+    const st = durumOf(y.id);
+    if (st === 'no') sorunlar.push({ grup: y.baslik || 'Yeni', metin: y.metin, not: (KL_DURUM[y.id].n || '').trim() });
+    else if (st !== 'ok') yeniIstekler.push({ grup: y.baslik || 'Genel', metin: y.metin });
+  }
   const s = klSayac();
   let t = `GREEN VILLAGE PILATES — KONTROL RAPORU (Sürüm ${APP_SURUM})\n`;
-  t += `Çalışıyor: ${s.ok}/${s.top} · Sorun: ${s.no}\n\n`;
-  if (sorunlar.length) {
-    t += 'SORUNLAR:\n';
-    sorunlar.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}${x.not ? ` — ${x.not}` : ''}\n`; });
-  } else t += 'İşaretli sorun yok. ✓\n';
+  t += `Çalışıyor: ${s.ok}/${s.top} · Sorun: ${sorunlar.length} · Yeni istek: ${yeniIstekler.length}\n`;
+  if (sorunlar.length) { t += '\nSORUNLAR:\n'; sorunlar.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}${x.not ? ` — ${x.not}` : ''}\n`; }); }
+  if (yeniIstekler.length) { t += '\nYENİ İSTEKLER:\n'; yeniIstekler.forEach((x, i) => { t += `${i + 1}) [${x.grup}] ${x.metin}\n`; }); }
+  if (!sorunlar.length && !yeniIstekler.length) t += '\nİşaretli sorun/istek yok. ✓\n';
   t += '\nKURALLAR (her düzeltmede uy):\n';
   t += '1) Önce tasarımı (önizleme) ilet, onay alınca kodla.\n';
   t += '2) Sıcak yeşil/kum/gold temayı ve mevcut tasarımı bozma.\n';
@@ -5128,7 +5201,8 @@ function klPromptKopyala() {
   t += '5) Programın mevcut yapısını bozma; işleyişi zorlaştırma, sade ve kolay kalsın.\n';
   t += '6) Gereksiz açıklama/yorum yazma; kısa ve öz ol.\n';
   t += '7) Uygulama aşırı hızlı ve çok akıcı çalışsın.\n';
-  if (sorunlar.length) t += '\nLütfen bu maddeleri düzelt ve her birine tek tek ne yaptığını yaz.';
+  t += '8) Formlarda Enter’a basınca bir sonraki alana/girişe geçilsin.\n';
+  if (sorunlar.length || yeniIstekler.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
   const tamam = () => bildir('Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(tamam).catch(() => klPromptGoster(t));
   else klPromptGoster(t);
