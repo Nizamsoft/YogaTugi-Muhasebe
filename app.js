@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '123';
+const APP_SURUM = '124';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '17:10';
+const APP_SURUM_SAAT = '17:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -509,12 +509,18 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
-  { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
-  { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
-  { id: 'odemeler', ad: 'Tahsilatlar', ikon: '💰', baslik: 'Tahsilatlar' },
-  { id: 'giderler', ad: 'Giderler', ikon: '💸', baslik: 'Giderler' },
-  { id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar' },
-  { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: '🗂️', baslik: 'Tanımlamalar' },
+  { grup: 'Ders Takibi', ikon: '🎯', ogeler: [
+    { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
+    { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
+  ] },
+  { grup: 'Muhasebe', ikon: '📒', ogeler: [
+    { id: 'odemeler', ad: 'Tahsilatlar', ikon: '💰', baslik: 'Tahsilatlar' },
+    { id: 'giderler', ad: 'Giderler', ikon: '💸', baslik: 'Giderler' },
+    { id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar' },
+  ] },
+  { grup: 'Ayarlar', ikon: '⚙️', sadeceAdmin: true, ogeler: [
+    { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: '🗂️', baslik: 'Tanımlamalar' },
+  ] },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
 const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-giris-kul': 'Kullanıcı Girişleri' };
@@ -611,7 +617,7 @@ function git(sayfa) {
   $$('.menu-oge').forEach(b => b.classList.toggle('aktif', b.dataset.sayfa === vurgulanan));
   // Aktif alt sayfanın grubunu aç, diğerlerini kapat (akordeon)
   $$('.menu-grup').forEach(g => {
-    const icerir = Array.from(g.querySelectorAll('.menu-oge')).some(b => b.dataset.sayfa === sayfa);
+    const icerir = Array.from(g.querySelectorAll('.menu-oge')).some(b => b.dataset.sayfa === sayfa || b.dataset.sayfa === vurgulanan);
     g.classList.toggle('acik', icerir);
   });
   document.body.classList.remove('menu-acik');
@@ -5466,6 +5472,8 @@ const KL_GUNCELLEME = [
   { q: 'pasifte kimse yokken', not: 'Pasif sekmesini boşken otomatik Aktif’e çeviren davranış kaldırıldı. Artık Pasif’e basınca sekme Pasif’te kalıyor ve “Pasif öğrenci yok.” mesajı gösteriliyor.' },
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
   { q: 'aktif öğrenci', not: 'Gösterge Paneli yeniden tasarlandı: solda gold çerçeveli kişi fotoğrafı + adı (Eğitmen), sağda kompakt premium gold metrik kartları — Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri ve altta geniş “Verilecek Pay”. Üstte ay seçimi ve (ortak girişinde) “Ortakları göster” anahtarı var: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı gelir (admin hep hepsini görür). Her karta tıklayınca ilgili sayfaya gidiyor (Öğrenciler/Dersler/Tahsilatlar/Giderler/Ortaklar). Altta mevcut “Ekibimiz” kartları duruyor.' },
+  { q: 'ders takibi', not: 'Sol menü Ana ▸ Alt başlık olarak gruplandı: Gösterge Paneli (tekil, üstte öne çıkan) · Ders Takibi ▸ Dersler/Öğrenciler · Muhasebe ▸ Tahsilatlar/Giderler/Ortaklar · Ayarlar ▸ Tanımlamalar (yalnızca admin). Görsel iyileştirme: açık grubun başlığı altın tonlu zemin + sol altın şerit; alt öğeleri bağlayan ince altın kılavuz çizgisi ve her öğede altın nokta; seçili öğe yeşil. Gruplar akordeon (birine basınca açılır, diğeri kapanır); bir alt sayfaya gidince grubu otomatik açılır.' },
+  { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
@@ -5714,6 +5722,8 @@ function klPromptKopyala() {
   t += '9) Yaptığın her düzeltme/güncellemeyi ilgili maddenin altına “Yapılan Güncelleme: ...” olarak yaz.\n';
   t += '10) Formlarda tarih için uygulamaya özel takvimi (Dersler/Giderler’deki gibi) kullan; native tarih kutusu kullanma. Ayrı seçim ekranları form ile AYNI boyutta ve animasyonlu (kayarak) açılsın; kutu oynamasın.\n';
   t += '11) Yeni form/açılır pencere oluştururken standart form boyunu kullan; tüm formlar aynı boyutta olsun ve adımlar arası büyüyüp küçülmesin (yalnız küçük “Sil?/Onay” kutuları küçük kalır).\n';
+  t += '12) Gold-premium tasarım: her yeni ekran/kart/eleman altın-premium dili taşısın (altın gradyan çerçeve/vurgu, sıcak ışıltı, yumuşak gölge, ince 3B derinlik); giriş ekranı ve Gösterge Paneli’ndeki premium havayla tutarlı olsun.\n';
+  t += '13) Tutarlılık ve etkileşim: Bir kart/tabloya yeni ne eklenirse bir öncekiyle AYNI ölçü ve özellikleri taşısın (Enter’la sonraki alana geçme, açılış/geçiş animasyonları, para birimi biçimi ₺ ve binlik ayracı vb.). İmleç kuralı: fotoğraf/dosya seçimi ve düz metinde imleç DEĞİŞMESİN (varsayılan ok); metin girişlerinde metin imleci, düğmelerde el (pointer) olsun. Tablolarda her kaydın satırında kalem (✎) ikonuyla düzenleme (geri düzenlenebilir) ve aynı yerden silme (🗑️) bulunsun.\n';
   if (sorunlar.length || yeniIstekler.length || dongu.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
   const tasindi = tab === 'yeni' ? yeniIstekler.length : dongu.length;
   const tamam = () => bildir(tasindi ? (tab === 'yeni' ? `Kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : `Kopyalandı — ${tasindi} geri bildirim döngüye eklendi.`) : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');

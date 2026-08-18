@@ -175,8 +175,20 @@ h1,h2,h3,h4{line-height:1.25}
 /* Akordeon panel — animasyonlu yükseklik (grid-rows 0fr→1fr) */
 .menu-alt{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
 .menu-grup.acik .menu-alt{grid-template-rows:1fr}
-.menu-alt > .ic{overflow:hidden;min-height:0;padding-left:6px}
-.menu-alt .menu-oge{padding-left:40px;font-size:13.5px}
+.menu-alt > .ic{overflow:hidden;min-height:0}
+
+/* ---- Ana ▸ Alt menü görsel iyileştirme ---- */
+.kenar-menu{padding:12px 12px 20px}
+.menu-oge.tekil{margin-bottom:4px;font-weight:600}
+.grup-baslik{font-weight:700;border-radius:11px}
+.grup-baslik .ikon{font-size:16px}
+.menu-grup.acik .grup-baslik{background:linear-gradient(135deg,rgba(198,154,76,.18),rgba(198,154,76,.05));color:var(--metin);box-shadow:inset 3px 0 0 var(--gold)}
+/* alt öğeler: sol altın kılavuz çizgisi + noktalar */
+.menu-alt > .ic{padding-left:20px;position:relative}
+.menu-alt > .ic::before{content:"";position:absolute;left:26px;top:4px;bottom:8px;width:2px;background:linear-gradient(180deg,#e3cf9a,rgba(198,154,76,.15));border-radius:2px}
+.menu-alt .menu-oge{padding-left:34px;font-size:13.5px;position:relative}
+.menu-alt .menu-oge::before{content:"";position:absolute;left:22px;top:50%;width:9px;height:2px;background:rgba(198,154,76,.55);transform:translateY(-50%);border-radius:2px}
+.menu-alt .menu-oge.aktif::before{background:#f6e6ad;width:11px;height:3px;box-shadow:0 0 6px rgba(246,230,173,.9)}
 
 /* --------- Ana alan --------- */
 .ana{flex:1;min-width:0;display:flex;flex-direction:column}
