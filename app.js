@@ -374,14 +374,21 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '112';
+const APP_SURUM = '113';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '13:11';
+const APP_SURUM_SAAT = '13:59';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
 /* Giriş yapan kullanıcı bir ortaksa onun id'si; admin/eşleşmeyen için null */
 function aktifOrtakId() { return (State.kullanici && State.kullanici.ortakId) || null; }
+/* Ortak girişinde: diğer ortakların verilerini de göster? (varsayılan kapalı) */
+let ortakGoster = false;
+function hepsiniGor() { return adminMi() || ortakGoster; }   // true → tüm ortakların verisi
+function benId() { return aktifOrtakId(); }                    // giriş yapan ortağın id'si
+/* Sayfa üst barındaki "Ortakları göster" düğmesi (yalnızca ortak girişinde) */
+function ortakGosterBtnHTML() { return adminMi() ? '' : `<button type="button" class="ort-tgl ${ortakGoster ? 'on' : ''}" id="ortGosterBtn"><span class="sw"><i></i></span> Ortakları göster</button>`; }
+function ortakGosterBtnBagla(yenile) { const b = document.getElementById('ortGosterBtn'); if (b) b.onclick = () => { ortakGoster = !ortakGoster; yenile(); }; }
 
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
@@ -390,7 +397,7 @@ async function veriYukle() {
   ESKI_KOLEKSIYONLAR.forEach(k => { if (localStorage.getItem('yt_' + k) !== null) { localStorage.removeItem('yt_' + k); temizlik = true; } });
   // Ortakları sadeleştir (id + ad + foto)
   const ham = DB._oku('ortaklar');
-  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false }));
+  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false, girisAd: o.girisAd || null, sifreHash: o.sifreHash || null, girisAktif: o.girisAktif !== false }));
   const degisti = JSON.stringify(ham) !== JSON.stringify(temiz);
   if (degisti) DB._yaz('ortaklar', temiz);   // bu aynı zamanda buluta temiz veriyi gönderir
   else if (temizlik && window._Bulut) window._Bulut.itPlanla();
@@ -507,9 +514,9 @@ const MENU = [
   { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: '🗂️', baslik: 'Tanımlamalar' },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-giris-kul': 'Kullanıcı Girişleri' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
-const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-uyelik', 'tanim-gider'];
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-uyelik', 'tanim-gider', 'ayar-giris-kul'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak', 'Müşteri & Planlama'];
@@ -539,11 +546,11 @@ function hesapIkonSVG(renk) {
 
 function menuCiz() {
   const nav = $('#anaMenu');
-  const sadeceOrtak = !adminMi();   // ortak girişi: yalnızca Panel + Ortaklar
+  const sadeceOrtak = !adminMi();   // ortak girişi: Tanımlamalar gizli, veriler kendine kısıtlı
   let html = '';
   for (const m of MENU) {
     if (m.gizli) continue;
-    if (sadeceOrtak && !(m.id === 'dashboard' || m.id === 'hesap-ortak')) continue;
+    if (sadeceOrtak && m.id === 'ayar-tanimlama') continue;   // Tanımlamalar yalnızca admin
     if (m.grup) {
       const ogeler = m.ogeler.filter(o => !o.gizli && (!o.sadeceAdmin || adminMi()));
       if (!ogeler.length) continue;
@@ -561,7 +568,7 @@ function menuCiz() {
       html += `<button class="menu-oge tekil" data-sayfa="${m.id}"><span class="ikon">${m.ikon}</span>${kacar(m.ad)}</button>`;
     }
   }
-  html += `<button class="menu-oge tekil" id="menuKontrol"><span class="ikon">✅</span>Kontrol Listesi</button>`;
+  if (adminMi()) html += `<button class="menu-oge tekil" id="menuKontrol"><span class="ikon">✅</span>Kontrol Listesi</button>`;   // yalnızca admin
   nav.innerHTML = html;
   // Akordeon: grup başlığına basınca aç/kapa; biri açılınca diğerleri kapanır
   $$('.grup-baslik', nav).forEach(b => b.onclick = () => {
@@ -619,7 +626,8 @@ const ic = () => $('#icerik');
 
 /* -------- DASHBOARD -------- */
 SAYFALAR.dashboard = function () {
-  const list = State.ortaklar.filter(o => o.aktif !== false);
+  let list = State.ortaklar.filter(o => o.aktif !== false);
+  if (!adminMi()) list = list.filter(o => o.id === benId());   // ortak: yalnızca kendini görür
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   const renk = ['g', 'b', 'p', 'a'];
   const kartlar = list.map((o, i) => {
@@ -3387,6 +3395,7 @@ const TANIMLAR = [
   { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: '👥', alt: 'Eğitmenler ve pay oranları' },
   { id: 'tanim-uyelik', ad: 'Üyelikler', ikon: '🎟️', alt: 'Ders ve üyelik paketleri' },
   { id: 'tanim-gider', ad: 'Giderler', ikon: '📉', alt: 'Gider kalemleri ve grupları' },
+  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: '🔑', alt: 'Ortaklara giriş (kullanıcı adı + şifre)' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
   ic().innerHTML = `
@@ -3404,6 +3413,79 @@ SAYFALAR['ayar-tanimlama'] = function () {
     setTimeout(() => git(b.dataset.tanim), 200);
   });
 };
+
+/* -------- Tanımlamalar: Kullanıcı Girişleri (ortaklara giriş) — yalnızca admin -------- */
+SAYFALAR['ayar-giris-kul'] = function () {
+  if (!adminMi()) { git('dashboard'); return; }
+  const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const renk = ['', 'f2', 'f3', 'f2', 'f3'];
+  const kart = (o, i) => {
+    const av = o.foto ? `<img src="${o.foto}" alt="">` : kacar(bas(o.ad));
+    const tanimli = !!(o.girisAd && o.sifreHash);
+    const aktif = o.girisAktif !== false;
+    const alt = tanimli
+      ? `Kullanıcı: <b>${kacar(o.girisAd)}</b> · şifre belirlendi ✓`
+      : `<span class="kul-yok">Giriş tanımlı değil — “Giriş Tanımla” ile ekle</span>`;
+    return `<div class="kul-kart">
+      <div class="kul-av ${o.foto ? 'kul-av-foto' : renk[i % renk.length]}">${av}</div>
+      <div class="kul-orta"><div class="kul-ad">${kacar(o.ad)}</div><div class="kul-alt">${alt}</div></div>
+      <div class="kul-arac">
+        <button type="button" class="kul-btn ${tanimli ? '' : 'kul-btn-ekle'}" data-kul="${o.id}">${tanimli ? '✎ Düzenle' : '＋ Giriş Tanımla'}</button>
+        ${tanimli ? `<span class="kul-sw ${aktif ? 'on' : ''}" data-kulakt="${o.id}" title="Giriş aktif"><i></i></span>` : ''}
+      </div>
+    </div>`;
+  };
+  ic().innerHTML = `
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="gkGeri">‹ Tanımlamalar</button></div>
+    <div class="bilgi-kutu" style="max-width:560px;margin:0 0 14px"><span class="ikon">🔑</span><div>Her ortağa <b>kullanıcı adı + şifre</b> verin. Ortak giriş yaptığında varsayılan olarak yalnızca <b>kendi</b> verilerini görür.</div></div>
+    <div class="kul-list">
+      <div class="kul-kart kadmin">
+        <div class="kul-av f2">A</div>
+        <div class="kul-orta"><div class="kul-ad">Yönetici <span class="kul-rozet">ADMIN</span></div><div class="kul-alt">Kullanıcı: <b>${kacar(SABIT_ADMIN.kullanici)}</b> · kod ile tanımlı · tüm verileri görür</div></div>
+        <div class="kul-arac"><span class="kul-alt">değiştirilemez</span></div>
+      </div>
+      ${State.ortaklar.filter(o => o.aktif !== false).map(kart).join('') || '<div class="gp-bos">Önce Ortak Bilgileri’nden ortak ekleyin.</div>'}
+    </div>`;
+  $('#gkGeri').onclick = () => git('ayar-tanimlama');
+  $$('[data-kul]').forEach(b => b.onclick = () => { const o = State.ortaklar.find(x => x.id === b.dataset.kul); if (o) girisKulFormu(o); });
+  $$('[data-kulakt]').forEach(s => s.onclick = async () => {
+    const o = State.ortaklar.find(x => x.id === s.dataset.kulakt); if (!o) return;
+    const yeni = o.girisAktif === false;   // kapalıysa aç
+    await DB.guncelle('ortaklar', o.id, { girisAktif: yeni }); o.girisAktif = yeni;
+    bildir(yeni ? 'Giriş açıldı.' : 'Giriş kapatıldı.', 'basari'); SAYFALAR['ayar-giris-kul']();
+  });
+};
+function girisKulFormu(o) {
+  const govde = `
+    <div class="gp-alan"><label>Kullanıcı Adı</label><input type="text" class="gp-inp" id="gkAd" value="${kacar(o.girisAd || '')}" placeholder="Örn. elif" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="gp-alan"><label>Şifre</label><input type="password" class="gp-inp" id="gkSif" placeholder="${o.sifreHash ? '•••••• (değiştirmek için yaz)' : 'Yeni şifre'}" autocomplete="new-password"></div>
+    <div class="gp-alan" style="margin:0"><label>Şifre (tekrar)</label><input type="password" class="gp-inp" id="gkSif2" placeholder="Şifreyi tekrar yaz" autocomplete="new-password"></div>`;
+  modalAc('Giriş Bilgileri — ' + kacar(o.ad), govde,
+    `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet">💾 Kaydet</button>`,
+    `<span class="hr-rozet">🔑 Giriş</span>`);
+  const zincir = ['#gkAd', '#gkSif', '#gkSif2'];
+  zincir.forEach((sel, i) => { const el = $(sel); if (!el) return; el.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); if (i < zincir.length - 1) { const sonraki = $(zincir[i + 1]); if (sonraki) sonraki.focus(); } else $('#gkKaydet').click(); }); });
+  setTimeout(() => $('#gkAd').focus(), 50);
+  $('#gkIptal').onclick = modalKapat;
+  $('#gkKaydet').onclick = async () => {
+    const ad = ($('#gkAd').value || '').trim();
+    const sif = $('#gkSif').value || '';
+    const sif2 = $('#gkSif2').value || '';
+    if (!ad) return bildir('Kullanıcı adı girin.', 'hata');
+    const adLc = ad.toLocaleLowerCase('tr');
+    if (adLc === SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) return bildir('Bu kullanıcı adı yöneticiye ait.', 'hata');
+    if (State.ortaklar.some(x => x.id !== o.id && (x.girisAd || '').toLocaleLowerCase('tr') === adLc)) return bildir('Bu kullanıcı adı başka ortakta kullanılıyor.', 'hata');
+    const veri = { girisAd: ad };
+    if (sif || !o.sifreHash) {   // yeni giriş ya da şifre değişikliği
+      if (sif.length < 4) return bildir('Şifre en az 4 karakter olmalı.', 'hata');
+      if (sif !== sif2) return bildir('Şifreler eşleşmiyor.', 'hata');
+      veri.sifreHash = await sifreHash(sif);
+    }
+    if (o.girisAktif === undefined) veri.girisAktif = true;
+    await DB.guncelle('ortaklar', o.id, veri); Object.assign(o, veri);
+    modalKapat(); bildir('Giriş bilgileri kaydedildi.', 'basari'); SAYFALAR['ayar-giris-kul']();
+  };
+}
 
 /* -------- Tanımlamalar: Giderler (gruplu) -------- */
 SAYFALAR['tanim-gider'] = function () {
@@ -3641,7 +3723,7 @@ function egitmenAv(id, cls) {
 }
 
 SAYFALAR['ogrenciler'] = function () {
-  const hepsi = State.ogrenciler || [];
+  const hepsi = (State.ogrenciler || []).filter(o => hepsiniGor() || o.egitmenId === benId());   // ortak: yalnızca kendi öğrencileri
   const bitmis = (o) => { const m = ogrenciMetrik(o); return m.dersToplam > 0 && m.kalanDers <= 0; };
   const ogrAll = hepsi.filter(o => o.durum === 'ogrenci');
   const ogr = ogrAll.filter(o => !bitmis(o));
@@ -3715,12 +3797,13 @@ SAYFALAR['ogrenciler'] = function () {
           <button type="button" class="seg-pot ${ogrenciAktifSekme === 'potansiyel' ? 'sec' : ''}" data-sekme="potansiyel">Potansiyel <span class="rk">${pot.length}</span></button>
           <button type="button" class="seg-pas ${ogrenciAktifSekme === 'pasif' ? 'sec' : ''}" data-sekme="pasif">Pasif <span class="rk">${pasif.length}</span></button>
         </div>
-        <button type="button" class="gp-ekle" id="yeniUyelikBtn">＋ Yeni Üyelik Oluştur</button>
+        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="yeniUyelikBtn">＋ Yeni Üyelik Oluştur</button></div>
       </div>
       ${govde}
     </div>`;
 
   $('#yeniUyelikBtn').onclick = yeniUyelikBaslat;
+  ortakGosterBtnBagla(() => SAYFALAR['ogrenciler']());
   $$('[data-sekme]').forEach(b => b.onclick = () => { ogrenciAktifSekme = b.dataset.sekme; SAYFALAR['ogrenciler'](); });
   $$('[data-oata]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oata); if (o) islemSecModal(o); });
   $$('[data-oduzenle]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.oduzenle); if (o) ogrenciDuzenle(o); });
@@ -3942,7 +4025,7 @@ let dersAktifSekme = 'bekliyor';   // 'bekliyor' | 'gerceklesti' | 'iptal'
 function ogrenciTamAd(o) { return o ? `${o.ad} ${o.soyad || ''}`.trim() : '—'; }
 
 SAYFALAR['dersler'] = function () {
-  const hepsi = State.dersler || [];
+  const hepsi = (State.dersler || []).filter(d => hepsiniGor() || d.egitmenId === benId());   // ortak: yalnızca kendi dersleri
   const say = { bekliyor: 0, gerceklesti: 0, iptal: 0 };
   hepsi.forEach(d => { if (say[d.durum] != null) say[d.durum]++; });
   const liste = hepsi.filter(d => d.durum === dersAktifSekme).sort((a, b) => (a.tarih + a.saat).localeCompare(b.tarih + b.saat));
@@ -3974,7 +4057,7 @@ SAYFALAR['dersler'] = function () {
           <button type="button" class="seg-grc ${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
           <button type="button" class="seg-ipt ${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
         </div>
-        <button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button>
+        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
       </div>
       ${liste.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
@@ -3983,6 +4066,7 @@ SAYFALAR['dersler'] = function () {
         : `<div class="gp-bos">${bosMetin}</div>`}
     </div>`;
   $('#dersEkle').onclick = () => dersOlusturModal();
+  ortakGosterBtnBagla(() => SAYFALAR['dersler']());
   $$('[data-dsek]').forEach(b => b.onclick = () => { dersAktifSekme = b.dataset.dsek; SAYFALAR['dersler'](); });
   $$('[data-drz]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d, b); });
 };
@@ -4332,7 +4416,8 @@ function saatSecici(mevcut, cb) {
 const ODEME_TURLERI = { nakit: '💵 Nakit', kart: '💳 Kredi Kartı', havale: '🏦 Havale' };
 
 SAYFALAR['odemeler'] = function () {
-  const kayitlar = (State.odemeler || []).slice().sort((a, b) => (b.tarih + (b.olusturma || '')).localeCompare(a.tarih + (a.olusturma || '')));
+  const odKapsam = (od) => { if (hepsiniGor()) return true; const o = State.ogrenciler.find(x => x.id === od.ogrenciId); return !!(o && o.egitmenId === benId()); };
+  const kayitlar = (State.odemeler || []).filter(odKapsam).slice().sort((a, b) => (b.tarih + (b.olusturma || '')).localeCompare(a.tarih + (a.olusturma || '')));
   const turSinif = { nakit: 'nakit', kart: 'kart', havale: 'havale' };
   // Kalan Borcu = ödeme yapıldığı ANDAKİ kalan borç (kaydedilmiş anlık görüntü).
   // Eski kayıtlarda alan yoksa: mevcut borç + bu ödemeden sonraki (aynı öğrenci) ödemeler ile geriye dönük hesapla.
@@ -4363,7 +4448,7 @@ SAYFALAR['odemeler'] = function () {
     <div class="odeme-sayfa">
       <div class="ogr-ust">
         <div class="od-baslik">Ödeme Kayıtları</div>
-        <button type="button" class="gp-ekle" id="odemeAlBtn">＋ Ödeme Al</button>
+        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="odemeAlBtn">＋ Ödeme Al</button></div>
       </div>
       ${kayitlar.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
@@ -4372,6 +4457,7 @@ SAYFALAR['odemeler'] = function () {
         : `<div class="gp-bos">Henüz ödeme yok. “＋ Ödeme Al” ile ilk ödemeyi işleyin.</div>`}
     </div>`;
   $('#odemeAlBtn').onclick = () => odemeAlModal();
+  ortakGosterBtnBagla(() => SAYFALAR['odemeler']());
   $$('[data-odsil]').forEach(b => b.onclick = () => onayModal('Ödeme silinsin mi?', 'Bu tutar öğrencinin borcuna geri eklenir.', async () => {
     const od = State.odemeler.find(x => x.id === b.dataset.odsil); if (od) await odemeGeriAl(od);
     bildir('Ödeme silindi.', 'basari'); SAYFALAR['odemeler']();
@@ -4534,6 +4620,7 @@ async function uygulamayiBaslat() {
   $('#kullaniciAd').textContent = ad;
   $('#kullaniciRol').textContent = adminMi() ? 'Yönetici' : 'Ortak';
   $('#kullaniciRozet').textContent = (ad[0] || '?').toLocaleUpperCase('tr');
+  ortakGoster = false;   // her girişte varsayılan: ortak yalnızca kendini görür (admin zaten hepsini)
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   menuCiz();
@@ -4636,10 +4723,18 @@ async function girisDogrula() {
   const sif = $('#gSif').value || '';
   const hata = $('#girisHata');
   const kulLc = kul.toLocaleLowerCase('tr');
-  if (kulLc !== SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) { hata.textContent = 'Kullanıcı adı hatalı.'; return; }
   const h = await sifreHash(sif);
-  if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
-  girisYap(SABIT_ADMIN.kullanici);
+  // Yönetici girişi
+  if (kulLc === SABIT_ADMIN.kullanici.toLocaleLowerCase('tr')) {
+    if (!SABIT_ADMIN.hashler.includes(h)) { hata.textContent = 'Şifre hatalı.'; return; }
+    return girisYap(SABIT_ADMIN.kullanici);
+  }
+  // Ortak girişi (kullanıcı adı + şifre ortak kaydında saklı)
+  const o = DB._oku('ortaklar').find(x => (x.girisAd || '').toLocaleLowerCase('tr') === kulLc && x.sifreHash);
+  if (!o) { hata.textContent = 'Kullanıcı adı hatalı.'; return; }
+  if (o.girisAktif === false) { hata.textContent = 'Bu giriş kapalı. Yöneticiye başvurun.'; return; }
+  if (o.sifreHash !== h) { hata.textContent = 'Şifre hatalı.'; return; }
+  girisYapOrtak(o);
 }
 
 async function girisYap(ad) {
@@ -5140,6 +5235,8 @@ const KL_GUNCELLEME = [
   { q: 'tanımlamalar düğmesi', not: 'Firma ve Ortak Bilgileri sayfaları Üyelikler/Giderler gibi sola hizalandı ve açılışta tnmGir animasyonuyla geliyor. Firma’daki kocaman/hatalı “‹ Tanımlamalar” düğmesi, Üyelikler’deki gibi küçük hap düğmeye çevrildi.' },
   { q: 'akışı anlatarak', not: 'Kontrol Listesi artık döngü çalışıyor: her madde İstek → Yapıldı → Geri bildirim → Yapıldı… zinciri olarak birikiyor. ✗ ile açıklama eklersin, “Prompt Kopyala” bu zinciri konuşma gibi (İSTEK/YAPILDI/GERİ BİLDİRİM) anlatarak üretir; ✓ ile onaylayana kadar döngü sürer.' },
   { q: 'döngü gitsin', not: 'Kontrol Listesi artık döngü çalışıyor: madde İstek → Yapıldı → Geri bildirim zinciri olarak birikiyor; Prompt Kopyala akışı anlatarak üretiyor, ✓ onaya kadar sürüyor.' },
+  { q: 'yeni kullanıcı ekle', not: 'Kullanıcı Girişleri eklendi (Tanımlamalar › Kullanıcı Girişleri, yalnızca admin): admin her ortağa kullanıcı adı + şifre verir, giriş aktif/pasif yapar. Ortak bu bilgilerle giriş yapar; varsayılan yalnızca KENDİ verilerini görür. Öğrenciler/Dersler/Ödemeler’de sağ üstte “Ortakları göster” düğmesi (varsayılan kapalı) — açınca diğer ortakların verileri de listelenir. Gösterge Paneli’nde ortak yalnızca kendini görür; Ortaklar sayfası aynen kalır; menüde Tanımlamalar/Kontrol ortak için gizli. Admin her yerde hepsini görür.' },
+  { q: 'admin tarafından oluşturulacak', not: 'Ortaklara kullanıcı adı + şifre ile giriş (Tanımlamalar › Kullanıcı Girişleri) eklendi; ortak varsayılan kendi verisini görür, her sayfada “Ortakları göster” düğmesiyle diğerlerini de açabilir. Panelde yalnızca kendini görür, admin hepsini.' },
   { q: 'planlanan sarı', not: 'Dersler durum sütunundaki tek harf (B/G/İ), Ödeme türü hapı gibi renkli kelime hapına çevrildi: Planlanan sarı, Gerçekleşen yeşil, İptal kırmızı. Üstteki sekmeler de aynı renklerde; seçili olan parlıyor ve altın çerçeve alıyor. Hapa basınca yine durum değiştirme menüsü açılıyor.' },
   { q: 'dersler kartları', not: 'Dersler durumları renkli kelime hapı oldu (Planlanan sarı · Gerçekleşen yeşil · İptal kırmızı) ve sekmeler renklendirildi; seçili olan parlıyor + altın çerçeve.' },
   { q: 'pasifte kimse yokken', not: 'Pasif sekmesini boşken otomatik Aktif’e çeviren davranış kaldırıldı. Artık Pasif’e basınca sekme Pasif’te kalıyor ve “Pasif öğrenci yok.” mesajı gösteriliyor.' },
