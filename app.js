@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '104';
+const APP_SURUM = '105';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '11:45';
+const APP_SURUM_SAAT = '11:50';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5061,16 +5061,19 @@ function klYukle() {
 }
 function klKaydet() { try { localStorage.setItem('yt_kontrol', JSON.stringify(KL_DURUM)); } catch {} }
 function klYeniKaydet() { try { localStorage.setItem('yt_kontrol_yeni', JSON.stringify(KL_YENI)); } catch {} }
-function klGruplar() {   // yerleşik gruplar + kullanıcının eklediği "Yeni Eklenenler"
+function klBekleyen() { return KL_YENI.filter(y => !y.gonderildi); }        // Yeni sekmesindeki (henüz prompt'a verilmemiş)
+function klGonderilen() { return KL_YENI.filter(y => y.gonderildi); }       // Kontrol'e taşınmış
+function klGruplar() {   // yerleşik gruplar + Kontrol'e taşınan "Yeni Eklenenler"
   const gruplar = KONTROL_LISTE.map(g => ({ ad: g.ad, ikon: g.ikon, maddeler: g.maddeler.map(m => ({ id: m[0], metin: m[1], alt: m[2] || '' })) }));
-  if (KL_YENI.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: KL_YENI.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true })) });
+  const gond = klGonderilen();
+  if (gond.length) gruplar.push({ ad: 'Yeni Eklenenler', ikon: '✨', maddeler: gond.map(y => ({ id: y.id, metin: y.metin, alt: y.baslik ? ('Başlık: ' + y.baslik) : '', yeni: true })) });
   return gruplar;
 }
 function klSayac() {
   let top = 0, ok = 0, no = 0;
   const say = (id) => { top++; const d = KL_DURUM[id]; if (d && d.d === 'ok') ok++; else if (d && d.d === 'no') no++; };
   for (const g of KONTROL_LISTE) for (const m of g.maddeler) say(m[0]);
-  for (const y of KL_YENI) say(y.id);
+  for (const y of klGonderilen()) say(y.id);
   return { top, ok, no };
 }
 function kontrolKur() {
@@ -5111,9 +5114,10 @@ function klKontrolGovde() {
 }
 function klYeniGovde() {
   const opts = KONTROL_LISTE.map(g => `<option value="${kacar(g.ad)}">${g.ikon} ${kacar(g.ad)}</option>`).join('');
-  const liste = KL_YENI.length
-    ? KL_YENI.map(y => `<div class="kl-yit" data-yid="${y.id}"><span class="kl-ycol"><span class="kl-ybas">${kacar(y.baslik || 'Genel')}</span><span class="kl-ytxt">${kacar(y.metin)}</span></span><span class="kl-yarac"><button type="button" data-yduz="${y.id}" title="Düzenle">✎</button><button type="button" data-ysil="${y.id}" title="Sil">🗑️</button></span></div>`).join('')
-    : '<div class="kl-bos2">Henüz istek yok.</div>';
+  const bekleyen = klBekleyen();
+  const liste = bekleyen.length
+    ? bekleyen.map(y => `<div class="kl-yit" data-yid="${y.id}"><span class="kl-ycol"><span class="kl-ybas">${kacar(y.baslik || 'Genel')}</span><span class="kl-ytxt">${kacar(y.metin)}</span></span><span class="kl-yarac"><button type="button" data-yduz="${y.id}" title="Düzenle">✎</button><button type="button" data-ysil="${y.id}" title="Sil">🗑️</button></span></div>`).join('')
+    : '<div class="kl-bos2">Henüz istek yok.<br>Ekle → “Prompt Kopyala” ile Kontrol’e geçer.</div>';
   return `<div class="kl-yform">
     <label class="kl-lbl">Başlık (grup)</label>
     <select class="kl-sel" id="klYbaslik"><option value="__yeni">＋ Yeni Başlık…</option>${opts}</select>
@@ -5139,7 +5143,7 @@ function klCiz() {
     <div class="kl-bas"><span class="kl-ik">✅</span><span class="kl-t">Kontrol Listesi</span><button type="button" class="kl-x" id="klKapat" title="Kapat">✕</button></div>
     <div class="kl-tabs">
       <button type="button" class="kl-tab ${kontrolAktif ? 'sec' : ''}" data-tab="kontrol"><span class="tt">🔍 Kontrol</span><span class="ts">${s.ok}/${s.top}${s.no ? ` · ✗${s.no}` : ''}</span></button>
-      <button type="button" class="kl-tab ${!kontrolAktif ? 'sec' : ''}" data-tab="yeni"><span class="tt">＋ Yeni</span><span class="ts">${KL_YENI.length} istek</span></button>
+      <button type="button" class="kl-tab ${!kontrolAktif ? 'sec' : ''}" data-tab="yeni"><span class="tt">＋ Yeni</span><span class="ts">${klBekleyen().length} istek</span></button>
     </div>
     ${ustHTML}
     <div class="kl-govde">${kontrolAktif ? klKontrolGovde() : klYeniGovde()}</div>
@@ -5188,9 +5192,8 @@ function klPromptKopyala() {
   const durumOf = (id) => (KL_DURUM[id] && KL_DURUM[id].d) || '';
   for (const g of KONTROL_LISTE) for (const [id, metin] of g.maddeler) { if (durumOf(id) === 'no') sorunlar.push({ grup: g.ad, metin, not: (KL_DURUM[id].n || '').trim() }); }
   for (const y of KL_YENI) {
-    const st = durumOf(y.id);
-    if (st === 'no') sorunlar.push({ grup: y.baslik || 'Yeni', metin: y.metin, not: (KL_DURUM[y.id].n || '').trim() });
-    else if (st !== 'ok') yeniIstekler.push({ grup: y.baslik || 'Genel', metin: y.metin });
+    if (!y.gonderildi) { yeniIstekler.push({ grup: y.baslik || 'Genel', metin: y.metin }); continue; }   // bekleyen → yeni istek
+    if (durumOf(y.id) === 'no') sorunlar.push({ grup: y.baslik || 'Yeni', metin: y.metin, not: (KL_DURUM[y.id].n || '').trim() });
   }
   const s = klSayac();
   let t = `GREEN VILLAGE PILATES — KONTROL RAPORU (Sürüm ${APP_SURUM})\n`;
@@ -5208,9 +5211,12 @@ function klPromptKopyala() {
   t += '7) Uygulama aşırı hızlı ve çok akıcı çalışsın.\n';
   t += '8) Formlarda Enter’a basınca bir sonraki alana/girişe geçilsin.\n';
   if (sorunlar.length || yeniIstekler.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
-  const tamam = () => bildir('Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
+  const tasindi = yeniIstekler.length;
+  const tamam = () => bildir(tasindi ? `Rapor kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(tamam).catch(() => klPromptGoster(t));
   else klPromptGoster(t);
+  // Prompt oluşturulunca bekleyen istekler Kontrol'e (Yeni Eklenenler) kayar
+  if (tasindi) { KL_YENI.forEach(y => { if (!y.gonderildi) y.gonderildi = true; }); klYeniKaydet(); klCiz(); }
 }
 function klPromptGoster(t) {
   modalAc('Kontrol Raporu', `<textarea class="gp-inp" id="klRapor" style="width:100%;box-sizing:border-box;min-height:220px;font-family:monospace;font-size:12px">${kacar(t)}</textarea><p class="soluk" style="font-size:12px;margin-top:8px">Metni seç, kopyala ve sohbete yapıştır.</p>`, `<button class="btn" id="klRaporKapat">Kapat</button>`);
