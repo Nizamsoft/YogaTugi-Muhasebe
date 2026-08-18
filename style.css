@@ -798,6 +798,22 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 .ogr-seg button.sec.seg-ipt{background:linear-gradient(135deg,#ef8f7f,#d24d3d);color:#fff;box-shadow:0 9px 20px -7px rgba(192,72,63,.7)}
 .ogr-seg .rk{font-size:11px;font-weight:800;margin-left:6px;background:rgba(255,255,255,.4);border-radius:999px;padding:1px 7px}
 .ogr-seg button.sec .rk{background:rgba(255,255,255,.32)}
+/* Hesaplar — Banka / Nakit / Kart sekmeleri (bakiye rozetli, içeriğe göre genişlik) */
+.hesap-seg button{min-width:0}
+.hesap-seg .rk{font-variant-numeric:tabular-nums}
+.hesap-seg button.hs-banka{background:linear-gradient(135deg,#5f8fc4,#3f6ba3);color:#fff}
+.hesap-seg button.hs-nakit{background:linear-gradient(135deg,#6fa877,#527f59);color:#fff}
+.hesap-seg button.hs-kart{background:linear-gradient(135deg,#e0b544,#c69327);color:#40320f}
+.hesap-seg button.sec.hs-banka{background:linear-gradient(135deg,#6f9fd4,#3f6ba3);color:#fff;box-shadow:0 9px 20px -7px rgba(63,107,163,.7)}
+.hesap-seg button.sec.hs-nakit{background:linear-gradient(135deg,#7ec284,#4f8f58);color:#fff;box-shadow:0 9px 20px -7px rgba(79,116,82,.75)}
+.hesap-seg button.sec.hs-kart{background:linear-gradient(135deg,#f7dd7f,#e0ac35);color:#40320f;box-shadow:0 9px 20px -7px rgba(200,150,40,.7)}
+/* Hesaplar tablosu — işlem türü, tutar ve bakiye */
+.isl-tur{display:inline-block;font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px}
+.isl-tur.tahsil{background:#e3f0e4;color:#2f8f5b}
+.isl-tur.gider{background:#f7e4e1;color:#c0483f}
+.hs-art{font-weight:800;font-variant-numeric:tabular-nums}
+.hs-art.a{color:#2f8f5b}.hs-art.e{color:#c0483f}
+.hs-bak{font-weight:800;font-variant-numeric:tabular-nums;color:var(--metin)}
 /* Dar ekran: sekmeler satırı doldurup yine eşit bölüşsün */
 @media(max-width:640px){
   .ogr-seg{display:flex;width:100%}

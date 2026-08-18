@@ -376,9 +376,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '131';
+const APP_SURUM = '132';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '20:40';
+const APP_SURUM_SAAT = '21:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -515,8 +515,7 @@ const MENU = [
     { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
   ] },
   { grup: 'Muhasebe', ikon: '📒', ogeler: [
-    { id: 'odemeler', ad: 'Tahsilatlar', ikon: '💰', baslik: 'Tahsilatlar' },
-    { id: 'giderler', ad: 'Giderler', ikon: '💸', baslik: 'Giderler' },
+    { id: 'hesap-defter', ad: 'Hesaplar', ikon: '📗', baslik: 'Hesaplar' },
     { id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar' },
   ] },
   { grup: 'Ayarlar', ikon: '⚙️', sadeceAdmin: true, ogeler: [
@@ -524,7 +523,7 @@ const MENU = [
   ] },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-giris-kul': 'Kullanıcı Girişleri' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
 const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-uyelik', 'tanim-gider', 'ayar-giris-kul'];
 
@@ -4604,6 +4603,80 @@ async function odemeGeriAl(od) {
 }
 
 /* ==========================================================
+   HESAPLAR — Banka / Nakit / Kart hesap defterleri
+   ========================================================== */
+let hesapAktif = 'banka';   // banka | nakit | kart
+const HESAP_TANIM = {
+  banka: { ad: 'Banka', ik: '🏦', tahsil: 'havale', gider: 'banka', cls: 'hs-banka' },
+  nakit: { ad: 'Nakit', ik: '💵', tahsil: 'nakit',  gider: 'nakit', cls: 'hs-nakit' },
+  kart:  { ad: 'Kart',  ik: '💳', tahsil: 'kart',   gider: 'kart',  cls: 'hs-kart' },
+};
+/* Bir hesabın hareketleri (kronolojik artan + işleyen bakiye) */
+function hesapHareketleri(hesap) {
+  const t = HESAP_TANIM[hesap];
+  const har = [];
+  (State.odemeler || []).filter(o => (o.tur || 'nakit') === t.tahsil).forEach(o => {
+    const og = State.ogrenciler.find(x => x.id === o.ogrenciId);
+    const pk = (og && og.paketler && og.paketler[0]) ? og.paketler[0].paketAd : '';
+    har.push({ tip: 'tahsilat', tarih: o.tarih, sahis: og ? ogrenciTamAd(og) : '—', aciklama: pk || '', tutar: Number(o.tutar) || 0, ref: o });
+  });
+  (State.giderKayitlari || []).filter(g => (g.odemeSekli || 'nakit') === t.gider).forEach(g => {
+    const ort = g.ortakId ? egitmenKisaAd(State.ortaklar.find(x => x.id === g.ortakId)) : 'Tüm ortaklar';
+    har.push({ tip: 'gider', tarih: g.tarih, sahis: ort, aciklama: g.aciklama || g.giderAd || g.grupAd || '', tutar: -(Number(g.tutar) || 0), ref: g });
+  });
+  har.sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || ((a.ref.olusturma || '').localeCompare(b.ref.olusturma || '')));
+  let bak = 0; har.forEach(h => { bak += h.tutar; h.bakiye = bak; });
+  return har;
+}
+function hesapSayfayiYenile() { SAYFALAR['hesap-defter'](); }
+SAYFALAR['hesap-defter'] = function () {
+  const veri = { banka: hesapHareketleri('banka'), nakit: hesapHareketleri('nakit'), kart: hesapHareketleri('kart') };
+  const bakiye = (k) => veri[k].length ? veri[k][veri[k].length - 1].bakiye : 0;
+  const list = veri[hesapAktif].slice().reverse();   // en yeni üstte
+  const satir = (h) => `<tr>
+      <td data-l="Tarih">${fmtTarihUzun(h.tarih)}</td>
+      <td data-l="İşlem Adı"><span class="isl-tur ${h.tip === 'tahsilat' ? 'tahsil' : 'gider'}">${h.tip === 'tahsilat' ? 'Tahsilat' : 'Gider'}</span></td>
+      <td data-l="Açıklama">${h.aciklama ? kacar(h.aciklama) : '<span class="ogr-soluk">—</span>'}</td>
+      <td data-l="Şahıs">${kacar(h.sahis)}</td>
+      <td data-l="Tutar" class="sag"><span class="hs-art ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span></td>
+      <td data-l="Güncel Bakiye" class="sag"><span class="hs-bak">${binlik(h.bakiye)} ₺</span></td>
+      <td class="sag"><span class="ogr-arac"><button type="button" data-hduz="${h.ref.id}" data-htip="${h.tip}" title="Düzenle">✎</button><button type="button" data-hsil="${h.ref.id}" data-htip="${h.tip}" title="Sil">🗑️</button></span></td>
+    </tr>`;
+  ic().innerHTML = `
+    <div class="odeme-sayfa">
+      <div class="ogr-ust">
+        <div class="ogr-seg hesap-seg">
+          ${['banka', 'nakit', 'kart'].map(k => `<button type="button" class="${HESAP_TANIM[k].cls} ${k === hesapAktif ? 'sec' : ''}" data-hs="${k}">${HESAP_TANIM[k].ik} ${HESAP_TANIM[k].ad} <span class="rk">${binlik(bakiye(k))} ₺</span></button>`).join('')}
+        </div>
+        <div class="ogr-ust-sag"><button type="button" class="gp-ekle" id="hsTahsil">＋ Tahsilat Al</button><button type="button" class="gp-ekle" id="hsGider">＋ Gider Ekle</button></div>
+      </div>
+      ${list.length
+      ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+          <colgroup><col style="width:12%"><col style="width:12%"><col style="width:20%"><col style="width:16%"><col style="width:13%"><col style="width:16%"><col style="width:11%"></colgroup>
+          <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>Şahıs</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th><th></th></tr></thead>
+          <tbody>${list.map(satir).join('')}</tbody></table></div></div>`
+      : `<div class="gp-bos">Bu hesapta hareket yok. “＋ Tahsilat Al” veya “＋ Gider Ekle” ile başlayın.</div>`}
+    </div>`;
+  $$('[data-hs]').forEach(b => b.onclick = () => { hesapAktif = b.dataset.hs; hesapSayfayiYenile(); });
+  $('#hsTahsil').onclick = () => odemeAlModal();
+  $('#hsGider').onclick = () => giderKayitFormu();
+  $$('[data-hduz]').forEach(b => b.onclick = () => {
+    if (b.dataset.htip === 'tahsilat') { const od = State.odemeler.find(x => x.id === b.dataset.hduz); if (od) odemeAlModal(od); }
+    else { const g = State.giderKayitlari.find(x => x.id === b.dataset.hduz); if (g) giderKayitFormu(g); }
+  });
+  $$('[data-hsil]').forEach(b => b.onclick = () => {
+    if (b.dataset.htip === 'tahsilat') onayModal('Tahsilat silinsin mi?', 'Bu tutar öğrencinin borcuna geri eklenir.', async () => {
+      const od = State.odemeler.find(x => x.id === b.dataset.hsil); if (od) await odemeGeriAl(od);
+      bildir('Tahsilat silindi.', 'basari'); hesapSayfayiYenile();
+    });
+    else onayModal('Gider silinsin mi?', 'Bu kayıt silinecek.', async () => {
+      await DB.sil('giderKayitlari', b.dataset.hsil); State.giderKayitlari = State.giderKayitlari.filter(x => x.id !== b.dataset.hsil);
+      bildir('Gider silindi.', 'basari'); hesapSayfayiYenile();
+    });
+  });
+};
+
+/* ==========================================================
    GİDERLER — işletme harcama kayıtları (yalnızca admin)
    ========================================================== */
 const ODEME_SEKLI = { banka: '🏦 Banka', nakit: '💵 Nakit', kart: '💳 Kredi Kartı' };
@@ -4643,10 +4716,12 @@ SAYFALAR['giderler'] = function () {
   }));
 };
 
-function giderKayitFormu() {
+function giderKayitFormu(mevcut) {
   // Form durumu tek yerde tutulur; "Gider Seç" ayrı ekrana geçince kaybolmaz
-  const st = { tarih: bugunISO(), secId: null, secAd: '', secGrupAd: '', aciklama: '', sekli: 'banka', tutar: '', ortak: null };
-  modalAc('Yeni Gider', giderFormGovde(st), giderFormAlt(), `<span class="hr-rozet">📉 Gider</span>`);
+  const st = mevcut
+    ? { tarih: mevcut.tarih, secId: mevcut.giderId, secAd: mevcut.giderAd, secGrupAd: mevcut.grupAd, aciklama: mevcut.aciklama || '', sekli: mevcut.odemeSekli || 'banka', tutar: mevcut.tutar ? binlik(mevcut.tutar) : '', ortak: mevcut.ortakId || null, mevcutId: mevcut.id }
+    : { tarih: bugunISO(), secId: null, secAd: '', secGrupAd: '', aciklama: '', sekli: 'banka', tutar: '', ortak: null, mevcutId: null };
+  modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', giderFormGovde(st), giderFormAlt(), `<span class="hr-rozet">📉 Gider</span>`);
   giderFormBagla(st, false);
 }
 function giderFormGovde(st) {
@@ -4683,9 +4758,17 @@ function giderFormBagla(st, geri) {
     if (!st.secId) return bildir('Gider grubu seçin.', 'hata');
     const tutar = tutarSayi(st.tutar);
     if (tutar <= 0) return bildir('Tutar girin.', 'hata');
-    const kayit = { tarih: st.tarih, giderId: st.secId, giderAd: st.secAd, grupAd: st.secGrupAd, aciklama: (st.aciklama || '').trim(), odemeSekli: st.sekli, tutar, ortakId: st.ortak || null, olusturma: new Date().toISOString() };
-    const y = await DB.ekle('giderKayitlari', kayit); State.giderKayitlari.push(y);
-    modalKapat(); bildir('Gider kaydedildi.', 'basari'); SAYFALAR['giderler']();
+    const kayit = { tarih: st.tarih, giderId: st.secId, giderAd: st.secAd, grupAd: st.secGrupAd, aciklama: (st.aciklama || '').trim(), odemeSekli: st.sekli, tutar, ortakId: st.ortak || null };
+    if (st.mevcutId) {
+      await DB.guncelle('giderKayitlari', st.mevcutId, kayit);
+      const idx = State.giderKayitlari.findIndex(x => x.id === st.mevcutId); if (idx >= 0) Object.assign(State.giderKayitlari[idx], kayit);
+      bildir('Gider güncellendi.', 'basari');
+    } else {
+      kayit.olusturma = new Date().toISOString();
+      const y = await DB.ekle('giderKayitlari', kayit); State.giderKayitlari.push(y);
+      bildir('Gider kaydedildi.', 'basari');
+    }
+    modalKapat(); git(State.aktifSayfa);
   };
 }
 function giderSecListe(st, filtre) {
@@ -4723,14 +4806,14 @@ function giderFormAc(st) {
   giderFormBagla(st, true);
 }
 
-function odemeAlModal() {
+function odemeAlModal(mevcut) {
   const ogrenciler = State.ogrenciler.filter(x => x.durum === 'ogrenci').slice()
     .sort((a, b) => ogrenciTamAd(a).localeCompare(ogrenciTamAd(b), 'tr'));
   if (!ogrenciler.length) return bildir('Önce paketli öğrenci ekleyin (Öğrenciler).', 'hata');
 
-  let seciliId = null;
-  let tarih = bugunISO();
-  let tur = 'nakit';
+  let seciliId = mevcut ? mevcut.ogrenciId : null;
+  let tarih = mevcut ? mevcut.tarih : bugunISO();
+  let tur = mevcut ? (mevcut.tur || 'nakit') : 'nakit';
   const borcMetin = (o) => { const m = ogrenciMetrik(o); return m.kalanOdeme > 0 ? 'Kalan borç: ' + binlik(m.kalanOdeme) + ' ₺' : 'Borç yok'; };
   const musteriAlanHTML = () => {
     if (!seciliId) {
@@ -4741,11 +4824,11 @@ function odemeAlModal() {
   };
   const govde = `
     <div class="gp-alan"><label>Müşteri</label><div id="odMus">${musteriAlanHTML()}</div></div>
-    <div class="gp-alan uy-birimli"><label>Ödediği Tutar</label><input type="text" inputmode="numeric" class="gp-inp" id="odTutar"><span class="uy-birim">₺</span></div>
+    <div class="gp-alan uy-birimli"><label>Ödediği Tutar</label><input type="text" inputmode="numeric" class="gp-inp" id="odTutar" value="${mevcut ? binlik(mevcut.tutar) : ''}"><span class="uy-birim">₺</span></div>
     <div class="gp-alan"><label>Ödeme Tarihi</label><button type="button" class="pa-trig" id="odTarih"><span id="odTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
     <div class="gp-alan" style="margin:0"><label>Ödeme Türü</label>
       <div class="turcip" id="odTur">${Object.entries(ODEME_TURLERI).map(([k, l]) => `<button type="button" class="tc ${tur === k ? 'sec' : ''}" data-t="${k}">${l}</button>`).join('')}</div></div>`;
-  modalAc('Ödeme Al', govde,
+  modalAc(mevcut ? 'Ödeme Düzenle' : 'Ödeme Al', govde,
     `<button class="btn" id="odIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="odKaydet">💾 Ödemeyi Kaydet</button>`,
     `<span class="hr-rozet od-rozet">💰 Ödeme</span>`);
 
@@ -4763,13 +4846,28 @@ function odemeAlModal() {
     if (!seciliId) return bildir('Müşteri seçin.', 'hata');
     const tutar = Number((tut.value || '').replace(/\D/g, '')) || 0;
     if (tutar <= 0) return bildir('Tutar girin.', 'hata');
+    // Düzenleme: önce eski düşümü geri al (borcu iade et)
+    if (mevcut) {
+      const eskiO = State.ogrenciler.find(x => x.id === mevcut.ogrenciId);
+      if (eskiO) {
+        for (const d of (mevcut.dusumler || [])) { const p = (eskiO.paketler || []).find(x => x.id === d.paketId); if (p) p.kalanOdeme = (Number(p.kalanOdeme) || 0) + (Number(d.tutar) || 0); }
+        await DB.guncelle('ogrenciler', eskiO.id, { paketler: eskiO.paketler });
+      }
+    }
     const o = State.ogrenciler.find(x => x.id === seciliId);
     const dusumler = odemeDusumUygula(o, tutar);
-    const kalanBorc = ogrenciMetrik(o).kalanOdeme;   // bu ödemeden hemen SONRAKİ kalan borç (anlık görüntü — sonradan değişmez)
+    const kalanBorc = ogrenciMetrik(o).kalanOdeme;   // bu ödemeden hemen SONRAKİ kalan borç (anlık görüntü)
     await DB.guncelle('ogrenciler', o.id, { paketler: o.paketler });
-    const y = await DB.ekle('odemeler', { ogrenciId: o.id, tutar, tarih, tur, dusumler, kalanBorc });
-    State.odemeler.push(y);
-    modalKapat(); bildir('Ödeme kaydedildi.', 'basari'); SAYFALAR['odemeler']();
+    if (mevcut) {
+      const veri = { ogrenciId: o.id, tutar, tarih, tur, dusumler, kalanBorc };
+      await DB.guncelle('odemeler', mevcut.id, veri); Object.assign(mevcut, veri);
+      bildir('Ödeme güncellendi.', 'basari');
+    } else {
+      const y = await DB.ekle('odemeler', { ogrenciId: o.id, tutar, tarih, tur, dusumler, kalanBorc });
+      State.odemeler.push(y);
+      bildir('Ödeme kaydedildi.', 'basari');
+    }
+    modalKapat(); git(State.aktifSayfa);
   };
 }
 
@@ -5037,13 +5135,14 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
   { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
   { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: '📅' },
-  { tip: 'sayfa', id: 'odemeler', ad: 'Ödemeler', ikon: '💰' },
+  { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: '📗' },
   { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: '🗂️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
   if (sayfa === 'dashboard') return 'dashboard';
+  if (sayfa === 'hesap-defter') return 'hesap-defter';   // Hesaplar sekmesi (mobil)
   if (sayfa === 'hesap-ortak') return 'hesap-ortak';   // Ortaklar sekmesi
   if (sayfa === 'ayar-tanimlama' || TANIM_ALT.includes(sayfa)) return 'ayar-tanimlama';
   // Hesaplar sekmesi: kart sayfası, diğer hesap-*, Potansiyel/Müşteriler ve Plan4Me
@@ -5500,6 +5599,7 @@ const KL_GUNCELLEME = [
   { q: 'önce öğrenci', not: 'Ders Oluştur akışı yeniden düzenlendi: sıra artık Öğrenci → Ders Adı → Eğitmen → Tarih/Saat. Açılışta hepsi boş. Öğrenci seçilince Ders Adı = öğrencinin paket adı, Eğitmen = öğrencinin eğitmeni otomatik gelir (istenirse elle değiştirilebilir; manuel değişiklik korunur).' },
   { q: 'ders seçmedeki gibi', not: 'Tahsilat (Ödeme Al) formundaki müşteri seçimi, Ders Oluştur’daki gibi “＋ Öğrenci Seç” düğmesiyle açılan aramalı listeye çevrildi (aynı görünüm, tek seçim). Seçince kalan borçlu özet kartı görünür; “Değiştir” ile yine aynı ekran açılır.' },
   { q: 'biraz küçült', not: 'Gider Ekle formundaki tüm alanlar/kartlar kompakt hale getirildi (Tarih, Gider Grubu, Açıklama, Ödeme Şekli, Tutar, Ait Olduğu Kişi) — sadece “Ait Olduğu Kişi” değil hepsi küçüldü; artık taşmadan sığıyor, ortak kartları tek satıra daha çok geliyor.' },
+  { q: 'banka hareketleri', not: 'Muhasebe altına “Hesaplar” sayfası eklendi: Dersler’deki gibi 3 sekme — 🏦 Banka (Havale tahsilat + Banka gider), 💵 Nakit, 💳 Kart — her sekmede güncel bakiye rozeti, aktif olanın hareketleri. Tablo: Tarih · İşlem Adı (Tahsilat/Gider) · Açıklama · Şahıs · Tutar (+/−) · Güncel Bakiye (kronolojik işleyen bakiye). Her satırda ✎ düzenle + 🗑️ sil. “＋ Tahsilat Al” ve “＋ Gider Ekle” bu sayfada. Tahsilatlar ve Giderler menüden gizlendi (her şey buradan görünüyor); mobil alt menüde de Ödemeler yerine Hesaplar geldi.' },
   { q: 'kasıyor', not: 'Akıcılık iyileştirmesi: kaydırma alanlarına momentum (touch) + overscroll-behavior:contain eklendi (kaydırma zincirlenmesi/donma önlenir); modal açıkken arka plan kaydırması kilitlenip gereksiz yeniden çizim durduruldu (form/sayfa açılışı daha akıcı). Tema/görünüm bozulmadı.' },
   { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
