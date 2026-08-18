@@ -968,6 +968,22 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .od-tur.nakit{background:#e4f0e2;color:#4e7a52}
 .od-tur.kart{background:#e7eef7;color:#3f6296}
 .od-tur.havale{background:#f3ead2;color:#997518}
+.od-tur.banka{background:#e7eef7;color:#3f6296}
+/* Giderler sayfası */
+.gid-tutar{font-weight:800;color:#b1483f}
+.gid-tum{font-size:11.5px;font-weight:800;background:#eef3ea;color:#4f7452;border:1px solid #cfe0cf;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.gid-kisi{display:inline-flex;align-items:center;gap:7px;min-width:0}
+/* Gider formu: gruplu başlık + ödeme şekli segment + kişi çipleri */
+.gd-grpbas{font-size:10.5px;font-weight:800;color:#a8792f;text-transform:uppercase;letter-spacing:.4px;padding:9px 9px 3px}
+.gd-soluk{color:var(--metin-soluk)}
+.gd-bos{padding:14px 12px;text-align:center;font-size:12.5px;color:var(--metin-soluk)}
+.ods-seg{display:inline-flex;width:100%;box-sizing:border-box;background:#efe6d2;border:1px solid var(--kenar);border-radius:12px;padding:5px;gap:6px}
+.ods-seg button{flex:1;border:2px solid transparent;background:transparent;font-family:inherit;font-weight:800;font-size:12.5px;color:var(--metin-soluk);padding:9px 6px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:.15s}
+.ods-seg button.sec{border-color:#d9b25a;background:linear-gradient(135deg,#f7dd7f,#e0ac35);color:#40320f}
+.kisi-sat{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kisi-chip{font-size:12px;font-weight:700;border:1px solid var(--kenar);border-radius:999px;padding:7px 12px;cursor:pointer;background:var(--kart);color:var(--metin);transition:.15s}
+.kisi-chip:hover{border-color:var(--gold)}
+.kisi-chip.sec{background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;border-color:transparent}
 .od-tutar{font-weight:800;color:#4e7a52}
 .od-borc{font-weight:800;color:#b1483f}
 .od-borc.ok{color:#4e7a52}
