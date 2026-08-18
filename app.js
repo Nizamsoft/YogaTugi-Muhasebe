@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '113';
+const APP_SURUM = '114';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '13:59';
+const APP_SURUM_SAAT = '14:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3773,16 +3773,19 @@ SAYFALAR['ogrenciler'] = function () {
 
   const ogrenciTablo = ogr.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        <colgroup><col style="width:27%"><col style="width:17%"><col style="width:14%"><col style="width:15%"><col style="width:19%"><col style="width:8%"></colgroup>
         <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Paket</th><th class="sag">Kalan Ders</th><th class="sag">Kalan Ödeme</th><th></th></tr></thead>
         <tbody>${ogr.map(ogrenciSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Henüz öğrenci yok. “＋ Yeni Üyelik Oluştur” ile başlayın.</div>`;
   const potTablo = pot.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        <colgroup><col style="width:36%"><col style="width:22%"><col style="width:28%"><col style="width:14%"></colgroup>
         <thead><tr><th>Öğrenci</th><th>Tel</th><th>Görüşülen Tarih</th><th></th></tr></thead>
         <tbody>${pot.map(potSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Bekleyen potansiyel müşteri yok.</div>`;
   const pasifTablo = pasif.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        <colgroup><col style="width:30%"><col style="width:20%"><col style="width:18%"><col style="width:20%"><col style="width:12%"></colgroup>
         <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Son Paket</th><th class="sag">Kalan Ders</th><th></th></tr></thead>
         <tbody>${pasif.map(pasifSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Pasif öğrenci yok.<br><small>Dersi/üyeliği biten öğrenciler burada otomatik görünür.</small></div>`;
@@ -4061,6 +4064,7 @@ SAYFALAR['dersler'] = function () {
       </div>
       ${liste.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+            <colgroup><col style="width:22%"><col style="width:30%"><col style="width:20%"><col style="width:12%"><col style="width:16%"></colgroup>
             <thead><tr><th>Eğitmen</th><th>Öğrenci</th><th>Tarih</th><th>Saat</th><th>Durum</th></tr></thead>
             <tbody>${liste.map(satir).join('')}</tbody></table></div></div>`
         : `<div class="gp-bos">${bosMetin}</div>`}
@@ -4452,6 +4456,7 @@ SAYFALAR['odemeler'] = function () {
       </div>
       ${kayitlar.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+            <colgroup><col style="width:19%"><col style="width:16%"><col style="width:16%"><col style="width:15%"><col style="width:15%"><col style="width:14%"><col style="width:5%"></colgroup>
             <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Ödediği Tarih</th><th>Ödeme Türü</th><th class="sag">Ödediği Tutar</th><th class="sag">Kalan Borcu</th><th></th></tr></thead>
             <tbody>${kayitlar.map(satir).join('')}</tbody></table></div></div>`
         : `<div class="gp-bos">Henüz ödeme yok. “＋ Ödeme Al” ile ilk ödemeyi işleyin.</div>`}
@@ -5227,6 +5232,8 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'sütunlarda genişliyor', not: 'Tablolar sabit sütun düzenine (table-layout:fixed + oransal sütun genişlikleri) geçirildi. Artık “Ortakları göster” açılıp kapanınca sütunlar genişleyip daralmıyor; yalnızca satırlar ekleniyor/çıkıyor.' },
+  { q: 'başlıklara yenileri eklenmiyor', not: 'Kontrol › Yeni’de “Başlık” menüsü artık senin eklediğin özel başlıkları da (✨ ile) listeliyor; oluşturduğun başlığı tekrar seçebiliyorsun.' },
   { q: 'solda açılan sayfalar', not: 'Sol menü açık/sıcak temaya çevrildi; “Ayarlar” grubu kaldırılıp Firma Bilgileri, Ortak Bilgileri, Üyelikler ve Giderler tek “Tanımlamalar” sayfasında toplandı.' },
   { q: 'ortakların ilgili ay', not: 'Yeni “Ortaklar” sayfası eklendi: ay seçimli büyük kare kartlar; tıkla-aç ile Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacağı, Giderler Payı (eşit bölüşüm), Komisyon (0) ve Verilecek Pay (tahsilat − gider − komisyon). Ortak fotoğrafları isimlerin yanında da gösteriliyor.' },
   { q: 'altın çerçeve', not: 'Kapalı karttaki “Verilecek Pay” özeti alt alta dizildi (tutar taşmıyor). Bir kart açıkken yanındaki kapalı kartların altında kalan beyazlık giderildi (kartlar esnemiyor). Akordeon: aynı anda tek ortak açık; açık olanın etrafı altın çerçeve, başkasına tıklayınca o kapanıp tıklanan açılıyor.' },
@@ -5328,7 +5335,10 @@ function klKontrolGovde() {
   return html || '<div class="kl-bos2">Hepsi tamamlandı 🎉<br>“Tamamlananları göster”i açabilirsin.</div>';
 }
 function klYeniGovde() {
-  const opts = KONTROL_LISTE.map(g => `<option value="${kacar(g.ad)}">${g.ikon} ${kacar(g.ad)}</option>`).join('');
+  const yerlesik = KONTROL_LISTE.map(g => g.ad);
+  const ozel = [...new Set(KL_YENI.map(y => (y.baslik || '').trim()).filter(b => b && !yerlesik.includes(b)))];   // kullanıcının eklediği özel başlıklar
+  const opts = KONTROL_LISTE.map(g => `<option value="${kacar(g.ad)}">${g.ikon} ${kacar(g.ad)}</option>`).join('')
+    + ozel.map(b => `<option value="${kacar(b)}">✨ ${kacar(b)}</option>`).join('');
   const bekleyen = klBekleyen();
   const liste = bekleyen.length
     ? bekleyen.map(y => `<div class="kl-yit" data-yid="${y.id}"><span class="kl-ycol"><span class="kl-ybas">${kacar(y.baslik || 'Genel')}</span><span class="kl-ytxt">${kacar(y.metin)}</span></span><span class="kl-yarac"><button type="button" data-yduz="${y.id}" title="Düzenle">✎</button><button type="button" data-ysil="${y.id}" title="Sil">🗑️</button></span></div>`).join('')

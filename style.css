@@ -743,7 +743,8 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .kul-sw.on i{left:21px}
 .ogr-tkart{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;overflow:hidden;box-shadow:0 16px 32px -26px rgba(80,60,20,.35)}
 .ogr-kaydir{overflow-x:auto}
-.ogr-tablo{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+.ogr-tablo{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;table-layout:fixed}
+.ogr-tablo td .ogr-ad,.ogr-tablo td .ders-ogr-ad,.ogr-tablo td .ogr-tel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .ogr-tablo thead th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#7c5e1f;font-weight:800;padding:12px 14px;background:linear-gradient(180deg,#f3e3bd,#efdcb0);border-bottom:2px solid #e3cd93;white-space:nowrap}
 .ogr-tablo thead th.sag{text-align:right}
 .ogr-tablo tbody td{padding:12px 14px;vertical-align:middle}
