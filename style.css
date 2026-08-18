@@ -680,7 +680,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .scip .tik{color:#a8792f;font-weight:800}
 
 /* ============ Öğrenciler ============ */
-.ogr-sayfa{max-width:880px;margin:0}
+.ogr-sayfa{max-width:980px;margin:0}
 .ogr-ust{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .ogr-seg{display:inline-flex;background:#efe6d2;border:1px solid var(--kenar);border-radius:13px;padding:5px;gap:6px}
 .ogr-seg button{border:2px solid transparent;background:transparent;font-family:inherit;font-weight:800;font-size:13px;color:var(--metin-soluk);padding:8px 15px;border-radius:10px;cursor:pointer;transition:.18s}
@@ -880,7 +880,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .pa-tik{margin-left:auto;color:#a8792f;font-weight:800}
 
 /* ============ Dersler ============ */
-.ders-sayfa{max-width:880px;margin:0}
+.ders-sayfa{max-width:980px;margin:0}
 .ders-ogr-ad{font-weight:800;font-size:14.5px}
 .ders-adet-satir{margin-top:4px}
 .ders-adet{display:inline-block;font-size:11px;font-weight:800;color:#a8792f;background:#f6e6ad;border-radius:999px;padding:2px 9px}

@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '120';
+const APP_SURUM = '121';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '16:18';
+const APP_SURUM_SAAT = '16:24';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5368,6 +5368,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'tüm tabloların genişlikleri aynı', not: 'Öğrenciler/Dersler 880px, Tahsilatlar/Giderler 980px idi; sayfa geçişinde tablo genişliği zıplıyordu. Hepsi en geniş olana (980px) eşitlendi — artık geçişte oynamıyor.' },
   { q: 'giriş paneli daha akıcı', not: 'Giriş ekranı premium/gold yapıldı: “GV” kutusu yerine logodaki fontta (Quicksand) “Green Village Pilates” yazı-logosu; koyu ışık-haleli zemin, altın çerçeveli koyu cam kart, gold ikonlu alanlar (placeholder’lar soluk “Kullanıcı Adı :” / “Şifre :”), parlayan gold “Giriş Yap”. Giriş yapınca doğrudan uygulamaya atlamıyor; animasyonlu bir loading screen (gold dönen halka + “Hazırlanıyor…”) çıkıyor, veriler/bulut yüklenince uygulama açılıyor.' },
   { q: 'loading screen açılsın', not: 'Giriş sonrası animasyonlu loading screen eklendi (wordmark + gold halka + “Hazırlanıyor…”); bu sırada veriler yükleniyor, sonra uygulama açılıyor.' },
   { q: 'grup başlığında gitsin', not: 'Kontrol Listesi yeniden düzenlendi: “Yeni Eklenenler” yığını kaldırıldı; yeni maddeler artık kendi ANA başlığının grubuna giriyor (yerleşik grup varsa ona ekleniyor, yeni başlık kendi grubu oluyor). Ana başlık altında ALT başlık kademesi var. Ayrıca maddenin “akışı” (İstek→Yapıldı→Geri bildirim + not) madde içinde akordeon oldu: madde kapalı gelir, üstüne basınca akış açılır; ✗’e basınca otomatik açılıp not kutusu gelir. Başlıklar sabit. Yeni eklerken Ana + Alt başlık seçiliyor.' },
