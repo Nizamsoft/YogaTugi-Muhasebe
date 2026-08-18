@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '126';
+const APP_SURUM = '127';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '18:45';
+const APP_SURUM_SAAT = '19:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5471,6 +5471,7 @@ const KL_GUNCELLEME = [
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
   { q: 'aktif öğrenci', not: 'Gösterge Paneli “Spotlight + İstatistik Şeridi” (C) tasarımıyla yeniden yapıldı — düz/kaba kartlar kaldırıldı, alttaki “Ekibimiz” bölümü çıkarıldı. Üstte büyük koyu hero: solda gold çerçeveli kişi (ad + rol/ay), sağda “Verilecek Pay” altın gradyan yazıyla + altında “Tahsilat − Giderler − Komisyon”; köşede ince altın halkalar. Altında tek panelde 6 istatistik hücresi (Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri) — her hücrede kategori renginde sol vurgu şeridi, üstüne gelince › oku. Karta/satıra tıkla → ilgili sayfa; hero → Ortaklar. Ay seçimi + (ortak girişinde) “Ortakları göster” anahtarı: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı; admin hep hepsini görür.' },
   { q: 'ders takibi', not: 'Sol menü Ana ▸ Alt başlık olarak gruplandı: Gösterge Paneli (tekil, üstte öne çıkan) · Ders Takibi ▸ Dersler/Öğrenciler · Muhasebe ▸ Tahsilatlar/Giderler/Ortaklar · Ayarlar ▸ Tanımlamalar (yalnızca admin). Görsel iyileştirme: açık grubun başlığı altın tonlu zemin + sol altın şerit; alt öğeleri bağlayan ince altın kılavuz çizgisi ve her öğede altın nokta; seçili öğe yeşil. Gruplar akordeon (birine basınca açılır, diğeri kapanır); bir alt sayfaya gidince grubu otomatik açılır.' },
+  { q: 'aynı ölçüde', not: 'Sayfa sekmeleri (Öğrenciler: Aktif/Potansiyel/Pasif · Dersler: Planlanan/Gerçekleşen/İptal) metin uzunluğuna göre farklı genişlikteydi; hepsi eşit sabit genişliğe (150px) getirildi — hem her sayfa içinde hem de sayfalar arasında aynı ölçüde. Dar ekranda satırı eşit bölüşerek sığıyor.' },
   { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
 ];

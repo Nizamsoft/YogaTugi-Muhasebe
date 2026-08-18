@@ -771,7 +771,8 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 .ogr-sayfa{max-width:980px;margin:0}
 .ogr-ust{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .ogr-seg{display:inline-flex;background:#efe6d2;border:1px solid var(--kenar);border-radius:13px;padding:5px;gap:6px}
-.ogr-seg button{border:2px solid transparent;background:transparent;font-family:inherit;font-weight:800;font-size:13px;color:var(--metin-soluk);padding:8px 15px;border-radius:10px;cursor:pointer;transition:.18s}
+/* Tüm sekmeler eşit genişlikte (sayfalar arası da aynı ölçü) */
+.ogr-seg button{display:inline-flex;align-items:center;justify-content:center;min-width:150px;border:2px solid transparent;background:transparent;font-family:inherit;font-weight:800;font-size:13px;color:var(--metin-soluk);padding:8px 15px;border-radius:10px;cursor:pointer;transition:.18s}
 .ogr-seg button.seg-akt{background:linear-gradient(135deg,#6fa877,#527f59);color:#fff}
 .ogr-seg button.seg-pot{background:linear-gradient(135deg,#e0b544,#c69327);color:#40320f}
 .ogr-seg button.seg-pas{background:linear-gradient(135deg,#d67c6e,#bf4b3d);color:#fff}
@@ -789,6 +790,11 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 .ogr-seg button.sec.seg-ipt{background:linear-gradient(135deg,#ef8f7f,#d24d3d);color:#fff;box-shadow:0 9px 20px -7px rgba(192,72,63,.7)}
 .ogr-seg .rk{font-size:11px;font-weight:800;margin-left:6px;background:rgba(255,255,255,.4);border-radius:999px;padding:1px 7px}
 .ogr-seg button.sec .rk{background:rgba(255,255,255,.32)}
+/* Dar ekran: sekmeler satırı doldurup yine eşit bölüşsün */
+@media(max-width:640px){
+  .ogr-seg{display:flex;width:100%}
+  .ogr-seg button{flex:1 1 0;min-width:0;padding:8px 8px}
+}
 .ogr-bar.bitti span{background:linear-gradient(90deg,#b7ae97,#9a9078)}
 /* Üst bar sağ grubu + "Ortakları göster" düğmesi */
 .ogr-ust-sag{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
