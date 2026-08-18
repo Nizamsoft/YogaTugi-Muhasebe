@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '128';
+const APP_SURUM = '129';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '19:35';
+const APP_SURUM_SAAT = '19:50';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5471,7 +5471,7 @@ const KL_GUNCELLEME = [
   { q: 'pasif öğrenciler', not: 'Öğrenciler sayfasına “Pasif” sekmesi eklendi (sıra: Aktif · Potansiyel · Pasif). Toplam kalan dersi 0’a düşen (dersi/üyeliği biten) öğrenciler otomatik Pasif’e düşüyor; “Paket Ata” ile tekrar aktif oluyor. Sekmeler renklendirildi: Aktif yeşil, Potansiyel sarı, Pasif kırmızı; seçili olan parlıyor ve altın çerçeve alıyor.' },
   { q: 'aktif öğrenci', not: 'Gösterge Paneli “Spotlight + İstatistik Şeridi” (C) tasarımıyla yeniden yapıldı — düz/kaba kartlar kaldırıldı, alttaki “Ekibimiz” bölümü çıkarıldı. Üstte büyük koyu hero: solda gold çerçeveli kişi (ad + rol/ay), sağda “Verilecek Pay” altın gradyan yazıyla + altında “Tahsilat − Giderler − Komisyon”; köşede ince altın halkalar. Altında tek panelde 6 istatistik hücresi (Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacak, Giderler Payı, Komisyon Gideri) — her hücrede kategori renginde sol vurgu şeridi, üstüne gelince › oku. Karta/satıra tıkla → ilgili sayfa; hero → Ortaklar. Ay seçimi + (ortak girişinde) “Ortakları göster” anahtarı: varsayılan yalnızca kendini görürsün, açınca tüm ortakların toplamı; admin hep hepsini görür.' },
   { q: 'ders takibi', not: 'Sol menü Ana ▸ Alt başlık olarak gruplandı: Gösterge Paneli (tekil, üstte öne çıkan) · Ders Takibi ▸ Dersler/Öğrenciler · Muhasebe ▸ Tahsilatlar/Giderler/Ortaklar · Ayarlar ▸ Tanımlamalar (yalnızca admin). Görsel iyileştirme: açık grubun başlığı altın tonlu zemin + sol altın şerit; alt öğeleri bağlayan ince altın kılavuz çizgisi ve her öğede altın nokta; seçili öğe yeşil. Gruplar akordeon (birine basınca açılır, diğeri kapanır); bir alt sayfaya gidince grubu otomatik açılır.' },
-  { q: 'tek kodlama', not: 'Kontrol Listesi promptuna 3 hızlandırıcı kural eklendi: (14) Toplu ilerle — birden çok madde varsa tek kontrol · tek kodlama · tek push; önizlemeler tek mesajda toplu, onaylananlar tek sürümde yayına. (15) Görsel olmayan işlerde (mantık/veri/metin/hata/yeniden adlandırma) önizleme atlanır, doğrudan kodlanır. (16) Gereksiz ara-onay sorulmaz; onay yalnızca tasarım önizlemesi ve geri döndürülemez işlemler için.' },
+  { q: 'tek kodlama', not: 'Kontrol Listesi promptuna hızlandırıcı kurallar eklendi: (14) Toplu ilerle — birden çok madde varsa tek kontrol · tek kodlama · tek push; önizlemeler tek mesajda toplu, onaylananlar tek sürümde yayına. (15) Görsel olmayan işlerde (mantık/veri/metin/hata/yeniden adlandırma) önizleme atlanır. (16) Gereksiz ara-onay sorulmaz. (17) Toplu önizleme tek görselde sunulur. (18) “Tümünü onaylıyorum” kısayolu. (19) Sürüm/saat her yayında otomatik artar. (20) Riskli olmayan metin/kopya düzeltmeleri biriktirilip tek seferde uygulanır.' },
   { q: 'aynı ölçüde', not: 'Sayfa sekmeleri (Öğrenciler: Aktif/Potansiyel/Pasif · Dersler: Planlanan/Gerçekleşen/İptal) metin uzunluğuna göre farklı genişlikteydi; hepsi eşit sabit genişliğe (150px) getirildi — hem her sayfa içinde hem de sayfalar arasında aynı ölçüde. Dar ekranda satırı eşit bölüşerek sığıyor.' },
   { q: 'çıkış yap seçeneği', not: 'Tepe paneli (üst bar) yenilendi: sağ üstte gold çerçeveli kullanıcı görseli (ortağın fotoğrafı; yoksa baş harfleri, admin’de firma logosu/baş harf) + ad soyad + rol. Üstüne basınca açılan menüde başlıkta yine görsel + ad, ardından “Tema değiştir” ve kırmızı “Çıkış Yap”. Üstteki ayrı 🌙 tema düğmesi kaldırıldı (tema değiştirme artık bu menüde).' },
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
@@ -5728,6 +5728,10 @@ function klPromptKopyala() {
   t += '14) Toplu ilerle (tek kontrol · tek kodlama · tek push): Raporda birden çok madde varsa her biri için ayrı döngü yapma. Görsel maddelerin önizlemelerini TEK mesajda topluca ilet; onaylananların HEPSİNİ tek kodlama turunda yap ve tek sürümde (tek commit + tek push) yayına al. Yalnızca revizyon isteyen bir tasarım kendi mini-döngüsünde ayrı yürür.\n';
   t += '15) Görsel olmayan işlerde önizleme atla: Mantık/veri düzeltmesi, metin/yazım, hata giderme, yeniden adlandırma gibi görünümü değiştirmeyen işlerde önizleme bekleme; doğrudan kodla, yaz ve “Yapılan Güncelleme”yi ekle. Önizleme yalnızca görünümü değiştiren işler için.\n';
   t += '16) Gereksiz ara-onay sorma: İş netse ilerle; her küçük adımı ayrıca onaylatma. Onay yalnızca tasarım önizlemesi ve geri döndürülemez işlemler için istenir — “tamam/uygun/olur” gibi tek kelime onay yeterlidir.\n';
+  t += '17) Toplu önizleme tek görselde: Birden çok görsel maddeyi mümkünse tek karşılaştırma/önizleme görselinde sun — daha az mesaj, tek bakışta karar.\n';
+  t += '18) “Tümünü onaylıyorum” kısayolu: Toplu önizlemede kullanıcı “hepsi uygun / tümünü onaylıyorum” derse tüm maddeler tek seferde onaylanmış sayılır ve toplu kodlanır.\n';
+  t += '19) Otomatik sürüm/saat: Her yayına almada sürüm numarası ve saat otomatik artırılır; kullanıcıdan elle güncelleme istenmez.\n';
+  t += '20) Riskli olmayan metin/kopya (yazım, etiket, açıklama) düzeltmelerini biriktirip tek seferde uygula; ayrı ayrı deploy etme.\n';
   if (sorunlar.length || yeniIstekler.length || dongu.length) t += '\nLütfen sorunları düzelt, yeni istekleri yap ve her birine tek tek ne yaptığını yaz.';
   const tasindi = tab === 'yeni' ? yeniIstekler.length : dongu.length;
   const tamam = () => bildir(tasindi ? (tab === 'yeni' ? `Kopyalandı — ${tasindi} yeni istek Kontrol’e taşındı.` : `Kopyalandı — ${tasindi} geri bildirim döngüye eklendi.`) : 'Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
