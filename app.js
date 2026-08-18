@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '103';
+const APP_SURUM = '104';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '11:31';
+const APP_SURUM_SAAT = '11:45';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -503,14 +503,12 @@ const MENU = [
   { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
   { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
   { id: 'odemeler', ad: 'Ödemeler', ikon: '💰', baslik: 'Ödemeler' },
-  { grup: 'Ayarlar', ikon: '⚙️', ogeler: [
-    { id: 'ayar-firma',      ad: 'Firma Bilgileri', ikon: '🏢', baslik: 'Firma Bilgileri' },
-    { id: 'ayar-ortak',      ad: 'Ortak Bilgileri', ikon: '👥', baslik: 'Ortak Bilgileri' },
-    { id: 'ayar-tanimlama',  ad: 'Tanımlamalar',    ikon: '🗂️', baslik: 'Tanımlamalar' },
-  ]},
+  { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: '🗂️', baslik: 'Tanımlamalar' },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri' };
+// Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-uyelik', 'tanim-gider'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak', 'Müşteri & Planlama'];
@@ -598,7 +596,7 @@ function git(sayfa) {
   // Hesap kart sayfaları menüde tekil "Hesaplar" öğesini aktif tutar
   // (Ortaklar Hesabı'nın kenar menüde kendi öğesi var — hariç tut)
   const hesapKartMi = HESAP_KARTLARI.some(k => k.id === sayfa) && sayfa !== 'hesap-ortak';
-  const vurgulanan = hesapKartMi ? 'hesaplar' : sayfa;
+  const vurgulanan = hesapKartMi ? 'hesaplar' : (TANIM_ALT.includes(sayfa) ? 'ayar-tanimlama' : sayfa);
   $$('.menu-oge').forEach(b => b.classList.toggle('aktif', b.dataset.sayfa === vurgulanan));
   // Aktif alt sayfanın grubunu aç, diğerlerini kapat (akordeon)
   $$('.menu-grup').forEach(g => {
@@ -3263,6 +3261,7 @@ SAYFALAR['ayar-firma'] = function () {
   const logoVar = !!a.logoData;
   ic().innerHTML = `
     <div class="gp-sar">
+      <button type="button" class="tnm-geri" id="fbGeri" style="margin-bottom:12px">‹ Tanımlamalar</button>
       <div class="gp-kart"><div class="gp-ic">
         <div class="gp-head"><div class="kk">Firma</div><h2>Firma Bilgileri</h2></div>
         <div class="gp-logo-alan">
@@ -3279,6 +3278,7 @@ SAYFALAR['ayar-firma'] = function () {
         <button type="button" class="gp-kaydet" id="fKaydet">💾 Kaydet</button>
       </div></div>
     </div>`;
+  $('#fbGeri').onclick = () => git('ayar-tanimlama');
   const dosya = $('#logoDosya');
   $('#logoSec').onclick = () => dosya.click();
   dosya.onchange = () => {
@@ -3313,6 +3313,7 @@ SAYFALAR['ayar-ortak'] = function () {
     </div></div>`;
   }).join('');
   ic().innerHTML = `
+    <button type="button" class="tnm-geri" id="obGeri" style="margin-bottom:12px">‹ Tanımlamalar</button>
     <div class="gp-ort-ust">
       <span class="say">👥 ${list.length} ortak</span>
       <button type="button" class="gp-ekle" id="ortEkle">＋ Ortak Ekle</button>
@@ -3320,6 +3321,7 @@ SAYFALAR['ayar-ortak'] = function () {
     ${list.length === 0
       ? `<div class="gp-bos">Henüz ortak yok. “＋ Ortak Ekle” ile ekleyin.</div>`
       : `<div class="gp-ort-grid">${kartlar}</div>`}`;
+  $('#obGeri').onclick = () => git('ayar-tanimlama');
   $('#ortEkle').onclick = () => ortakFormu();
   $$('[data-duzenle]').forEach(b => b.onclick = () => ortakFormu(State.ortaklar.find(o => o.id === b.dataset.duzenle)));
   $$('[data-sil]').forEach(b => b.onclick = () => onayModal('Ortak silinsin mi?', 'Bu işlem geri alınamaz.', async () => {
@@ -3331,8 +3333,10 @@ SAYFALAR['ayar-ortak'] = function () {
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
-  { id: 'gider', ad: 'Giderler', ikon: '📉', alt: 'Gider kalemleri ve grupları' },
-  { id: 'uyelik', ad: 'Üyelikler', ikon: '🎟️', alt: 'Ders ve üyelik paketleri' },
+  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: '🏢', alt: 'Ad, logo, slogan' },
+  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: '👥', alt: 'Eğitmenler ve pay oranları' },
+  { id: 'tanim-uyelik', ad: 'Üyelikler', ikon: '🎟️', alt: 'Ders ve üyelik paketleri' },
+  { id: 'tanim-gider', ad: 'Giderler', ikon: '📉', alt: 'Gider kalemleri ve grupları' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
   ic().innerHTML = `
@@ -3347,7 +3351,7 @@ SAYFALAR['ayar-tanimlama'] = function () {
     </div>`;
   $$('[data-tanim]').forEach(b => b.onclick = () => {
     b.classList.add('sec');
-    setTimeout(() => git('tanim-' + b.dataset.tanim), 200);
+    setTimeout(() => git(b.dataset.tanim), 200);
   });
 };
 
@@ -4623,12 +4627,13 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
   { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: '📅' },
   { tip: 'sayfa', id: 'odemeler', ad: 'Ödemeler', ikon: '💰' },
-  { tip: 'grup',  grup: 'Ayarlar',  ad: 'Ayarlar',  ikon: '⚙️' },
+  { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: '🗂️' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
   if (sayfa === 'dashboard') return 'dashboard';
   if (sayfa === 'hesap-ortak') return 'hesap-ortak';   // Ortaklar sekmesi
+  if (sayfa === 'ayar-tanimlama' || TANIM_ALT.includes(sayfa)) return 'ayar-tanimlama';
   // Hesaplar sekmesi: kart sayfası, diğer hesap-*, Potansiyel/Müşteriler ve Plan4Me
   if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa === 'musteriler' || sayfa === 'plan4me' || sayfa.startsWith('hesap-')) return 'hesaplar';
   for (const m of ALT_MENU) {

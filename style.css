@@ -133,12 +133,13 @@ body.tema-koyu #girisEkrani{
 
 /* --------- Kenar menü --------- */
 .kenar{
-  width:var(--menu);flex-shrink:0;background:var(--antrasit);color:#e7ede9;
+  width:var(--menu);flex-shrink:0;background:linear-gradient(180deg,var(--kart),var(--krem));color:var(--metin);
+  border-right:1px solid var(--kenar-koyu);
   display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
 }
 .kenar-logo{
   display:flex;align-items:center;gap:11px;padding:18px 18px 16px;
-  border-bottom:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid var(--kenar);
 }
 .kenar-logo .kutu{
   width:40px;height:40px;border-radius:11px;background:var(--yesil);
@@ -147,38 +148,38 @@ body.tema-koyu #girisEkrani{
 }
 .kenar-logo .kutu img{width:100%;height:100%;object-fit:cover}
 .kenar-logo .ad{font-weight:700;font-size:15.5px;line-height:1.1}
-.kenar-logo .ad small{display:block;font-weight:400;font-size:11px;color:#9db3a2;margin-top:2px}
+.kenar-logo .ad small{display:block;font-weight:400;font-size:11px;color:var(--metin-soluk);margin-top:2px}
 .kenar-menu{flex:1;overflow-y:auto;padding:10px 10px 20px}
-.kenar-surum{padding:11px 14px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#9db3a2;line-height:1.5;display:flex;align-items:center;gap:10px}
+.kenar-surum{padding:11px 14px 14px;border-top:1px solid var(--kenar);font-size:11px;color:var(--metin-soluk);line-height:1.5;display:flex;align-items:center;gap:10px}
 .kenar-surum .ks-bilg{flex:1;min-width:0}
-.kenar-surum b{display:block;color:#c7d3cb;font-weight:700;font-size:11.5px}
-.ks-guncelle{flex:0 0 auto;width:36px;height:36px;border-radius:10px;border:1px solid rgba(227,197,116,.4);background:rgba(227,197,116,.12);color:#e3c574;font-size:17px;line-height:1;display:grid;place-items:center;cursor:pointer;font-family:inherit}
-.ks-guncelle:hover{background:rgba(227,197,116,.22)}
+.kenar-surum b{display:block;color:var(--metin);font-weight:700;font-size:11.5px}
+.ks-guncelle{flex:0 0 auto;width:36px;height:36px;border-radius:10px;border:1px solid rgba(198,154,76,.45);background:rgba(198,154,76,.14);color:var(--gold);font-size:17px;line-height:1;display:grid;place-items:center;cursor:pointer;font-family:inherit}
+.ks-guncelle:hover{background:rgba(198,154,76,.24)}
 .ks-guncelle.donuyor{animation:ksDon 1s linear infinite}
 @keyframes ksDon{to{transform:rotate(360deg)}}
 .kenar-menu::-webkit-scrollbar{width:6px}
-.kenar-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.kenar-menu::-webkit-scrollbar-thumb{background:rgba(120,90,20,.22);border-radius:3px}
 .menu-grup{margin-top:3px}
 /* Akordeon grup başlığı */
 .grup-baslik{
   display:flex;align-items:center;gap:10px;width:100%;text-align:left;
   padding:11px 12px;border:none;background:none;border-radius:9px;cursor:pointer;
-  color:#c8d4cc;font-size:14px;font-weight:600;transition:background .12s,color .12s;
+  color:var(--metin);font-size:14px;font-weight:600;transition:background .12s,color .12s;
 }
-.grup-baslik:hover{background:rgba(255,255,255,.06);color:#fff}
+.grup-baslik:hover{background:var(--gri);color:var(--metin)}
 .grup-baslik .ikon{width:19px;text-align:center;font-size:15px;flex-shrink:0}
 .grup-baslik .gad{flex:1}
-.grup-baslik .ok{font-size:12px;color:#7e9384;transition:transform .25s ease;flex-shrink:0}
-.menu-grup.acik .grup-baslik{color:#fff;background:rgba(255,255,255,.05)}
-.menu-grup.acik .grup-baslik .ok{transform:rotate(90deg);color:#c8d4cc}
+.grup-baslik .ok{font-size:12px;color:var(--gold);transition:transform .25s ease;flex-shrink:0}
+.menu-grup.acik .grup-baslik{color:var(--metin);background:var(--gri)}
+.menu-grup.acik .grup-baslik .ok{transform:rotate(90deg);color:var(--gold)}
 
 .menu-oge{
   display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;
-  cursor:pointer;color:#c8d4cc;font-size:14px;transition:background .12s,color .12s;
+  cursor:pointer;color:var(--metin);font-size:14px;transition:background .12s,color .12s;
   border:none;background:none;width:100%;text-align:left;
 }
-.menu-oge:hover{background:rgba(255,255,255,.06);color:#fff}
-.menu-oge.aktif{background:var(--yesil);color:#fff;font-weight:600}
+.menu-oge:hover{background:var(--gri);color:var(--metin)}
+.menu-oge.aktif{background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;font-weight:700;box-shadow:0 6px 14px -6px rgba(79,116,82,.5)}
 .menu-oge .ikon{width:19px;text-align:center;font-size:15px;flex-shrink:0}
 
 /* Akordeon panel — animasyonlu yükseklik (grid-rows 0fr→1fr) */
