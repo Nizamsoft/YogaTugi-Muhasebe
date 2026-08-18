@@ -375,9 +375,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '119';
+const APP_SURUM = '120';
 const APP_SURUM_TARIH = '18 Ağu 2026';
-const APP_SURUM_SAAT = '15:50';
+const APP_SURUM_SAAT = '16:18';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4744,9 +4744,13 @@ function onayModal(baslik, mesaj, onaylandi) {
    10) KİMLİK DOĞRULAMA & BAŞLATMA
    ========================================================== */
 async function uygulamayiBaslat() {
-  $('#girisEkrani').classList.add('gizli');
-  $('#uygulama').classList.remove('gizli');
-  // Kullanıcı bilgisi
+  // Giriş ekranında premium yükleme göster; veriler yüklenince uygulamaya geç
+  const gg = $('#girisGovde'), gy = $('#girisYuk');
+  if (gg) gg.classList.add('gizli');
+  if (gy) gy.classList.remove('gizli');
+  const simdi = () => (window.performance && performance.now) ? performance.now() : 0;
+  const t0 = simdi();
+  // Kullanıcı bilgisi (uygulama gizliyken hazırlanır)
   const ep = State.kullanici?.email || 'yerel@yogatugi.com';
   const ad = State.kullanici?.ad || ep.split('@')[0];
   $('#kullaniciAd').textContent = ad;
@@ -4758,6 +4762,12 @@ async function uygulamayiBaslat() {
   menuCiz();
   kontrolKur();
   git('dashboard');
+  const bekle = Math.max(0, 900 - (simdi() - t0));   // en az ~0.9sn göster (premium his)
+  await new Promise(r => setTimeout(r, bekle));
+  $('#girisEkrani').classList.add('gizli');
+  $('#uygulama').classList.remove('gizli');
+  if (gg) gg.classList.remove('gizli');   // sonraki giriş için formu geri hazırla
+  if (gy) gy.classList.add('gizli');
 }
 
 /* İlk açılış: örnek verilerle mi boş mu başlansın? */
@@ -4839,15 +4849,17 @@ function girisGovdeCiz() {
   }
   if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }   // eski oturum → admin
   govde.innerHTML = `
-    <label for="gKul">Kullanıcı Adı</label>
-    <input type="text" id="gKul" placeholder="Admin" autocomplete="username">
-    <label for="gSif">Şifre</label>
-    <input type="password" id="gSif" placeholder="••••••••" autocomplete="current-password">
-    <div class="giris-hata" id="girisHata"></div>
-    <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>`;
+    <div class="giris-kart"><div class="giris-kart-ic">
+      <div class="giris-alan ilk"><span class="giris-ik">👤</span><input type="text" id="gKul" placeholder="Kullanıcı Adı :" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="giris-alan"><span class="giris-ik">🔒</span><input type="password" id="gSif" placeholder="Şifre :" autocomplete="new-password"></div>
+      <div class="giris-hata" id="girisHata"></div>
+      <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>
+      <div class="giris-guv">🔒 Güvenli giriş</div>
+    </div></div>`;
   $('#girisBtn').onclick = girisDogrula;
-  govde.querySelectorAll('input').forEach(inp =>
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') girisDogrula(); }));
+  const gk = $('#gKul'), gs = $('#gSif');
+  gk.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gs.focus(); } });
+  gs.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); girisDogrula(); } });
 }
 
 async function girisDogrula() {
@@ -5224,13 +5236,10 @@ function faviconUygula() {
 
 /* Giriş ekranı markası: logo (wordmark/yüklenen) varsa göster ve metin başlığı gizle */
 function girisLogoAta(src) {
-  if ($('#girisLogo')) $('#girisLogo').innerHTML = `<img src="${src}" alt="logo">`;
-  if ($('#girisBaslik')) $('#girisBaslik').style.display = 'none';
+  // Giriş ekranı artık sabit yazı-logo kullanıyor; firma logosu buraya basılmaz.
 }
 function girisLogoYer() {
-  const ad = (State.ayarlar && State.ayarlar.firmaAd) || 'Green Village Pilates';
-  if ($('#girisLogo')) $('#girisLogo').innerHTML = `<span class="yer-tutucu">${kacar(monogram(ad))}</span>`;
-  if ($('#girisBaslik')) $('#girisBaslik').style.display = '';
+  // Giriş ekranı sabit yazı-logo (Green Village Pilates) — değiştirilmez.
 }
 
 /* Logo uygula: önce ayarlardaki yüklenen logo, yoksa logos/ klasöründeki dosya (önce GV wordmark) */
@@ -5359,6 +5368,8 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'giriş paneli daha akıcı', not: 'Giriş ekranı premium/gold yapıldı: “GV” kutusu yerine logodaki fontta (Quicksand) “Green Village Pilates” yazı-logosu; koyu ışık-haleli zemin, altın çerçeveli koyu cam kart, gold ikonlu alanlar (placeholder’lar soluk “Kullanıcı Adı :” / “Şifre :”), parlayan gold “Giriş Yap”. Giriş yapınca doğrudan uygulamaya atlamıyor; animasyonlu bir loading screen (gold dönen halka + “Hazırlanıyor…”) çıkıyor, veriler/bulut yüklenince uygulama açılıyor.' },
+  { q: 'loading screen açılsın', not: 'Giriş sonrası animasyonlu loading screen eklendi (wordmark + gold halka + “Hazırlanıyor…”); bu sırada veriler yükleniyor, sonra uygulama açılıyor.' },
   { q: 'grup başlığında gitsin', not: 'Kontrol Listesi yeniden düzenlendi: “Yeni Eklenenler” yığını kaldırıldı; yeni maddeler artık kendi ANA başlığının grubuna giriyor (yerleşik grup varsa ona ekleniyor, yeni başlık kendi grubu oluyor). Ana başlık altında ALT başlık kademesi var. Ayrıca maddenin “akışı” (İstek→Yapıldı→Geri bildirim + not) madde içinde akordeon oldu: madde kapalı gelir, üstüne basınca akış açılır; ✗’e basınca otomatik açılıp not kutusu gelir. Başlıklar sabit. Yeni eklerken Ana + Alt başlık seçiliyor.' },
   { q: 'o kısımlar daralsın', not: 'Maddenin altındaki akış (cevap/geçmiş) artık akordeon: kapalı gelir, maddeye basınca açılır. Başlıklar daralmıyor.' },
   { q: 'aynı boyutta olsun', not: 'Tüm veri-giriş ve seçim pencereleri tek standart boya getirildi (Gider, Ders, Tahsilat, Yeni Üyelik/Üye, Paket Ata/Seç, Üye Seç, Ortak/Üyelik/Gider tanımı, Kullanıcı Girişi, Öğrenci Düzenle/Detay). Adımlar arası artık büyüyüp küçülmüyor; footer düğmeleri de eşit yükseklikte. Gider formu bu boyla yeterince uzadığı için “Giderin Ait Olduğu Kişi” alanı artık kaydırmasız görünüyor. Küçük “Sil?/Onay” kutuları küçük kaldı. (Prompt’a 11. kural olarak eklendi.)' },

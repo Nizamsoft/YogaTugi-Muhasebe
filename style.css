@@ -76,55 +76,42 @@ h1,h2,h3,h4{line-height:1.25}
 .mono{font-variant-numeric:tabular-nums}
 
 /* ============ GİRİŞ EKRANI ============ */
-/* ---- Sıcak Neomorfizm teması (giriş) ---- */
+/* ---- Premium / Gold giriş ekranı ---- */
 #girisEkrani{
-  position:fixed;inset:0;z-index:100;
-  display:flex;align-items:center;justify-content:center;
-  background:#e7ddca;padding:20px;
-  --nk:#e7ddca; --nsd:#c2b79f; --nsl:#fdf6e6; --nink:#3f3a30; --nink-soft:#8a8069;
+  position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:22px;overflow:hidden;
+  background:
+    radial-gradient(90% 60% at 50% -8%,rgba(217,178,90,.28),transparent 60%),
+    radial-gradient(80% 50% at 50% 112%,rgba(123,169,126,.22),transparent 60%),
+    linear-gradient(180deg,#2c3b2f,#232d27);
 }
-body.tema-koyu #girisEkrani{
-  background:#232019;
-  --nk:#232019; --nsd:#161310; --nsl:#302b21; --nink:#ece4d3; --nink-soft:#a89c84;
-}
-.giris-kart{
-  background:var(--nk);width:100%;max-width:380px;
-  border-radius:30px;
-  box-shadow:16px 16px 34px var(--nsd), -16px -16px 34px var(--nsl);
-  padding:34px 28px 30px;text-align:center;
-}
-/* Logo A — Altın Çerçeve: kabartma kare + ince altın hat */
-.giris-logo{
-  position:relative;max-width:270px;min-height:56px;margin:2px auto 16px;
-  display:flex;align-items:center;justify-content:center;
-}
-.giris-logo img{max-width:100%;max-height:128px;object-fit:contain;display:block}
-.giris-logo .yer-tutucu{
-  width:88px;height:88px;border-radius:24px;display:flex;align-items:center;justify-content:center;
-  font-size:30px;font-weight:800;color:var(--yesil-koyu);letter-spacing:1px;background:var(--nk);
-  box-shadow:8px 8px 16px var(--nsd), -8px -8px 16px var(--nsl);
-}
-.giris-kart h1{font-family:Georgia,"Times New Roman",serif;font-size:24px;margin-bottom:3px;color:var(--nink);letter-spacing:-.3px}
-.giris-kart .alt{color:var(--nink-soft);font-size:12.5px;margin-bottom:24px}
-.giris-kart label{display:block;text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--nink-soft);margin:14px 0 7px}
-.giris-kart input{
-  width:100%;padding:13px 15px;border:none;border-radius:13px;
-  background:var(--nk);color:var(--nink);font-size:14.5px;
-  box-shadow:inset 5px 5px 10px var(--nsd), inset -5px -5px 10px var(--nsl);
-}
-.giris-kart input::placeholder{color:var(--nink-soft);opacity:.7}
-.giris-kart input:focus{outline:none;
-  box-shadow:inset 5px 5px 10px var(--nsd), inset -5px -5px 10px var(--nsl), 0 0 0 2px rgba(111,154,114,.55);}
-.giris-hata{color:var(--kirmizi);font-size:13px;margin-top:12px;min-height:18px}
-.btn-giris{
-  width:100%;margin-top:22px;padding:14px;border:none;border-radius:15px;
-  background:linear-gradient(180deg,#7ba97e,#5c8760);color:#fff;font-weight:700;cursor:pointer;font-size:15px;
-  box-shadow:6px 6px 14px var(--nsd), -4px -4px 12px var(--nsl);
-  transition:transform .12s,filter .15s;
-}
-.btn-giris:hover{filter:brightness(1.06)}
+.giris-orta{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:352px;animation:girisGir .5s ease both}
+@keyframes girisGir{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.giris-wm{font-family:'Quicksand',"Segoe UI",system-ui,sans-serif;font-weight:600;font-size:31px;line-height:1.04;color:#f3ecd8;text-align:center;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.giris-wm small{display:block}
+.giris-orn{display:flex;align-items:center;justify-content:center;gap:9px;margin:11px 0 22px}
+.giris-orn .l{width:46px;height:1.5px;background:linear-gradient(90deg,transparent,#e0c06a)}
+.giris-orn .l.r{background:linear-gradient(90deg,#e0c06a,transparent)}
+.giris-orn .d{color:#e0c06a;font-size:11px}
+.giris-kart{width:100%;border-radius:22px;padding:1.5px;background:linear-gradient(135deg,#e6c574,#c9992f 45%,#8a6417 70%,#e6c574);box-shadow:0 26px 50px -22px rgba(0,0,0,.6)}
+.giris-kart-ic{background:linear-gradient(180deg,rgba(38,48,40,.72),rgba(30,38,32,.84));backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border-radius:20px;padding:22px 22px 20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.giris-alan{display:flex;align-items:center;gap:10px;border:1px solid rgba(224,192,106,.35);border-radius:13px;padding:11px 13px;background:rgba(20,26,21,.5);box-shadow:inset 0 1px 3px rgba(0,0,0,.25);margin-top:12px}
+.giris-alan.ilk{margin-top:0}
+.giris-alan:focus-within{border-color:#e0c06a;box-shadow:inset 0 1px 3px rgba(0,0,0,.25),0 0 0 2px rgba(224,192,106,.25)}
+.giris-ik{width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;background:linear-gradient(135deg,#f7e6ad,#e6c574);color:#8a6417;font-size:13px}
+.giris-alan input{border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:#f3ecd8;flex:1;min-width:0}
+.giris-alan input::placeholder{color:#9aa895}
+.giris-hata{color:#f0a08f;font-size:12.5px;margin:10px 2px 0;min-height:16px}
+.btn-giris{position:relative;overflow:hidden;width:100%;margin-top:16px;border:none;border-radius:14px;padding:14px;font-weight:800;font-size:15.5px;color:#40320f;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#f7e08a,#e6bb4e 45%,#cf9a2f);box-shadow:0 12px 24px -10px rgba(200,150,40,.8),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s}
+.btn-giris::after{content:"";position:absolute;top:0;left:-45%;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);animation:girisSh 3.4s ease-in-out infinite}
+@keyframes girisSh{0%,62%{left:-45%}100%{left:130%}}
 .btn-giris:active{transform:translateY(1px)}
-.giris-demo{margin-top:18px;font-size:12px;color:var(--nink-soft)}
+.giris-guv{margin-top:13px;font-size:11px;color:#c8b98f;text-align:center}
+.giris-yuk{display:flex;flex-direction:column;align-items:center;padding-top:4px;animation:girisGir .3s ease both}
+.giris-ring{width:52px;height:52px;border-radius:50%;border:4px solid rgba(224,192,106,.22);border-top-color:#e0c06a;animation:girisSpin 1s linear infinite}
+@keyframes girisSpin{to{transform:rotate(360deg)}}
+.giris-hz{margin-top:15px;font-size:12.5px;font-weight:700;color:#d8c79a;letter-spacing:.3px}
+@media (prefers-reduced-motion:reduce){.btn-giris::after,.giris-orta,.giris-yuk{animation:none}}
 
 /* ============ UYGULAMA İSKELETİ ============ */
 /* min-height: iOS'ta 100vh görünür alandan uzun olduğu için içerik kısayken
