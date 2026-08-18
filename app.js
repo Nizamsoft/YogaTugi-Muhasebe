@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '101';
+const APP_SURUM = '102';
 const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '11:13';
+const APP_SURUM_SAAT = '11:16';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5127,6 +5127,7 @@ function klPromptKopyala() {
   t += '4) Geçişler ve açılışlar akıcı, hafif animasyonlu ve 3B derinlik hissi versin (abartısız).\n';
   t += '5) Programın mevcut yapısını bozma; işleyişi zorlaştırma, sade ve kolay kalsın.\n';
   t += '6) Gereksiz açıklama/yorum yazma; kısa ve öz ol.\n';
+  t += '7) Uygulama aşırı hızlı ve çok akıcı çalışsın.\n';
   if (sorunlar.length) t += '\nLütfen bu maddeleri düzelt ve her birine tek tek ne yaptığını yaz.';
   const tamam = () => bildir('Rapor panoya kopyalandı — sohbete yapıştır.', 'basari');
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(tamam).catch(() => klPromptGoster(t));
