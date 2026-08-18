@@ -374,9 +374,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '107';
-const APP_SURUM_TARIH = '17 Ağu 2026';
-const APP_SURUM_SAAT = '12:15';
+const APP_SURUM = '108';
+const APP_SURUM_TARIH = '18 Ağu 2026';
+const APP_SURUM_SAAT = '12:28';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3379,7 +3379,7 @@ SAYFALAR['ortaklar'] = function () {
     </div>
     ${veri.length ? `<div class="ok-grid">${veri.map(kart).join('')}</div>` : `<div class="gp-bos">Henüz ortak yok. Tanımlamalar › Ortak Bilgileri’nden ekleyin.</div>`}`;
   $$('[data-ay]').forEach(b => b.onclick = () => { ortakDonem = donemKaydir(ortakDonem, Number(b.dataset.ay)); SAYFALAR['ortaklar'](); });
-  $$('[data-ok]').forEach(c => c.onclick = () => { const id = c.dataset.ok; if (ortakAcikSet.has(id)) ortakAcikSet.delete(id); else ortakAcikSet.add(id); SAYFALAR['ortaklar'](); });
+  $$('[data-ok]').forEach(c => c.onclick = () => { const id = c.dataset.ok; const acik = ortakAcikSet.has(id); ortakAcikSet.clear(); if (!acik) ortakAcikSet.add(id); SAYFALAR['ortaklar'](); });
 };
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
@@ -5112,6 +5112,8 @@ const KONTROL_LISTE = [
 const KL_GUNCELLEME = [
   { q: 'solda açılan sayfalar', not: 'Sol menü açık/sıcak temaya çevrildi; “Ayarlar” grubu kaldırılıp Firma Bilgileri, Ortak Bilgileri, Üyelikler ve Giderler tek “Tanımlamalar” sayfasında toplandı.' },
   { q: 'ortakların ilgili ay', not: 'Yeni “Ortaklar” sayfası eklendi: ay seçimli büyük kare kartlar; tıkla-aç ile Aktif Öğrenci, Verdiği Ders, Tahsil Edilen, Kalan Alacağı, Giderler Payı (eşit bölüşüm), Komisyon (0) ve Verilecek Pay (tahsilat − gider − komisyon). Ortak fotoğrafları isimlerin yanında da gösteriliyor.' },
+  { q: 'altın çerçeve', not: 'Kapalı karttaki “Verilecek Pay” özeti alt alta dizildi (tutar taşmıyor). Bir kart açıkken yanındaki kapalı kartların altında kalan beyazlık giderildi (kartlar esnemiyor). Akordeon: aynı anda tek ortak açık; açık olanın etrafı altın çerçeve, başkasına tıklayınca o kapanıp tıklanan açılıyor.' },
+  { q: 'sığmamış', not: 'Kapalı karttaki “Verilecek Pay” özeti alt alta dizildi (tutar taşmıyor). Bir kart açıkken yanındaki kapalı kartların altında kalan beyazlık giderildi. Akordeon: aynı anda tek ortak açık ve etrafı altın çerçeve.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
