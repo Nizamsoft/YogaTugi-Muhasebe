@@ -47,7 +47,7 @@ const $$ = (s, k) => Array.from((k || document).querySelectorAll(s));
 
 function TL(n) {
   n = Number(n) || 0;
-  return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+  return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';   // kırılmaz boşluk → ₺ alt satıra kaymaz
 }
 function sayi(n) { return (Number(n) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 /* Binlik ayraçlı tam sayı (ondalıksız): 50000 -> "50.000" */
@@ -396,9 +396,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '138';
+const APP_SURUM = '139';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '00:35';
+const APP_SURUM_SAAT = '01:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -647,8 +647,36 @@ function git(sayfa) {
   if (typeof altMenuGuncelle === 'function') altMenuGuncelle();
   const render = SAYFALAR[sayfa] || SAYFALAR.dashboard;
   render(m);
+  // Yumuşak sayfa geçişi (fade + hafif yukarı kayma) — her sayfa değişiminde
+  const el = ic();
+  if (el) { el.classList.remove('sayfa-gir'); void el.offsetWidth; el.classList.add('sayfa-gir'); el.scrollTop = 0; }
+  const ana = document.querySelector('.ana'); if (ana) ana.scrollTop = 0;
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(tabloSigdir);
 }
 window.git = git;
+
+/* Mobilde geniş tabloları PC boyutundan ekrana ORANTILI küçült (transform scale) — kırpma/yatay kaydırma yok */
+function tabloSigdir() {
+  const mobil = window.innerWidth <= 640;
+  document.querySelectorAll('.ogr-kaydir, .tablo-sar').forEach(w => {
+    const t = w.querySelector('table'); if (!t) return;
+    t.style.transform = ''; w.style.height = '';           // önce sıfırla, doğal ölçüyü oku
+    if (!mobil) return;
+    const dogal = t.offsetWidth, kap = w.clientWidth;
+    if (dogal > kap + 1) {
+      const s = kap / dogal;
+      t.style.transform = `scale(${s})`;
+      w.style.height = Math.ceil(t.offsetHeight * s) + 'px';
+    }
+  });
+}
+let _tsZ;
+function tabloSigdirGec() { clearTimeout(_tsZ); _tsZ = setTimeout(tabloSigdir, 40); }
+window.addEventListener('resize', tabloSigdirGec);
+(function () {
+  const el = document.getElementById('icerik');
+  if (el && 'MutationObserver' in window) new MutationObserver(tabloSigdirGec).observe(el, { childList: true, subtree: true });
+})();
 
 /* ==========================================================
    5) SAYFALAR
@@ -3019,10 +3047,10 @@ SAYFALAR['rapor-giderler'] = function () {
       const acik = !giderRaporKapali.has(grp.ad);
       const kalemler = Object.values(grp.kalemler).sort((a, b) => b.toplam - a.toplam);
       const satirlar = acik ? kalemler.map(k =>
-        `<div class="gr-sat" data-grp="${kacar(grp.ad)}" data-klm="${kacar(k.ad)}"><span class="ad"><span class="nk"></span>${kacar(k.ad)}</span><span class="sag"><span class="cnt">${k.kayitlar.length} kayıt</span><span class="tut">−${binlik(k.toplam)} ₺</span><span class="chev">›</span></span></div>`
+        `<div class="gr-sat" data-grp="${kacar(grp.ad)}" data-klm="${kacar(k.ad)}"><span class="ad"><span class="nk"></span>${kacar(k.ad)}</span><span class="gr-cnt">${k.kayitlar.length} kayıt</span><span class="gr-tut">−${binlik(k.toplam)} ₺</span><span class="gr-chev">›</span></div>`
       ).join('') : '';
       return `<div class="gr-grp">
-          <div class="gr-grpbas" data-grpkapa="${kacar(grp.ad)}"><span class="ad"><span class="ik">📁</span>${kacar(grp.ad)}</span><span class="top">−${binlik(grp.toplam)} ₺</span></div>
+          <div class="gr-grpbas" data-grpkapa="${kacar(grp.ad)}"><span class="ad"><span class="ik">📁</span>${kacar(grp.ad)}</span><span class="gr-cnt"></span><span class="gr-tut top">−${binlik(grp.toplam)} ₺</span><span class="gr-chev"></span></div>
           ${satirlar}
         </div>`;
     }).join('');
@@ -4754,7 +4782,7 @@ SAYFALAR['odemeler'] = function () {
         <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="odemeAlBtn">＋ Tahsilat Al</button></div>
       </div>
       ${kayitlar.length
-        ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+        ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis">
             <colgroup><col style="width:19%"><col style="width:16%"><col style="width:16%"><col style="width:15%"><col style="width:15%"><col style="width:14%"><col style="width:5%"></colgroup>
             <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Ödediği Tarih</th><th>Ödeme Türü</th><th class="sag">Ödediği Tutar</th><th class="sag">Kalan Borcu</th><th></th></tr></thead>
             <tbody>${kayitlar.map(satir).join('')}</tbody></table></div></div>`
@@ -4884,7 +4912,7 @@ SAYFALAR['hesap-defter'] = function () {
   };
   ic().innerHTML = `
     <div class="odeme-sayfa">
-      <div class="ogr-ust">
+      <div class="ogr-ust hesap-ust">
         <div class="ogr-seg hesap-seg">
           ${['banka', 'nakit', 'kart'].map(k => `<button type="button" class="${HESAP_TANIM[k].cls} ${k === hesapAktif ? 'sec' : ''}" data-hs="${k}">${HESAP_TANIM[k].ik} ${HESAP_TANIM[k].ad} <span class="rk">${binlik(bakiye(k))} ₺</span></button>`).join('')}
         </div>
@@ -4892,7 +4920,7 @@ SAYFALAR['hesap-defter'] = function () {
       </div>
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span>🔍</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
-      ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+      ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis">
           <colgroup><col style="width:12%"><col style="width:11%"><col style="width:23%"><col style="width:18%"><col style="width:12%"><col style="width:15%"><col style="width:9%"></colgroup>
           <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>İlgili Ortak</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th><th></th></tr></thead>
           <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`
@@ -5207,6 +5235,7 @@ async function uygulamayiBaslat() {
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   menuCiz();
+  altMenuCiz();          // alt sayfa çubuğunu giriş yapan kullanıcıya göre yeniden çiz (admin → tüm sekmeler)
   kullaniciBilgiCiz();   // tepe paneli: görsel + ad soyad (ortaklar yüklendikten sonra)
   kontrolKur();
   git('dashboard');
@@ -5881,6 +5910,8 @@ const KL_GUNCELLEME = [
   { q: 'kalem ikonu', not: 'Kontrol Listesi promptuna 2 daimi kural eklendi: (12) Gold-premium tasarım — her yeni ekran/kart/eleman altın-premium dili taşısın; (13) Tutarlılık ve etkileşim — yeni eklenen kart/tablo öğeleri bir öncekiyle aynı ölçü/özelliği taşısın (Enter’la geçiş, animasyon, ₺ para biçimi), imleç kuralı (fotoğraf/düz metinde ok değişmez, metin girişinde metin imleci, düğmede el) ve tablolarda her kayıtta ✎ düzenle + 🗑️ sil.' },
   { q: 'giderlerini inceleye', not: 'Uygulandı: Menüye “Raporlar › Giderler Raporu” eklendi. İlgili ay seçilir; giderler gruplara göre listelenir, her grup başlığında grup toplamı, en altta koyu “Dip Toplam”. Bir gruba basınca açılıp kapanır; bir kaleme (ör. Kırtasiye) basınca o kalemin seçili aydaki kayıtları hesap defteri formunda (tarih · açıklama · ödeme · tutar) açılır. Sağ üstteki “⇄ Karşılaştır” anahtarı açılınca tablo: 1. sütun Tanımlamalardaki gider başlıkları (grup+kalem), sonraki sütunlar 2 ay öncesi · 1 ay öncesi · güncel ay; grup alt-toplamları ve dönem dip toplamlarıyla.' },
   { q: 'tepede 4 kart', not: 'Uygulandı: Gösterge Paneli yeniden tasarlandı. En üstte 4 toplam kart — Hak Ediş · Banka · Kasa · Kredi Kartı Borcu (her kullanıcıda aynı toplamlar). Altında ekran 3 sütun: Sol’da ilgili ortağın tek kartı (Ortaklar sayfasıyla birebir — kare fotoğraf + isim, basınca açılan detay); Orta’da Dersler (yalnız bugün ve yarın, fazlası “Tüm dersler →”); Sağ’da Öğrenciler (Aktif / Potansiyel / Pasif sayıları, satıra basınca Öğrenciler sayfası ilgili sekmede açılır). Sıcak yeşil/kum/gold premium dil korundu; dar ekranda sütunlar alt alta iner.' },
+  { q: 'mobile uyumlu', not: 'Uygulandı: Tüm sayfalar mobil uyumlu hale getirildi. Tablolar mobilde artık “kart”a dönüşmüyor; PC’deki tablo boyutunda kalıp ekrana ORANTILI küçültülüyor (tüm sütunlar görünür, kırpma/yatay kaydırma yok; sayfa hiçbir yerde yana kaymıyor). Yumuşak sayfa geçişleri (fade + hafif yukarı kayma) eklendi. Yerleşim: Gösterge Paneli’nde 4 kart tek üst satır + altta 3 sütun (foto/dersler/öğrenciler); Dersler ve Üyelikler’de 3 sekme + aksiyon düğmesi eşit boyda tek satır; Hesaplar tek satır 4 sütun (Banka/Kasa/Kart + 4. sütunda Gelir/Gider Ekle altlı-üstlü); Ortaklar 4 sütun; Giderler Raporu’nda Karşılaştır düğmesi ay-seçicinin yanında tek satır.' },
+  { q: 'tl amblemi', not: 'Düzeltildi: Para (₺) değerleri artık hiçbir yerde alt satıra kırılmıyor — ₺ amblemi her zaman rakamla aynı satırda kalıyor. Ayrıca Giderler Raporu’nda tutarlar tek sütunda sağa hizalandı (₺’ler alt alta), “kayıt” sayıları ve › okları da hizalı. Ve telefonun altına tüm sayfalar için geçiş çubuğu eklendi (Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar · Tanımlar) — girişten sonra doğru çiziliyor (önceden yalnızca “Panel” görünüyordu).' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
