@@ -809,11 +809,24 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 .hesap-seg button.sec.hs-kart{background:linear-gradient(135deg,#f7dd7f,#e0ac35);color:#40320f;box-shadow:0 9px 20px -7px rgba(200,150,40,.7)}
 /* Hesaplar tablosu — işlem türü, tutar ve bakiye */
 .isl-tur{display:inline-block;font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px}
-.isl-tur.tahsil{background:#e3f0e4;color:#2f8f5b}
+.isl-tur.gelir{background:#e3f0e4;color:#2f8f5b}
 .isl-tur.gider{background:#f7e4e1;color:#c0483f}
+.isl-tur.ode{background:#dfe7f2;color:#3f6ba3}
 .hs-art{font-weight:800;font-variant-numeric:tabular-nums}
 .hs-art.a{color:#2f8f5b}.hs-art.e{color:#c0483f}
 .hs-bak{font-weight:800;font-variant-numeric:tabular-nums;color:var(--metin)}
+.hs-alt{font-size:11px;font-weight:700;margin-top:2px}
+.hs-alt.eg{color:#4f7452}.hs-alt.gr{color:#a8792f}
+.hesap-ara{margin:14px 0 2px}
+/* Gider Seç — Kredi Kartı Borcunu Öde */
+.gs-kkode{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid #e0b544;border-radius:12px;padding:11px 14px;margin-bottom:10px;background:linear-gradient(135deg,#fbf1d4,#f6e6ad);cursor:pointer;transition:.15s}
+.gs-kkode:hover{box-shadow:0 8px 18px -10px rgba(200,150,40,.6)}
+.gs-kkode .l{display:flex;align-items:center;gap:8px;font-weight:800;color:#8a6417}
+.gs-kkode .borc{font-weight:800;color:#c0483f;font-variant-numeric:tabular-nums}
+/* Verilecek Pay altı kart borcu notu */
+.dsh-c-hero .alt.kkborc{color:#f0b8b0;margin-top:3px}
+.kkborc-not{background:#fbeeec;border:1px solid #e6b8b3;color:#9a4a40;border-radius:12px;padding:9px 14px;font-size:12.5px;font-weight:600;margin-bottom:14px}
+.kkborc-not b{color:#c0483f}
 /* Dar ekran: sekmeler satırı doldurup yine eşit bölüşsün */
 @media(max-width:640px){
   .ogr-seg{display:flex;width:100%}
