@@ -402,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '143';
+const APP_SURUM = '144';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '04:10';
+const APP_SURUM_SAAT = '05:30';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -535,20 +535,20 @@ const Hesapla = {
    4) MENÜ & YÖNLENDİRME
    ========================================================== */
 const MENU = [
-  { id: 'dashboard', ad: 'Gösterge Paneli', ikon: '📊', baslik: 'Gösterge Paneli' },
-  { grup: 'Ders Takibi', ikon: '🎯', ogeler: [
-    { id: 'dersler', ad: 'Dersler', ikon: '📅', baslik: 'Dersler' },
-    { id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓', baslik: 'Öğrenciler' },
+  { id: 'dashboard', ad: 'Gösterge Paneli', ikon: 'panel', baslik: 'Gösterge Paneli' },
+  { grup: 'Ders Takibi', ikon: 'hedef', ogeler: [
+    { id: 'dersler', ad: 'Dersler', ikon: 'dersler', baslik: 'Dersler' },
+    { id: 'ogrenciler', ad: 'Öğrenciler', ikon: 'ogrenci', baslik: 'Öğrenciler' },
   ] },
-  { grup: 'Muhasebe', ikon: '📒', ogeler: [
-    { id: 'hesap-defter', ad: 'Hesaplar', ikon: '📗', baslik: 'Hesaplar' },
-    { id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝', baslik: 'Ortaklar' },
+  { grup: 'Muhasebe', ikon: 'muhasebe', ogeler: [
+    { id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe', baslik: 'Hesaplar' },
+    { id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar', baslik: 'Ortaklar' },
   ] },
-  { grup: 'Raporlar', ikon: '📈', ogeler: [
-    { id: 'rapor-giderler', ad: 'Giderler Raporu', ikon: '📉', baslik: 'Giderler Raporu' },
+  { grup: 'Raporlar', ikon: 'raporlar', ogeler: [
+    { id: 'rapor-giderler', ad: 'Giderler Raporu', ikon: 'gider', baslik: 'Giderler Raporu' },
   ] },
-  { grup: 'Ayarlar', ikon: '⚙️', sadeceAdmin: true, ogeler: [
-    { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: '🗂️', baslik: 'Tanımlamalar' },
+  { grup: 'Ayarlar', ikon: 'ayarlar', sadeceAdmin: true, ogeler: [
+    { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: 'tanimlar', baslik: 'Tanımlamalar' },
   ] },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
@@ -581,6 +581,34 @@ const HESAP_IKON = {
 function hesapIkonSVG(renk) {
   return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">${HESAP_IKON[renk] || ''}</svg>`;
 }
+/* ---- Uygulamaya özel elle çizilmiş SVG ikon kütüphanesi (emoji yerine) ---- */
+const IK = {
+  panel: '<rect x="3" y="12" width="4" height="8" rx="1.2" fill="currentColor" opacity=".3"/><rect x="3" y="12" width="4" height="8" rx="1.2" stroke="currentColor" stroke-width="1.7"/><rect x="10" y="7" width="4" height="13" rx="1.2" stroke="currentColor" stroke-width="1.7"/><rect x="17" y="4" width="4" height="16" rx="1.2" fill="currentColor" opacity=".3"/><rect x="17" y="4" width="4" height="16" rx="1.2" stroke="currentColor" stroke-width="1.7"/>',
+  hedef: '<circle cx="12" cy="12" r="8.2" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.4" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>',
+  dersler: '<rect x="3.5" y="5" width="17" height="15" rx="3" fill="currentColor" opacity=".26"/><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5h17M8 3.2v3.4M16 3.2v3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7.5 13h3M7.5 16.3h3M13.5 13h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  ogrenci: '<path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z" fill="currentColor" opacity=".26"/><path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6.5 10.5v4c0 1.6 2.5 2.8 5.5 2.8s5.5-1.2 5.5-2.8v-4M21.5 8.5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  muhasebe: '<path d="M5 4.5h9a2.5 2.5 0 0 1 2.5 2.5V20H7.5A2.5 2.5 0 0 1 5 17.5V4.5Z" fill="currentColor" opacity=".24"/><path d="M6.5 4.5h9A2.5 2.5 0 0 1 18 7v12.5H8A1.5 1.5 0 0 1 6.5 18V4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.5 8.5h5M9.5 11.5h5M9.5 14.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  ortaklar: '<circle cx="8.5" cy="8.5" r="2.8" fill="currentColor" opacity=".28"/><circle cx="8.5" cy="8.5" r="2.8" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9.5" r="2.3" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18.5c0-2.8 2.2-4.7 5-4.7s5 1.9 5 4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.6 14.1c2.3-.2 4.2 1.4 4.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  raporlar: '<path d="M4 19V5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7 15l3.5-4 3 2.5L20 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 11V7h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  ayarlar: '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6M18.7 18.7l-1.6-1.6M6.9 6.9 5.3 5.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  tanimlar: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.2l1.8 2h8a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2v-9.5Z" fill="currentColor" opacity=".24"/><path d="M3.5 7.5a2 2 0 0 1 2-2h3.2l1.8 2h8a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2v-9.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  hakedis: '<path d="M9 3h6l-1.2 2.2a5.5 5.5 0 0 1 3.7 5.2c0 3.6-2.9 6.4-5.5 6.4S6.5 14 6.5 10.4A5.5 5.5 0 0 1 10.2 5.2L9 3Z" fill="currentColor" opacity=".26"/><path d="M9 3h6l-1.2 2.2a5.5 5.5 0 0 1 3.7 5.2c0 3.6-2.9 6.4-5.5 6.4S6.5 14 6.5 10.4A5.5 5.5 0 0 1 10.2 5.2L9 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 8.6v4.8M10.4 9.6c0-.8.7-1.3 1.6-1.3s1.6.5 1.6 1.3M10.4 11.9c0 .8.7 1.3 1.6 1.3s1.6-.5 1.6-1.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+  kisi: '<circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  para: '<ellipse cx="12" cy="6.6" rx="6.8" ry="2.6" fill="currentColor" opacity=".24"/><ellipse cx="12" cy="6.6" rx="6.8" ry="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M5.2 6.6v6c0 1.4 3 2.6 6.8 2.6s6.8-1.2 6.8-2.6v-6" stroke="currentColor" stroke-width="1.6"/><path d="M5.2 9.6c0 1.4 3 2.6 6.8 2.6s6.8-1.2 6.8-2.6" stroke="currentColor" stroke-width="1.6"/>',
+  firma: '<rect x="4.5" y="3.5" width="9" height="17" rx="1.5" fill="currentColor" opacity=".24"/><rect x="4.5" y="3.5" width="9" height="17" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 8.5h5a1.5 1.5 0 0 1 1.5 1.5v10.5h-6.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 7h4M7 10.5h4M7 14h4M16 12h1.5M16 15.5h1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  uyelik: '<path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" fill="currentColor" opacity=".24"/><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v1.5M12 11.2v1.6M12 14.5V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  gider: '<rect x="3.5" y="8" width="17" height="12" rx="2.5" fill="currentColor" opacity=".22"/><rect x="3.5" y="8" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.6"/><path d="M7 5.5h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14.5v3M10.5 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  kullanici: '<circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="m11 11 8 8M16 20l3-3M19 17l2 .5-.5-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+  ders: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H12v14H6.5A2.5 2.5 0 0 0 4 20.5V6.5Z" fill="currentColor" opacity=".22"/><path d="M20 6.5A2.5 2.5 0 0 0 17.5 4H12v14h5.5A2.5 2.5 0 0 1 20 20.5V6.5Z" fill="currentColor" opacity=".22"/><path d="M12 5.2C11 4.4 9.6 4 8 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H8c1.6 0 3 .4 4 1.2m0-16C13 4.4 14.4 4 16 4h2.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H16c-1.6 0-3 .4-4 1.2m0-16v16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  banka: HESAP_IKON.banka, kasa: HESAP_IKON.kasa, kart: HESAP_IKON.kart, kartBorc: HESAP_IKON.kart,
+  onay: '<circle cx="12" cy="12" r="8.5" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="m8.3 12.2 2.6 2.6 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  sure: '<circle cx="12" cy="12" r="8.3" fill="currentColor" opacity=".2"/><circle cx="12" cy="12" r="8.3" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+  bolme: '<path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.5" fill="currentColor"/><circle cx="12" cy="16.5" r="1.5" fill="currentColor"/>',
+  ara: '<circle cx="10.5" cy="10.5" r="6" stroke="currentColor" stroke-width="1.8"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  grup: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.2l1.8 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2v-9Z" fill="currentColor" opacity=".22"/><path d="M3.5 7.5a2 2 0 0 1 2-2h3.2l1.8 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2v-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+};
+/* İkon SVG'si üretir. cls: ekstra sınıf. */
+function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
 
 function menuCiz() {
   const nav = $('#anaMenu');
@@ -594,19 +622,19 @@ function menuCiz() {
       if (!ogeler.length) continue;
       html += `<div class="menu-grup">
         <button type="button" class="grup-baslik">
-          <span class="ikon">${m.ikon || '📁'}</span>
+          <span class="ikon">${ik(m.ikon)}</span>
           <span class="gad">${kacar(m.grup)}</span>
           <span class="ok">▸</span>
         </button>
         <div class="menu-alt"><div class="ic">
-          ${ogeler.map(o => `<button class="menu-oge" data-sayfa="${o.id}"><span class="ikon">${o.ikon}</span>${kacar(o.ad)}</button>`).join('')}
+          ${ogeler.map(o => `<button class="menu-oge" data-sayfa="${o.id}"><span class="ikon">${ik(o.ikon)}</span>${kacar(o.ad)}</button>`).join('')}
         </div></div>
       </div>`;
     } else {
-      html += `<button class="menu-oge tekil" data-sayfa="${m.id}"><span class="ikon">${m.ikon}</span>${kacar(m.ad)}</button>`;
+      html += `<button class="menu-oge tekil" data-sayfa="${m.id}"><span class="ikon">${ik(m.ikon)}</span>${kacar(m.ad)}</button>`;
     }
   }
-  if (adminMi()) html += `<button class="menu-oge tekil" id="menuKontrol"><span class="ikon">✅</span>Kontrol Listesi</button>`;   // yalnızca admin
+  if (adminMi()) html += `<button class="menu-oge tekil" id="menuKontrol"><span class="ikon">${ik('onay')}</span>Kontrol Listesi</button>`;   // yalnızca admin
   nav.innerHTML = html;
   // Akordeon: grup başlığına basınca aç/kapa; biri açılınca diğerleri kapanır
   $$('.grup-baslik', nav).forEach(b => b.onclick = () => {
@@ -706,13 +734,13 @@ SAYFALAR.dashboard = function () {
   const bankaBak = sonBak(hesapHareketleri('banka'));
   const kasaBak = sonBak(hesapHareketleri('nakit'));
   const kartB = kartBorcu();
-  const k4 = (cls, ik, lbl, val, alt) =>
-    `<div class="d4 ${cls}"><span class="ring"></span><div class="ust"><span class="ik">${ik}</span><span class="lbl">${lbl}</span></div><div class="val">${val}</div><div class="alt">${alt}</div></div>`;
+  const k4 = (cls, ikAd, lbl, val, alt) =>
+    `<div class="d4 ${cls}"><span class="glow"></span><span class="ring"></span><div class="ust"><span class="ik">${ik(ikAd)}</span><span class="lbl">${lbl}</span></div><div class="val">${val}</div><div class="alt">${alt}</div></div>`;
   const ust4 = `<div class="dsh4">
-    ${k4('hak', '💰', 'Hak Ediş', TL(hakEdis), donemAdi(dashDonem) + ' · dağıtılacak pay')}
-    ${k4('bnk', '🏦', 'Banka', TL(bankaBak), 'Güncel bakiye')}
-    ${k4('ksa', '💵', 'Kasa', TL(kasaBak), 'Nakit bakiye')}
-    ${k4('krt', '💳', 'Kredi Kartı Borcu', TL(kartB), kartB > 0 ? 'Ödenmemiş' : 'Borç yok')}
+    ${k4('hak', 'hakedis', 'Hak Ediş', TL(hakEdis), donemAdi(dashDonem) + ' · dağıtılacak pay')}
+    ${k4('bnk', 'banka', 'Banka', TL(bankaBak), 'Güncel bakiye')}
+    ${k4('ksa', 'kasa', 'Kasa', TL(kasaBak), 'Nakit bakiye')}
+    ${k4('krt', 'kartBorc', 'Kredi Kartı Borcu', TL(kartB), kartB > 0 ? 'Ödenmemiş' : 'Borç yok')}
   </div>`;
 
   /* --- SOL: ilgili ortağın tek kartı (Ortaklar sayfasıyla birebir) --- */
@@ -723,15 +751,15 @@ SAYFALAR.dashboard = function () {
     const acik = dashOrtakAcik;
     const foto = r.o.foto ? `<img src="${r.o.foto}" alt="${kacar(r.o.ad)}">` : `<span class="ok-mono">${basHarf(r.o.ad)}</span>`;
     const detay = `<div class="ok-detay">
-        <div class="ok-sr"><span class="et">👥 Aktif Öğrenci</span><span class="v">${r.aktifOgrenci}</span></div>
-        <div class="ok-sr"><span class="et">📅 Verdiği Ders</span><span class="v">${r.verdigiDers}</span></div>
-        <div class="ok-sr"><span class="et">✅ Tahsil Edilen</span><span class="v green">${TL(r.tahsil)}</span></div>
-        <div class="ok-sr"><span class="et">⏳ Kalan Alacağı</span><span class="v gold">${TL(r.kalanAlacak)}</span></div>
-        <div class="ok-sr"><span class="et">➗ Giderler Payı</span><span class="v red">${eksi(r.giderPayi)}</span></div>
-        <div class="ok-sr"><span class="et">🏦 Komisyon Gideri</span><span class="v red">${eksi(r.komisyon)}</span></div>
-        <div class="ok-sonuc"><span class="k">💰 Verilecek Pay</span><span class="v"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('kisi','uik-et')}Aktif Öğrenci</span><span class="v">${r.aktifOgrenci}</span></div>
+        <div class="ok-sr"><span class="et">${ik('dersler','uik-et')}Verdiği Ders</span><span class="v">${r.verdigiDers}</span></div>
+        <div class="ok-sr"><span class="et">${ik('onay','uik-et')}Tahsil Edilen</span><span class="v green">${TL(r.tahsil)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('sure','uik-et')}Kalan Alacağı</span><span class="v gold">${TL(r.kalanAlacak)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('bolme','uik-et')}Giderler Payı</span><span class="v red">${eksi(r.giderPayi)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('banka','uik-et')}Komisyon Gideri</span><span class="v red">${eksi(r.komisyon)}</span></div>
+        <div class="ok-sonuc"><span class="k">${ik('para','uik-et')}Verilecek Pay</span><span class="v"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>
       </div>`;
-    const ozet = `<div class="ok-ozet"><span class="lbl">💰 Verilecek Pay</span><span class="val"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>`;
+    const ozet = `<div class="ok-ozet"><span class="lbl">${ik('para','uik-et')}Verilecek Pay</span><span class="val"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>`;
     ortakHTML = `<div class="ok-kart f1 ${acik ? 'acik' : ''}" id="dashOrtakKart">
         <div class="ok-kare"><div class="ok-foto">${foto}</div><span class="ok-isim">${kacar(r.o.ad)}</span></div>
         ${acik ? detay : ozet}
@@ -763,7 +791,7 @@ SAYFALAR.dashboard = function () {
        ${yarinD.length ? `<div class="drs-gun-et">Yarın · ${gunAy(yarin)}</div>${yarinD.map(dersSatir).join('')}` : ''}`
     : `<div class="drs-bos">Bugün ve yarın için ders yok.</div>`;
   const dersPanel = `<div class="panel">
-      <div class="panel-bas"><span class="t"><span class="ik">📅</span>Bugün & Yarın</span><span class="link" data-git="dersler">Tüm dersler →</span></div>
+      <div class="panel-bas"><span class="t"><span class="ik">${ik('dersler')}</span>Bugün & Yarın</span><span class="link" data-git="dersler">Tüm dersler →</span></div>
       ${derslerIc}
     </div>`;
 
@@ -777,8 +805,8 @@ SAYFALAR.dashboard = function () {
     </div>
     ${ust4}
     <div class="dsh2">
-      <div><div class="blok-bas"><span>👤 Ortak</span><span class="ln"></span></div>${ortakHTML}</div>
-      <div><div class="blok-bas"><span>📅 Dersler</span><span class="ln"></span></div>${dersPanel}</div>
+      <div><div class="blok-bas"><span class="bi">${ik('kisi')}</span><span>Ortak</span><span class="ln"></span></div>${ortakHTML}</div>
+      <div><div class="blok-bas"><span class="bi">${ik('dersler')}</span><span>Dersler</span><span class="ln"></span></div>${dersPanel}</div>
     </div>`;
 
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
@@ -3010,7 +3038,7 @@ function giderKalemDetay(donem, grpAd, klmAd) {
     const kime = ort ? egitmenKisaAd(ort) : (g.kaynakOdemeId ? '' : 'Tüm ortaklar');
     return `<tr>
       <td data-l="Tarih">${fmtTarihUzun(g.tarih)}</td>
-      <td data-l="Açıklama">${kacar(g.aciklama || g.giderAd || '—')}${kime ? `<div class="hs-alt gr">👥 ${kacar(kime)}</div>` : ''}</td>
+      <td data-l="Açıklama">${kacar(g.aciklama || g.giderAd || '—')}${kime ? `<div class="hs-alt gr">${ik('kisi','uik-mini')}${kacar(kime)}</div>` : ''}</td>
       <td data-l="Ödeme">${kacar(HESAP_TANIM[g.odemeSekli] ? HESAP_TANIM[g.odemeSekli].ad : (g.odemeSekli || '—'))}</td>
       <td data-l="Tutar" class="sag"><span class="hs-art e">−${binlik(Number(g.tutar) || 0)} ₺</span></td>
     </tr>`;
@@ -3643,15 +3671,15 @@ SAYFALAR['ortaklar'] = function () {
     const foto = r.o.foto ? `<img src="${r.o.foto}" alt="${kacar(r.o.ad)}">` : `<span class="ok-mono">${basHarf(r.o.ad)}</span>`;
     const eksi = (n) => n ? '−' + TL(n) : TL(0);
     const detay = `<div class="ok-detay">
-        <div class="ok-sr"><span class="et">👥 Aktif Öğrenci</span><span class="v">${r.aktifOgrenci}</span></div>
-        <div class="ok-sr"><span class="et">📅 Verdiği Ders</span><span class="v">${r.verdigiDers}</span></div>
-        <div class="ok-sr"><span class="et">✅ Tahsil Edilen</span><span class="v green">${TL(r.tahsil)}</span></div>
-        <div class="ok-sr"><span class="et">⏳ Kalan Alacağı</span><span class="v gold">${TL(r.kalanAlacak)}</span></div>
-        <div class="ok-sr"><span class="et">➗ Giderler Payı</span><span class="v red">${eksi(r.giderPayi)}</span></div>
-        <div class="ok-sr"><span class="et">🏦 Komisyon Gideri</span><span class="v red">${eksi(r.komisyon)}</span></div>
-        <div class="ok-sonuc"><span class="k">💰 Verilecek Pay</span><span class="v"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('kisi','uik-et')}Aktif Öğrenci</span><span class="v">${r.aktifOgrenci}</span></div>
+        <div class="ok-sr"><span class="et">${ik('dersler','uik-et')}Verdiği Ders</span><span class="v">${r.verdigiDers}</span></div>
+        <div class="ok-sr"><span class="et">${ik('onay','uik-et')}Tahsil Edilen</span><span class="v green">${TL(r.tahsil)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('sure','uik-et')}Kalan Alacağı</span><span class="v gold">${TL(r.kalanAlacak)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('bolme','uik-et')}Giderler Payı</span><span class="v red">${eksi(r.giderPayi)}</span></div>
+        <div class="ok-sr"><span class="et">${ik('banka','uik-et')}Komisyon Gideri</span><span class="v red">${eksi(r.komisyon)}</span></div>
+        <div class="ok-sonuc"><span class="k">${ik('para','uik-et')}Verilecek Pay</span><span class="v"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>
       </div>`;
-    const ozet = `<div class="ok-ozet"><span class="lbl">💰 Verilecek Pay</span><span class="val"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>`;
+    const ozet = `<div class="ok-ozet"><span class="lbl">${ik('para','uik-et')}Verilecek Pay</span><span class="val"${r.verilecek < 0 ? ' style="color:var(--kirmizi)"' : ''}>${TL(r.verilecek)}</span></div>`;
     return `<div class="ok-kart f${i % 4} ${acik ? 'acik' : ''}" data-ok="${r.o.id}">
       <div class="ok-kare"><div class="ok-foto">${foto}</div><span class="ok-isim">${kacar(r.o.ad)}</span></div>
       ${acik ? detay : ozet}
@@ -3670,18 +3698,18 @@ SAYFALAR['ortaklar'] = function () {
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
-  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: '🏢', alt: 'Ad, logo, slogan' },
-  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: '👥', alt: 'Eğitmenler ve pay oranları' },
-  { id: 'tanim-uyelik', ad: 'Üyelikler', ikon: '🎟️', alt: 'Ders ve üyelik paketleri' },
-  { id: 'tanim-gider', ad: 'Giderler', ikon: '📉', alt: 'Gider kalemleri ve grupları' },
-  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: '🔑', alt: 'Ortaklara giriş (kullanıcı adı + şifre)' },
+  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan' },
+  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Eğitmenler ve pay oranları' },
+  { id: 'tanim-uyelik', ad: 'Üyelikler', ikon: 'uyelik', alt: 'Ders ve üyelik paketleri' },
+  { id: 'tanim-gider', ad: 'Giderler', ikon: 'gider', alt: 'Gider kalemleri ve grupları' },
+  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
   ic().innerHTML = `
     <div class="tnm-hub">
       <div class="tnm-menu">
         ${TANIMLAR.map(t => `<button type="button" class="tnm-row2" data-tanim="${t.id}">
-          <span class="tnm-ik">${t.ikon}</span>
+          <span class="tnm-ik">${ik(t.ikon)}</span>
           <span class="tnm-metin"><span class="tnm-ad">${kacar(t.ad)}</span><span class="tnm-alt">${kacar(t.alt || '')}</span></span>
           <span class="tnm-ok">›</span>
         </button>`).join('')}
@@ -4196,7 +4224,7 @@ function uyeSecModal() {
     return `<button type="button" class="uys-uye" data-uye="${o.id}"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="uys-uye-bilg"><span class="ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="alt">${kacar(o.telefon || '—')} · ${kacar(durumMetin)}</span></span><span class="uys-ok">›</span></button>`;
   };
   const govde = `
-    <div class="uys-ara"><span>🔍</span><input type="text" id="uyeAra" placeholder="İsim ile ara…" autocomplete="off"></div>
+    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="uyeAra" placeholder="İsim ile ara…" autocomplete="off"></div>
     <div class="uys-liste" id="uyeListe">${liste.map(satir).join('')}</div>`;
   modalAc('Üye Seç', govde, `<button class="btn" id="uyeGeri" style="flex:1">‹ Geri</button>`, `<span class="hr-rozet">👤 Eski Üye</span>`);
   const bagla = () => $$('#uyeListe [data-uye]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.uye); if (o) paketAtaModal(o); });
@@ -4503,7 +4531,7 @@ function ogrenciSecModal(onceki, onKaydet) {
   };
   const govde = `
     <div class="ds-chipler" id="osChip">${chip()}</div>
-    <div class="uys-ara"><span>🔍</span><input type="text" id="osAra" placeholder="Öğrenci ara…"></div>
+    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="osAra" placeholder="Öğrenci ara…"></div>
     <div class="ds-oliste sec-liste-kaydir" id="osListe">${ogrenciler.map(item).join('')}</div>`;
   const m = ustKatModal('Öğrenci Seç', '👥 Öğrenci', govde,
     `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç (<span id="osSay">${secili.size}</span>)</button>`);
@@ -4532,7 +4560,7 @@ function ogrenciTekSecModal(seciliId, onSec) {
     return `<div class="ds-osat ${sel === o.id ? 'sec' : ''}" data-o="${o.id}"><span class="ds-ochk">${sel === o.id ? '✓' : ''}</span><span class="oav-mini">${basHarf(o.ad, o.soyad)}</span><span class="ds-obil"><span class="ad">${kacar(ogrenciTamAd(o))}</span><span class="alt">${pk}${borc}</span></span></div>`;
   };
   const govde = `
-    <div class="uys-ara"><span>🔍</span><input type="text" id="tsAra" placeholder="Öğrenci ara…"></div>
+    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="tsAra" placeholder="Öğrenci ara…"></div>
     <div class="ds-oliste sec-liste-kaydir" id="tsListe">${ogrenciler.map(item).join('')}</div>`;
   const m = ustKatModal('Öğrenci Seç', '👥 Öğrenci', govde,
     `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç</button>`);
@@ -4881,8 +4909,8 @@ SAYFALAR['hesap-defter'] = function () {
   const tumList = veri[hesapAktif].slice().reverse();   // en yeni üstte
   const satir = (h) => {
     const rtip = h.tip === 'tahsilat' ? 'tahsilat' : 'gider';   // düzenle/sil yönlendirmesi
-    const alt = h.altYazi ? `<div class="hs-alt ${h.altTip}">${h.altTip === 'ogr' ? '🎓 ' : '📁 '}${kacar(h.altYazi)}</div>` : '';
-    const ortHucre = h.ilgiliId ? `<span class="ogr-egit">${egitmenAv(h.ilgiliId, 'ogr-ea')}${kacar(h.ilgiliAd)}</span>` : `<span class="gid-tum">👥 ${kacar(h.ilgiliAd)}</span>`;
+    const alt = h.altYazi ? `<div class="hs-alt ${h.altTip}">${h.altTip === 'ogr' ? ik('ogrenci','uik-mini') : ik('grup','uik-mini')}${kacar(h.altYazi)}</div>` : '';
+    const ortHucre = h.ilgiliId ? `<span class="ogr-egit">${egitmenAv(h.ilgiliId, 'ogr-ea')}${kacar(h.ilgiliAd)}</span>` : `<span class="gid-tum">${ik('kisi','uik-mini')}${kacar(h.ilgiliAd)}</span>`;
     const ana = h.aciklama ? (h.tip === 'tahsilat' ? `<span class="hs-tur">${kacar(h.aciklama)}</span>` : kacar(h.aciklama)) : '<span class="ogr-soluk">—</span>';
     return `<tr>
       <td data-l="Tarih">${fmtTarihUzun(h.tarih)}</td>
@@ -4908,7 +4936,7 @@ SAYFALAR['hesap-defter'] = function () {
         </div>
         <div class="ogr-ust-sag"><button type="button" class="gp-ekle" id="hsGelir">＋ Gelir Ekle</button><button type="button" class="gp-ekle" id="hsGider">＋ Gider Ekle</button></div>
       </div>
-      <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span>🔍</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
+      <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span class="ara-ik">${ik('ara')}</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
       ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis">
           <colgroup><col style="width:12%"><col style="width:11%"><col style="width:22%"><col style="width:17%"><col style="width:12%"><col style="width:15%"><col style="width:11%"></colgroup>
@@ -4947,7 +4975,7 @@ const ODEME_SEKLI = { banka: '🏦 Banka', nakit: '💵 Nakit', kart: '💳 Kred
 SAYFALAR['giderler'] = function () {
   const kayitlar = (State.giderKayitlari || []).slice().sort((a, b) => (b.tarih + (b.olusturma || '')).localeCompare(a.tarih + (a.olusturma || '')));
   const kisiHucre = (g) => {
-    if (!g.ortakId) return '<span class="gid-tum">👥 Tüm ortaklar</span>';
+    if (!g.ortakId) return `<span class="gid-tum">${ik('kisi', 'uik-mini')}Tüm ortaklar</span>`;
     const o = State.ortaklar.find(x => x.id === g.ortakId);
     return `<span class="gid-kisi">${egitmenAv(g.ortakId, 'ogr-ea')}${kacar(o ? egitmenKisaAd(o) : '—')}</span>`;
   };
@@ -5060,7 +5088,7 @@ function giderSecAc(st) {
   const borc = kartBorcu();
   const kkodeHTML = borc > 0 ? `<div class="gs-kkode" id="gsKkode"><span class="l">💳 Kredi Kartı Borcunu Öde</span><span class="borc">${binlik(borc)} ₺</span></div>` : '';
   $('#modalKap .modal-govde').innerHTML = `<div class="gd-flow gd-flow-sec gd-anim">
-      <div class="gs-ara"><span class="gs-ara-ik">🔍</span><input type="text" id="gsAra" placeholder="Gider ara…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+      <div class="gs-ara"><span class="gs-ara-ik">${ik('ara')}</span><input type="text" id="gsAra" placeholder="Gider ara…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
       ${kkodeHTML}
       <div class="gs-liste" id="gsListe">${giderSecListe(st, '')}</div></div>`;
   $('#modalKap .modal-alt').innerHTML = `<button class="btn gs-geri-btn" id="gsGeri">‹ Gider Ekle</button>`;
@@ -5422,12 +5450,12 @@ function ustCubukKur() {
 
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
-  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: '📊', merkez: true },
-  { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: '🎓' },
-  { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: '📅' },
-  { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: '📗' },
-  { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: '🤝' },
-  { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: '🗂️' },
+  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel', merkez: true },
+  { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: 'ogrenci' },
+  { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: 'dersler' },
+  { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
+  { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar' },
+  { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
@@ -5452,7 +5480,7 @@ function altMenuCiz() {
     .map(m => {
     const anahtar = m.tip === 'grup' ? m.grup : m.id;
     return `<button type="button" class="alt-oge${m.merkez ? ' merkez' : ''}" data-alt="${kacar(anahtar)}">
-      <span class="ic">${m.ikon}</span><span class="tx">${kacar(m.ad)}</span></button>`;
+      <span class="ic">${ik(m.ikon)}</span><span class="tx">${kacar(m.ad)}</span></button>`;
   }).join('');
   $$('.alt-oge', nav).forEach(b => b.onclick = () => {
     const anahtar = b.dataset.alt;
@@ -5474,10 +5502,10 @@ function grupSheet(grupAd) {
   const ogeler = m.ogeler.filter(o => !o.gizli && (!o.sadeceAdmin || adminMi()));
   $('#altSheet').innerHTML = `
     <div class="cizgi"></div>
-    <h4>${m.ikon} ${kacar(grupAd)}</h4>
+    <h4><span class="oi">${ik(m.ikon)}</span> ${kacar(grupAd)}</h4>
     <div class="sheet-liste">
       ${ogeler.map(o => `<button type="button" class="sheet-oge ${o.id === State.aktifSayfa ? 'aktif' : ''}" data-sayfa="${o.id}">
-        <span class="oi">${o.ikon}</span><b>${kacar(o.ad)}</b><span class="ok">›</span></button>`).join('')}
+        <span class="oi">${ik(o.ikon)}</span><b>${kacar(o.ad)}</b><span class="ok">›</span></button>`).join('')}
     </div>`;
   document.body.classList.add('sheet-acik');
   $$('#altSheet .sheet-oge').forEach(b => b.onclick = () => { sheetKapat(); git(b.dataset.sayfa); });
@@ -5906,6 +5934,7 @@ const KL_GUNCELLEME = [
   { q: 'çöp kutusu ve kalem', not: 'Düzeltildi: Tablolarda ✎ (düzenle) ve 🗑️ (sil) düğmeleri artık verinin üzerine binmiyor. Neden: düğmeler PC boyutunda aksiyon sütununa sığmayıp sola taşıyordu (ör. Öğrenciler’de Kalan Ödeme’yi kapatıyordu). Düğmeler biraz küçültüldü, aksiyon sütunları genişletildi (Öğrenciler, Hesaplar, Müşteriler/cari, Gider detay tablolarında) ve uzun tutarlar gerekirse alt satıra sarıyor. Tüm tablolar kontrol edildi.' },
   { q: 'ay seçme çubuğu ve ortakları', not: 'Uygulandı: Ay seçme çubuğu ve “Ortakları göster” düğmesi tüm sayfalarda tek premium tasarıma geçti. Ay çubuğu: altın gradyan çerçeve + hafif ışıltı, oklar premium yuvarlak düğme (üstüne gelince altın dolgu), ay adı büyük serif ve altında yıl altın harflerle; Giderler Raporu’ndaki ayrı ay çubuğu da bununla birleşti. “Ortakları göster”: solda yuvarlak 👥 ikon + metin + premium altın anahtar (açıkken altın gradyan track, ikon altınlaşır, hafif altın halka ışıltısı). Sıcak yeşil/kum/gold tema korundu; koyu tema uyumu da eklendi.' },
   { q: 'sayfalar çubuğu da premium', not: 'Uygulandı: Alttaki sayfa geçiş çubuğu premiumlaştırıldı — sıcak krem gradyan zemin + üstte ince altın hairline çizgi, aktif sekme yeşil premium tile + altın halka ışıltısı (hafif kalkık), merkez “Panel” altın çerçeveli premium kutu; etiketler daha belirgin. Ayrıca dokununca çıkan gri highlight/gölge kaldırıldı (-webkit-tap-highlight-color: transparent + düğmelerde metin seçimi kapalı) — mobilde “kasma” hissi giderildi. Koyu tema uyumu eklendi.' },
+  { q: 'dashboarddaki tasarımı açılış', not: 'Uygulandı: Gösterge Paneli açılış ekranı gibi premiumlaştırıldı — 4 kart koyu cam + altın çerçeve, köşede renkli ışıltı + altın halka, değerler beyaz-altın serif. Emojiler kaldırılıp uygulamaya özel elle çizilmiş altın SVG ikonlar geldi (para kesesi/banka/banknot/kart, kişi, takvim, madeni para vb.). Ayrıca: (1) Arka plan A — sıcak degrade + üstte yumuşak altın halo. (2) Tüm tablolar premium gold oldu: üstte altın hairline, zengin altın başlık + iç ışıltı, altın zebra satırlar, altın ayraçlar. (3) Sayfa emojileri elle çizilen SVG ikonlarla değiştirildi: sol menü + alt geçiş çubuğu, Tanımlamalar hub kartları, bölüm başlıkları, ortak/dashboard detay satırları, arama kutuları, hesap defteri alt-etiketleri ve “Tüm ortaklar” hapı. (Yalnız açılır menü seçeneklerinde emoji kalır — teknik olarak SVG konamıyor.) Sıcak yeşil/kum/gold tema ve koyu tema korunur.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();

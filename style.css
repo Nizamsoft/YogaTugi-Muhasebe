@@ -64,6 +64,11 @@ body{
   font-size:15px;
   -webkit-font-smoothing:antialiased;
 }
+/* Premium arka plan A — sıcak degrade + üstte yumuşak altın halo (sabit) */
+.uygulama{background:radial-gradient(125% 78% at 50% -8%, rgba(246,230,173,.5), rgba(236,227,209,0) 52%), linear-gradient(180deg,#f3ebd8,#e7ddc5);background-attachment:fixed}
+body.tema-koyu .uygulama{background:radial-gradient(125% 78% at 50% -8%, rgba(198,154,76,.12), transparent 52%), linear-gradient(180deg,#1d1b14,#161410);background-attachment:fixed}
+/* Elle çizilmiş SVG ikon — varsayılan boyut (bağlama göre ezilebilir) */
+.uik{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.16em;flex:0 0 auto;color:inherit}
 .icerik{overflow-x:hidden}
 /* Para/₺ değerleri hiçbir zaman alt satıra kırılmasın (₺ amblemi rakamla kalsın) */
 .hs-art,.hs-bak,.hs-tur,.d4 .val,.ok-ozet .val,.ok-sonuc .v,.ok-sr .v,
@@ -635,17 +640,22 @@ body.tema-koyu .dsh-c-strip{background:linear-gradient(180deg,#2b3630,#232d27)}
 
 /* ============ Gösterge Paneli — 4 kart + 3 sütun ============ */
 .dsh4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:4px 0 18px}
-.d4{position:relative;border-radius:18px;padding:15px 17px;overflow:hidden;box-shadow:0 16px 32px -20px rgba(74,58,28,.5);border:1px solid rgba(255,255,255,.5)}
+/* Premium koyu cam kartlar (açılış ekranı dili) + altın ikon kutusu */
+.d4{position:relative;border-radius:20px;padding:16px 17px 15px;overflow:hidden;border:1px solid rgba(224,192,106,.42);
+  box-shadow:0 20px 38px -20px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.18)}
 .d4 .ust{display:flex;align-items:center;gap:9px;margin-bottom:11px}
-.d4 .ik{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 12px -7px rgba(0,0,0,.3)}
-.d4 .lbl{font-size:11px;font-weight:800;color:rgba(255,255,255,.92);text-transform:uppercase;letter-spacing:.3px}
-.d4 .val{font-family:Georgia,serif;font-weight:800;font-size:22px;color:#fff;font-variant-numeric:tabular-nums;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
-.d4 .alt{font-size:10.5px;color:rgba(255,255,255,.72);margin-top:3px}
-.d4 .ring{position:absolute;right:-24px;top:-24px;width:92px;height:92px;border-radius:50%;border:2px solid rgba(255,255,255,.14);pointer-events:none}
-.d4.hak{background:linear-gradient(135deg,#3f6f4a,#5a9668)}.d4.hak .ik{background:rgba(255,255,255,.18)}
-.d4.bnk{background:linear-gradient(135deg,#3a5c86,#5f83b6)}.d4.bnk .ik{background:rgba(255,255,255,.18)}
-.d4.ksa{background:linear-gradient(135deg,#2f8f5b,#63b587)}.d4.ksa .ik{background:rgba(255,255,255,.18)}
-.d4.krt{background:linear-gradient(135deg,#a2453d,#c8756b)}.d4.krt .ik{background:rgba(255,255,255,.18)}
+.d4 .glow{position:absolute;width:150px;height:150px;border-radius:50%;right:-50px;top:-60px;pointer-events:none;filter:blur(6px);opacity:.5}
+.d4 .ik{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#5a4109;
+  background:linear-gradient(135deg,#f7e6ad,#e6c574);box-shadow:0 6px 14px -6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.d4 .ik .uik{width:23px;height:23px}
+.d4 .lbl{font-size:11px;font-weight:800;color:#e7d9a6;text-transform:uppercase;letter-spacing:.4px}
+.d4 .val{font-family:Georgia,serif;font-weight:800;font-size:21px;line-height:1.1;background:linear-gradient(135deg,#fff,#f6e6ad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));font-variant-numeric:tabular-nums}
+.d4 .alt{font-size:10.5px;color:#9fb3a1;margin-top:3px}
+.d4 .ring{position:absolute;right:-22px;top:-22px;width:84px;height:84px;border-radius:50%;border:1px solid rgba(246,230,173,.18);pointer-events:none}
+.d4.hak{background:linear-gradient(155deg,#2f4636,#20302a)}.d4.hak .glow{background:#5a9668}
+.d4.bnk{background:linear-gradient(155deg,#25384f,#1d2836)}.d4.bnk .glow{background:#5f83b6}
+.d4.ksa{background:linear-gradient(155deg,#204536,#1a3128)}.d4.ksa .glow{background:#3fae74}
+.d4.krt{background:linear-gradient(155deg,#4a2b28,#33211f)}.d4.krt .glow{background:#c8756b}
 .dsh2{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.35fr);gap:16px;align-items:start}
 .blok-bas{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;color:#5a4a24;margin:0 2px 10px}
 .blok-bas .ln{flex:1;height:1px;background:linear-gradient(90deg,rgba(198,154,76,.4),transparent)}
@@ -688,6 +698,8 @@ body.tema-koyu .drs-gun-et{color:var(--gold)}
   /* 4 kart TEK satıra sığsın (kompakt) */
   .dsh4{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
   .d4{padding:8px 7px;border-radius:11px}
+  .d4 .ik .uik{width:13px;height:13px}
+  .d4 .glow{width:80px;height:80px;right:-28px;top:-32px}
   .d4 .ust{flex-direction:column;align-items:flex-start;margin-bottom:5px;gap:4px}
   .d4 .ik{width:22px;height:22px;font-size:11px;border-radius:7px}
   .d4 .lbl{font-size:7.5px;letter-spacing:0;line-height:1.15}
@@ -1022,16 +1034,22 @@ body.tema-koyu .ort-tgl .tx{color:var(--metin)}
 .kul-sw.on{background:linear-gradient(135deg,#7ba97e,#4f7452)}
 .kul-sw i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
 .kul-sw.on i{left:21px}
-.ogr-tkart{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;overflow:hidden;box-shadow:0 16px 32px -26px rgba(80,60,20,.35)}
+/* Premium gold tablo — altın hairline + zengin başlık + altın zebra */
+.ogr-tkart{background:var(--kart);border:1px solid rgba(198,154,76,.4);border-radius:16px;overflow:hidden;position:relative;box-shadow:0 18px 36px -24px rgba(120,90,20,.5)}
+.ogr-tkart::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;z-index:3;background:linear-gradient(90deg,transparent,rgba(246,230,173,.95),rgba(198,154,76,.7),rgba(246,230,173,.95),transparent)}
 .ogr-kaydir{overflow-x:auto}
 .ogr-tablo{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;table-layout:fixed}
 .ogr-tablo td .ogr-ad,.ogr-tablo td .ders-ogr-ad,.ogr-tablo td .ogr-tel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.ogr-tablo thead th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#7c5e1f;font-weight:800;padding:12px 14px;background:linear-gradient(180deg,#f3e3bd,#efdcb0);border-bottom:2px solid #e3cd93;white-space:nowrap}
+.ogr-tablo thead th{text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#6f5214;font-weight:800;padding:13px 14px;background:linear-gradient(180deg,#f7e8c2,#efdcaa);border-bottom:1px solid #d9b96a;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);white-space:nowrap}
 .ogr-tablo thead th.sag{text-align:right}
 .ogr-tablo tbody td{padding:12px 14px;vertical-align:middle}
-.ogr-tablo tbody tr:nth-child(even){background:rgba(243,227,189,.34)}
-.ogr-tablo tbody tr+tr td{border-top:1px solid var(--kenar)}
-.ogr-tablo tbody tr:hover{background:rgba(243,227,189,.6)}
+.ogr-tablo tbody tr:nth-child(odd){background:#fffef9}
+.ogr-tablo tbody tr:nth-child(even){background:#fbf3e1}
+.ogr-tablo tbody tr+tr td{border-top:1px solid rgba(198,154,76,.18)}
+.ogr-tablo tbody tr:hover td{background:rgba(198,154,76,.1)}
+body.tema-koyu .ogr-tablo thead th{background:linear-gradient(180deg,#3a3320,#2e2917);color:#e6c574;border-bottom-color:#5a4a20}
+body.tema-koyu .ogr-tablo tbody tr:nth-child(odd){background:#211f16}
+body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 .ogr-tablo td.sag{text-align:right}
 .ogr-kisi{display:flex;align-items:center;gap:11px}
 .ogr-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#f2d98a,#d3a84a);display:grid;place-items:center;font-size:12.5px;font-weight:800;color:#40320f;flex:0 0 auto}
@@ -2126,3 +2144,27 @@ body.tema-koyu .ay-nav .ay .m{color:var(--metin)}
   .gr-cnt{width:46px;font-size:9px}.gr-tut{width:82px;font-size:12px}.gr-grpbas .gr-tut{font-size:13px}.gr-chev{flex-basis:11px;font-size:13px}
   .gr-dip{padding:12px 15px}.gr-dip .k{font-size:11.5px}.gr-dip .v{font-size:17px}
 }
+
+/* ============ Elle çizilmiş SVG ikonlar — bağlam boyutları ============ */
+.grup-baslik .ikon,.menu-oge .ikon{display:inline-flex;align-items:center;justify-content:center;color:inherit;opacity:.9}
+.grup-baslik .ikon .uik,.menu-oge .ikon .uik{width:19px;height:19px}
+.menu-oge.tekil .ikon .uik{width:20px;height:20px}
+.menu-oge.aktif .ikon,.menu-grup.acik .grup-baslik .ikon{opacity:1;color:var(--gold)}
+.alt-oge .ic .uik{width:23px;height:23px}
+.alt-oge.merkez .ic .uik{width:26px;height:26px}
+.panel-bas .t .ik{display:inline-flex}.panel-bas .t .ik .uik{width:15px;height:15px}
+.blok-bas .bi{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;color:#8a6417;background:linear-gradient(135deg,#f7e6ad,#e6c574);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.blok-bas .bi .uik{width:15px;height:15px}
+.ok-sr .et,.ok-sonuc .k,.ok-ozet .lbl{display:inline-flex;align-items:center}
+.uik-et{width:15px;height:15px;margin-right:7px;color:#b78d3a;flex:0 0 auto}
+.ok-sonuc .k .uik-et,.ok-ozet .lbl .uik-et{color:#c99a2e}
+#altSheet h4 .oi{display:inline-flex;vertical-align:-.2em}#altSheet h4 .oi .uik,.sheet-oge .oi .uik{width:19px;height:19px}
+body.tema-koyu .blok-bas .bi{color:#5a4109}
+
+/* Satır-içi küçük ikonlar (alt-etiket, hap, arama) */
+.uik-mini{width:12px;height:12px;margin-right:4px;vertical-align:-.12em;color:currentColor;flex:0 0 auto}
+.hs-alt{display:inline-flex;align-items:center}
+.gid-tum{display:inline-flex;align-items:center}
+.ara-ik,.gs-ara-ik{display:inline-flex;align-items:center;color:var(--metin-soluk)}
+.ara-ik .uik,.gs-ara-ik .uik{width:18px;height:18px}
+.tnm-ik{color:#8a6417}.tnm-ik .uik{width:23px;height:23px}
