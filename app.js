@@ -396,9 +396,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '140';
+const APP_SURUM = '141';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '02:05';
+const APP_SURUM_SAAT = '02:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4046,7 +4046,7 @@ SAYFALAR['ogrenciler'] = function () {
 
   const ogrenciTablo = ogr.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
-        <colgroup><col style="width:27%"><col style="width:17%"><col style="width:14%"><col style="width:15%"><col style="width:19%"><col style="width:8%"></colgroup>
+        <colgroup><col style="width:26%"><col style="width:16%"><col style="width:14%"><col style="width:15%"><col style="width:18%"><col style="width:11%"></colgroup>
         <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Paket</th><th class="sag">Kalan Ders</th><th class="sag">Kalan Ödeme</th><th></th></tr></thead>
         <tbody>${ogr.map(ogrenciSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Henüz öğrenci yok. “＋ Yeni Üyelik Oluştur” ile başlayın.</div>`;
@@ -4767,7 +4767,7 @@ SAYFALAR['odemeler'] = function () {
       </div>
       ${kayitlar.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis">
-            <colgroup><col style="width:19%"><col style="width:16%"><col style="width:16%"><col style="width:15%"><col style="width:15%"><col style="width:14%"><col style="width:5%"></colgroup>
+            <colgroup><col style="width:19%"><col style="width:15%"><col style="width:15%"><col style="width:13%"><col style="width:14%"><col style="width:14%"><col style="width:10%"></colgroup>
             <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Ödediği Tarih</th><th>Ödeme Türü</th><th class="sag">Ödediği Tutar</th><th class="sag">Kalan Borcu</th><th></th></tr></thead>
             <tbody>${kayitlar.map(satir).join('')}</tbody></table></div></div>`
         : `<div class="gp-bos">Henüz ödeme yok. “＋ Ödeme Al” ile ilk ödemeyi işleyin.</div>`}
@@ -4905,7 +4905,7 @@ SAYFALAR['hesap-defter'] = function () {
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span>🔍</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
       ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis">
-          <colgroup><col style="width:12%"><col style="width:11%"><col style="width:23%"><col style="width:18%"><col style="width:12%"><col style="width:15%"><col style="width:9%"></colgroup>
+          <colgroup><col style="width:12%"><col style="width:11%"><col style="width:22%"><col style="width:17%"><col style="width:12%"><col style="width:15%"><col style="width:11%"></colgroup>
           <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>İlgili Ortak</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th><th></th></tr></thead>
           <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`
       : `<div class="gp-bos">Bu hesapta hareket yok. “＋ Gelir Ekle” veya “＋ Gider Ekle” ile başlayın.</div>`}
@@ -4962,7 +4962,7 @@ SAYFALAR['giderler'] = function () {
       </div>
       ${kayitlar.length
       ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
-            <colgroup><col style="width:13%"><col style="width:17%"><col style="width:21%"><col style="width:14%"><col style="width:13%"><col style="width:16%"><col style="width:6%"></colgroup>
+            <colgroup><col style="width:13%"><col style="width:16%"><col style="width:18%"><col style="width:14%"><col style="width:13%"><col style="width:16%"><col style="width:10%"></colgroup>
             <thead><tr><th>Tarih</th><th>Gider Grubu</th><th>Açıklama</th><th>Ödeme Şekli</th><th class="sag">Tutar</th><th>Ait Olduğu Kişi</th><th></th></tr></thead>
             <tbody>${kayitlar.map(satir).join('')}</tbody></table></div></div>`
       : `<div class="gp-bos">Henüz gider yok. “＋ Gider Ekle” ile ilk gideri işleyin.</div>`}
@@ -5897,6 +5897,7 @@ const KL_GUNCELLEME = [
   { q: 'mobile uyumlu', not: 'Uygulandı: Tüm sayfalar mobil uyumlu hale getirildi. Tablolar mobilde artık “kart”a dönüşmüyor; PC’deki tablo boyutunda kalıp ekrana ORANTILI küçültülüyor (tüm sütunlar görünür, kırpma/yatay kaydırma yok; sayfa hiçbir yerde yana kaymıyor). Yumuşak sayfa geçişleri (fade + hafif yukarı kayma) eklendi. Yerleşim: Gösterge Paneli’nde 4 kart tek üst satır + altta 3 sütun (foto/dersler/öğrenciler); Dersler ve Üyelikler’de 3 sekme + aksiyon düğmesi eşit boyda tek satır; Hesaplar tek satır 4 sütun (Banka/Kasa/Kart + 4. sütunda Gelir/Gider Ekle altlı-üstlü); Ortaklar 4 sütun; Giderler Raporu’nda Karşılaştır düğmesi ay-seçicinin yanında tek satır.' },
   { q: 'tl amblemi', not: 'Düzeltildi: Para (₺) değerleri artık hiçbir yerde alt satıra kırılmıyor — ₺ amblemi her zaman rakamla aynı satırda kalıyor. Ayrıca Giderler Raporu’nda tutarlar tek sütunda sağa hizalandı (₺’ler alt alta), “kayıt” sayıları ve › okları da hizalı. Ve telefonun altına tüm sayfalar için geçiş çubuğu eklendi (Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar · Tanımlar) — girişten sonra doğru çiziliyor (önceden yalnızca “Panel” görünüyordu).' },
   { q: 'öğrenciler kısmı gözükmesin', not: 'Uygulandı: Gösterge Paneli’nden Öğrenciler bölümü kaldırıldı (hem PC hem mobil). Artık 2 sütun: solda ilgili ortak kartı, sağda Dersler (takvim) — Dersler büyütüldü. Ayrıca: (1) Alt geçiş çubuğunda basılan sayfanın düğmesi artık doğru vurgulanıyor (eskiden hep Panel’de kalıyordu). (2) Öğrenciler tablosunda “Kalan Ders/Ödeme” çubukları sütuna sığdırıldı, iç içe girmiyor. (3) Sayfa geçişinde tablolar boya öncesi (senkron) ölçekleniyor; büyük tablo bir an görünüp küçülmüyor (titreme giderildi).' },
+  { q: 'çöp kutusu ve kalem', not: 'Düzeltildi: Tablolarda ✎ (düzenle) ve 🗑️ (sil) düğmeleri artık verinin üzerine binmiyor. Neden: düğmeler PC boyutunda aksiyon sütununa sığmayıp sola taşıyordu (ör. Öğrenciler’de Kalan Ödeme’yi kapatıyordu). Düğmeler biraz küçültüldü, aksiyon sütunları genişletildi (Öğrenciler, Hesaplar, Müşteriler/cari, Gider detay tablolarında) ve uzun tutarlar gerekirse alt satıra sarıyor. Tüm tablolar kontrol edildi.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
