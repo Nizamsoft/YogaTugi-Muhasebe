@@ -402,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '142';
+const APP_SURUM = '143';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '03:25';
+const APP_SURUM_SAAT = '04:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5905,6 +5905,7 @@ const KL_GUNCELLEME = [
   { q: 'öğrenciler kısmı gözükmesin', not: 'Uygulandı: Gösterge Paneli’nden Öğrenciler bölümü kaldırıldı (hem PC hem mobil). Artık 2 sütun: solda ilgili ortak kartı, sağda Dersler (takvim) — Dersler büyütüldü. Ayrıca: (1) Alt geçiş çubuğunda basılan sayfanın düğmesi artık doğru vurgulanıyor (eskiden hep Panel’de kalıyordu). (2) Öğrenciler tablosunda “Kalan Ders/Ödeme” çubukları sütuna sığdırıldı, iç içe girmiyor. (3) Sayfa geçişinde tablolar boya öncesi (senkron) ölçekleniyor; büyük tablo bir an görünüp küçülmüyor (titreme giderildi).' },
   { q: 'çöp kutusu ve kalem', not: 'Düzeltildi: Tablolarda ✎ (düzenle) ve 🗑️ (sil) düğmeleri artık verinin üzerine binmiyor. Neden: düğmeler PC boyutunda aksiyon sütununa sığmayıp sola taşıyordu (ör. Öğrenciler’de Kalan Ödeme’yi kapatıyordu). Düğmeler biraz küçültüldü, aksiyon sütunları genişletildi (Öğrenciler, Hesaplar, Müşteriler/cari, Gider detay tablolarında) ve uzun tutarlar gerekirse alt satıra sarıyor. Tüm tablolar kontrol edildi.' },
   { q: 'ay seçme çubuğu ve ortakları', not: 'Uygulandı: Ay seçme çubuğu ve “Ortakları göster” düğmesi tüm sayfalarda tek premium tasarıma geçti. Ay çubuğu: altın gradyan çerçeve + hafif ışıltı, oklar premium yuvarlak düğme (üstüne gelince altın dolgu), ay adı büyük serif ve altında yıl altın harflerle; Giderler Raporu’ndaki ayrı ay çubuğu da bununla birleşti. “Ortakları göster”: solda yuvarlak 👥 ikon + metin + premium altın anahtar (açıkken altın gradyan track, ikon altınlaşır, hafif altın halka ışıltısı). Sıcak yeşil/kum/gold tema korundu; koyu tema uyumu da eklendi.' },
+  { q: 'sayfalar çubuğu da premium', not: 'Uygulandı: Alttaki sayfa geçiş çubuğu premiumlaştırıldı — sıcak krem gradyan zemin + üstte ince altın hairline çizgi, aktif sekme yeşil premium tile + altın halka ışıltısı (hafif kalkık), merkez “Panel” altın çerçeveli premium kutu; etiketler daha belirgin. Ayrıca dokununca çıkan gri highlight/gölge kaldırıldı (-webkit-tap-highlight-color: transparent + düğmelerde metin seçimi kapalı) — mobilde “kasma” hissi giderildi. Koyu tema uyumu eklendi.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();

@@ -52,6 +52,9 @@ html,body{height:100%}
 html,body{overflow-x:hidden;max-width:100%}
 /* Sadece dikey kaydırma: yakınlaşma (çift dokunma/pinch) ve yatay kayma kapalı */
 html,body{touch-action:pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+/* Dokununca çıkan gri highlight kutusunu kaldır (mobilde "kasma/gölge" hissi) */
+*{-webkit-tap-highlight-color:transparent}
+button,.alt-oge,[role="button"],[data-git],[data-osek],[data-alt]{-webkit-user-select:none;user-select:none}
 /* İçinde yatay kaydırılabilen alanlar (geniş raporlar) bundan muaf */
 .tablo-sar{touch-action:pan-x pan-y}
 body{
@@ -469,21 +472,29 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
   .ust-cubuk .kchip .k-isim,.ust-cubuk .kchip .kok{display:none}
   .ust-cubuk .kchip .kav{width:34px;height:34px}
 
-  /* Alt menü çubuğu (logolu sekmeler) */
-  .alt-menu{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--kart);
-    border-top:1px solid var(--kenar);gap:2px;padding:7px 6px calc(8px + env(safe-area-inset-bottom, 0px));
-    box-shadow:0 -6px 20px rgba(51,47,39,.08)}
-  .alt-oge{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border:none;background:none;font-family:inherit;cursor:pointer}
-  .alt-oge .ic{width:44px;height:37px;border-radius:13px;display:grid;place-items:center;font-size:19px;color:var(--metin-soluk);transition:transform .22s, background .22s, box-shadow .22s}
-  .alt-oge .tx{font-size:10px;font-weight:700;color:var(--metin-soluk)}
-  .alt-oge.aktif .ic{background:linear-gradient(135deg,#7ba97e,#4f7452);color:#fff;transform:translateY(-4px);box-shadow:0 8px 16px rgba(79,116,82,.4)}
+  /* Alt menü çubuğu — premium (altın hairline + sıcak krem gradyan) */
+  .alt-menu{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:2px;
+    padding:9px 8px calc(11px + env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(180deg,#fffdf7,#f6ecd7);border-top:1px solid rgba(198,154,76,.32);
+    box-shadow:0 -10px 26px -6px rgba(120,90,20,.16)}
+  .alt-menu::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(246,230,173,.9),rgba(198,154,76,.5),rgba(246,230,173,.9),transparent)}
+  .alt-oge{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:3px 2px;border:none;background:none;font-family:inherit;cursor:pointer}
+  .alt-oge .ic{width:46px;height:38px;border-radius:14px;display:grid;place-items:center;font-size:19px;color:var(--metin-soluk);position:relative;transition:transform .2s,background .2s,box-shadow .2s}
+  .alt-oge .tx{font-size:10px;font-weight:800;letter-spacing:.2px;color:#8a8069}
+  /* aktif — yeşil premium tile + altın halka ışıltı, hafif kalkık */
+  .alt-oge.aktif .ic{background:linear-gradient(135deg,#82b085,#4f7452);color:#fff;transform:translateY(-5px);
+    box-shadow:0 10px 20px -7px rgba(79,116,82,.6),inset 0 1px 0 rgba(255,255,255,.35),0 0 0 2px rgba(246,230,173,.55)}
   .alt-oge.aktif .tx{color:var(--yesil-koyu)}
-  /* Ortadaki Panel — büyük kare; seçiliyken yeşil, seçili değilken beyaz */
-  .alt-oge.merkez .ic{width:56px;height:50px;border-radius:16px;font-size:24px;transform:translateY(-9px);
-    background:var(--kart);border:1px solid var(--kenar);color:var(--metin-soluk);box-shadow:0 6px 14px -6px rgba(51,47,39,.22)}
-  .alt-oge.merkez.aktif .ic{background:linear-gradient(135deg,#7ba97e,#4f7452);border-color:transparent;color:#fff;
-    transform:translateY(-9px);box-shadow:0 10px 18px -6px rgba(79,116,82,.5)}
-  .alt-oge.merkez .tx{transform:translateY(-6px)}
+  /* Ortadaki Panel — büyük altın çerçeveli premium kutu */
+  .alt-oge.merkez .ic{width:58px;height:52px;border-radius:18px;font-size:24px;transform:translateY(-11px);
+    background:linear-gradient(180deg,#fff,#f4e9d0);border:1px solid rgba(198,154,76,.4);color:#8a6a2a;
+    box-shadow:0 10px 20px -8px rgba(120,90,20,.4),inset 0 1px 0 #fff}
+  .alt-oge.merkez.aktif .ic{background:linear-gradient(135deg,#82b085,#4f7452);border-color:rgba(246,230,173,.6);color:#fff;
+    transform:translateY(-11px);box-shadow:0 12px 22px -7px rgba(79,116,82,.6),0 0 0 2px rgba(246,230,173,.6)}
+  .alt-oge.merkez .tx{transform:translateY(-8px)}
+  body.tema-koyu .alt-menu{background:linear-gradient(180deg,#2c2a20,#242219)}
+  body.tema-koyu .alt-oge.merkez .ic{background:linear-gradient(180deg,#34301f,#2a2718)}
   .icerik{padding-bottom:calc(86px + env(safe-area-inset-bottom, 0px))}
 
   /* Grup sheet (alttan açılan alt sayfa listesi) */
