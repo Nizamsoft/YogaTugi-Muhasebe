@@ -1011,6 +1011,12 @@ body.tema-koyu .krs-tablo tbody td.num{color:#cdba86}
 .ort-tgl.on .sw i{left:22px}
 body.tema-koyu .ort-tgl{background:linear-gradient(180deg,#2c2a20,#26241b)}
 body.tema-koyu .ort-tgl .tx{color:var(--metin)}
+/* Kompakt (yalnız ikon) toggle — sayfa üst barlarında tek satıra sığar */
+.ort-tgl.ikon{gap:6px;padding:4px 7px 4px 5px;flex:0 0 auto}
+.ort-tgl.ikon .ico{width:22px;height:22px;border-radius:7px;font-size:11px}
+.ort-tgl.ikon .sw{width:34px;height:19px}
+.ort-tgl.ikon .sw i{width:14px;height:14px;top:2.5px;left:2.5px}
+.ort-tgl.ikon.on .sw i{left:17px}
 /* Kullanıcı Girişleri sayfası */
 .kul-list{display:flex;flex-direction:column;gap:12px;max-width:560px}
 .kul-kart{display:flex;align-items:center;gap:14px;background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:13px 15px;box-shadow:0 12px 24px -18px rgba(80,60,20,.3)}
@@ -2132,6 +2138,12 @@ body.tema-koyu .ay-nav .ay .m{color:var(--metin)}
   .ogr-ust-sag{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
   .ogr-ust .gp-ekle{min-width:0;width:100%;padding:8px 5px;font-size:10px;border-radius:11px;flex:1 1 0}
   .ort-tgl{width:100%;justify-content:center}
+  /* Ortak girişi (kompakt toggle var): sekmeler üst satır, toggle + aksiyon düğmesi alt satırda tek sıra */
+  .ogr-ust:has(.ort-tgl){flex-wrap:wrap}
+  .ogr-ust:has(.ort-tgl) .ogr-seg{flex:1 1 100%}
+  .ogr-ust:has(.ort-tgl) .ogr-ust-sag{flex:1 1 100%;flex-direction:row;align-items:center;gap:7px}
+  .ogr-ust:has(.ort-tgl) .ort-tgl.ikon{width:auto;flex:0 0 auto}
+  .ogr-ust:has(.ort-tgl) .gp-ekle{flex:1 1 auto;width:auto}
   /* Hesaplar: TEK satır 4 sütun — 3 hesap sekmesi + 4. sütun (Gelir/Gider Ekle altlı üstlü) */
   .hesap-seg button{flex-direction:column;gap:1px;padding:7px 3px;font-size:9px;line-height:1.15}
   .hesap-seg .rk{margin-left:0;font-size:8px}

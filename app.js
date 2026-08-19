@@ -402,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '146';
+const APP_SURUM = '147';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '09:35';
+const APP_SURUM_SAAT = '10:05';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -415,7 +415,7 @@ let ortakGoster = false;
 function hepsiniGor() { return adminMi() || ortakGoster; }   // true → tüm ortakların verisi
 function benId() { return aktifOrtakId(); }                    // giriş yapan ortağın id'si
 /* Sayfa üst barındaki "Ortakları göster" düğmesi (yalnızca ortak girişinde) */
-function ortakGosterBtnHTML() { return adminMi() ? '' : `<button type="button" class="ort-tgl ${ortakGoster ? 'on' : ''}" id="ortGosterBtn"><span class="ico">👥</span><span class="tx">Ortakları göster</span><span class="sw"><i></i></span></button>`; }
+function ortakGosterBtnHTML() { return adminMi() ? '' : `<button type="button" class="ort-tgl ikon ${ortakGoster ? 'on' : ''}" id="ortGosterBtn" title="Ortakları göster" aria-label="Ortakları göster"><span class="ico">👥</span><span class="sw"><i></i></span></button>`; }
 function ortakGosterBtnBagla(yenile) { const b = document.getElementById('ortGosterBtn'); if (b) b.onclick = () => { ortakGoster = !ortakGoster; yenile(); }; }
 
 /* Tüm koleksiyonları State'e yükle */
@@ -799,7 +799,6 @@ SAYFALAR.dashboard = function () {
     <div class="dsh-c-bar">
       <span class="dsh-c-title">Gösterge Paneli</span>
       <div class="dsh-c-arac">
-        ${ortakGosterBtnHTML()}
         ${ayNavHTML(dashDonem)}
       </div>
     </div>
@@ -812,7 +811,6 @@ SAYFALAR.dashboard = function () {
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   $$('[data-ay]').forEach(b => b.onclick = () => { dashDonem = donemKaydir(dashDonem, Number(b.dataset.ay)); SAYFALAR.dashboard(); });
   const ok = $('#dashOrtakKart'); if (ok) ok.onclick = () => { dashOrtakAcik = !dashOrtakAcik; SAYFALAR.dashboard(); };
-  ortakGosterBtnBagla(() => SAYFALAR.dashboard());
 };
 
 /* Ortak başına hesaplama: ders geliri, eşit gider payı, hak ediş */
@@ -5470,9 +5468,9 @@ function altMenuAktifId(sayfa) {
 }
 function altMenuCiz() {
   const nav = $('#altMenu');
-  const sadeceOrtak = !adminMi();   // ortak: yalnızca Ortaklar + Panel
+  const sadeceOrtak = !adminMi();   // ortak: Tanımlar hariç tüm sekmeler (PC menüsüyle aynı)
   nav.innerHTML = ALT_MENU
-    .filter(m => !sadeceOrtak || m.id === 'dashboard' || m.id === 'hesap-ortak')
+    .filter(m => !sadeceOrtak || m.id !== 'ayar-tanimlama')
     .map(m => {
     const anahtar = m.tip === 'grup' ? m.grup : m.id;
     return `<button type="button" class="alt-oge${m.merkez ? ' merkez' : ''}" data-alt="${kacar(anahtar)}">
@@ -5874,6 +5872,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'sayfalar kısmı boş kalıyor', not: 'Ortak (partner) girişi düzeltmeleri: (1) Alt menüde ortağa yalnızca “Panel” görünüyordu (kod hatası — olmayan bir id aranıyordu). Düzeltildi: ortak artık Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar sekmelerini görüyor; yalnızca Tanımlar gizli. (2) Gösterge Paneli’nden “Ortakları göster” anahtarı kaldırıldı (ortak panelde zaten yalnızca kendini görüyor; mobilde fazladan satır açıyordu). (3) Kalan sayfalarda (Öğrenciler/Dersler/Tahsilatlar) “Ortakları göster” küçültülüp yalnız ikon + mini anahtar haline geldi; sekmelerin altında ekle düğmesiyle aynı satıra sığıyor.' },
   { q: 'burası böyle olmuş', not: 'Düzeltme: Hesaplar tablosunda mobilde “İşlem Adı” sütunu gizlenince tablonun sağında boş bir şerit kalıyordu (gizlenen sütunun payı boşta kalıyordu). Kalan sütunlar %100’e yeniden dağıtıldı; tablo artık kartı tam dolduruyor ve “Açıklama” sütunu genişledi.' },
   { q: '2 2 olsun satırlar çok küçük', not: 'Mobilde birkaç düzeltme: (1) Ortaklar sayfası 4 sütun yerine 2×2 kart düzenine geçti — kartlar artık daha büyük; bir ortak kartı açılınca 2 satır yükseklik alıp diğer kartlar yumuşak/akıcı şekilde etrafından kayıyor. (2) Hesaplar (Banka/Kasa/Kart) tablosunda dar ekranda “İşlem Adı” sütunu gizlendi; gelir/gider ayrımı Tutar rengiyle zaten belli, sütunlar rahatladı. (3) Öğrenciler tablosunda ayrı “Eğitmeni” sütunu kaldırıldı; eğitmen artık öğrenci adının altında küçük (avatar + kısa ad) yazıyor. (4) Bir şeye dokununca çıkan sarı/gri renklenme ve kısa gecikme kaldırıldı (Tanımlamalar satırları anında geçiyor) — “donuyor” hissi gitti.' },
   { q: 'tüm tabloların genişlikleri aynı', not: 'Öğrenciler/Dersler 880px, Tahsilatlar/Giderler 980px idi; sayfa geçişinde tablo genişliği zıplıyordu. Hepsi en geniş olana (980px) eşitlendi — artık geçişte oynamıyor.' },
