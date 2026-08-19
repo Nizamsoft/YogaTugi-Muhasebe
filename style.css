@@ -416,10 +416,15 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
 .onay-ik .uik{width:30px;height:30px}
 .onay-bas{margin:0 0 6px;font-size:16.5px;font-weight:800;color:var(--metin)}
 .onay-mesaj{margin:0;font-size:13px;line-height:1.55;color:var(--metin-soluk)}
-/* Tüm veri-giriş / seçim pencereleri tek STANDART boy — adımlar arası büyüyüp küçülmez.
-   Küçük onay kutuları .modal-kucuk ile hariç tutulur. */
-.modal:not(.modal-kucuk) .modal-govde{height:min(66vh,486px);overflow-y:auto;box-sizing:border-box}
+/* Pencereler içeriğe göre boyutlanır: kısa liste = kısa pencere (boş kutu yok),
+   uzun form ekrana sığar; ancak taşarsa iç kaydırma devreye girer. */
+.modal:not(.modal-kucuk) .modal-govde{max-height:min(74vh,640px);overflow-y:auto;box-sizing:border-box}
 .modal-kucuk .modal-govde{height:auto}
+/* İşlem Yap: alanları sıkılaştır → Kaydet dahil tek ekrana sığsın */
+#iyBody .gp-alan{margin-bottom:9px}
+#iyBody .iy-seg{margin-bottom:10px}
+#iyBody .hr-tutar{padding:9px 15px}
+#iyBody .hr-tutar input{font-size:22px}
 .modal-alt{padding:14px 18px;border-top:1px solid rgba(198,154,76,.2);display:flex;justify-content:flex-end;gap:10px;
   background:linear-gradient(180deg,rgba(255,253,247,0),rgba(247,238,214,.5))}
 .modal-alt .btn{min-height:46px;border-radius:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:7px}   /* footer düğmeleri eşit yükseklikte → tüm formlar aynı boyda */
@@ -2245,12 +2250,12 @@ body.tema-koyu .blok-bas .bi{color:#5a4109}
      (col genişlikleri HTML'de inline olduğundan !important şart).
      Sıra: Tarih · Açıklama · İlgili Ortak · Tutar · Güncel Bakiye · (işlem) = %100 */
   .hs-ledger thead th:nth-child(2),.hs-ledger tbody td:nth-child(2){display:none}
-  .hs-ledger colgroup col:nth-child(1){width:13% !important}
-  .hs-ledger colgroup col:nth-child(2){width:30% !important}
-  .hs-ledger colgroup col:nth-child(3){width:19% !important}
+  .hs-ledger colgroup col:nth-child(1){width:12% !important}
+  .hs-ledger colgroup col:nth-child(2){width:26% !important}
+  .hs-ledger colgroup col:nth-child(3){width:18% !important}
   .hs-ledger colgroup col:nth-child(4){width:13% !important}
-  .hs-ledger colgroup col:nth-child(5){width:13% !important}
-  .hs-ledger colgroup col:nth-child(6){width:12% !important}
+  .hs-ledger colgroup col:nth-child(5){width:14% !important}
+  .hs-ledger colgroup col:nth-child(6){width:17% !important}
   .hs-ledger colgroup col:nth-child(7){width:0 !important}
 }
 
@@ -2325,3 +2330,37 @@ textarea.tlp-aciklama{min-height:120px;resize:vertical;line-height:1.5;font-fami
 .tlp-bekle .uik{width:16px;height:16px}
 body.tema-koyu .tlp-sat,body.tema-koyu .tlp-detay{background:linear-gradient(180deg,#2c2a20,#26241b)}
 body.tema-koyu .syf-chip{background:#2c2a20;color:var(--metin)}
+
+/* ===== Tek "Düzenle" butonu (tablo satırı) ===== */
+.duz-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(198,154,76,.45);background:linear-gradient(180deg,#fffdf7,#f5ead4);color:#6a5320;border-radius:10px;padding:8px 13px;font-weight:800;font-size:12.5px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:.15s}
+.duz-btn:hover{border-color:var(--gold);color:#5a4212;box-shadow:0 8px 16px -10px rgba(120,90,20,.5)}
+.duz-btn .uik{width:15px;height:15px;flex:0 0 auto}
+body.tema-koyu .duz-btn{background:linear-gradient(180deg,#2c2a20,#26241b);color:#e7d9a6}
+@media(max-width:640px){.duz-btn{padding:7px 10px;font-size:11px}.duz-btn .uik{width:14px;height:14px}}
+
+/* ===== Saat tetik + kaydırmalı saat seçici ===== */
+.saat-trig{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid rgba(198,154,76,.35);border-radius:12px;padding:11px;background:#fffefb;font-weight:800;font-size:20px;font-family:Georgia,"Times New Roman",serif;letter-spacing:2px;color:#33301f;cursor:pointer}
+.saat-trig .uik{width:18px;height:18px;color:var(--gold)}
+body.tema-koyu .saat-trig{background:#26241b;color:var(--metin)}
+
+/* ===== Giriş: demo notu + ana ekrana ekle ===== */
+.giris-demo{display:flex;gap:9px;align-items:flex-start;text-align:left;margin-top:14px;padding:11px 13px;border-radius:12px;
+  background:rgba(224,192,106,.12);border:1px solid rgba(224,192,106,.35);color:#e7d9a6;font-size:11.5px;line-height:1.5}
+.giris-demo .uik{width:18px;height:18px;flex:0 0 auto;margin-top:1px;color:#e0c06a}
+.giris-demo b{color:#f3ecd8}
+.giris-ekle{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;width:100%;background:none;border:1px dashed rgba(224,192,106,.5);color:#e7d9a6;
+  border-radius:12px;padding:11px;font-family:inherit;font-weight:800;font-size:12.5px;cursor:pointer}
+.giris-ekle:hover{border-color:#e0c06a;background:rgba(224,192,106,.08)}
+.giris-ekle .uik{width:17px;height:17px;color:#e0c06a}
+
+/* ===== Ana Ekrana Ekle yardım modalı ===== */
+.aee-bas{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.aee-ik{width:46px;height:46px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;color:#5a4212;background:linear-gradient(135deg,#f7e6ad,#e6c574);box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+.aee-ik .uik{width:26px;height:26px}
+.aee-bas h4{margin:0;font-size:15.5px;color:var(--metin)}
+.aee-bas p{margin:3px 0 0;font-size:12px;color:var(--metin-soluk);line-height:1.45}
+.aee-plat{font-size:10.5px;font-weight:800;color:#8a6a2a;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px}
+.aee-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px}
+.aee-n{width:24px;height:24px;border-radius:50%;flex:0 0 auto;background:linear-gradient(135deg,#6fa877,#4f8058);color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center}
+.aee-tx{font-size:13px;color:#4a4436;line-height:1.45}.aee-tx b{color:var(--metin)}
+body.tema-koyu .aee-tx{color:var(--metin)}

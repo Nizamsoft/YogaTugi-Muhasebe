@@ -1,0 +1,17 @@
+{
+  "name": "Green Village Pilates — Ön Muhasebe",
+  "short_name": "GV Pilates",
+  "description": "Pilates stüdyonuz için öğrenci, ders ve hesap takibi.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c2b24",
+  "theme_color": "#e7ddca",
+  "lang": "tr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

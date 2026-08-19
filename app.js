@@ -403,9 +403,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '150';
+const APP_SURUM = '151';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '11:55';
+const APP_SURUM_SAAT = '12:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -619,6 +619,9 @@ const IK = {
   geri: '<path d="M19 12H5M11 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   destek: '<path d="M4 13a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="12.5" width="4.2" height="6.7" rx="1.6" fill="currentColor" opacity=".24"/><rect x="3" y="12.5" width="4.2" height="6.7" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="16.8" y="12.5" width="4.2" height="6.7" rx="1.6" fill="currentColor" opacity=".24"/><rect x="16.8" y="12.5" width="4.2" height="6.7" rx="1.6" stroke="currentColor" stroke-width="1.6"/><path d="M20 19.2v.3a2.5 2.5 0 0 1-2.5 2.5H13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   guncel: '<path d="M20 12a8 8 0 1 1-2.3-5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 4v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  kalem: '<path d="M4 20h4l10.5-10.5a2 2 0 0 0-3-3L5 17v3Z" fill="currentColor" opacity=".18"/><path d="M4 20h4l10.5-10.5a2 2 0 0 0-3-3L5 17v3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.5 6.5l3.9 3.9" stroke="currentColor" stroke-width="1.6"/>',
+  indir: '<rect x="5" y="2.5" width="14" height="19" rx="2.5" fill="currentColor" opacity=".16"/><rect x="5" y="2.5" width="14" height="19" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v6M9.2 10.8 12 13.6l2.8-2.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  uyari: '<circle cx="12" cy="12" r="9" fill="currentColor" opacity=".16"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor"/>',
 };
 /* İkon SVG'si üretir. cls: ekstra sınıf. */
 function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
@@ -3312,18 +3315,22 @@ SAYFALAR['ayar-komisyon'] = function () {
 };
 
 function komisyonFormu(mevcut) {
+  let aktif = mevcut ? mevcut.aktif !== false : true;
   const govde = `
-    <div class="form-alan"><label>Komisyon Adı</label><input type="text" id="kAd" value="${mevcut?kacar(mevcut.ad):''}" placeholder="Örn. Kredi Kartı POS"></div>
-    <div class="form-satir">
-      <div class="form-alan"><label>Oran (%)</label><input type="number" id="kOran" step="0.01" min="0" value="${mevcut?mevcut.oran:''}"></div>
-      <div class="form-alan"><label>Durum</label><select id="kAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
+    <div class="gp-alan"><label>Komisyon Adı</label><input type="text" class="gp-inp" id="kAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kredi Kartı POS" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="uy-ikili">
+      <div class="gp-alan" style="margin:0"><label>Oran (%)</label><input type="text" inputmode="decimal" class="gp-inp" id="kOran" value="${mevcut ? kacar(String(mevcut.oran)) : ''}" placeholder="Örn. 1.5"></div>
+      <div class="gp-alan" style="margin:0"><label>Durum</label><div class="turcip" id="kDurum"><button type="button" class="tc ${aktif ? 'sec' : ''}" data-a="1">Aktif</button><button type="button" class="tc ${!aktif ? 'sec' : ''}" data-a="0">Pasif</button></div></div>
     </div>`;
-  modalAc(mevcut ? 'Komisyon Düzenle' : 'Yeni Komisyon', govde, `<button class="btn" id="kiIptal">İptal</button><button class="btn btn-ana" id="kiKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`);
+  modalAc(mevcut ? 'Komisyon Düzenle' : 'Yeni Komisyon', govde,
+    `<button class="btn" id="kiIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="kiKaydet">${ik('kaydet')} Kaydet</button>`,
+    rozetHTML('banka', 'Komisyon'));
+  $('#kDurum').onclick = (e) => { const b = e.target.closest('[data-a]'); if (!b) return; aktif = b.dataset.a === '1'; $$('#kDurum .tc').forEach(x => x.classList.toggle('sec', x === b)); };
   $('#kiIptal').onclick = modalKapat;
   $('#kiKaydet').onclick = async () => {
     const ad = $('#kAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const veri = { ad, oran: parseFloat($('#kOran').value) || 0, aktif: $('#kAktif').value === '1' };
+    const veri = { ad, oran: parseFloat((($('#kOran').value || '').replace(',', '.'))) || 0, aktif };
     if (mevcut) { await DB.guncelle('komisyonlar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('komisyonlar', veri); State.komisyonlar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); git('ayar-komisyon');
@@ -3670,13 +3677,13 @@ function ortakAyHesap(donem) {
   return aktif.map(o => {
     const giderPayi = paylasilanPay + (ortakGider[o.id] || 0);
     const dersler = (State.dersler || []).filter(d => d.egitmenId === o.id && d.durum === 'gerceklesti' && donemStr(d.tarih) === donem);
-    const ogrSet = new Set();
-    dersler.forEach(d => { const kk = (d.dusumler && d.dusumler.length) ? d.dusumler.map(x => x.ogrenciId) : (d.ogrenciIds || []); kk.forEach(id => ogrSet.add(id)); });
+    // Aktif Öğrenci = bu eğitmene bağlı kayıtlı öğrenciler (döneme bağlı değil)
+    const aktifOgrenci = State.ogrenciler.filter(x => x.egitmenId === o.id && x.durum === 'ogrenci').length;
     const tahsil = (State.odemeler || []).filter(od => donemStr(od.tarih) === donem && (od.ortakId || ogrenciEgitmenId(od.ogrenciId)) === o.id).reduce((s, od) => s + (Number(od.tutar) || 0), 0);
     const kalanAlacak = State.ogrenciler.filter(x => x.egitmenId === o.id).reduce((s, x) => s + (x.paketler || []).reduce((a, p) => a + (Number(p.kalanOdeme) || 0), 0), 0);
     const komisyon = komisyonMap[o.id] || 0;
     const verilecek = tahsil - giderPayi - komisyon;
-    return { o, aktifOgrenci: ogrSet.size, verdigiDers: dersler.length, tahsil, kalanAlacak, giderPayi, komisyon, verilecek };
+    return { o, aktifOgrenci, verdigiDers: dersler.length, tahsil, kalanAlacak, giderPayi, komisyon, verilecek };
   });
 }
 SAYFALAR['ortaklar'] = function () {
@@ -4067,7 +4074,7 @@ SAYFALAR['ogrenciler'] = function () {
       <td data-l="Paket">${paketRozet}</td>
       <td data-l="Kalan Ders" class="sag"><span class="ogr-metrik"><span class="rakam">${m.kalanDers}<span class="top"> / ${m.dersToplam}</span></span>${barHTML(m.dersToplam - m.kalanDers, m.dersToplam, 'ders')}</span></td>
       <td data-l="Kalan Ödeme" class="sag">${odemeHucre}</td>
-      <td class="sag"><span class="ogr-arac"><button type="button" data-oduzenle="${o.id}" title="Düzenle">✎</button><button type="button" data-osil="${o.id}" title="Sil">🗑️</button></span></td>
+      <td class="sag"><button type="button" class="duz-btn" data-oduzenle="${o.id}">${ik('kalem')} Düzenle</button></td>
     </tr>`;
   };
   const potSatir = (o) => `<tr>
@@ -4091,7 +4098,7 @@ SAYFALAR['ogrenciler'] = function () {
 
   const ogrenciTablo = ogr.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
-        <colgroup><col style="width:34%"><col style="width:15%"><col style="width:16%"><col style="width:22%"><col style="width:13%"></colgroup>
+        <colgroup><col style="width:30%"><col style="width:14%"><col style="width:15%"><col style="width:22%"><col style="width:19%"></colgroup>
         <thead><tr><th>Öğrenci</th><th>Paket</th><th class="sag">Kalan Ders</th><th class="sag">Kalan Ödeme</th><th></th></tr></thead>
         <tbody>${ogr.map(ogrenciSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Henüz öğrenci yok. “＋ Yeni Üyelik Oluştur” ile başlayın.</div>`;
@@ -4340,13 +4347,17 @@ function ogrenciDuzenle(o) {
     <div class="gp-alan"><label>Eğitmeni</label><button type="button" class="sec-trig" id="oEgTrig">${egitmenTrigIc(egitmenId)}</button></div>
     ${paketler.map(paketBlok).join('')}`;
   modalAc('Öğrenci Düzenle', govde,
-    `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
+    `<button class="btn btn-kirmizi" id="oSil" style="margin-right:auto">${ik('cop')} Sil</button><button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oKaydet">${ik('kaydet')} Kaydet</button>`,
     `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>Öğrenci</span>`);
   { const tl = $('#oTel'); tl.addEventListener('input', () => { tl.value = telBiciml(tl.value); }); }
   $('#oEgTrig').onclick = () => egitmenSecModal(egitmenId, (id) => { egitmenId = id; $('#oEgTrig').innerHTML = egitmenTrigIc(egitmenId); });
   $$('[data-pf="fiyat"]').forEach(el => el.addEventListener('input', () => { el.value = binlikBiciml(el.value); }));
   $$('[data-pf="dersToplam"]').forEach(el => el.addEventListener('input', () => { el.value = (el.value || '').replace(/\D/g, ''); }));
   $('#oIptal').onclick = modalKapat;
+  $('#oSil').onclick = () => onayModal('Kayıt silinsin mi?', 'Bu öğrenci ve tüm paketleri silinecek.', async () => {
+    await DB.sil('ogrenciler', o.id); State.ogrenciler = State.ogrenciler.filter(x => x.id !== o.id);
+    bildir('Silindi.', 'basari'); SAYFALAR['ogrenciler']();
+  });
   $('#oKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
@@ -4692,7 +4703,7 @@ function dersOlusturModal(mevcut) {
       <button type="button" class="sec-trig" id="dsETrig">${egitmenTrigIc(egitmenId)}</button></div>
     <div class="uy-ikili">
       <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">${ik('dersler')}</span></button></div>
-      <div class="gp-alan" style="margin:0"><label>Saat</label><input type="text" class="gp-inp" id="dsSaat" value="${saat}" inputmode="numeric" maxlength="5" style="text-align:center;letter-spacing:1px;font-weight:600"></div>
+      <div class="gp-alan" style="margin:0"><label>Saat</label><button type="button" class="saat-trig" id="dsSaat">${ik('sure')}<span id="dsSaatAd">${saat}</span></button></div>
     </div>`;
   modalAc(mevcut ? 'Ders Düzenle' : 'Ders Oluştur', govde,
     `${mevcut ? `<button class="btn btn-kirmizi" id="dsSil" style="margin-right:auto">${ik('cop')} Sil</button>` : ''}<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> ${mevcut ? 'Kaydet' : 'Dersi Planla'}</button>`,
@@ -4712,20 +4723,16 @@ function dersOlusturModal(mevcut) {
   const chipYenile = () => { $('#dsChipler').innerHTML = chipler(); $$('#dsChipler [data-cx]').forEach(c => c.onclick = () => { secili.delete(c.dataset.cx); chipYenile(); }); };
   chipYenile();
   $('#dsOEkle').onclick = () => ogrenciSecModal(secili, (yeni) => { secili.clear(); yeni.forEach(id => secili.add(id)); chipYenile(); otoDoldur(); });
-  $('#dsAd').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#dsSaat').focus(); } });
 
   $('#dsTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#dsTarihAd').textContent = fmtTarihUzun(tarih); });
-  { const st = $('#dsSaat');
-    st.addEventListener('focus', () => st.select());   // hazır "10:00" değerinin üzerine tak diye yazılsın
-    st.addEventListener('input', () => { st.value = saatBiciml(st.value); saat = st.value; });
-    st.addEventListener('blur', () => { st.value = saatNormal(st.value); saat = st.value; }); }
+  $('#dsSaat').onclick = () => saatSecici(saat, (s) => { saat = s; $('#dsSaatAd').textContent = s; });
   $('#dsIptal').onclick = modalKapat;
   if (mevcut) $('#dsSil').onclick = () => dersSil(mevcut);
   $('#dsKaydet').onclick = async () => {
     const ad = $('#dsAd').value.trim();
     if (!ad) return bildir('Ders adı girin.', 'hata');
     if (!secili.size) return bildir('En az bir öğrenci seçin.', 'hata');
-    saat = saatNormal($('#dsSaat').value);
+    saat = saatNormal(saat);
     if (mevcut) {
       const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat };   // durum & düşümler korunur
       await DB.guncelle('dersler', mevcut.id, veri); Object.assign(mevcut, veri);
@@ -4979,7 +4986,7 @@ SAYFALAR['hesap-defter'] = function () {
       <td data-l="İlgili Ortak">${ortHucre}</td>
       <td data-l="Tutar" class="sag"><span class="hs-art ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span></td>
       <td data-l="Güncel Bakiye" class="sag"><span class="hs-bak">${binlik(h.bakiye)} ₺</span></td>
-      <td class="sag"><span class="ogr-arac"><button type="button" data-hduz="${h.ref.id}" data-htip="${rtip}" title="Düzenle">✎</button><button type="button" data-hsil="${h.ref.id}" data-htip="${rtip}" title="Sil">🗑️</button></span></td>
+      <td class="sag"><button type="button" class="duz-btn" data-hduz="${h.ref.id}" data-htip="${rtip}">${ik('kalem')} Düzenle</button></td>
     </tr>`;
   };
   const eslesir = (h, q) => { if (!q) return true; return [fmtTarihUzun(h.tarih), HS_PILL_AD[h.tip], h.aciklama, h.altYazi, h.ilgiliAd, binlik(Math.abs(h.tutar)), binlik(h.bakiye)].join(' ').toLocaleLowerCase('tr').includes(q); };
@@ -5072,7 +5079,7 @@ function giderKayitFormu(mevcut) {
   const st = mevcut
     ? { tarih: mevcut.tarih, secId: mevcut.giderId || (mevcut.kkOdeme ? '__kkode' : null), secAd: mevcut.giderAd, secGrupAd: mevcut.grupAd, aciklama: mevcut.aciklama || '', sekli: mevcut.odemeSekli || 'banka', tutar: mevcut.tutar ? binlik(mevcut.tutar) : '', ortak: mevcut.ortakId || null, mevcutId: mevcut.id, kkOde: !!mevcut.kkOdeme, kaynakOdemeId: mevcut.kaynakOdemeId || null, otoKomisyon: !!mevcut.otoKomisyon }
     : { tarih: bugunISO(), secId: null, secAd: '', secGrupAd: '', aciklama: '', sekli: 'banka', tutar: '', ortak: null, mevcutId: null, kkOde: false, kaynakOdemeId: null, otoKomisyon: false };
-  modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', giderFormGovde(st), giderFormAlt(), `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="8" width="17" height="12" rx="2.5" fill="currentColor" opacity=".22"/><rect x="3.5" y="8" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.6"/><path d="M7 5.5h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14.5v3M10.5 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Gider</span>`);
+  modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', giderFormGovde(st), giderFormAlt(!!mevcut), `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="8" width="17" height="12" rx="2.5" fill="currentColor" opacity=".22"/><rect x="3.5" y="8" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.6"/><path d="M7 5.5h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14.5v3M10.5 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Gider</span>`);
   giderFormBagla(st, false);
 }
 function giderFormGovde(st) {
@@ -5092,7 +5099,7 @@ function giderFormGovde(st) {
     </div>
   </div>`;
 }
-function giderFormAlt() { return `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`; }
+function giderFormAlt(edit) { return `${edit ? `<button class="btn btn-kirmizi" id="gkSil" style="margin-right:auto">${ik('cop')} Sil</button>` : ''}<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet">${ik('kaydet')} Kaydet</button>`; }
 function giderFormBagla(st, geri) {
   if (geri) { const f = $('.gd-flow-form'); if (f) f.classList.add('gd-geri'); }
   const oku = () => { st.aciklama = $('#gkAciklama').value; st.tutar = $('#gkTutar').value; };
@@ -5110,6 +5117,10 @@ function giderFormBagla(st, geri) {
   $('#gkAciklama').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#gkTutar').focus(); } });
   $('#gkTutar').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#gkKaydet').click(); } });
   $('#gkIptal').onclick = modalKapat;
+  { const sb = $('#gkSil'); if (sb && st.mevcutId) sb.onclick = () => onayModal('Gider silinsin mi?', 'Bu kayıt silinecek.', async () => {
+    await DB.sil('giderKayitlari', st.mevcutId); State.giderKayitlari = State.giderKayitlari.filter(x => x.id !== st.mevcutId);
+    modalKapat(); bildir('Gider silindi.', 'basari'); git(State.aktifSayfa);
+  }); }
   $('#gkKaydet').onclick = async () => {
     oku();
     if (!st.secId && !st.kkOde && !st.otoKomisyon) return bildir('Gider grubu seçin.', 'hata');
@@ -5245,7 +5256,7 @@ function islemYapModal(opts) {
   const govde = `${edit ? '' : `<div class="iy-seg" id="iySeg"><button type="button" class="g ${mode === 'gelir' ? 'sec' : ''}" data-m="gelir">${ik('gelir')} Gelir Ekle</button><button type="button" class="d ${mode === 'gider' ? 'sec' : ''}" data-m="gider">${ik('gider')} Gider Ekle</button></div>`}<div class="iy-body" id="iyBody">${bodyHTML()}</div>`;
   const baslik = edit ? (mode === 'gelir' ? 'Gelir Düzenle' : 'Gider Düzenle') : 'İşlem Yap';
   modalAc(baslik, govde,
-    `<button class="btn" id="iyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini ${mode === 'gelir' ? 'iy-g' : 'iy-d'}" id="iyKaydet">${ik('kaydet')} Kaydet</button>`,
+    `${edit ? `<button class="btn btn-kirmizi" id="iySil" style="margin-right:auto">${ik('cop')} Sil</button>` : ''}<button class="btn" id="iyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini ${mode === 'gelir' ? 'iy-g' : 'iy-d'}" id="iyKaydet">${ik('kaydet')} Kaydet</button>`,
     rozetHTML('para', edit ? (mode === 'gelir' ? 'Gelir' : 'Gider') : 'İşlem'));
 
   const bindBody = () => {
@@ -5276,6 +5287,15 @@ function islemYapModal(opts) {
   if (!edit) $$('#iySeg [data-m]').forEach(b => b.onclick = () => modDegis(b.dataset.m));
   bindBody();
   $('#iyIptal').onclick = modalKapat;
+  if (edit && mev) $('#iySil').onclick = () => {
+    if (mode === 'gelir') onayModal('Gelir silinsin mi?', 'Bu tutar öğrencinin borcuna geri eklenir.', async () => {
+      await odemeGeriAl(mev); modalKapat(); bildir('Kayıt silindi.', 'basari'); git(State.aktifSayfa);
+    });
+    else onayModal('Gider silinsin mi?', 'Bu kayıt silinecek.', async () => {
+      await DB.sil('giderKayitlari', mev.id); State.giderKayitlari = State.giderKayitlari.filter(x => x.id !== mev.id);
+      modalKapat(); bildir('Gider silindi.', 'basari'); git(State.aktifSayfa);
+    });
+  };
   $('#iyKaydet').onclick = async () => {
     okuGiris();
     const tt = Number((tutar || '').replace(/\D/g, '')) || 0;
@@ -5461,6 +5481,23 @@ function aktifKullaniciAd() {
 }
 function talepSaatStr(iso) { try { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } catch { return ''; } }
 const TALEP_ROZET = () => rozetHTML('destek', 'Talepler');
+
+/* Ana ekrana ekle — yardım (iPhone/Android) */
+function anaEkranaEkleModal() {
+  const adim = (n, t) => `<div class="aee-step"><span class="aee-n">${n}</span><span class="aee-tx">${t}</span></div>`;
+  const govde = `
+    <div class="aee-bas"><span class="aee-ik">${ik('indir')}</span><div><h4>Ana Ekrana Ekle</h4><p>Uygulamayı telefonuna kısayol olarak ekle; tam ekran, uygulama gibi açılır.</p></div></div>
+    <div class="aee-plat">iPhone · Safari</div>
+    ${adim(1, 'Alttaki <b>Paylaş</b> (kutudan çıkan ok) simgesine dokun')}
+    ${adim(2, '<b>Ana Ekrana Ekle</b> seçeneğini seç')}
+    ${adim(3, 'Sağ üstte <b>Ekle</b>’ye dokun')}
+    <div class="aee-plat">Android · Chrome</div>
+    ${adim(1, 'Sağ üstteki <b>⋮</b> menüye dokun')}
+    ${adim(2, '<b>Ana ekrana ekle</b> / <b>Uygulamayı yükle</b> seçeneğini seç')}
+    ${adim(3, '<b>Ekle</b> ile onayla')}`;
+  modalAc('Ana Ekrana Ekle', govde, `<button class="btn btn-ana" id="aeeKapat" style="flex:1">Anladım</button>`, rozetHTML('indir', 'Kısayol'));
+  $('#aeeKapat').onclick = modalKapat;
+}
 
 function talepListeModal() {
   const liste = (State.talepler || []).slice().sort((a, b) => (b.olusturma || '').localeCompare(a.olusturma || ''));
@@ -5652,8 +5689,11 @@ function girisGovdeCiz() {
     <div class="giris-alan"><span class="giris-ik">🔒</span><input type="password" id="gSif" placeholder="Şifre :" autocomplete="new-password"></div>
     <div class="giris-hata" id="girisHata"></div>
     <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>
-    <div class="giris-guv">🔒 Güvenli giriş</div>`;
+    <div class="giris-guv">🔒 Güvenli giriş</div>
+    <div class="giris-demo">${ik('uyari')}<span><b>Demo uygulama.</b> Test aşamasındadır; zaman zaman hata veya eksik olabilir. Önemli verilerinizi ayrıca yedekleyin.</span></div>
+    <button type="button" class="giris-ekle" id="girisEkleBtn">${ik('indir')} Ana ekrana nasıl eklenir?</button>`;
   $('#girisBtn').onclick = girisDogrula;
+  { const eb = $('#girisEkleBtn'); if (eb) eb.onclick = anaEkranaEkleModal; }
   const gk = $('#gKul'), gs = $('#gSif');
   gk.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gs.focus(); } });
   gs.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); girisDogrula(); } });
@@ -6185,6 +6225,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'formun içinde form', not: 'Bir dizi düzeltme + yeni: (1) Pencereler artık içeriğe göre boyutlanıyor — İşlem Yap dahil formlar kaydırma gerekmeden tek ekrana sığıyor; Grup Dersi/Gider Seç gibi listeler “yarım/dev boş kutu” yerine içeriğe göre açılıyor. (2) Dashboard/Ortaklar “Aktif Öğrenci” artık eğitmene bağlı kayıtlı öğrencileri sayıyor (önce yalnızca o ay gerçekleşen dersteki öğrencileri sayıyordu → 0 görünüyordu). (3) Komisyon düzenleme formu premium tasarıma geçti (eski tablo/görünüm kaldırıldı). (4) Tablolarda kalem+çöp yerine tek “Düzenle” butonu; silme ilgili düzenleme formunun altına taşındı (Öğrenci, Gelir/Gider). (5) Ders Oluştur’da saat alanı düz kutu yerine kaydırmalı saat/dakika seçicisine bağlandı. (6) Giriş ekranında “Demo uygulama” uyarısı + “Ana ekrana nasıl eklenir?” yardımı (iPhone/Android adımları). (7) WhatsApp/sosyal paylaşımda karmaşık link yerine premium önizleme kartı (Open Graph başlık/açıklama/kapak görseli) + PWA manifest & ikonlar → ana ekrana ekleyince tam ekran uygulama gibi açılır.' },
   { q: 'istek ve öneri', not: 'Yeni “İstek ve Öneri” bölümü eklendi (kullanıcıların aksaklık/istek iletmesi için). Üst panel yenilendi: firma (GV) yanında kullanıcının fotoğrafı + adı soyadı; en sağda “Güncelle” (uygulamayı en son sürüme yeniler) ve “Destek” (İstek ve Öneri) ikonları. Destek ikonuna basınca önce Talepler listesi açılır (Tarih/Saat · Talep eden · Talep başlığı · Durum); herkes tüm talepleri görür. “Yeni İstek Oluştur” → sayfa seç (Diğer dahil) · başlık · geniş açıklama → Gönder. Bir talebe basınca detay açılır; yalnızca admin cevap yazabilir, cevap herkese görünür (yeşil kutu). Talepler buluta da senkronlanır.' },
   { q: 'gelirde varsayılan eğitmen', not: 'Bir dizi iyileştirme: (1) Ortak giriş yapıp üye oluşturursa varsayılan eğitmen kendisi olur (potansiyel aşamasında bile). (2) Bir derste birden fazla öğrenci varsa tablolarda isim yerine “Grup Dersi” yazar; satıra basınca öğrencilerin listelendiği modal açılır. (3) Dersler “Gerçekleşen” durum pili tabloya sığmıyordu → kompakt “✓ Yapıldı” yapıldı, sütunlar dengelendi. (4) Öğrenci Düzenle genişletildi: ad/soyad/telefon + eğitmen + paket alanları (paket adı, toplam ders, fiyat) düzenlenebilir; kalan ders / kalan ödeme salt-görüntü. (5) Ders Düzenle eklendi (durum menüsünde “Dersi Düzenle”): öğrenciler/ad/eğitmen/tarih/saat düzenlenebilir + Sil. (6) Hesaplar’da iki ayrı “Gelir/Gider Ekle” yerine tek “İşlem Yap” kartı; açılan modalda üstte Gelir/Gider geçişi (animasyonlu), ödeme yöntemi (Gelir: Havale/Nakit/Kart · Gider: Banka/Nakit/Kart), tarih (bugün), Gelir’de öğrenci seç / Gider’de gider seç, açıklama (tutardan önce), tutar, ait olduğu kişi (Gider’de “Tüm ortaklar”, Gelir’de öğrencinin eğitmeni varsayılan).' },
   { q: 'tüm açılan formları', not: 'Tüm açılan formlar/modallar tek premium dile geçti: üstte ince altın hairline, sıcak krem-gold kart, arka perde koyulaşıp hafifçe bulanıklaşıyor (backdrop-blur), açılışta aşağıdan yükselip minik yaylanma animasyonu, yuvarlak kapatma düğmesi. Başlık rozetleri ve seçim satırları artık emoji değil elle çizilmiş SVG ikon + altın tile (Yeni Üye=filiz, Eski Üye/Kişi, Üyelik/Paket=bilet, Onay=tik, Link, Saat, Giriş=anahtar, Belge, Banka/Kasa/Kart, Gelir/Gider). Seçim satırları renk-kodlu (ana=altın, onay=yeşil, link=mavi, bekleme=gri). Kaydet/Devam/Sil düğmelerinde ikon; Sil onay kutusu premium ortalanmış tasarıma geçti (kırmızı çöp ikonu). Form içi ödeme şekli (Banka/Nakit/Kart), tarih ve “Tüm ortaklar” çipleri de çizili ikonlu.' },
