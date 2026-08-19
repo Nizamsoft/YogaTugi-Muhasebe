@@ -2178,8 +2178,19 @@ body.tema-koyu .blok-bas .bi{color:#5a4109}
 .ogr-ea-sm{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#cfe3cf,#a9cdac);display:grid;place-items:center;font-size:7.5px;font-weight:800;color:#3c5b3e;flex:0 0 auto;overflow:hidden}
 .ogr-ea-sm.av-foto{padding:0}.ogr-ea-sm img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 
-/* Hesaplar — mobilde "İşlem Adı" sütununu gizle (Gelir/Gider zaten tutar renginde) */
+/* Hesaplar — mobilde "İşlem Adı" sütununu gizle (Gelir/Gider zaten tutar renginde);
+   kalan sütunlar %100'e yeniden dağıtılır ki tablo sağda boşluk bırakmasın */
 @media(max-width:640px){
+  /* İşlem Adı (2. hücre) display:none ile ızgaradan çıkınca kalan 6 görünür hücre
+     1–6. sütun slotlarına kayıyor; bu yüzden genişlikler görünür sıraya göre verilir
+     (col genişlikleri HTML'de inline olduğundan !important şart).
+     Sıra: Tarih · Açıklama · İlgili Ortak · Tutar · Güncel Bakiye · (işlem) = %100 */
   .hs-ledger thead th:nth-child(2),.hs-ledger tbody td:nth-child(2){display:none}
-  .hs-ledger colgroup col:nth-child(2){width:0}
+  .hs-ledger colgroup col:nth-child(1){width:13% !important}
+  .hs-ledger colgroup col:nth-child(2){width:30% !important}
+  .hs-ledger colgroup col:nth-child(3){width:19% !important}
+  .hs-ledger colgroup col:nth-child(4){width:13% !important}
+  .hs-ledger colgroup col:nth-child(5){width:13% !important}
+  .hs-ledger colgroup col:nth-child(6){width:12% !important}
+  .hs-ledger colgroup col:nth-child(7){width:0 !important}
 }

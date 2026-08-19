@@ -402,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '145';
+const APP_SURUM = '146';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '06:10';
+const APP_SURUM_SAAT = '09:35';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -5874,6 +5874,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'burası böyle olmuş', not: 'Düzeltme: Hesaplar tablosunda mobilde “İşlem Adı” sütunu gizlenince tablonun sağında boş bir şerit kalıyordu (gizlenen sütunun payı boşta kalıyordu). Kalan sütunlar %100’e yeniden dağıtıldı; tablo artık kartı tam dolduruyor ve “Açıklama” sütunu genişledi.' },
   { q: '2 2 olsun satırlar çok küçük', not: 'Mobilde birkaç düzeltme: (1) Ortaklar sayfası 4 sütun yerine 2×2 kart düzenine geçti — kartlar artık daha büyük; bir ortak kartı açılınca 2 satır yükseklik alıp diğer kartlar yumuşak/akıcı şekilde etrafından kayıyor. (2) Hesaplar (Banka/Kasa/Kart) tablosunda dar ekranda “İşlem Adı” sütunu gizlendi; gelir/gider ayrımı Tutar rengiyle zaten belli, sütunlar rahatladı. (3) Öğrenciler tablosunda ayrı “Eğitmeni” sütunu kaldırıldı; eğitmen artık öğrenci adının altında küçük (avatar + kısa ad) yazıyor. (4) Bir şeye dokununca çıkan sarı/gri renklenme ve kısa gecikme kaldırıldı (Tanımlamalar satırları anında geçiyor) — “donuyor” hissi gitti.' },
   { q: 'tüm tabloların genişlikleri aynı', not: 'Öğrenciler/Dersler 880px, Tahsilatlar/Giderler 980px idi; sayfa geçişinde tablo genişliği zıplıyordu. Hepsi en geniş olana (980px) eşitlendi — artık geçişte oynamıyor.' },
   { q: 'giriş paneli daha akıcı', not: 'Giriş ekranı premium/gold yapıldı: “GV” kutusu yerine logodaki fontta (Quicksand) “Green Village Pilates” yazı-logosu; koyu ışık-haleli zemin, altın çerçeveli koyu cam kart, gold ikonlu alanlar (placeholder’lar soluk “Kullanıcı Adı :” / “Şifre :”), parlayan gold “Giriş Yap”. Giriş yapınca doğrudan uygulamaya atlamıyor; animasyonlu bir loading screen (gold dönen halka + “Hazırlanıyor…”) çıkıyor, veriler/bulut yüklenince uygulama açılıyor.' },
