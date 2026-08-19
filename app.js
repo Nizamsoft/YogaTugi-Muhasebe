@@ -402,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '147';
+const APP_SURUM = '148';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '10:05';
+const APP_SURUM_SAAT = '10:45';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -606,9 +606,22 @@ const IK = {
   bolme: '<path d="M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.5" fill="currentColor"/><circle cx="12" cy="16.5" r="1.5" fill="currentColor"/>',
   ara: '<circle cx="10.5" cy="10.5" r="6" stroke="currentColor" stroke-width="1.8"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   grup: '<path d="M3.5 7.5a2 2 0 0 1 2-2h3.2l1.8 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2v-9Z" fill="currentColor" opacity=".22"/><path d="M3.5 7.5a2 2 0 0 1 2-2h3.2l1.8 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2v-9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  yeni: '<path d="M12 20v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  anahtar: '<circle cx="8" cy="8" r="4" fill="currentColor" opacity=".22"/><circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="m11 11 8 8M16 20l3-3M19 17l2 .5-.5-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+  belge: '<path d="M6 3.5h7l5 5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" fill="currentColor" opacity=".22"/><path d="M6 3.5h7l5 5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3.5V8.5h5M8 12.5h8M8 15.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  kaydet: '<path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+  link: '<path d="M9.5 14.5 14.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M11 7.5 12.6 6a3.6 3.6 0 0 1 5.1 5.1l-1.6 1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M13 16.5 11.4 18a3.6 3.6 0 0 1-5.1-5.1l1.6-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  cop: '<path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  gelir: HESAP_IKON.gelir, gidertrend: HESAP_IKON.gider,
+  ok: '<path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  geri: '<path d="M19 12H5M11 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 /* İkon SVG'si üretir. cls: ekstra sınıf. */
 function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
+/* Modal başlığı sağındaki premium rozet: altın tile ikon + etiket */
+function rozetHTML(ikAd, etiket) { return `<span class="hr-rozet"><span class="hr-rz-ik">${ik(ikAd)}</span>${kacar(etiket)}</span>`; }
+/* Hesap tipi (banka/kasa/krediKarti/ortak/gider/gelir) → ik ikon adı */
+const HESAP_TIP_IK = { banka: 'banka', kasa: 'kasa', krediKarti: 'kart', ortak: 'ortaklar', gider: 'gider', gelir: 'gelir' };
 
 function menuCiz() {
   const nav = $('#anaMenu');
@@ -922,10 +935,10 @@ function dersSayisiDuzenle(ortakId, donem) {
   if (!o) return;
   const mevcut = (o.dersAdet && o.dersAdet[donem]) || 0;
   modalAc(`${o.ad} — Ders Sayısı`, `
-    <div class="bilgi-kutu"><span class="ikon">📅</span><div><b>${donemAdi(donem)}</b> için verilen ders sayısı. Ders ücreti: <b>${TL(o.dersUcreti || 0)}</b>/ders.
+    <div class="bilgi-kutu"><span class="ikon">${ik('dersler')}</span><div><b>${donemAdi(donem)}</b> için verilen ders sayısı. Ders ücreti: <b>${TL(o.dersUcreti || 0)}</b>/ders.
       ${!o.dersUcreti ? '<br>⚠️ Bu ortağın ders ücreti tanımlı değil (Ayarlar → Ortak Pay Oranı).' : ''}</div></div>
     <div class="form-alan"><label>Ders Sayısı</label><input type="number" id="dsAdet" min="0" step="1" value="${mevcut}" autofocus></div>
-  `, `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana" id="dsKaydet">💾 Kaydet</button>`);
+  `, `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana" id="dsKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`);
   $('#dsIptal').onclick = modalKapat;
   $('#dsKaydet').onclick = async () => {
     const adet = Math.max(0, parseInt($('#dsAdet').value, 10) || 0);
@@ -1033,7 +1046,7 @@ function manuelGirisFormu(cfg) {
         <div class="form-alan"><label>Açıklama</label><input type="text" id="mAciklama" placeholder="Örn. Ocak ders geliri"></div>
       </div>
       <div style="text-align:right;margin-top:6px">
-        <button class="btn btn-ana" id="mKaydet">💾 Kaydet</button>
+        <button class="btn btn-ana" id="mKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>
       </div>
     </div>`;
 
@@ -1297,7 +1310,7 @@ function paketAktarModal() {
       <button type="button" class="pa-sec" id="paSecBtn">📂 Dosya Seç</button>
       <input type="file" id="paDosya" accept=".xlsx,.xls" hidden>
     </div></div>`;
-  modalAc('Excel\'den İçe Aktar', govde, `<button class="btn" id="paIptal">İptal</button>`, `<span class="hr-rozet">📄 Paket Satışları</span>`);
+  modalAc('Excel\'den İçe Aktar', govde, `<button class="btn" id="paIptal">İptal</button>`, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3.5h7l5 5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" fill="currentColor" opacity=".22"/><path d="M6 3.5h7l5 5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3.5V8.5h5M8 12.5h8M8 15.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Paket Satışları</span>`);
   $('#paIptal').onclick = modalKapat;
   const dosya = $('#paDosya');
   $('#paSecBtn').onclick = (e) => { e.stopPropagation(); dosya.click(); };
@@ -1406,7 +1419,7 @@ function paketOnizle(satirlar, dosyaAd) {
 
   // Alt butonu güncelle: İçe Aktar
   const alt = $('#modalKap .modal-alt') || document.querySelector('.modal-alt');
-  if (alt) alt.innerHTML = `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="paAktar">✓ İçe Aktar (${yeni.length})</button>`;
+  if (alt) alt.innerHTML = `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="paAktar"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="m8.3 12.2 2.6 2.6 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> İçe Aktar (${yeni.length})</button>`;
   $('#paIptal').onclick = modalKapat;
   $('#paAktar').onclick = async () => {
     const btn = $('#paAktar'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
@@ -1463,9 +1476,9 @@ function dersKaydiFormu(mevcut, opts = {}) {
         <div class="hr-satir"><label for="hrAciklama">Açıklama</label><input type="text" id="hrAciklama" value="${mevcut ? kacar(mevcut.aciklama || '') : ''}" placeholder="Örn. Sabah mat dersi"></div>
       </div>
     </div>`;
-  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
-    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
-  modalAc(mevcut ? 'Ders Kaydı Düzenle' : 'Yeni Ders Kaydı', govde, alt, `<span class="hr-rozet">🧘 Ders</span>`);
+  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sil</button>' : ''}
+    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`;
+  modalAc(mevcut ? 'Ders Kaydı Düzenle' : 'Yeni Ders Kaydı', govde, alt, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H12v14H6.5A2.5 2.5 0 0 0 4 20.5V6.5Z" fill="currentColor" opacity=".22"/><path d="M20 6.5A2.5 2.5 0 0 0 17.5 4H12v14h5.5A2.5 2.5 0 0 1 20 20.5V6.5Z" fill="currentColor" opacity=".22"/><path d="M12 5.2C11 4.4 9.6 4 8 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H8c1.6 0 3 .4 4 1.2m0-16C13 4.4 14.4 4 16 4h2.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H16c-1.6 0-3 .4-4 1.2m0-16v16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Ders</span>`);
 
   $$('.ders-tur .yon-btn').forEach(b => b.onclick = () => { tur = b.dataset.tur; $$('.ders-tur .yon-btn').forEach(x => x.classList.toggle('sec', x.dataset.tur === tur)); });
 
@@ -1515,12 +1528,12 @@ function yeniEgitmenModal(sonra) {
   kap.className = 'modal-perde modal-ust-kat';
   kap.innerHTML = `
     <div class="modal modal-dar" role="dialog">
-      <div class="modal-ust"><h3>Yeni Eğitmen</h3><span class="hr-rozet">🤝 Ortak</span><button class="modal-kapat" type="button">×</button></div>
+      <div class="modal-ust"><h3>Yeni Eğitmen</h3><span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="2.8" fill="currentColor" opacity=".28"/><circle cx="8.5" cy="8.5" r="2.8" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9.5" r="2.3" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18.5c0-2.8 2.2-4.7 5-4.7s5 1.9 5 4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.6 14.1c2.3-.2 4.2 1.4 4.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Ortak</span><button class="modal-kapat" type="button">×</button></div>
       <div class="modal-govde">
         <div class="form-alan"><label>Ad Soyad</label><input type="text" id="yeAd" placeholder="Örn. Ayşe Yılmaz"></div>
         <div class="form-alan"><label>Ders Ücreti (₺)</label><input type="number" id="yeUcret" inputmode="decimal" min="0" placeholder="Örn. 300"></div>
       </div>
-      <div class="modal-alt"><button class="btn" type="button" data-iptal>İptal</button><button class="btn btn-ana hr-kaydet" type="button" data-kaydet>💾 Ekle</button></div>
+      <div class="modal-alt"><button class="btn" type="button" data-iptal>İptal</button><button class="btn btn-ana hr-kaydet" type="button" data-kaydet><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Ekle</button></div>
     </div>`;
   document.body.appendChild(kap);
   const kapat = () => kap.remove();
@@ -1542,12 +1555,12 @@ function yeniMusteriModal(sonra) {
   kap.className = 'modal-perde modal-ust-kat';
   kap.innerHTML = `
     <div class="modal modal-dar" role="dialog">
-      <div class="modal-ust"><h3>Yeni Müşteri</h3><span class="hr-rozet">👤 Müşteri</span><button class="modal-kapat" type="button">×</button></div>
+      <div class="modal-ust"><h3>Yeni Müşteri</h3><span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>Müşteri</span><button class="modal-kapat" type="button">×</button></div>
       <div class="modal-govde">
         <div class="form-alan"><label>Ad Soyad</label><input type="text" id="ymAd" placeholder="Örn. Zeynep Demir"></div>
         <div class="form-alan"><label>Telefon (opsiyonel)</label><input type="tel" id="ymTel" placeholder="05..."></div>
       </div>
-      <div class="modal-alt"><button class="btn" type="button" data-iptal>İptal</button><button class="btn btn-ana hr-kaydet" type="button" data-kaydet>💾 Ekle</button></div>
+      <div class="modal-alt"><button class="btn" type="button" data-iptal>İptal</button><button class="btn btn-ana hr-kaydet" type="button" data-kaydet><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Ekle</button></div>
     </div>`;
   document.body.appendChild(kap);
   const kapat = () => kap.remove();
@@ -1665,7 +1678,7 @@ function musteriFormu(mevcut) {
     <div class="form-alan"><label>Ad Soyad</label><input type="text" id="mfAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Zeynep Demir"></div>
     <div class="form-alan"><label>Telefon (opsiyonel)</label><input type="tel" id="mfTel" value="${mevcut ? kacar(mevcut.telefon || '') : ''}" placeholder="05..."></div>
     <div class="form-alan"><label>Not (opsiyonel)</label><input type="text" id="mfNot" value="${mevcut ? kacar(mevcut.not || '') : ''}"></div>`;
-  modalAc(mevcut ? 'Müşteri Düzenle' : 'Yeni Müşteri', govde, `<button class="btn" id="mfIptal">İptal</button><button class="btn btn-ana" id="mfKaydet">💾 Kaydet</button>`, `<span class="hr-rozet">👥 Müşteri</span>`);
+  modalAc(mevcut ? 'Müşteri Düzenle' : 'Yeni Müşteri', govde, `<button class="btn" id="mfIptal">İptal</button><button class="btn btn-ana" id="mfKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>Müşteri</span>`);
   $('#mfIptal').onclick = modalKapat;
   $('#mfKaydet').onclick = async () => {
     const ad = $('#mfAd').value.trim();
@@ -1765,9 +1778,9 @@ function kasaSihirbaz() {
             <div class="sat"><span>Tarih</span><b>${bugunMu() ? 'Bugün · ' : ''}${trTarih(S.tarih)}</b></div>
             ${kaslar.length > 1 ? `<div class="sat"><span>Kasa</span><b><select id="kKasa">${kaslar.map(k => `<option value="${k.id}" ${S.kasaId === k.id ? 'selected' : ''}>${kacar(k.ad)}</option>`).join('')}</select></b></div>` : ''}
           </div>
-          <button class="k-tarih" data-eylem="tarih">📅 Tarihi değiştir</button>
+          <button class="k-tarih" data-eylem="tarih">${ik('dersler')} Tarihi değiştir</button>
         </div>
-        <div class="k-foot"><button class="k-ana kaydet" data-eylem="kaydet">✓ Kaydet</button></div>`;
+        <div class="k-foot"><button class="k-ana kaydet" data-eylem="kaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="m8.3 12.2 2.6 2.6 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Kaydet</button></div>`;
     }
     kap.innerHTML = `<div class="ksihirbaz">${g}</div>`;
     wire();
@@ -1925,7 +1938,7 @@ function potansiyelFormu(mevcut) {
     <div class="form-alan"><label>Ad Soyad</label><input type="text" id="pAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Ayşe Demir"></div>
     <div class="form-alan"><label>Telefon</label><input type="tel" id="pTel" value="${mevcut ? kacar(mevcut.telefon || '') : ''}" placeholder="05__ ___ __ __"></div>
     <div class="form-alan"><label>Not</label><textarea id="pNot" rows="2" placeholder="Örn. Deneme dersine geldi, Pazartesi tekrar arayacak">${mevcut ? kacar(mevcut.not || '') : ''}</textarea></div>`;
-  modalAc(mevcut ? 'Kişi Düzenle' : 'Yeni Potansiyel Müşteri', govde, `<button class="btn" id="pIptal">İptal</button><button class="btn btn-ana" id="pKaydet">💾 Kaydet</button>`);
+  modalAc(mevcut ? 'Kişi Düzenle' : 'Yeni Potansiyel Müşteri', govde, `<button class="btn" id="pIptal">İptal</button><button class="btn btn-ana" id="pKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`);
   $('#pIptal').onclick = modalKapat;
   $('#pKaydet').onclick = async () => {
     const ad = $('#pAd').value.trim();
@@ -2078,7 +2091,7 @@ function kasaOlustur() {
   const govde = `
     <div class="form-alan"><label>Kasa Adı</label><input type="text" id="kAd" value="Kasa" placeholder="Örn. Merkez Kasa"></div>
     <div class="form-alan"><label>Açılış Bakiyesi (₺)</label><input type="number" id="kBak" step="0.01" value="0"></div>`;
-  modalAc('Yeni Kasa', govde, `<button class="btn" id="kIptal">İptal</button><button class="btn btn-ana" id="kKaydet">💾 Oluştur</button>`);
+  modalAc('Yeni Kasa', govde, `<button class="btn" id="kIptal">İptal</button><button class="btn btn-ana" id="kKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Oluştur</button>`);
   $('#kIptal').onclick = modalKapat;
   $('#kKaydet').onclick = async () => {
     const ad = $('#kAd').value.trim() || 'Kasa';
@@ -2119,7 +2132,7 @@ function hesapEkleModal(tip, mevcut) {
   </div>`;
   const kaydetEt = tip === 'kasa' ? '💾 Oluştur' : '💾 Kaydet';
   const alt = `<button class="btn" id="heIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="heKaydet">${kaydetEt}</button>`;
-  modalAc(mevcut ? bilgi.ad + ' Düzenle' : 'Yeni ' + bilgi.ad, govde, alt, `<span class="hr-rozet">${bilgi.ikon} ${kacar(bilgi.ad)}</span>`);
+  modalAc(mevcut ? bilgi.ad + ' Düzenle' : 'Yeni ' + bilgi.ad, govde, alt, rozetHTML(HESAP_TIP_IK[tip] || 'firma', bilgi.ad));
 
   if (logoDestek) {
     const dosya = $('#heLogoDosya');
@@ -2274,7 +2287,7 @@ function yeniKalemModal(tur, sonra) {
   kap.innerHTML = `
     <div class="modal modal-dar" role="dialog">
       <div class="modal-ust"><h3>Yeni ${ad} Kalemi</h3>
-        <span class="hr-rozet">${tur === 'gelir' ? '📈' : '📉'} ${ad}</span>
+        <span class="hr-rozet"><span class="hr-rz-ik">${ik(tur === 'gelir' ? 'gelir' : 'gider')}</span>${ad}</span>
         <button class="modal-kapat" type="button">×</button></div>
       <div class="modal-govde"><div class="hr-form">
         <div class="hr-grup"><div class="hr-satir"><label for="ykAdInp">${ad} Adı</label>
@@ -2282,7 +2295,7 @@ function yeniKalemModal(tur, sonra) {
       </div></div>
       <div class="modal-alt">
         <button class="btn" type="button" data-iptal>İptal</button>
-        <button class="btn btn-ana hr-kaydet" type="button" data-kaydet>💾 Ekle</button>
+        <button class="btn btn-ana hr-kaydet" type="button" data-kaydet><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Ekle</button>
       </div>
     </div>`;
   document.body.appendChild(kap);
@@ -2311,7 +2324,7 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
   const banka = State.hesaplar.find(h => h.id === bankaId);
   if (!banka) return;
   const kaynak = opts.kaynak || 'banka';
-  const rozet = opts.rozet || `🏦 ${kacar(banka.ad)}`;
+  const rozet = opts.rozet || `<span class="hr-rz-ik">${ik('banka')}</span>${kacar(banka.ad)}`;
   const geri = opts.geri || (() => ekstreSayfasi(banka.tip));
   const gelirKalem = State.hesaplar.filter(h => h.tip === 'gelir');
   const giderKalem = State.hesaplar.filter(h => h.tip === 'gider');
@@ -2346,8 +2359,8 @@ function bankaHareketFormu(bankaId, mevcut, opts = {}) {
       </div>
     </div>`;
 
-  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
-    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
+  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sil</button>' : ''}
+    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`;
   modalAc(mevcut ? (opts.baslikDuzenle || 'Hareketi Düzenle') : (opts.baslik || 'Yeni Hareket'), govde, alt, `<span class="hr-rozet">${rozet}</span>`);
 
   let yon = baslangicYon, _sonKalem = '', _sonMu = mevcut ? (mevcut.musteriId || '') : '';
@@ -2595,9 +2608,9 @@ function kartHareketFormu(kartId, mevcut) {
       </div>
     </div>`;
 
-  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto">🗑️ Sil</button>' : ''}
-    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet">💾 Kaydet</button>`;
-  modalAc(mevcut ? 'Kart Hareketi Düzenle' : 'Yeni Kart Hareketi', govde, alt, `<span class="hr-rozet">💳 ${kacar(kart.ad)}</span>`);
+  const alt = `${mevcut ? '<button class="btn btn-kirmizi" id="hrSil" style="margin-right:auto"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sil</button>' : ''}
+    <button class="btn" id="hrIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="hrKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`;
+  modalAc(mevcut ? 'Kart Hareketi Düzenle' : 'Yeni Kart Hareketi', govde, alt, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="3" fill="currentColor" opacity=".3"/><rect x="2.5" y="5.5" width="19" height="13" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 9.7h19" stroke="currentColor" stroke-width="1.8"/><path d="M6 15h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>${kacar(kart.ad)}</span>`);
 
   let mod = baslangicMod, _sonKalem = '';
   const modUygula = (seciliId) => {
@@ -2746,7 +2759,7 @@ function hesapFormu(tip, mevcut) {
     ${tip === 'banka' ? `<div class="form-alan"><label>Banka / IBAN (opsiyonel)</label>
       <input type="text" id="hBanka" value="${mevcut?kacar(mevcut.banka||''):''}" placeholder="Örn. Ziraat · TR..."></div>` : ''}
   `;
-  const alt = `<button class="btn" id="ffIptal">İptal</button><button class="btn btn-ana" id="ffKaydet">💾 Kaydet</button>`;
+  const alt = `<button class="btn" id="ffIptal">İptal</button><button class="btn btn-ana" id="ffKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`;
   modalAc(mevcut ? bilgi.ad + ' Düzenle' : 'Yeni ' + bilgi.ad, govde, alt);
   $('#ffIptal').onclick = modalKapat;
   $('#ffKaydet').onclick = async () => {
@@ -2797,7 +2810,7 @@ function hesapHareketleri(hesapId) {
         </tr>`; }).join('') : `<tr><td colspan="4" class="orta soluk" style="padding:24px">Hareket yok.</td></tr>`}
       </tbody>
     </table></div>`;
-  modalAc(`${HESAP_TIPLERI[h.tip].ikon} ${h.ad} — Hareketler`, govde, `<button class="btn" onclick="document.getElementById('modalKap').innerHTML=''">Kapat</button>`);
+  modalAc(`${h.ad} — Hareketler`, govde, `<button class="btn" onclick="document.getElementById('modalKap').innerHTML=''">Kapat</button>`, rozetHTML(HESAP_TIP_IK[h.tip] || 'firma', HESAP_TIPLERI[h.tip].ad));
 }
 function islemTipAd(i) {
   return { gelir:'Gelir', gider:'Gider', transfer:'Transfer', ortakOdeme:'Ortak Ödeme' }[i.tip] || i.tip;
@@ -2852,7 +2865,7 @@ function ortakOdemeFormu(ortakId) {
       <div class="form-alan"><label>Tutar (₺)</label><input type="number" id="oTutar" step="0.01" min="0"></div>
       <div class="form-alan"><label>Açıklama</label><input type="text" id="oAciklama" value="Kar payı ödemesi"></div>
     </div>`;
-  modalAc('Ortak Ödemesi', govde, `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana" id="oKaydet">💾 Kaydet</button>`);
+  modalAc('Ortak Ödemesi', govde, `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana" id="oKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`);
   $('#oIptal').onclick = modalKapat;
   $('#oKaydet').onclick = async () => {
     const tutar = parseFloat($('#oTutar').value);
@@ -3183,8 +3196,8 @@ function ortakFormu(mevcut) {
     </div>
     <div class="gp-alan" style="margin:0"><label>Ad Soyad</label><input type="text" class="gp-inp" id="oAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Ayşe Yılmaz"></div>`;
   modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde,
-    `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oiKaydet">💾 Kaydet</button>`,
-    `<span class="hr-rozet">👥 Ortak</span>`);
+    `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oiKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="2.8" fill="currentColor" opacity=".28"/><circle cx="8.5" cy="8.5" r="2.8" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9.5" r="2.3" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18.5c0-2.8 2.2-4.7 5-4.7s5 1.9 5 4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.6 14.1c2.3-.2 4.2 1.4 4.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Ortak</span>`);
   const sec = () => $('#oFotoDosya').click();
   $('#oFotoBtn').onclick = sec; $('#oFotoOnizle').onclick = sec;
   $('#oFotoSil').onclick = () => { fotoData = null; $('#oFotoOnizle').innerHTML = kareIc(); $('#oFotoSil').style.display = 'none'; };
@@ -3233,7 +3246,7 @@ function fotoKirp(dosya, onTamam) {
         </div>
         <p class="kirp-ipuc">Sürükleyerek konumla · çubukla yakınlaştır</p>
         <div class="kirp-zoom"><span>🏔️</span><input type="range" id="kZoom" min="1" max="3" step="0.01" value="1"><span style="font-size:19px">🏔️</span></div>
-        <div class="modal-alt"><button class="btn" id="kIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="kKullan">✓ Kullan</button></div>
+        <div class="modal-alt"><button class="btn" id="kIptal">İptal</button><button class="btn btn-ana hr-kaydet" id="kKullan"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="m8.3 12.2 2.6 2.6 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Kullan</button></div>
       </div>`;
     document.body.appendChild(kap);
     const el = kap.querySelector('#kImg');
@@ -3301,7 +3314,7 @@ function komisyonFormu(mevcut) {
       <div class="form-alan"><label>Oran (%)</label><input type="number" id="kOran" step="0.01" min="0" value="${mevcut?mevcut.oran:''}"></div>
       <div class="form-alan"><label>Durum</label><select id="kAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
     </div>`;
-  modalAc(mevcut ? 'Komisyon Düzenle' : 'Yeni Komisyon', govde, `<button class="btn" id="kiIptal">İptal</button><button class="btn btn-ana" id="kiKaydet">💾 Kaydet</button>`);
+  modalAc(mevcut ? 'Komisyon Düzenle' : 'Yeni Komisyon', govde, `<button class="btn" id="kiIptal">İptal</button><button class="btn btn-ana" id="kiKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`);
   $('#kiIptal').onclick = modalKapat;
   $('#kiKaydet').onclick = async () => {
     const ad = $('#kAd').value.trim();
@@ -3349,7 +3362,7 @@ function kullaniciFormu(roller, mevcut) {
       <div class="form-alan"><label>Durum</label><select id="uAktif"><option value="1" ${!mevcut||mevcut.aktif!==false?'selected':''}>Aktif</option><option value="0" ${mevcut&&mevcut.aktif===false?'selected':''}>Pasif</option></select></div>
     </div>
     <div class="bilgi-kutu"><span class="ikon">🔑</span><div>Bu kayıt yetki planlaması içindir. Yerel modda ayrı bir şifre/giriş kısıtı uygulanmaz.</div></div>`;
-  modalAc(mevcut ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı', govde, `<button class="btn" id="uiIptal">İptal</button><button class="btn btn-ana" id="uiKaydet">💾 Kaydet</button>`);
+  modalAc(mevcut ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı', govde, `<button class="btn" id="uiIptal">İptal</button><button class="btn btn-ana" id="uiKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`);
   $('#uiIptal').onclick = modalKapat;
   $('#uiKaydet').onclick = async () => {
     const ad = $('#uAd').value.trim();
@@ -3576,7 +3589,7 @@ SAYFALAR['ayar-firma'] = function () {
           <input type="file" id="logoDosya" accept="image/*" hidden>
         </div>
         <div class="gp-alan"><label>Firma Adı</label><input type="text" class="gp-inp" id="fAd" value="${kacar(a.firmaAd || '')}" placeholder="Green Village Pilates"></div>
-        <button type="button" class="gp-kaydet" id="fKaydet">💾 Kaydet</button>
+        <button type="button" class="gp-kaydet" id="fKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>
       </div></div>
     </div>`;
   $('#fbGeri').onclick = () => git('ayar-tanimlama');
@@ -3763,8 +3776,8 @@ function girisKulFormu(o) {
     <div class="gp-alan"><label>Şifre</label><input type="password" class="gp-inp" id="gkSif" placeholder="${o.sifreHash ? '•••••• (değiştirmek için yaz)' : 'Yeni şifre'}" autocomplete="new-password"></div>
     <div class="gp-alan" style="margin:0"><label>Şifre (tekrar)</label><input type="password" class="gp-inp" id="gkSif2" placeholder="Şifreyi tekrar yaz" autocomplete="new-password"></div>`;
   modalAc('Giriş Bilgileri — ' + kacar(o.ad), govde,
-    `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet">💾 Kaydet</button>`,
-    `<span class="hr-rozet">🔑 Giriş</span>`);
+    `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="currentColor" opacity=".22"/><circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="m11 11 8 8M16 20l3-3M19 17l2 .5-.5-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Giriş</span>`);
   const zincir = ['#gkAd', '#gkSif', '#gkSif2'];
   zincir.forEach((sel, i) => { const el = $(sel); if (!el) return; el.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault(); if (i < zincir.length - 1) { const sonraki = $(zincir[i + 1]); if (sonraki) sonraki.focus(); } else $('#gkKaydet').click(); }); });
   setTimeout(() => $('#gkAd').focus(), 50);
@@ -3847,8 +3860,8 @@ function giderFormu(mevcut) {
       </div>
     </div>`;
   modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', govde,
-    `<button class="btn" id="gdIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gdKaydet">💾 Kaydet</button>`,
-    `<span class="hr-rozet">📉 Gider</span>`);
+    `<button class="btn" id="gdIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gdKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="8" width="17" height="12" rx="2.5" fill="currentColor" opacity=".22"/><rect x="3.5" y="8" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.6"/><path d="M7 5.5h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14.5v3M10.5 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Gider</span>`);
 
   const inp = $('#gdAd'); setTimeout(() => inp.focus(), 50);
   const panel = $('#gdPanel'), trig = $('#gdTrig');
@@ -3906,7 +3919,7 @@ SAYFALAR['tanim-uyelik'] = function () {
       <div class="uk-ay"></div>
       <div class="uk-satir"><span class="e">⏳</span><span><b>${Number(u.gecerlilikGun) || 0}</b> Gün geçerli</span></div>
       ${acik ? `<div class="uk-satir"><span class="e">📝</span><span class="uk-kapsam">${kacar(acik)}</span></div>` : ''}
-      <div class="uk-arac"><button type="button" class="duz" data-ud="${u.id}">✎ Düzenle</button><button type="button" data-us="${u.id}">🗑️ Sil</button></div>
+      <div class="uk-arac"><button type="button" class="duz" data-ud="${u.id}">✎ Düzenle</button><button type="button" data-us="${u.id}"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Sil</button></div>
     </div></div>`;
   };
 
@@ -3951,8 +3964,8 @@ function uyelikFormu(mevcut) {
     <div class="gp-alan" style="margin:0"><label>Açıklama</label>
       <textarea class="gp-inp" id="uyAciklama" rows="2" autocomplete="off" autocorrect="off" spellcheck="false">${mevcut ? kacar(uyelikAciklama(mevcut)) : ''}</textarea></div>`;
   modalAc(mevcut ? 'Üyelik Düzenle' : 'Yeni Üyelik', govde,
-    `<button class="btn" id="uyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="uyKaydet">💾 Kaydet</button>`,
-    `<span class="hr-rozet">🎟️ Üyelik</span>`);
+    `<button class="btn" id="uyIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="uyKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" fill="currentColor" opacity=".24"/><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v1.5M12 11.2v1.6M12 14.5V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Üyelik</span>`);
   setTimeout(() => $('#uyAd').focus(), 50);
 
   const satirlariBagla = () => {
@@ -4133,7 +4146,7 @@ function ogrenciDetayModal(o) {
         ? `<span class="pk-val ok2">Ödendi</span><span class="ogr-bar odeme"><span style="width:100%"></span></span>`
         : `<span class="pk-val gold">${binlik(kalanO)} / ${binlik(fiyat)} ₺</span>${barHTML(fiyat - kalanO, fiyat, 'odeme')}`;
       return `<div class="pkart">
-        <div class="pk-ust"><span class="pk-ad"><span class="pk-ic">🎟️</span>${kacar(p.paketAd || 'Paket')} — ${dersT} ders</span><button type="button" class="pk-iptal" data-piptal="${p.id}">🗑️ Paketi İptal</button></div>
+        <div class="pk-ust"><span class="pk-ad"><span class="pk-ic">🎟️</span>${kacar(p.paketAd || 'Paket')} — ${dersT} ders</span><button type="button" class="pk-iptal" data-piptal="${p.id}"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Paketi İptal</button></div>
         <div class="pk-metrik">
           <div><span class="pk-lbl">Kalan Ders</span><span class="pk-val">${kalanD} / ${dersT}</span>${barHTML(dersT - kalanD, dersT, 'ders')}</div>
           <div><span class="pk-lbl">Kalan Ödeme</span>${odemeSat}</div>
@@ -4146,7 +4159,7 @@ function ogrenciDetayModal(o) {
   };
   modalAc(ogrenciTamAd(o), govde(),
     `<button class="btn" id="odetKapat" style="flex:1">Kapat</button>`,
-    `<span class="hr-rozet">🎓 Öğrenci</span>`);
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z" fill="currentColor" opacity=".26"/><path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6.5 10.5v4c0 1.6 2.5 2.8 5.5 2.8s5.5-1.2 5.5-2.8v-4M21.5 8.5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Öğrenci</span>`);
   $('#odetKapat').onclick = modalKapat;
   $$('[data-piptal]').forEach(b => b.onclick = () => onayModal('Paket iptal edilsin mi?', 'Bu paket öğrenciden kaldırılacak.', async () => {
     o.paketler = (o.paketler || []).filter(x => x.id !== b.dataset.piptal);
@@ -4163,10 +4176,10 @@ function ogrenciDetayModal(o) {
 function yeniUyelikBaslat() {
   const govde = `
     <div class="uys-ikisec">
-      <button type="button" class="uys-opt yeni" id="uysYeni"><span class="uys-ik">🌱</span><span class="uys-metin"><span class="ad">Yeni Üye</span><span class="alt">İlk kez kayıt — ad, soyad, telefon</span></span><span class="uys-ok">›</span></button>
-      <button type="button" class="uys-opt eski" id="uysEski"><span class="uys-ik">👤</span><span class="uys-metin"><span class="ad">Eski Üye</span><span class="alt">Kayıtlı öğrenciye yeni paket ekle</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt yeni" id="uysYeni"><span class="uys-ik yesil"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="uys-metin"><span class="ad">Yeni Üye</span><span class="alt">İlk kez kayıt — ad, soyad, telefon</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt eski" id="uysEski"><span class="uys-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="uys-metin"><span class="ad">Eski Üye</span><span class="alt">Kayıtlı öğrenciye yeni paket ekle</span></span><span class="uys-ok">›</span></button>
     </div>`;
-  modalAc('Yeni Üyelik', govde, `<button class="btn" id="uysIptal" style="flex:1">İptal</button>`, `<span class="hr-rozet">🎟️ Üyelik</span>`);
+  modalAc('Yeni Üyelik', govde, `<button class="btn" id="uysIptal" style="flex:1">İptal</button>`, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" fill="currentColor" opacity=".24"/><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v1.5M12 11.2v1.6M12 14.5V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Üyelik</span>`);
   $('#uysIptal').onclick = modalKapat;
   $('#uysYeni').onclick = yeniUyeFormu;
   $('#uysEski').onclick = uyeSecModal;
@@ -4180,7 +4193,7 @@ function yeniUyeFormu() {
     <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="numeric" class="gp-inp" id="oTel" placeholder="Örn. 505-033-41-27"></div>`;
   modalAc('Yeni Üye', govde,
     `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oDevam">Devam Et →</button>`,
-    `<span class="hr-rozet">🌱 Yeni Üye</span>`);
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>Yeni Üye</span>`);
   setTimeout(() => $('#oAd').focus(), 50);
   { const tl = $('#oTel'); tl.addEventListener('input', () => { tl.value = telBiciml(tl.value); }); }
   $('#oIptal').onclick = modalKapat;
@@ -4196,12 +4209,12 @@ function yeniUyeFormu() {
 /* Potansiyel oluştu — 3 seçenek */
 function neYapmakModal(o) {
   const govde = `
-    <div class="ny-ust"><div class="ny-ik">✅</div><div class="ny-bilg"><h4>Potansiyel Müşteri Oluştu</h4><p>${kacar(o.ad)} ${kacar(o.soyad || '')} eklendi. Ne yapmak istersiniz?</p></div></div>
+    <div class="ny-ust"><div class="ny-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="m8.3 12.2 2.6 2.6 4.8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="ny-bilg"><h4>Potansiyel Müşteri Oluştu</h4><p>${kacar(o.ad)} ${kacar(o.soyad || '')} eklendi. Ne yapmak istersiniz?</p></div></div>
     <div class="uys-ikisec">
-      <button type="button" class="uys-opt" id="nyPaket"><span class="uys-ik">🎟️</span><span class="uys-metin"><span class="ad">Ben Ders Paketi Tanımlayacağım</span><span class="alt">Eğitmen + paket seç, öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
-      <button type="button" class="uys-opt pas" id="nyLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşterime Link Göndereceğim</span><span class="alt">Paketi kendi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
-      <button type="button" class="uys-opt" id="nySonra"><span class="uys-ik gri">🕒</span><span class="uys-metin"><span class="ad">Daha Sonra Devam Edeceğim</span><span class="alt">Potansiyel müşteri olarak beklet</span></span><span class="uys-ok">›</span></button>`;
-  modalAc('Potansiyel Müşteri Oluştu', govde, null, `<span class="hr-rozet">🌱 Yeni Üye</span>`);
+      <button type="button" class="uys-opt" id="nyPaket"><span class="uys-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" fill="currentColor" opacity=".24"/><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v1.5M12 11.2v1.6M12 14.5V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span class="uys-metin"><span class="ad">Ben Ders Paketi Tanımlayacağım</span><span class="alt">Eğitmen + paket seç, öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt pas" id="nyLink"><span class="uys-ik mavi"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.5 14.5 14.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M11 7.5 12.6 6a3.6 3.6 0 0 1 5.1 5.1l-1.6 1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M13 16.5 11.4 18a3.6 3.6 0 0 1-5.1-5.1l1.6-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="uys-metin"><span class="ad">Müşterime Link Göndereceğim</span><span class="alt">Paketi kendi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
+      <button type="button" class="uys-opt" id="nySonra"><span class="uys-ik gri"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.3" fill="currentColor" opacity=".2"/><circle cx="12" cy="12" r="8.3" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="uys-metin"><span class="ad">Daha Sonra Devam Edeceğim</span><span class="alt">Potansiyel müşteri olarak beklet</span></span><span class="uys-ok">›</span></button>`;
+  modalAc('Potansiyel Müşteri Oluştu', govde, null, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>Yeni Üye</span>`);
   $('#nySonra').onclick = () => { modalKapat(); ogrenciAktifSekme = 'potansiyel'; bildir('Potansiyel müşterilere eklendi.', 'basari'); SAYFALAR['ogrenciler'](); };
   $('#nyPaket').onclick = () => paketAtaModal(o);
   $('#nyLink').onclick = () => bildir('Bu bölüm yapım aşamasında.', '');
@@ -4220,7 +4233,7 @@ function uyeSecModal() {
   const govde = `
     <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="uyeAra" placeholder="İsim ile ara…" autocomplete="off"></div>
     <div class="uys-liste" id="uyeListe">${liste.map(satir).join('')}</div>`;
-  modalAc('Üye Seç', govde, `<button class="btn" id="uyeGeri" style="flex:1">‹ Geri</button>`, `<span class="hr-rozet">👤 Eski Üye</span>`);
+  modalAc('Üye Seç', govde, `<button class="btn" id="uyeGeri" style="flex:1">‹ Geri</button>`, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>Eski Üye</span>`);
   const bagla = () => $$('#uyeListe [data-uye]').forEach(b => b.onclick = () => { const o = State.ogrenciler.find(x => x.id === b.dataset.uye); if (o) paketAtaModal(o); });
   bagla();
   $('#uyeGeri').onclick = yeniUyelikBaslat;
@@ -4239,10 +4252,10 @@ function islemSecModal(o) {
     <div class="is-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="is-kisi-bilg"><span class="ad">${kacar(tamAd)}</span><span class="alt">Potansiyel müşteri${o.telefon ? ` · ${kacar(o.telefon)}` : ''}</span></span></div>
     <div class="is-soru">Ne yapmak istersiniz?</div>
     <div class="uys-ikisec">
-      <button type="button" class="uys-opt uana" id="isPaket"><span class="uys-ik">🎟️</span><span class="uys-metin"><span class="ad">Ders Paketi Tanımla</span><span class="alt">Eğitmen ve paket seç → öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
-      <button type="button" class="uys-opt pas" id="isLink"><span class="uys-ik mavi">🔗</span><span class="uys-metin"><span class="ad">Müşteriye Link Gönder</span><span class="alt">Paketi kendisi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
+      <button type="button" class="uys-opt uana" id="isPaket"><span class="uys-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" fill="currentColor" opacity=".24"/><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v1.5M12 11.2v1.6M12 14.5V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span class="uys-metin"><span class="ad">Ders Paketi Tanımla</span><span class="alt">Eğitmen ve paket seç → öğrenciye dönüştür</span></span><span class="uys-ok">›</span></button>
+      <button type="button" class="uys-opt pas" id="isLink"><span class="uys-ik mavi"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.5 14.5 14.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M11 7.5 12.6 6a3.6 3.6 0 0 1 5.1 5.1l-1.6 1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M13 16.5 11.4 18a3.6 3.6 0 0 1-5.1-5.1l1.6-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="uys-metin"><span class="ad">Müşteriye Link Gönder</span><span class="alt">Paketi kendisi seçsin</span></span><span class="uys-yak">yapım aşamasında</span></button>
     </div>`;
-  modalAc('İşlem Seç', govde, `<button class="btn" id="isVazgec" style="flex:1">Vazgeç</button>`, `<span class="hr-rozet">👤 ${kacar(tamAd)}</span>`);
+  modalAc('İşlem Seç', govde, `<button class="btn" id="isVazgec" style="flex:1">Vazgeç</button>`, `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>${kacar(tamAd)}</span>`);
   $('#isPaket').onclick = () => paketAtaModal(o);
   $('#isVazgec').onclick = modalKapat;
   $('#isLink').onclick = () => bildir('Bu bölüm yapım aşamasında.', '');
@@ -4261,10 +4274,10 @@ function paketAtaModal(o) {
   const paketTrigIc = () => {
     const p = paketler.find(x => x.id === uyelikId);
     if (!p) return `<span class="st-col"><span class="st-ph">Paket seçin</span></span><span class="st-ok">›</span>`;
-    if (secIdx < 0) return `<span class="pa-pk">🎟️</span><span class="st-col"><span class="st-nm">${kacar(p.ad)}</span><span class="st-sub" style="color:#b06a43;font-weight:700">Ders sayısı seçilmedi — dokun</span></span><span class="st-ok">›</span>`;
+    if (secIdx < 0) return `<span class="pa-pk">${ik('uyelik')}</span><span class="st-col"><span class="st-nm">${kacar(p.ad)}</span><span class="st-sub" style="color:#b06a43;font-weight:700">Ders sayısı seçilmedi — dokun</span></span><span class="st-ok">›</span>`;
     const secler = uyelikSecenekleri(p);
     const s = secler[secIdx] || {};
-    return `<span class="pa-pk">🎟️</span><span class="st-col"><span class="st-nm">${kacar(p.ad)} — ${Number(s.dersSayisi) || 0} ders</span><span class="st-sub">${binlik(s.fiyat || 0)} ₺ · ${Number(p.gecerlilikGun) || 0} gün geçerli</span></span><span class="st-ok">›</span>`;
+    return `<span class="pa-pk">${ik('uyelik')}</span><span class="st-col"><span class="st-nm">${kacar(p.ad)} — ${Number(s.dersSayisi) || 0} ders</span><span class="st-sub">${binlik(s.fiyat || 0)} ₺ · ${Number(p.gecerlilikGun) || 0} gün geçerli</span></span><span class="st-ok">›</span>`;
   };
 
   const govde = `
@@ -4273,8 +4286,8 @@ function paketAtaModal(o) {
     <div class="gp-alan" style="margin:0"><label>Üyelik Paketi</label>
       <button type="button" class="sec-trig" id="papTrig">${paketTrigIc()}</button></div>`;
   modalAc('Ders Paketi Ata', govde,
-    `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="paKaydet">💾 Öğrenciye Ekle</button>`,
-    `<span class="hr-rozet">🎟️ Paket</span>`);
+    `<button class="btn" id="paIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="paKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Öğrenciye Ekle</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" fill="currentColor" opacity=".24"/><path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7.5v2a2 2 0 0 0 0 5v2a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-2a2 2 0 0 0 0-5v-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v1.5M12 11.2v1.6M12 14.5V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Paket</span>`);
 
   $('#paeTrig').onclick = () => egitmenSecModal(egitmenId, (id) => { egitmenId = id; $('#paeTrig').innerHTML = egitmenTrigIc(egitmenId); });
   $('#papTrig').onclick = () => paketSecModal(uyelikId, secIdx, (pid, sidx) => { uyelikId = pid; secIdx = sidx; $('#papTrig').innerHTML = paketTrigIc(); });
@@ -4307,8 +4320,8 @@ function ogrenciDuzenle(o) {
     <div class="gp-alan"><label>Soyadı</label><input type="text" class="gp-inp" id="oSoyad" value="${kacar(o.soyad || '')}" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="gp-alan" style="margin:0"><label>Telefon</label><input type="tel" inputmode="numeric" class="gp-inp" id="oTel" value="${kacar(telBiciml(o.telefon || ''))}"></div>`;
   modalAc('Öğrenci Düzenle', govde,
-    `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oKaydet">💾 Kaydet</button>`,
-    `<span class="hr-rozet">👤 Öğrenci</span>`);
+    `<button class="btn" id="oIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="currentColor" opacity=".28"/><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.5c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>Öğrenci</span>`);
   setTimeout(() => $('#oAd').focus(), 50);
   { const tl = $('#oTel'); tl.addEventListener('input', () => { tl.value = telBiciml(tl.value); }); }
   $('#oIptal').onclick = modalKapat;
@@ -4438,7 +4451,7 @@ function katilimModal(ders, onOnay) {
     <div class="kt-bilgi"><b>${kacar(ders.dersAd || 'Ders')}</b> · ${fmtTarihUzun(ders.tarih)}${ders.saat ? ' · ' + kacar(ders.saat) : ''}</div>
     <div class="ds-oliste sec-liste-kaydir" id="ktListe">${ogrenciler.map(item).join('')}</div>
     <div class="kt-bilgi kt-not">İşaretli öğrencilerden 1’er ders düşülür. İşaretsiz kalan (gelmeyen) düşülmez.</div>`;
-  const m = ustKatModal('Kimler Katıldı?', '✅ Gerçekleşti', govde,
+  const m = ustKatModal('Kimler Katıldı?', `<span class="hr-rz-ik">${ik('onay')}</span>Gerçekleşti`, govde,
     `<button class="btn" type="button" data-vaz>Vazgeç</button><button class="btn btn-ana" type="button" data-onay>Gerçekleştir (<span id="ktSay">${secili.size}</span>)</button>`);
   m.qq('#ktListe [data-o]').forEach(el => el.onclick = () => {
     const id = el.dataset.o;
@@ -4508,7 +4521,7 @@ function egitmenSecModal(seciliId, onSec) {
     return `<button type="button" class="uys-uye ${sc ? 'sec-akt' : ''}" data-e="${e.id}">${egitmenAv(e.id, 'ogr-av')}<span class="uys-uye-bilg"><span class="ad">${kacar(egitmenKisaAd(e))}</span><span class="alt">Eğitmen${pay}</span></span><span class="uys-ok">${sc ? '<span class="tik-yes">✓</span>' : '›'}</span></button>`;
   };
   const govde = `<div class="sec-liste">${egitmenler.map(satir).join('')}</div>`;
-  const m = ustKatModal('Eğitmen Seç', '👩‍🏫 Eğitmen', govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  const m = ustKatModal('Eğitmen Seç', `<span class="hr-rz-ik">${ik('ortaklar')}</span>Eğitmen`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
   m.q('[data-geri]').onclick = m.kapat;
   m.qq('[data-e]').forEach(el => el.onclick = () => { onSec(el.dataset.e); m.kapat(); });
 }
@@ -4527,7 +4540,7 @@ function ogrenciSecModal(onceki, onKaydet) {
     <div class="ds-chipler" id="osChip">${chip()}</div>
     <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="osAra" placeholder="Öğrenci ara…"></div>
     <div class="ds-oliste sec-liste-kaydir" id="osListe">${ogrenciler.map(item).join('')}</div>`;
-  const m = ustKatModal('Öğrenci Seç', '👥 Öğrenci', govde,
+  const m = ustKatModal('Öğrenci Seç', `<span class="hr-rz-ik">${ik('ogrenci')}</span>Öğrenci`, govde,
     `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç (<span id="osSay">${secili.size}</span>)</button>`);
   const bindListe = () => m.qq('#osListe [data-o]').forEach(el => el.onclick = () => { const id = el.dataset.o; if (secili.has(id)) secili.delete(id); else secili.add(id); m.q('#osSay').textContent = secili.size; chipYenile(); yenile(); });
   const yenile = () => {
@@ -4556,7 +4569,7 @@ function ogrenciTekSecModal(seciliId, onSec) {
   const govde = `
     <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="tsAra" placeholder="Öğrenci ara…"></div>
     <div class="ds-oliste sec-liste-kaydir" id="tsListe">${ogrenciler.map(item).join('')}</div>`;
-  const m = ustKatModal('Öğrenci Seç', '👥 Öğrenci', govde,
+  const m = ustKatModal('Öğrenci Seç', `<span class="hr-rz-ik">${ik('ogrenci')}</span>Öğrenci`, govde,
     `<button class="btn" type="button" data-geri>‹ Geri</button><button class="btn btn-ana" type="button" data-sec>Seç</button>`);
   const bindListe = () => m.qq('#tsListe [data-o]').forEach(el => el.onclick = () => { sel = el.dataset.o; yenile(); });
   const yenile = () => {
@@ -4576,7 +4589,7 @@ function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
   let pid = seciliPaketId || null;   // paket varsayılan: seçili değil
   let sidx = (typeof seciliSecIdx === 'number' && seciliSecIdx >= 0) ? seciliSecIdx : -1;   // ders sayısı varsayılan: seçili değil
   const secOzet = (p) => uyelikSecenekleri(p).map(s => Number(s.dersSayisi) || 0).join(' · ') + ' ders';
-  const m = ustKatModal('Paket Seç', '🎟️ Paket · 1/2', '<div id="psGovde"></div>',
+  const m = ustKatModal('Paket Seç', `<span class="hr-rz-ik">${ik('uyelik')}</span>Paket · 1/2`, '<div id="psGovde"></div>',
     '<div id="psAlt" style="display:flex;gap:10px;width:100%"></div>');
   const baslik = m.q('.modal-ust h3'), rozet = m.q('.hr-rozet'), govde = m.q('#psGovde'), alt = m.q('#psAlt');
 
@@ -4585,7 +4598,7 @@ function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
     govde.className = 'sec-liste';
     govde.innerHTML = paketler.map(p => {
       const sc = p.id === pid;
-      return `<div class="pa-oge sec-oge ${sc ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${sc ? '<span class="pa-tik">✓</span>' : ''}</div>`;
+      return `<div class="pa-oge sec-oge ${sc ? 'sec' : ''}" data-p="${p.id}"><span class="pa-pk">${ik('uyelik')}</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${secOzet(p)} · ${Number(p.gecerlilikGun) || 0} Gün</span></span>${sc ? '<span class="pa-tik">✓</span>' : ''}</div>`;
     }).join('');
     alt.innerHTML = `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-ilerle style="flex:1">İlerle →</button>`;
     govde.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { if (pid !== el.dataset.p) { pid = el.dataset.p; sidx = -1; } cizPaket(); });
@@ -4598,7 +4611,7 @@ function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
     if (sidx >= secler.length) sidx = -1;
     baslik.textContent = 'Ders Sayısı'; rozet.textContent = '🎟️ Paket · 2/2';
     govde.className = '';
-    govde.innerHTML = `<div class="pa-oge sec-oge sec" style="margin-bottom:12px"><span class="pa-pk">🎟️</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${Number(p.gecerlilikGun) || 0} gün geçerli</span></span></div>
+    govde.innerHTML = `<div class="pa-oge sec-oge sec" style="margin-bottom:12px"><span class="pa-pk">${ik('uyelik')}</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${Number(p.gecerlilikGun) || 0} gün geçerli</span></span></div>
       <div class="sec-mini-bas">Kaç derslik alsın? ${sidx < 0 ? '<span style="color:#b06a43;font-weight:700">(bir seçenek seç)</span>' : ''}</div>
       <div class="sec-cip" id="psSecList">${secler.map((s, i) => `<div class="scip ${sidx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${sidx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('')}</div>`;
     alt.innerHTML = `<button class="btn" type="button" data-geri2 style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-sec style="flex:1">Seç</button>`;
@@ -4632,12 +4645,12 @@ function dersOlusturModal() {
     <div class="gp-alan"><label>Dersi Verecek Eğitmen</label>
       <button type="button" class="sec-trig" id="dsETrig">${egitmenTrigIc(egitmenId)}</button></div>
     <div class="uy-ikili">
-      <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
+      <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">${ik('dersler')}</span></button></div>
       <div class="gp-alan" style="margin:0"><label>Saat</label><input type="text" class="gp-inp" id="dsSaat" value="${saat}" inputmode="numeric" maxlength="5" style="text-align:center;letter-spacing:1px;font-weight:600"></div>
     </div>`;
   modalAc('Ders Oluştur', govde,
-    `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet">💾 Dersi Planla</button>`,
-    `<span class="hr-rozet">📅 Ders</span>`);
+    `<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Dersi Planla</button>`,
+    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="currentColor" opacity=".26"/><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5h17M8 3.2v3.4M16 3.2v3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7.5 13h3M7.5 16.3h3M13.5 13h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Ders</span>`);
 
   // Öğrenci seçilince: Ders Adı = öğrencinin paketi, Eğitmen = öğrencinin eğitmeni (manuel değişiklik korunur)
   const otoDoldur = () => {
@@ -4846,9 +4859,9 @@ async function odemeGeriAl(od) {
 let hesapAktif = 'banka';   // banka | nakit | kart
 let hesapArama = '';
 const HESAP_TANIM = {
-  banka: { ad: 'Banka', ik: '🏦', tahsil: ['havale', 'kart'], gider: 'banka', cls: 'hs-banka' },   // Kredi Kartı geliri bankaya düşer
-  nakit: { ad: 'Nakit', ik: '💵', tahsil: ['nakit'],          gider: 'nakit', cls: 'hs-nakit' },
-  kart:  { ad: 'Kart',  ik: '💳', tahsil: [],                 gider: 'kart',  cls: 'hs-kart' },
+  banka: { ad: 'Banka', ik: ik('banka'), tahsil: ['havale', 'kart'], gider: 'banka', cls: 'hs-banka' },   // Kredi Kartı geliri bankaya düşer
+  nakit: { ad: 'Nakit', ik: ik('kasa'), tahsil: ['nakit'],          gider: 'nakit', cls: 'hs-nakit' },
+  kart:  { ad: 'Kart',  ik: ik('kart'), tahsil: [],                 gider: 'kart',  cls: 'hs-kart' },
 };
 const HS_TUR_AD = { havale: 'Havale', kart: 'Kredi Kartı', nakit: 'Nakit' };
 /* Ödenmemiş kredi kartı borcu (kart giderleri − kart borç ödemeleri) */
@@ -4965,7 +4978,7 @@ SAYFALAR['hesap-defter'] = function () {
 /* ==========================================================
    GİDERLER — işletme harcama kayıtları (yalnızca admin)
    ========================================================== */
-const ODEME_SEKLI = { banka: '🏦 Banka', nakit: '💵 Nakit', kart: '💳 Kredi Kartı' };
+const ODEME_SEKLI = { banka: ik('banka') + ' Banka', nakit: ik('kasa') + ' Nakit', kart: ik('kart') + ' Kredi Kartı' };
 SAYFALAR['giderler'] = function () {
   const kayitlar = (State.giderKayitlari || []).slice().sort((a, b) => (b.tarih + (b.olusturma || '')).localeCompare(a.tarih + (a.olusturma || '')));
   const kisiHucre = (g) => {
@@ -5007,13 +5020,13 @@ function giderKayitFormu(mevcut) {
   const st = mevcut
     ? { tarih: mevcut.tarih, secId: mevcut.giderId || (mevcut.kkOdeme ? '__kkode' : null), secAd: mevcut.giderAd, secGrupAd: mevcut.grupAd, aciklama: mevcut.aciklama || '', sekli: mevcut.odemeSekli || 'banka', tutar: mevcut.tutar ? binlik(mevcut.tutar) : '', ortak: mevcut.ortakId || null, mevcutId: mevcut.id, kkOde: !!mevcut.kkOdeme, kaynakOdemeId: mevcut.kaynakOdemeId || null, otoKomisyon: !!mevcut.otoKomisyon }
     : { tarih: bugunISO(), secId: null, secAd: '', secGrupAd: '', aciklama: '', sekli: 'banka', tutar: '', ortak: null, mevcutId: null, kkOde: false, kaynakOdemeId: null, otoKomisyon: false };
-  modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', giderFormGovde(st), giderFormAlt(), `<span class="hr-rozet">📉 Gider</span>`);
+  modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', giderFormGovde(st), giderFormAlt(), `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="8" width="17" height="12" rx="2.5" fill="currentColor" opacity=".22"/><rect x="3.5" y="8" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.6"/><path d="M7 5.5h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14.5v3M10.5 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Gider</span>`);
   giderFormBagla(st, false);
 }
 function giderFormGovde(st) {
-  const ortakChip = (o) => `<span class="kisi-chip ${(o && st.ortak === o.id) || (!o && !st.ortak) ? 'sec' : ''}" data-ortk="${o ? o.id : ''}">${o ? kacar(egitmenKisaAd(o)) : '👥 Tüm ortaklar'}</span>`;
+  const ortakChip = (o) => `<span class="kisi-chip ${(o && st.ortak === o.id) || (!o && !st.ortak) ? 'sec' : ''}" data-ortk="${o ? o.id : ''}">${o ? kacar(egitmenKisaAd(o)) : ik('ortaklar') + ' Tüm ortaklar'}</span>`;
   return `<div class="gd-flow gd-flow-form gd-kompakt">
-    <div class="gp-alan"><label>Tarih</label><button type="button" class="pa-trig" id="gkTarih"><span id="gkTarihAd">${fmtTarihUzun(st.tarih)}</span><span class="ok">📅</span></button></div>
+    <div class="gp-alan"><label>Tarih</label><button type="button" class="pa-trig" id="gkTarih"><span id="gkTarihAd">${fmtTarihUzun(st.tarih)}</span><span class="ok">${ik('dersler')}</span></button></div>
     <div class="gp-alan"><label>Gider Grubu</label>
       <button type="button" class="gd-trig${(st.otoKomisyon || st.kkOde) ? ' gd-kilit' : ''}" id="gkTrig"><span id="gkSecAd" class="${(st.secId || st.otoKomisyon || st.kkOde) ? '' : 'gd-soluk'}">${(st.secId || st.otoKomisyon || st.kkOde) ? kacar(st.secAd) : 'Gider seç…'}</span>${(st.otoKomisyon || st.kkOde) ? '' : '<span class="ok">›</span>'}</button>
     </div>
@@ -5027,7 +5040,7 @@ function giderFormGovde(st) {
     </div>
   </div>`;
 }
-function giderFormAlt() { return `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet">💾 Kaydet</button>`; }
+function giderFormAlt() { return `<button class="btn" id="gkIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gkKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`; }
 function giderFormBagla(st, geri) {
   if (geri) { const f = $('.gd-flow-form'); if (f) f.classList.add('gd-geri'); }
   const oku = () => { st.aciklama = $('#gkAciklama').value; st.tutar = $('#gkTutar').value; };
@@ -5126,11 +5139,11 @@ function odemeAlModal(mevcut) {
   const govde = `
     <div class="gp-alan"><label>Müşteri</label><div id="odMus">${musteriAlanHTML()}</div></div>
     <div class="gp-alan uy-birimli"><label>Ödediği Tutar</label><input type="text" inputmode="numeric" class="gp-inp" id="odTutar" value="${mevcut ? binlik(mevcut.tutar) : ''}"><span class="uy-birim">₺</span></div>
-    <div class="gp-alan"><label>Ödeme Tarihi</label><button type="button" class="pa-trig" id="odTarih"><span id="odTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">📅</span></button></div>
+    <div class="gp-alan"><label>Ödeme Tarihi</label><button type="button" class="pa-trig" id="odTarih"><span id="odTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">${ik('dersler')}</span></button></div>
     <div class="gp-alan" style="margin:0"><label>Ödeme Türü</label>
       <div class="turcip" id="odTur">${Object.entries(ODEME_TURLERI).map(([k, l]) => `<button type="button" class="tc ${tur === k ? 'sec' : ''}" data-t="${k}">${l}</button>`).join('')}</div></div>`;
   modalAc(mevcut ? 'Gelir Düzenle' : 'Gelir Ekle', govde,
-    `<button class="btn" id="odIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="odKaydet">💾 Kaydet</button>`,
+    `<button class="btn" id="odIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="odKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
     `<span class="hr-rozet od-rozet">💰 Gelir</span>`);
 
   const musSec = () => ogrenciTekSecModal(seciliId, (id) => { seciliId = id; $('#odMus').innerHTML = musteriAlanHTML(); musBagla(); });
@@ -5226,9 +5239,14 @@ SAYFALAR['ayar-guvenlik'] = function () {
 
 /* Onay modalı */
 function onayModal(baslik, mesaj, onaylandi) {
-  modalAc(baslik, `<p style="font-size:14px;line-height:1.6">${mesaj || 'Emin misiniz?'}</p>`,
-    `<button class="btn" id="onIptal">Vazgeç</button><button class="btn btn-kirmizi" id="onEvet">Evet, Sil</button>`);
-  const m = $('#modalKap .modal'); if (m) m.classList.add('modal-kucuk');   // onay kutuları küçük kalır
+  const govde = `<div class="onay-ic">
+      <div class="onay-ik">${ik('cop')}</div>
+      <h4 class="onay-bas">${kacar(baslik)}</h4>
+      <p class="onay-mesaj">${mesaj || 'Emin misiniz?'}</p>
+    </div>`;
+  modalAc('', govde,
+    `<button class="btn" id="onIptal" style="flex:1">Vazgeç</button><button class="btn btn-kirmizi" id="onEvet" style="flex:1">${ik('cop')} Sil</button>`);
+  const m = $('#modalKap .modal'); if (m) m.classList.add('modal-kucuk', 'modal-onay');   // onay kutuları küçük + başlıksız
   $('#onIptal').onclick = modalKapat;
   $('#onEvet').onclick = () => { modalKapat(); onaylandi(); };
 }
@@ -5516,7 +5534,7 @@ SAYFALAR['ayar-yedek'] = function () {
       <button class="btn btn-ana" id="yedIndir">⤓ Yedeği İndir</button>
       <button class="btn" id="yedYukle">⤒ Yedekten Geri Yükle</button>
       <input type="file" id="yedDosya" accept=".json" hidden>
-      <button class="btn btn-kirmizi" id="yedSil">🗑️ Tüm Verileri Sil</button>
+      <button class="btn btn-kirmizi" id="yedSil"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Tüm Verileri Sil</button>
     </div>`;
   $('#yedIndir').onclick = yedekIndir;
   $('#yedYukle').onclick = () => $('#yedDosya').click();
@@ -5632,7 +5650,7 @@ function yedekModal() {
     </div>
     <hr style="border:none;border-top:1px solid var(--kenar);margin:18px 0">
     <div class="bilgi-kutu uyari"><span class="ikon">⚠️</span><div><b>Tehlikeli bölge:</b> Tüm yerel verileri kalıcı olarak siler.</div></div>
-    <button class="btn btn-kirmizi" id="ydSifirla" style="width:100%;justify-content:center;padding:12px">🗑️ Tüm Verileri Sıfırla</button>
+    <button class="btn btn-kirmizi" id="ydSifirla" style="width:100%;justify-content:center;padding:12px"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Tüm Verileri Sıfırla</button>
   `, `<button class="btn" id="ydKapat">Kapat</button>`);
   $('#ydKapat').onclick = modalKapat;
   $('#ydDisa').onclick = yedekIndir;
@@ -5872,6 +5890,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'tüm açılan formları', not: 'Tüm açılan formlar/modallar tek premium dile geçti: üstte ince altın hairline, sıcak krem-gold kart, arka perde koyulaşıp hafifçe bulanıklaşıyor (backdrop-blur), açılışta aşağıdan yükselip minik yaylanma animasyonu, yuvarlak kapatma düğmesi. Başlık rozetleri ve seçim satırları artık emoji değil elle çizilmiş SVG ikon + altın tile (Yeni Üye=filiz, Eski Üye/Kişi, Üyelik/Paket=bilet, Onay=tik, Link, Saat, Giriş=anahtar, Belge, Banka/Kasa/Kart, Gelir/Gider). Seçim satırları renk-kodlu (ana=altın, onay=yeşil, link=mavi, bekleme=gri). Kaydet/Devam/Sil düğmelerinde ikon; Sil onay kutusu premium ortalanmış tasarıma geçti (kırmızı çöp ikonu). Form içi ödeme şekli (Banka/Nakit/Kart), tarih ve “Tüm ortaklar” çipleri de çizili ikonlu.' },
   { q: 'sayfalar kısmı boş kalıyor', not: 'Ortak (partner) girişi düzeltmeleri: (1) Alt menüde ortağa yalnızca “Panel” görünüyordu (kod hatası — olmayan bir id aranıyordu). Düzeltildi: ortak artık Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar sekmelerini görüyor; yalnızca Tanımlar gizli. (2) Gösterge Paneli’nden “Ortakları göster” anahtarı kaldırıldı (ortak panelde zaten yalnızca kendini görüyor; mobilde fazladan satır açıyordu). (3) Kalan sayfalarda (Öğrenciler/Dersler/Tahsilatlar) “Ortakları göster” küçültülüp yalnız ikon + mini anahtar haline geldi; sekmelerin altında ekle düğmesiyle aynı satıra sığıyor.' },
   { q: 'burası böyle olmuş', not: 'Düzeltme: Hesaplar tablosunda mobilde “İşlem Adı” sütunu gizlenince tablonun sağında boş bir şerit kalıyordu (gizlenen sütunun payı boşta kalıyordu). Kalan sütunlar %100’e yeniden dağıtıldı; tablo artık kartı tam dolduruyor ve “Açıklama” sütunu genişledi.' },
   { q: '2 2 olsun satırlar çok küçük', not: 'Mobilde birkaç düzeltme: (1) Ortaklar sayfası 4 sütun yerine 2×2 kart düzenine geçti — kartlar artık daha büyük; bir ortak kartı açılınca 2 satır yükseklik alıp diğer kartlar yumuşak/akıcı şekilde etrafından kayıyor. (2) Hesaplar (Banka/Kasa/Kart) tablosunda dar ekranda “İşlem Adı” sütunu gizlendi; gelir/gider ayrımı Tutar rengiyle zaten belli, sütunlar rahatladı. (3) Öğrenciler tablosunda ayrı “Eğitmeni” sütunu kaldırıldı; eğitmen artık öğrenci adının altında küçük (avatar + kısa ad) yazıyor. (4) Bir şeye dokununca çıkan sarı/gri renklenme ve kısa gecikme kaldırıldı (Tanımlamalar satırları anında geçiyor) — “donuyor” hissi gitti.' },
