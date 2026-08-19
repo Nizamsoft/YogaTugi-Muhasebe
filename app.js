@@ -26,6 +26,7 @@ const State = {
   ogrenciler: [],    // {id, ad, soyad, telefon, olusturma, durum:'potansiyel'|'ogrenci', egitmenId, paketler:[{id,uyelikId,paketAd,dersToplam,kalanDers,fiyat,kalanOdeme,tarih}]}
   dersler: [],       // {id, dersAd, egitmenId, ogrenciIds:[], tarih:'YYYY-MM-DD', saat:'HH:MM', durum:'bekliyor'|'gerceklesti'|'iptal', dusumler:[{ogrenciId,paketId}], olusturma}
   odemeler: [],      // {id, ogrenciId, tutar, tarih:'YYYY-MM-DD', tur:'nakit'|'kart'|'havale', dusumler:[{paketId,tutar}], olusturma}
+  talepler: [],      // {id, kullaniciId, kullaniciAd, sayfa, baslik, aciklama, cevap, cevapAd, durum:'bekliyor'|'cevaplandi', olusturma, cevapTarih}  — İstek ve Öneri
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -212,7 +213,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.r
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler'];   // + Ödemeler
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler'];   // + Ödemeler, İstek/Öneri
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -402,9 +403,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '149';
+const APP_SURUM = '150';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '11:20';
+const APP_SURUM_SAAT = '11:55';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -437,6 +438,7 @@ async function veriYukle() {
   State.ogrenciler = DB._oku('ogrenciler');
   State.dersler = DB._oku('dersler');
   State.odemeler = DB._oku('odemeler');
+  State.talepler = DB._oku('talepler');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = [];
 }
@@ -615,6 +617,8 @@ const IK = {
   gelir: HESAP_IKON.gelir, gidertrend: HESAP_IKON.gider,
   ok: '<path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   geri: '<path d="M19 12H5M11 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  destek: '<path d="M4 13a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="12.5" width="4.2" height="6.7" rx="1.6" fill="currentColor" opacity=".24"/><rect x="3" y="12.5" width="4.2" height="6.7" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="16.8" y="12.5" width="4.2" height="6.7" rx="1.6" fill="currentColor" opacity=".24"/><rect x="16.8" y="12.5" width="4.2" height="6.7" rx="1.6" stroke="currentColor" stroke-width="1.6"/><path d="M20 19.2v.3a2.5 2.5 0 0 1-2.5 2.5H13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  guncel: '<path d="M20 12a8 8 0 1 1-2.3-5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 4v4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 /* İkon SVG'si üretir. cls: ekstra sınıf. */
 function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
@@ -5437,6 +5441,109 @@ function onayModal(baslik, mesaj, onaylandi) {
 }
 
 /* ==========================================================
+   İSTEK VE ÖNERİ (talepler) — kullanıcı geri bildirimi
+   ========================================================== */
+const TALEP_SAYFALAR = [
+  { id: 'dashboard', ad: 'Panel', ik: 'panel' },
+  { id: 'ogrenciler', ad: 'Öğrenciler', ik: 'ogrenci' },
+  { id: 'dersler', ad: 'Dersler', ik: 'dersler' },
+  { id: 'hesap-defter', ad: 'Hesaplar', ik: 'muhasebe' },
+  { id: 'ortaklar', ad: 'Ortaklar', ik: 'ortaklar' },
+  { id: 'ayar-tanimlama', ad: 'Tanımlar', ik: 'tanimlar' },
+  { id: 'diger', ad: 'Diğer', ik: 'grup' },
+];
+function talepSayfaAd(id) { const s = TALEP_SAYFALAR.find(x => x.id === id); return s ? s.ad : 'Diğer'; }
+function aktifKullaniciAd() {
+  const k = State.kullanici || {};
+  if (adminMi()) return 'Yönetici';
+  const ortak = k.ortakId ? State.ortaklar.find(o => o.id === k.ortakId) : null;
+  return ortak?.ad || k.ad || 'Kullanıcı';
+}
+function talepSaatStr(iso) { try { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } catch { return ''; } }
+const TALEP_ROZET = () => rozetHTML('destek', 'Talepler');
+
+function talepListeModal() {
+  const liste = (State.talepler || []).slice().sort((a, b) => (b.olusturma || '').localeCompare(a.olusturma || ''));
+  const bas = (s) => (s || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const satir = (t) => {
+    const cev = t.durum === 'cevaplandi';
+    return `<button type="button" class="tlp-sat" data-t="${t.id}">
+      <span class="tlp-ts"><b>${fmtTarihUzun((t.olusturma || '').slice(0, 10))}</b><span>${talepSaatStr(t.olusturma)}</span></span>
+      <span class="tlp-orta"><span class="tlp-bas">${kacar(t.baslik || '—')}</span><span class="tlp-alt"><span class="tlp-syf">${kacar(talepSayfaAd(t.sayfa))}</span><span class="tlp-eden"><span class="tlp-av">${kacar(bas(t.kullaniciAd))}</span>${kacar(t.kullaniciAd || '—')}</span></span></span>
+      <span class="dpill ${cev ? 'c' : 'b'}">${cev ? ik('onay') : ik('sure')}<span class="tlp-drm">${cev ? 'Cevaplandı' : 'Bekliyor'}</span></span>
+    </button>`;
+  };
+  const govde = `<button type="button" class="gp-ekle tlp-yeni" id="tlpYeni"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Yeni İstek Oluştur</button>
+    ${liste.length ? `<div class="tlp-liste">${liste.map(satir).join('')}</div>` : `<div class="gp-bos" style="margin:10px 4px">Henüz istek/öneri yok. İlkini sen oluştur.</div>`}`;
+  modalAc('İstek ve Öneri', govde, null, TALEP_ROZET());
+  $('#tlpYeni').onclick = talepFormModal;
+  $$('#modalKap [data-t]').forEach(b => b.onclick = () => { const t = (State.talepler || []).find(x => x.id === b.dataset.t); if (t) talepDetayModal(t); });
+}
+
+function talepFormModal(mevcut) {
+  let sayfa = mevcut ? mevcut.sayfa : null;
+  const chip = (s) => `<button type="button" class="syf-chip ${sayfa === s.id ? 'sec' : ''}" data-syf="${s.id}">${ik(s.ik)} ${kacar(s.ad)}</button>`;
+  const govde = `
+    <div class="gp-alan"><label>Hangi sayfa ile ilgili?</label>
+      <div class="syf-chipler" id="tlpSyf">${TALEP_SAYFALAR.map(chip).join('')}</div></div>
+    <div class="gp-alan"><label>Başlık</label><input type="text" class="gp-inp" id="tlpBaslik" value="${mevcut ? kacar(mevcut.baslik || '') : ''}" placeholder="Örn. Kalan ders barı sığmıyor" autocomplete="off"></div>
+    <div class="gp-alan" style="margin:0"><label>Açıklama</label><textarea class="gp-inp tlp-aciklama" id="tlpAciklama" placeholder="Yaşadığınız aksaklığı ya da yeni isteğinizi ayrıntılı yazın…">${mevcut ? kacar(mevcut.aciklama || '') : ''}</textarea></div>`;
+  modalAc('Yeni İstek', govde,
+    `<button class="btn" id="tlpGeri" style="flex:1">‹ Geri</button><button class="btn btn-ana" id="tlpGonder" style="flex:1">${ik('kaydet')} Gönder</button>`,
+    rozetHTML('destek', 'İstek'));
+  $('#tlpSyf').onclick = (e) => { const b = e.target.closest('[data-syf]'); if (!b) return; sayfa = b.dataset.syf; $$('#tlpSyf .syf-chip').forEach(x => x.classList.toggle('sec', x === b)); };
+  $('#tlpGeri').onclick = talepListeModal;
+  $('#tlpGonder').onclick = async () => {
+    const baslik = $('#tlpBaslik').value.trim();
+    const aciklama = $('#tlpAciklama').value.trim();
+    if (!sayfa) return bildir('Bir sayfa seçin.', 'hata');
+    if (!baslik) return bildir('Başlık girin.', 'hata');
+    if (!aciklama) return bildir('Açıklama girin.', 'hata');
+    const veri = { kullaniciId: adminMi() ? 'admin' : (aktifOrtakId() || 'admin'), kullaniciAd: aktifKullaniciAd(), sayfa, baslik, aciklama, cevap: '', cevapAd: '', durum: 'bekliyor', olusturma: new Date().toISOString() };
+    const y = await DB.ekle('talepler', veri); State.talepler.push(y);
+    bildir('İsteğiniz gönderildi. Teşekkürler!', 'basari');
+    talepListeModal();
+  };
+}
+
+function talepDetayModal(t) {
+  const admin = adminMi();
+  const bas = (s) => (s || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
+  const cevapHTML = t.cevap
+    ? `<div class="tlp-cevap"><div class="cv-bas">${ik('onay')} ${kacar(t.cevapAd || 'Yönetici')} Cevabı</div><div class="cv-txt">${kacar(t.cevap)}</div></div>`
+    : (!admin ? `<div class="tlp-bekle">${ik('sure')} Henüz cevaplanmadı.</div>` : '');
+  const cevapKutu = admin
+    ? `<div class="gp-alan" style="margin:12px 0 0"><label>Cevap yaz (yalnızca admin)</label><textarea class="gp-inp tlp-aciklama" id="tlpCevap" style="min-height:80px" placeholder="Cevabınızı yazın…">${kacar(t.cevap || '')}</textarea></div>`
+    : '';
+  const govde = `
+    <div class="tlp-detay">
+      <div class="det-ust"><span class="who"><span class="tlp-av">${kacar(bas(t.kullaniciAd))}</span>${kacar(t.kullaniciAd || '—')}</span><span class="tlp-ts2">${fmtTarihUzun((t.olusturma || '').slice(0, 10))} · ${talepSaatStr(t.olusturma)}</span></div>
+      <div class="det-h">${kacar(t.baslik || '—')}</div>
+      <div class="det-txt">${kacar(t.aciklama || '')}</div>
+    </div>
+    ${cevapHTML}
+    ${cevapKutu}`;
+  const alt = admin
+    ? `<button class="btn btn-kirmizi" id="tlpSil" style="margin-right:auto">${ik('cop')} Sil</button><button class="btn" id="tlpKapat">Kapat</button><button class="btn btn-ana" id="tlpCevapla">${ik('kaydet')} Cevabı Gönder</button>`
+    : `<button class="btn" id="tlpKapat" style="flex:1">Kapat</button>`;
+  modalAc('Talep Detayı', govde, alt, rozetHTML(TALEP_SAYFALAR.find(s => s.id === t.sayfa)?.ik || 'grup', talepSayfaAd(t.sayfa)));
+  $('#tlpKapat').onclick = talepListeModal;
+  if (admin) {
+    $('#tlpCevapla').onclick = async () => {
+      const cevap = $('#tlpCevap').value.trim();
+      if (!cevap) return bildir('Cevap yazın.', 'hata');
+      const veri = { cevap, cevapAd: aktifKullaniciAd(), durum: 'cevaplandi', cevapTarih: new Date().toISOString() };
+      await DB.guncelle('talepler', t.id, veri); Object.assign(t, veri);
+      bildir('Cevap gönderildi.', 'basari'); talepListeModal();
+    };
+    $('#tlpSil').onclick = () => onayModal('İstek silinsin mi?', 'Bu talep kalıcı olarak silinecek.', async () => {
+      await DB.sil('talepler', t.id); State.talepler = State.talepler.filter(x => x.id !== t.id);
+      bildir('İstek silindi.', 'basari'); talepListeModal();
+    });
+  }
+}
+
+/* ==========================================================
    10) KİMLİK DOĞRULAMA & BAŞLATMA
    ========================================================== */
 async function uygulamayiBaslat() {
@@ -5627,6 +5734,9 @@ function kullaniciBilgiCiz() {
 function ustCubukKur() {
   if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); if ($('#temaBtn')) $('#temaBtn').textContent = '☀️'; }
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
+  // Üst panel: güncelle (uygulamayı yeniler) + destek (İstek ve Öneri)
+  { const gb = $('#guncelleBtn'); if (gb) { gb.innerHTML = ik('guncel'); gb.onclick = () => { bildir('En son sürüm yükleniyor…', ''); setTimeout(() => window.location.replace(location.pathname + '?g=' + Date.now()), 350); }; } }
+  { const db = $('#destekBtn'); if (db) { db.innerHTML = ik('destek'); db.onclick = talepListeModal; } }
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
   if ($('#yedekBtn')) $('#yedekBtn').onclick = yedekModal;
 
@@ -6075,6 +6185,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: 'istek ve öneri', not: 'Yeni “İstek ve Öneri” bölümü eklendi (kullanıcıların aksaklık/istek iletmesi için). Üst panel yenilendi: firma (GV) yanında kullanıcının fotoğrafı + adı soyadı; en sağda “Güncelle” (uygulamayı en son sürüme yeniler) ve “Destek” (İstek ve Öneri) ikonları. Destek ikonuna basınca önce Talepler listesi açılır (Tarih/Saat · Talep eden · Talep başlığı · Durum); herkes tüm talepleri görür. “Yeni İstek Oluştur” → sayfa seç (Diğer dahil) · başlık · geniş açıklama → Gönder. Bir talebe basınca detay açılır; yalnızca admin cevap yazabilir, cevap herkese görünür (yeşil kutu). Talepler buluta da senkronlanır.' },
   { q: 'gelirde varsayılan eğitmen', not: 'Bir dizi iyileştirme: (1) Ortak giriş yapıp üye oluşturursa varsayılan eğitmen kendisi olur (potansiyel aşamasında bile). (2) Bir derste birden fazla öğrenci varsa tablolarda isim yerine “Grup Dersi” yazar; satıra basınca öğrencilerin listelendiği modal açılır. (3) Dersler “Gerçekleşen” durum pili tabloya sığmıyordu → kompakt “✓ Yapıldı” yapıldı, sütunlar dengelendi. (4) Öğrenci Düzenle genişletildi: ad/soyad/telefon + eğitmen + paket alanları (paket adı, toplam ders, fiyat) düzenlenebilir; kalan ders / kalan ödeme salt-görüntü. (5) Ders Düzenle eklendi (durum menüsünde “Dersi Düzenle”): öğrenciler/ad/eğitmen/tarih/saat düzenlenebilir + Sil. (6) Hesaplar’da iki ayrı “Gelir/Gider Ekle” yerine tek “İşlem Yap” kartı; açılan modalda üstte Gelir/Gider geçişi (animasyonlu), ödeme yöntemi (Gelir: Havale/Nakit/Kart · Gider: Banka/Nakit/Kart), tarih (bugün), Gelir’de öğrenci seç / Gider’de gider seç, açıklama (tutardan önce), tutar, ait olduğu kişi (Gider’de “Tüm ortaklar”, Gelir’de öğrencinin eğitmeni varsayılan).' },
   { q: 'tüm açılan formları', not: 'Tüm açılan formlar/modallar tek premium dile geçti: üstte ince altın hairline, sıcak krem-gold kart, arka perde koyulaşıp hafifçe bulanıklaşıyor (backdrop-blur), açılışta aşağıdan yükselip minik yaylanma animasyonu, yuvarlak kapatma düğmesi. Başlık rozetleri ve seçim satırları artık emoji değil elle çizilmiş SVG ikon + altın tile (Yeni Üye=filiz, Eski Üye/Kişi, Üyelik/Paket=bilet, Onay=tik, Link, Saat, Giriş=anahtar, Belge, Banka/Kasa/Kart, Gelir/Gider). Seçim satırları renk-kodlu (ana=altın, onay=yeşil, link=mavi, bekleme=gri). Kaydet/Devam/Sil düğmelerinde ikon; Sil onay kutusu premium ortalanmış tasarıma geçti (kırmızı çöp ikonu). Form içi ödeme şekli (Banka/Nakit/Kart), tarih ve “Tüm ortaklar” çipleri de çizili ikonlu.' },
   { q: 'sayfalar kısmı boş kalıyor', not: 'Ortak (partner) girişi düzeltmeleri: (1) Alt menüde ortağa yalnızca “Panel” görünüyordu (kod hatası — olmayan bir id aranıyordu). Düzeltildi: ortak artık Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar sekmelerini görüyor; yalnızca Tanımlar gizli. (2) Gösterge Paneli’nden “Ortakları göster” anahtarı kaldırıldı (ortak panelde zaten yalnızca kendini görüyor; mobilde fazladan satır açıyordu). (3) Kalan sayfalarda (Öğrenciler/Dersler/Tahsilatlar) “Ortakları göster” küçültülüp yalnız ikon + mini anahtar haline geldi; sekmelerin altında ekle düğmesiyle aynı satıra sığıyor.' },
