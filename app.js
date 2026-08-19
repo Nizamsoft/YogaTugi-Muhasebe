@@ -396,9 +396,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '139';
+const APP_SURUM = '140';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '01:20';
+const APP_SURUM_SAAT = '02:05';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -647,11 +647,11 @@ function git(sayfa) {
   if (typeof altMenuGuncelle === 'function') altMenuGuncelle();
   const render = SAYFALAR[sayfa] || SAYFALAR.dashboard;
   render(m);
+  tabloSigdir();   // tabloları BOYA ÖNCESİ ölçekle → büyük tablo bir an görünüp küçülmez (titreme yok)
   // Yumuşak sayfa geçişi (fade + hafif yukarı kayma) — her sayfa değişiminde
   const el = ic();
   if (el) { el.classList.remove('sayfa-gir'); void el.offsetWidth; el.classList.add('sayfa-gir'); el.scrollTop = 0; }
   const ana = document.querySelector('.ana'); if (ana) ana.scrollTop = 0;
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(tabloSigdir);
 }
 window.git = git;
 
@@ -675,7 +675,8 @@ function tabloSigdirGec() { clearTimeout(_tsZ); _tsZ = setTimeout(tabloSigdir, 4
 window.addEventListener('resize', tabloSigdirGec);
 (function () {
   const el = document.getElementById('icerik');
-  if (el && 'MutationObserver' in window) new MutationObserver(tabloSigdirGec).observe(el, { childList: true, subtree: true });
+  // Sayfa-içi yeniden çizimlerde (arama, sekme) tabloları BOYA ÖNCESİ (senkron microtask) ölçekle → titreme yok
+  if (el && 'MutationObserver' in window) new MutationObserver(() => tabloSigdir()).observe(el, { childList: true, subtree: true });
 })();
 
 /* ==========================================================
@@ -760,21 +761,6 @@ SAYFALAR.dashboard = function () {
       ${derslerIc}
     </div>`;
 
-  /* --- SAĞ: Öğrenciler (aktif/potansiyel/pasif) --- */
-  const ogrHepsi = (State.ogrenciler || []).filter(o => hepsiniGor() || o.egitmenId === benim);
-  const bitmis = (o) => { const m = ogrenciMetrik(o); return m.dersToplam > 0 && m.kalanDers <= 0; };
-  const ogrAll = ogrHepsi.filter(o => o.durum === 'ogrenci');
-  const aktifSay = ogrAll.filter(o => !bitmis(o)).length;
-  const pasifSay = ogrAll.filter(o => bitmis(o)).length;
-  const potSay = ogrHepsi.filter(o => o.durum !== 'ogrenci').length;
-  const oSt = (cls, sek, ik, lbl, alt, say) =>
-    `<div class="ogr-st ${cls}" data-osek="${sek}"><span class="ik">${ik}</span><div><div class="lbl">${lbl}</div><div class="alt">${alt}</div></div><span class="say">${say}</span></div>`;
-  const ogrPanel = `<div class="panel">
-      ${oSt('akt', 'ogrenci', '🟢', 'Aktif Öğrencin', 'Devam eden paketi', aktifSay)}
-      ${oSt('pot', 'potansiyel', '🌱', 'Potansiyel Öğrencin', 'İlgilenen / deneme', potSay)}
-      ${oSt('pas', 'pasif', '⚪', 'Pasif Öğrenci', 'Paketi biten', pasifSay)}
-    </div>`;
-
   ic().innerHTML = `
     <div class="dsh-c-bar">
       <span class="dsh-c-title">Gösterge Paneli</span>
@@ -784,15 +770,13 @@ SAYFALAR.dashboard = function () {
       </div>
     </div>
     ${ust4}
-    <div class="dsh3">
+    <div class="dsh2">
       <div><div class="blok-bas"><span>👤 Ortak</span><span class="ln"></span></div>${ortakHTML}</div>
       <div><div class="blok-bas"><span>📅 Dersler</span><span class="ln"></span></div>${dersPanel}</div>
-      <div><div class="blok-bas"><span>🎓 Öğrenciler</span><span class="ln"></span></div>${ogrPanel}</div>
     </div>`;
 
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   $$('[data-ay]').forEach(b => b.onclick = () => { dashDonem = donemKaydir(dashDonem, Number(b.dataset.ay)); SAYFALAR.dashboard(); });
-  $$('[data-osek]').forEach(c => c.onclick = () => { ogrenciAktifSekme = c.dataset.osek; git('ogrenciler'); });
   const ok = $('#dashOrtakKart'); if (ok) ok.onclick = () => { dashOrtakAcik = !dashOrtakAcik; SAYFALAR.dashboard(); };
   ortakGosterBtnBagla(() => SAYFALAR.dashboard());
 };
@@ -5441,12 +5425,12 @@ const ALT_MENU = [
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
-  if (sayfa === 'dashboard') return 'dashboard';
-  if (sayfa === 'hesap-defter') return 'hesap-defter';   // Hesaplar sekmesi (mobil)
-  if (sayfa === 'hesap-ortak') return 'hesap-ortak';   // Ortaklar sekmesi
-  if (sayfa === 'ayar-tanimlama' || TANIM_ALT.includes(sayfa)) return 'ayar-tanimlama';
-  // Hesaplar sekmesi: kart sayfası, diğer hesap-*, Potansiyel/Müşteriler ve Plan4Me
-  if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa === 'musteriler' || sayfa === 'plan4me' || sayfa.startsWith('hesap-')) return 'hesaplar';
+  // Doğrudan alt-menüde olan sayfa (dashboard, ogrenciler, dersler, hesap-defter, ortaklar, ayar-tanimlama)
+  if (ALT_MENU.some(m => m.tip === 'sayfa' && m.id === sayfa)) return sayfa;
+  if (TANIM_ALT.includes(sayfa)) return 'ayar-tanimlama';                 // Tanımlamalar alt sayfaları
+  if (sayfa === 'hesap-ortak') return 'ortaklar';                          // Ortaklar Hesabı → Ortaklar sekmesi
+  // Hesaplar sekmesine ait diğer sayfalar (kart sayfaları, Potansiyel/Müşteriler, Plan4Me)
+  if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa === 'musteriler' || sayfa === 'plan4me' || sayfa.startsWith('hesap-')) return 'hesap-defter';
   for (const m of ALT_MENU) {
     if (m.tip !== 'grup') continue;
     const grup = MENU.find(g => g.grup === m.grup);
@@ -5912,6 +5896,7 @@ const KL_GUNCELLEME = [
   { q: 'tepede 4 kart', not: 'Uygulandı: Gösterge Paneli yeniden tasarlandı. En üstte 4 toplam kart — Hak Ediş · Banka · Kasa · Kredi Kartı Borcu (her kullanıcıda aynı toplamlar). Altında ekran 3 sütun: Sol’da ilgili ortağın tek kartı (Ortaklar sayfasıyla birebir — kare fotoğraf + isim, basınca açılan detay); Orta’da Dersler (yalnız bugün ve yarın, fazlası “Tüm dersler →”); Sağ’da Öğrenciler (Aktif / Potansiyel / Pasif sayıları, satıra basınca Öğrenciler sayfası ilgili sekmede açılır). Sıcak yeşil/kum/gold premium dil korundu; dar ekranda sütunlar alt alta iner.' },
   { q: 'mobile uyumlu', not: 'Uygulandı: Tüm sayfalar mobil uyumlu hale getirildi. Tablolar mobilde artık “kart”a dönüşmüyor; PC’deki tablo boyutunda kalıp ekrana ORANTILI küçültülüyor (tüm sütunlar görünür, kırpma/yatay kaydırma yok; sayfa hiçbir yerde yana kaymıyor). Yumuşak sayfa geçişleri (fade + hafif yukarı kayma) eklendi. Yerleşim: Gösterge Paneli’nde 4 kart tek üst satır + altta 3 sütun (foto/dersler/öğrenciler); Dersler ve Üyelikler’de 3 sekme + aksiyon düğmesi eşit boyda tek satır; Hesaplar tek satır 4 sütun (Banka/Kasa/Kart + 4. sütunda Gelir/Gider Ekle altlı-üstlü); Ortaklar 4 sütun; Giderler Raporu’nda Karşılaştır düğmesi ay-seçicinin yanında tek satır.' },
   { q: 'tl amblemi', not: 'Düzeltildi: Para (₺) değerleri artık hiçbir yerde alt satıra kırılmıyor — ₺ amblemi her zaman rakamla aynı satırda kalıyor. Ayrıca Giderler Raporu’nda tutarlar tek sütunda sağa hizalandı (₺’ler alt alta), “kayıt” sayıları ve › okları da hizalı. Ve telefonun altına tüm sayfalar için geçiş çubuğu eklendi (Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar · Tanımlar) — girişten sonra doğru çiziliyor (önceden yalnızca “Panel” görünüyordu).' },
+  { q: 'öğrenciler kısmı gözükmesin', not: 'Uygulandı: Gösterge Paneli’nden Öğrenciler bölümü kaldırıldı (hem PC hem mobil). Artık 2 sütun: solda ilgili ortak kartı, sağda Dersler (takvim) — Dersler büyütüldü. Ayrıca: (1) Alt geçiş çubuğunda basılan sayfanın düğmesi artık doğru vurgulanıyor (eskiden hep Panel’de kalıyordu). (2) Öğrenciler tablosunda “Kalan Ders/Ödeme” çubukları sütuna sığdırıldı, iç içe girmiyor. (3) Sayfa geçişinde tablolar boya öncesi (senkron) ölçekleniyor; büyük tablo bir an görünüp küçülmüyor (titreme giderildi).' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
