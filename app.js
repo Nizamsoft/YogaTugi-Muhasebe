@@ -402,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '144';
+const APP_SURUM = '145';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '05:30';
+const APP_SURUM_SAAT = '06:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -3715,10 +3715,7 @@ SAYFALAR['ayar-tanimlama'] = function () {
         </button>`).join('')}
       </div>
     </div>`;
-  $$('[data-tanim]').forEach(b => b.onclick = () => {
-    b.classList.add('sec');
-    setTimeout(() => git(b.dataset.tanim), 200);
-  });
+  $$('[data-tanim]').forEach(b => b.onclick = () => git(b.dataset.tanim));   // anında geç (renklenme/gecikme yok)
 };
 
 /* -------- Tanımlamalar: Kullanıcı Girişleri (ortaklara giriş) — yalnızca admin -------- */
@@ -4051,8 +4048,7 @@ SAYFALAR['ogrenciler'] = function () {
       ? `<span class="ogr-metrik"><span class="rakam ogr-odendi">Ödendi</span>${barHTML(1, 1, 'odeme')}</span>`
       : `<span class="ogr-metrik"><span class="rakam ogr-altin">${binlik(m.kalanOdeme)}<span class="top"> / ${binlik(m.fiyatToplam)} ₺</span></span>${barHTML(m.fiyatToplam - m.kalanOdeme, m.fiyatToplam, 'odeme')}</span>`;
     return `<tr class="ogr-satir" data-odetay="${o.id}">
-      <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-bilg"><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span><span class="ogr-tel">${kacar(o.telefon || '')}</span></span></span></td>
-      <td data-l="Eğitmeni"><span class="ogr-egit">${egitmenAv(o.egitmenId, 'ogr-ea')}${kacar(egitmenAdiById(o.egitmenId))}</span></td>
+      <td data-l="Öğrenci"><span class="ogr-kisi"><span class="ogr-av">${basHarf(o.ad, o.soyad)}</span><span class="ogr-bilg"><span class="ogr-ad">${kacar(o.ad)} ${kacar(o.soyad || '')}</span>${o.telefon ? `<span class="ogr-tel">${kacar(o.telefon)}</span>` : ''}<span class="ogr-egit-alt">${egitmenAv(o.egitmenId, 'ogr-ea-sm')}${kacar(egitmenAdiById(o.egitmenId))}</span></span></span></td>
       <td data-l="Paket">${paketRozet}</td>
       <td data-l="Kalan Ders" class="sag"><span class="ogr-metrik"><span class="rakam">${m.kalanDers}<span class="top"> / ${m.dersToplam}</span></span>${barHTML(m.dersToplam - m.kalanDers, m.dersToplam, 'ders')}</span></td>
       <td data-l="Kalan Ödeme" class="sag">${odemeHucre}</td>
@@ -4080,8 +4076,8 @@ SAYFALAR['ogrenciler'] = function () {
 
   const ogrenciTablo = ogr.length
     ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
-        <colgroup><col style="width:26%"><col style="width:16%"><col style="width:14%"><col style="width:15%"><col style="width:18%"><col style="width:11%"></colgroup>
-        <thead><tr><th>Öğrenci</th><th>Eğitmeni</th><th>Paket</th><th class="sag">Kalan Ders</th><th class="sag">Kalan Ödeme</th><th></th></tr></thead>
+        <colgroup><col style="width:34%"><col style="width:15%"><col style="width:16%"><col style="width:22%"><col style="width:13%"></colgroup>
+        <thead><tr><th>Öğrenci</th><th>Paket</th><th class="sag">Kalan Ders</th><th class="sag">Kalan Ödeme</th><th></th></tr></thead>
         <tbody>${ogr.map(ogrenciSatir).join('')}</tbody></table></div></div>`
     : `<div class="gp-bos">Henüz öğrenci yok. “＋ Yeni Üyelik Oluştur” ile başlayın.</div>`;
   const potTablo = pot.length
@@ -4938,7 +4934,7 @@ SAYFALAR['hesap-defter'] = function () {
       </div>
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span class="ara-ik">${ik('ara')}</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
-      ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis">
+      ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis hs-ledger">
           <colgroup><col style="width:12%"><col style="width:11%"><col style="width:22%"><col style="width:17%"><col style="width:12%"><col style="width:15%"><col style="width:11%"></colgroup>
           <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>İlgili Ortak</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th><th></th></tr></thead>
           <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`
@@ -5878,6 +5874,7 @@ const KONTROL_LISTE = [
 ];
 /* Yaptığım güncelleme notları — istek metnine göre eşleşir, ilgili maddenin altında otomatik görünür */
 const KL_GUNCELLEME = [
+  { q: '2 2 olsun satırlar çok küçük', not: 'Mobilde birkaç düzeltme: (1) Ortaklar sayfası 4 sütun yerine 2×2 kart düzenine geçti — kartlar artık daha büyük; bir ortak kartı açılınca 2 satır yükseklik alıp diğer kartlar yumuşak/akıcı şekilde etrafından kayıyor. (2) Hesaplar (Banka/Kasa/Kart) tablosunda dar ekranda “İşlem Adı” sütunu gizlendi; gelir/gider ayrımı Tutar rengiyle zaten belli, sütunlar rahatladı. (3) Öğrenciler tablosunda ayrı “Eğitmeni” sütunu kaldırıldı; eğitmen artık öğrenci adının altında küçük (avatar + kısa ad) yazıyor. (4) Bir şeye dokununca çıkan sarı/gri renklenme ve kısa gecikme kaldırıldı (Tanımlamalar satırları anında geçiyor) — “donuyor” hissi gitti.' },
   { q: 'tüm tabloların genişlikleri aynı', not: 'Öğrenciler/Dersler 880px, Tahsilatlar/Giderler 980px idi; sayfa geçişinde tablo genişliği zıplıyordu. Hepsi en geniş olana (980px) eşitlendi — artık geçişte oynamıyor.' },
   { q: 'giriş paneli daha akıcı', not: 'Giriş ekranı premium/gold yapıldı: “GV” kutusu yerine logodaki fontta (Quicksand) “Green Village Pilates” yazı-logosu; koyu ışık-haleli zemin, altın çerçeveli koyu cam kart, gold ikonlu alanlar (placeholder’lar soluk “Kullanıcı Adı :” / “Şifre :”), parlayan gold “Giriş Yap”. Giriş yapınca doğrudan uygulamaya atlamıyor; animasyonlu bir loading screen (gold dönen halka + “Hazırlanıyor…”) çıkıyor, veriler/bulut yüklenince uygulama açılıyor.' },
   { q: 'loading screen açılsın', not: 'Giriş sonrası animasyonlu loading screen eklendi (wordmark + gold halka + “Hazırlanıyor…”); bu sırada veriler yükleniyor, sonra uygulama açılıyor.' },
