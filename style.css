@@ -1389,6 +1389,9 @@ body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 .turcip{display:flex;gap:8px;flex-wrap:wrap}
 .turcip .tc{border:1.5px solid var(--kenar);background:#fff;border-radius:999px;padding:9px 15px;font-family:inherit;font-weight:800;font-size:13px;color:var(--metin-soluk);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .turcip .tc.sec{border-color:var(--gold);background:linear-gradient(135deg,#fbf1d4,#f6e6ad);color:#a8792f}
+/* İşlem Yap ödeme yöntemi: 3'ü tek sırada eşit genişlik */
+#iyPay{flex-wrap:nowrap}
+#iyPay .tc{flex:1 1 0;min-width:0;justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 
 /* Gider Ekle — açılır grup seçici (satır içi) */
 .gd-dd{position:relative}
