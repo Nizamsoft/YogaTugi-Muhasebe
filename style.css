@@ -697,10 +697,7 @@ body.tema-koyu .drs-gun-et{color:var(--gold)}
 
 /* ============ Giderler Raporu ============ */
 .gr-ust{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.gr-ay{display:inline-flex;align-items:center;gap:4px;background:var(--kart);border:1px solid var(--kenar);border-radius:12px;padding:5px 6px;box-shadow:0 6px 16px -12px rgba(74,58,28,.4)}
-.gr-ay button{width:32px;height:32px;border:none;background:transparent;color:var(--gold);font-size:17px;cursor:pointer;border-radius:8px;font-family:inherit}
-.gr-ay button:hover{background:rgba(198,154,76,.14)}
-.gr-ay .ay{font-weight:800;font-size:14px;min-width:120px;text-align:center;color:var(--metin)}
+/* Giderler Raporu ay çubuğu artık premium .ay-nav'ı kullanıyor (ayrı stil yok) */
 .gr-karsi{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(198,154,76,.5);background:linear-gradient(180deg,#fffefb,#f6ecd6);color:#8a6a2a;font-weight:800;font-size:12.5px;padding:9px 16px;border-radius:12px;cursor:pointer;font-family:inherit;box-shadow:0 6px 16px -12px rgba(120,90,20,.6)}
 body.tema-koyu .gr-karsi{background:linear-gradient(180deg,#2c2a20,#26241b);color:var(--gold)}
 .gr-karsi.acik{background:linear-gradient(135deg,#c99a2e,#e9c66b);color:#fff;border-color:#c99a2e;box-shadow:0 8px 18px -8px rgba(198,154,76,.7)}
@@ -974,12 +971,23 @@ body.tema-koyu .krs-tablo tbody td.num{color:#cdba86}
 .ogr-bar.bitti span{background:linear-gradient(90deg,#b7ae97,#9a9078)}
 /* Üst bar sağ grubu + "Ortakları göster" düğmesi */
 .ogr-ust-sag{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.ort-tgl{display:inline-flex;align-items:center;gap:9px;background:var(--kart);border:1px solid var(--kenar);border-radius:999px;padding:6px 8px 6px 13px;font-size:12.5px;font-weight:700;color:var(--metin);cursor:pointer;font-family:inherit;transition:.15s}
-.ort-tgl:hover{border-color:var(--gold)}
-.ort-tgl .sw{width:40px;height:23px;border-radius:999px;background:#d8cdb4;position:relative;transition:.15s;flex:0 0 auto}
-.ort-tgl .sw i{position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.15s}
-.ort-tgl.on .sw{background:linear-gradient(135deg,#c99a2e,#a07b1e)}
-.ort-tgl.on .sw i{left:20px}
+/* Premium "Ortakları göster" — ikon + metin + altın anahtar */
+.ort-tgl{display:inline-flex;align-items:center;gap:11px;cursor:pointer;font-family:inherit;padding:6px 8px 6px 7px;border-radius:999px;
+  background:linear-gradient(180deg,#fffdf7,#f5ead4);border:1px solid rgba(198,154,76,.4);
+  box-shadow:0 8px 20px -14px rgba(120,90,20,.5),inset 0 1px 0 rgba(255,255,255,.8);transition:.18s}
+.ort-tgl .ico{width:28px;height:28px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;font-size:14px;
+  background:linear-gradient(135deg,#eef3ea,#d6e6d8);box-shadow:inset 0 1px 0 rgba(255,255,255,.7);transition:.18s}
+.ort-tgl .tx{font-size:12.5px;font-weight:800;color:#5a4a24}
+.ort-tgl .sw{width:44px;height:25px;border-radius:999px;position:relative;flex:0 0 auto;transition:.2s;
+  background:#ddd0b4;box-shadow:inset 0 1px 3px rgba(90,70,25,.28)}
+.ort-tgl .sw i{position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;transition:.2s;
+  background:linear-gradient(180deg,#fff,#f0eadd);box-shadow:0 2px 5px -1px rgba(60,45,15,.5)}
+.ort-tgl.on{background:linear-gradient(135deg,#fbf3dd,#f3e2b4);border-color:rgba(198,154,76,.7);box-shadow:0 10px 22px -12px rgba(198,154,76,.7)}
+.ort-tgl.on .ico{background:linear-gradient(135deg,#f6e6ad,#d8ad4c)}
+.ort-tgl.on .sw{background:linear-gradient(135deg,#d8ad4c,#b8862a);box-shadow:inset 0 1px 3px rgba(120,80,10,.4),0 0 0 3px rgba(198,154,76,.18)}
+.ort-tgl.on .sw i{left:22px}
+body.tema-koyu .ort-tgl{background:linear-gradient(180deg,#2c2a20,#26241b)}
+body.tema-koyu .ort-tgl .tx{color:var(--metin)}
 /* Kullanıcı Girişleri sayfası */
 .kul-list{display:flex;flex-direction:column;gap:12px;max-width:560px}
 .kul-kart{display:flex;align-items:center;gap:14px;background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:13px 15px;box-shadow:0 12px 24px -18px rgba(80,60,20,.3)}
@@ -2021,9 +2029,24 @@ body.kl-acik .kl-fab{opacity:0;pointer-events:none}
 /* ==================== Ortaklar (aylık pay) ==================== */
 .ortk-ust{display:flex;align-items:center;justify-content:space-between;margin:0 2px 16px;flex-wrap:wrap;gap:10px}
 .ortk-bas{font-family:Georgia,"Times New Roman",serif;font-size:19px;font-weight:800;color:var(--metin)}
-.ay-nav{display:flex;align-items:center;gap:6px;background:var(--kart);border:1px solid var(--kenar);border-radius:12px;padding:5px 6px;box-shadow:var(--golge)}
-.ay-nav button{width:30px;height:30px;border-radius:8px;border:1px solid var(--kenar);background:#fff;color:#a8792f;font-weight:800;cursor:pointer;font-family:inherit}
-.ay-nav .ay{font-weight:800;font-size:13.5px;padding:0 8px;min-width:118px;text-align:center;color:var(--metin)}
+/* Premium ay seçici — altın çerçeve + ışıltı, serif ay, altın yıl */
+.ay-nav{display:inline-flex;align-items:center;gap:3px;padding:4px;border-radius:15px;position:relative;
+  background:linear-gradient(180deg,#fffdf7,#f7edd8);border:1px solid rgba(198,154,76,.4);
+  box-shadow:0 10px 24px -14px rgba(120,90,20,.55),inset 0 1px 0 rgba(255,255,255,.8)}
+.ay-nav::before{content:"";position:absolute;inset:0;border-radius:15px;padding:1px;pointer-events:none;
+  background:linear-gradient(135deg,rgba(246,230,173,.9),rgba(201,154,76,.15) 40%,transparent 70%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.ay-nav button{width:34px;height:34px;border:none;border-radius:11px;cursor:pointer;font-family:inherit;font-size:16px;font-weight:800;
+  color:#8a6a2a;background:linear-gradient(180deg,#fff,#f3e7cd);box-shadow:0 3px 7px -3px rgba(120,90,20,.4),inset 0 1px 0 #fff;
+  display:grid;place-items:center;transition:.15s;flex:0 0 auto}
+.ay-nav button:hover{color:#fff;background:linear-gradient(135deg,#d8ad4c,#b8862a);box-shadow:0 6px 12px -4px rgba(184,134,42,.6)}
+.ay-nav button:active{transform:translateY(1px)}
+.ay-nav .ay{min-width:132px;text-align:center;display:flex;flex-direction:column;line-height:1;gap:2px;padding:0 6px}
+.ay-nav .ay .m{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:15px;color:#4a3a1c}
+.ay-nav .ay .y{font-size:9.5px;font-weight:800;letter-spacing:2px;color:#a8813a}
+body.tema-koyu .ay-nav{background:linear-gradient(180deg,#2c2a20,#26241b)}
+body.tema-koyu .ay-nav button{background:linear-gradient(180deg,#34301f,#2a2718);color:var(--gold)}
+body.tema-koyu .ay-nav .ay .m{color:var(--metin)}
 .ok-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;align-items:start}
 .ok-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:18px;overflow:hidden;box-shadow:0 12px 26px -14px rgba(74,58,28,.28);cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s}
 .ok-kart:hover{box-shadow:0 16px 32px -14px rgba(74,58,28,.36);transform:translateY(-2px)}
@@ -2083,8 +2106,9 @@ body.kl-acik .kl-fab{opacity:0;pointer-events:none}
   .hesap-ust .ogr-ust-sag .gp-ekle{padding:6px 4px;font-size:9px}
   /* Giderler Raporu: Karşılaştır ay-navın yanında TEK satır */
   .gr-ust{flex-wrap:nowrap;gap:8px}
-  .gr-ay{flex:1 1 0;min-width:0;justify-content:center}.gr-ay .ay{min-width:0;flex:1;font-size:12px}
-  .gr-ay button{width:28px;height:28px;font-size:15px}
+  .gr-ay{flex:1 1 0;min-width:0;justify-content:center}.gr-ay .ay{min-width:0;flex:1}
+  .gr-ay button{width:30px;height:30px;font-size:15px}
+  .gr-ay .ay .m{font-size:13px}
   .gr-karsi{flex:0 0 auto;padding:8px 11px;font-size:11px}
   .gr-grpbas{padding:10px 13px;gap:6px}.gr-grpbas .ad{font-size:12px}.gr-grpbas .ad .ik{width:22px;height:22px;font-size:12px}
   .gr-sat{padding:9px 13px 9px 24px;gap:6px}.gr-sat .ad{font-size:11.5px}

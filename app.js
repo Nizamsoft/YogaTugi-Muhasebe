@@ -160,6 +160,12 @@ function donemAdi(donem) {
   const [y, m] = donem.split('-');
   return `${aylar[parseInt(m, 10) - 1]} ${y}`;
 }
+/* Premium ay seçici — ay büyük (serif), yıl altında altın harflerle */
+function ayNavHTML(donem) {
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const [y, m] = donem.split('-');
+  return `<div class="ay-nav"><button type="button" data-ay="-1" aria-label="Önceki ay">‹</button><span class="ay"><span class="m">${aylar[parseInt(m, 10) - 1]}</span><span class="y">${y}</span></span><button type="button" data-ay="1" aria-label="Sonraki ay">›</button></div>`;
+}
 function kacar(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 /* Dönemi (YYYY-MM) n ay kaydır */
 function donemKaydir(donem, n) {
@@ -396,9 +402,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '141';
+const APP_SURUM = '142';
 const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '02:40';
+const APP_SURUM_SAAT = '03:25';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -409,7 +415,7 @@ let ortakGoster = false;
 function hepsiniGor() { return adminMi() || ortakGoster; }   // true → tüm ortakların verisi
 function benId() { return aktifOrtakId(); }                    // giriş yapan ortağın id'si
 /* Sayfa üst barındaki "Ortakları göster" düğmesi (yalnızca ortak girişinde) */
-function ortakGosterBtnHTML() { return adminMi() ? '' : `<button type="button" class="ort-tgl ${ortakGoster ? 'on' : ''}" id="ortGosterBtn"><span class="sw"><i></i></span> Ortakları göster</button>`; }
+function ortakGosterBtnHTML() { return adminMi() ? '' : `<button type="button" class="ort-tgl ${ortakGoster ? 'on' : ''}" id="ortGosterBtn"><span class="ico">👥</span><span class="tx">Ortakları göster</span><span class="sw"><i></i></span></button>`; }
 function ortakGosterBtnBagla(yenile) { const b = document.getElementById('ortGosterBtn'); if (b) b.onclick = () => { ortakGoster = !ortakGoster; yenile(); }; }
 
 /* Tüm koleksiyonları State'e yükle */
@@ -766,7 +772,7 @@ SAYFALAR.dashboard = function () {
       <span class="dsh-c-title">Gösterge Paneli</span>
       <div class="dsh-c-arac">
         ${ortakGosterBtnHTML()}
-        <div class="ay-nav"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(dashDonem)}</span><button type="button" data-ay="1">›</button></div>
+        ${ayNavHTML(dashDonem)}
       </div>
     </div>
     ${ust4}
@@ -3044,7 +3050,7 @@ SAYFALAR['rapor-giderler'] = function () {
   };
   ic().innerHTML = `
     <div class="gr-ust">
-      <div class="ay-nav gr-ay"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(donem)}</span><button type="button" data-ay="1">›</button></div>
+      ${ayNavHTML(donem).replace('class="ay-nav"', 'class="ay-nav gr-ay"')}
       <button type="button" class="gr-karsi ${giderRaporKarsi ? 'acik' : ''}" id="grKarsiBtn"><span class="sw"></span>⇄ Karşılaştır</button>
     </div>
     <div id="grGovde">${govdeCiz()}</div>`;
@@ -3654,7 +3660,7 @@ SAYFALAR['ortaklar'] = function () {
   ic().innerHTML = `
     <div class="ortk-ust">
       <span class="ortk-bas">Ortaklar</span>
-      <div class="ay-nav"><button type="button" data-ay="-1">‹</button><span class="ay">${donemAdi(ortakDonem)}</span><button type="button" data-ay="1">›</button></div>
+      ${ayNavHTML(ortakDonem)}
     </div>
     ${kartBorcu() > 0 ? `<div class="kkborc-not">💳 Ödenmemiş kredi kartı borcu: <b>${TL(kartBorcu())}</b> — ödenince ortak giderine yansır.</div>` : ''}
     ${veri.length ? `<div class="ok-grid">${veri.map(kart).join('')}</div>` : `<div class="gp-bos">Henüz ortak yok. Tanımlamalar › Ortak Bilgileri’nden ekleyin.</div>`}`;
@@ -5898,6 +5904,7 @@ const KL_GUNCELLEME = [
   { q: 'tl amblemi', not: 'Düzeltildi: Para (₺) değerleri artık hiçbir yerde alt satıra kırılmıyor — ₺ amblemi her zaman rakamla aynı satırda kalıyor. Ayrıca Giderler Raporu’nda tutarlar tek sütunda sağa hizalandı (₺’ler alt alta), “kayıt” sayıları ve › okları da hizalı. Ve telefonun altına tüm sayfalar için geçiş çubuğu eklendi (Panel · Öğrenciler · Dersler · Hesaplar · Ortaklar · Tanımlar) — girişten sonra doğru çiziliyor (önceden yalnızca “Panel” görünüyordu).' },
   { q: 'öğrenciler kısmı gözükmesin', not: 'Uygulandı: Gösterge Paneli’nden Öğrenciler bölümü kaldırıldı (hem PC hem mobil). Artık 2 sütun: solda ilgili ortak kartı, sağda Dersler (takvim) — Dersler büyütüldü. Ayrıca: (1) Alt geçiş çubuğunda basılan sayfanın düğmesi artık doğru vurgulanıyor (eskiden hep Panel’de kalıyordu). (2) Öğrenciler tablosunda “Kalan Ders/Ödeme” çubukları sütuna sığdırıldı, iç içe girmiyor. (3) Sayfa geçişinde tablolar boya öncesi (senkron) ölçekleniyor; büyük tablo bir an görünüp küçülmüyor (titreme giderildi).' },
   { q: 'çöp kutusu ve kalem', not: 'Düzeltildi: Tablolarda ✎ (düzenle) ve 🗑️ (sil) düğmeleri artık verinin üzerine binmiyor. Neden: düğmeler PC boyutunda aksiyon sütununa sığmayıp sola taşıyordu (ör. Öğrenciler’de Kalan Ödeme’yi kapatıyordu). Düğmeler biraz küçültüldü, aksiyon sütunları genişletildi (Öğrenciler, Hesaplar, Müşteriler/cari, Gider detay tablolarında) ve uzun tutarlar gerekirse alt satıra sarıyor. Tüm tablolar kontrol edildi.' },
+  { q: 'ay seçme çubuğu ve ortakları', not: 'Uygulandı: Ay seçme çubuğu ve “Ortakları göster” düğmesi tüm sayfalarda tek premium tasarıma geçti. Ay çubuğu: altın gradyan çerçeve + hafif ışıltı, oklar premium yuvarlak düğme (üstüne gelince altın dolgu), ay adı büyük serif ve altında yıl altın harflerle; Giderler Raporu’ndaki ayrı ay çubuğu da bununla birleşti. “Ortakları göster”: solda yuvarlak 👥 ikon + metin + premium altın anahtar (açıkken altın gradyan track, ikon altınlaşır, hafif altın halka ışıltısı). Sıcak yeşil/kum/gold tema korundu; koyu tema uyumu da eklendi.' },
 ];
 function klGuncellemeBul(metin) {
   const n = (metin || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim();
