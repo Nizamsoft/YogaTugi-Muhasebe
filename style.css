@@ -436,6 +436,19 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-esles-ok{color:#7ee0a4;font-weight:800;font-size:12px;white-space:nowrap}
 .ia-esles-btn{border:1.5px solid var(--neon);background:rgba(180,232,58,.1);color:var(--neon);border-radius:9px;padding:5px 11px;font-family:inherit;font-weight:800;font-size:11.5px;cursor:pointer;white-space:nowrap;transition:transform .18s cubic-bezier(.34,1.35,.5,1),background .18s}
 .ia-esles-btn:active{transform:scale(.94)}
+/* Önizleme filtre düğmeleri (Eşleşmeyen / Eşleşen) */
+.ia-flt{display:flex;gap:8px}
+.ia-flt-b{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--kenar);background:var(--gri);color:var(--metin-soluk);border-radius:13px;padding:11px 10px;font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer;transition:transform .18s cubic-bezier(.34,1.35,.5,1),background .2s,border-color .2s,color .2s}
+.ia-flt-b:active{transform:scale(.97)}
+.ia-flt-b b{font-size:12px;font-weight:800;border-radius:999px;padding:1px 9px;background:rgba(0,0,0,.18)}
+.ia-flt-b.yok.sec{background:rgba(240,110,95,.16);border-color:#f0a08f;color:#f0a08f}
+.ia-flt-b.yok.sec b{background:rgba(240,110,95,.22)}
+.ia-flt-b.ok.sec{background:rgba(180,232,58,.16);border-color:var(--neon);color:var(--neon)}
+.ia-flt-b.ok.sec b{background:rgba(180,232,58,.2)}
+.ia-bosgrup{text-align:center;color:var(--metin-soluk);padding:18px 10px}
+.ia-daha-btn{width:100%;border:1.5px dashed var(--kenar);background:transparent;color:var(--metin);border-radius:12px;padding:11px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;transition:transform .18s cubic-bezier(.34,1.35,.5,1),border-color .2s,color .2s}
+.ia-daha-btn:hover{border-color:var(--neon);color:var(--neon)}
+.ia-daha-btn:active{transform:scale(.98)}
 /* Eşleştir seçim modalı (yeni tanım / var olan) */
 .tt-esl-sec{display:flex;flex-direction:column;gap:10px}
 .tt-esl-bilg{font-size:13px;color:var(--metin-soluk)}

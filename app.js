@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '193';
+const APP_SURUM = '194';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1495,6 +1495,8 @@ function bankaAyristir(data) {
 let iaSekme = 'planformi';
 let iaArsivAcik = false;
 let iaSonKayitlar = null, iaSonDosya = '';   // önizlemeyi (eşleştirme sonrası) tazelemek için
+let iaOnFiltre = 'yok';   // Plan4me önizleme filtresi: 'yok'=eşleşmeyen (varsayılan) | 'ok'=eşleşen
+let iaOnLimit = 12;       // gösterilen satır sayısı; "Daha fazla" arttırır
 SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   const pfN = (State.planformiTahsilat || []).length, bhN = (State.bankaHareketleri || []).length;
   ic().innerHTML = `
@@ -1553,6 +1555,7 @@ function iaIsle(file) {
     const sonuc = iaSekme === 'planformi' ? pfAyristir(data) : bankaAyristir(data);
     if (sonuc.hata) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} ${kacar(sonuc.hata)}</div>`; return; }
     if (!sonuc.kayitlar.length) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} Dosyada uygun kayıt bulunamadı.</div>`; return; }
+    iaOnFiltre = 'yok'; iaOnLimit = 12;   // yeni dosya → filtre/limit sıfırla
     iaOnizleCiz(sonuc.kayitlar, file.name);
   });
 }
@@ -1571,35 +1574,43 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   const mevcut = new Set((State[kol] || []).map(x => x.imza));
   const yeni = kayitlar.filter(k => !mevcut.has(k.imza));
   const tekrar = kayitlar.length - yeni.length;
-  let ozet, thead, tbody, pfRows = null;
+  let ozet, thead, tbody, pfRows = null, dahaVar = false, kalan = 0;
   if (isPf) {
-    const say = t => yeni.filter(k => k.tur === t).length;
-    const top = yeni.reduce((s, k) => s + k.tutar, 0);
     // her kayıt için eşleşme durumu; eşleşmeyenler üstte
     pfRows = yeni.map(k => ({ k, es: ttEslesme(k) }));
     pfRows.sort((a, b) => (a.es ? 1 : 0) - (b.es ? 1 : 0));
     const esOk = pfRows.filter(r => r.es).length, esYok = pfRows.length - esOk;
-    ozet = `${chip(`${yeni.length} yeni kayıt`, 'lime')}${tekrar ? chip(`${tekrar} tekrar atlandı`, 'notr') : ''}${chip(TL(top), 'amber')}
-      ${chip(`${esOk} eşleşti`, esOk ? 'lime' : 'notr')}${chip(`${esYok} eşleşmedi`, esYok ? 'kirmizi' : 'notr')}
-      <span class="ia-ozk">Nakit ${say('nakit')} · Havale ${say('havale')} · Kart ${say('kart')}</span>
-      ${esYok ? `<div class="ia-uyari">${ik('uyari')} ${esYok} kayıt Tahsilat Tanımla ile eşleşmedi. “Eşleştir” ile tanımlayın.</div>` : ''}`;
+    // Üstte yalnız iki filtre düğmesi (sayaçlı) — basınca o grup listelenir
+    ozet = `<div class="ia-flt">
+      <button type="button" class="ia-flt-b yok ${iaOnFiltre === 'yok' ? 'sec' : ''}" data-flt="yok">Eşleşmeyen <b>${esYok}</b></button>
+      <button type="button" class="ia-flt-b ok ${iaOnFiltre === 'ok' ? 'sec' : ''}" data-flt="ok">Eşleşen <b>${esOk}</b></button>
+    </div>`;
+    const gorunen = pfRows.map((r, i) => ({ ...r, gi: i })).filter(r => iaOnFiltre === 'ok' ? r.es : !r.es);
+    const kesit = gorunen.slice(0, iaOnLimit);
+    dahaVar = gorunen.length > iaOnLimit; kalan = gorunen.length - iaOnLimit;
     thead = '<tr><th>Tarih</th><th>Üye</th><th>Tip</th><th class="sag">Tutar</th><th>Durum</th></tr>';
-    tbody = pfRows.slice(0, 14).map((r, i) => `<tr class="ia-r-${r.es ? 'ok' : 'yok'}"><td>${kacar(kisaTarih(r.k.tarih))}</td><td>${kacar(r.k.uyeAd)}</td><td>${turRoz(r.k.tur)}</td><td class="sag mono">${TL(r.k.tutar)}</td><td>${r.es ? '<span class="ia-esles-ok">✓ Eşleşti</span>' : `<button type="button" class="ia-esles-btn" data-esl="${i}">Eşleştir</button>`}</td></tr>`).join('');
+    tbody = kesit.length
+      ? kesit.map(r => `<tr class="ia-r-${r.es ? 'ok' : 'yok'}"><td>${kacar(kisaTarih(r.k.tarih))}</td><td>${kacar(r.k.uyeAd)}</td><td>${turRoz(r.k.tur)}</td><td class="sag mono">${TL(r.k.tutar)}</td><td>${r.es ? '<span class="ia-esles-ok">✓ Eşleşti</span>' : `<button type="button" class="ia-esles-btn" data-esl="${r.gi}">Eşleştir</button>`}</td></tr>`).join('')
+      : '<tr><td colspan="5" class="ia-bosgrup">Bu grupta kayıt yok.</td></tr>';
   } else {
     const grp = y => yeni.filter(k => k.yon === y);
     ozet = `${chip(`${yeni.length} yeni hareket`, 'lime')}${tekrar ? chip(`${tekrar} tekrar atlandı`, 'notr') : ''}
       <span class="ia-ozk">Tahsilat ${grp('gelir').length} · Komisyon ${grp('komisyon').length} · Gider ${grp('gider').length} · Ortak ${grp('ortakOdeme').length}</span>`;
     thead = '<tr><th>Tarih</th><th>İşlem</th><th>Yön</th><th>Kategori</th><th class="sag">Tutar</th></tr>';
-    tbody = yeni.slice(0, 16).map(k => `<tr><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem">${kacar(k.islem)}</td><td>${yonRoz(k.yon)}</td><td>${kacar(k.giderKategori || '')}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td></tr>`).join('');
+    const bkesit = yeni.slice(0, iaOnLimit);
+    dahaVar = yeni.length > iaOnLimit; kalan = yeni.length - iaOnLimit;
+    tbody = bkesit.map(k => `<tr><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem">${kacar(k.islem)}</td><td>${yonRoz(k.yon)}</td><td>${kacar(k.giderKategori || '')}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td></tr>`).join('');
   }
   on.innerHTML = `
     <div class="ia-onizle">
       <div class="ia-dosad">${ik('belge')} ${kacar(dosyaAd)}</div>
       <div class="ia-ozet">${ozet}</div>
       <div class="tablo-sar"><table class="tablo ia-tablo"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
-      ${yeni.length > (isPf ? 14 : 16) ? `<div class="ia-daha">… ve ${yeni.length - (isPf ? 14 : 16)} kayıt daha</div>` : ''}
+      ${dahaVar ? `<button type="button" class="ia-daha-btn" id="iaDaha">Daha fazla (+${Math.min(25, kalan)})</button>` : ''}
       <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${yeni.length ? '' : 'disabled'}>${ik('kaydet')} ${yeni.length} kaydı içe aktar</button>
     </div>`;
+  $$('.ia-flt-b', on).forEach(b => b.onclick = () => { iaOnFiltre = b.dataset.flt; iaOnLimit = 12; iaOnizleCiz(iaSonKayitlar, iaSonDosya); });
+  { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
   if (pfRows) $$('.ia-esles-btn', on).forEach(b => b.onclick = () => { const r = pfRows[+b.dataset.esl]; if (r) ttEslestirSec(r.k); });
   $('#iaKaydet').onclick = async () => {
     const btn = $('#iaKaydet'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
