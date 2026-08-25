@@ -434,6 +434,12 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-tablo tr.ia-r-ok td{background:rgba(180,232,58,.07)}
 .ia-tablo tr.ia-r-yok td{background:rgba(240,110,95,.09)}
 .ia-esles-ok{color:#7ee0a4;font-weight:800;font-size:12px;white-space:nowrap}
+.ia-durum-notr{color:var(--metin-soluk);opacity:.5}
+/* Banka hareket detayı — alan listesi */
+.bd-liste{border:1px solid var(--kenar);border-radius:13px;overflow:hidden;background:var(--gri)}
+.bd-liste .hr-satir{padding:11px 14px}
+.bd-liste .hr-satir:last-child{border-bottom:none}
+.bd-liste .hr-deger{white-space:normal;word-break:break-word;text-align:right}
 .ia-esles-btn{border:1.5px solid var(--neon);background:rgba(180,232,58,.1);color:var(--neon);border-radius:9px;padding:5px 11px;font-family:inherit;font-weight:800;font-size:11.5px;cursor:pointer;white-space:nowrap;transition:transform .18s cubic-bezier(.34,1.35,.5,1),background .18s}
 .ia-esles-btn:active{transform:scale(.94)}
 /* Önizleme filtre düğmeleri (Eşleşmeyen / Eşleşen) */
@@ -893,6 +899,10 @@ table.tablo th{
   text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;position:sticky;top:0;
 }
 table.tablo tbody tr:hover{background:var(--yesil-acik)}
+/* İçe Aktar önizleme tablosu: dokununca yapışan yeşil hover'ı kapat (Plan4me td-tint'leri td'de, korunur) */
+.ia-tablo tbody tr:hover{background:transparent}
+.ia-tablo tbody tr.ia-bank{cursor:pointer}
+.ia-tablo tbody tr.ia-bank:active{background:var(--gri)}
 table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabular-nums}
 .bos-tablo{padding:36px;text-align:center;color:var(--metin-soluk)}
 .bos-tablo .ikon{font-size:34px;display:block;margin-bottom:8px;opacity:.5}
