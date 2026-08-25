@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '204';
+const APP_SURUM = '205';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '00:45';
+const APP_SURUM_SAAT = '01:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -1500,6 +1500,7 @@ function bankaAyristir(data) {
         else if (c === 'KANAL' && idx.kanal == null) idx.kanal = i;
         else if (c === 'KART NO' && idx.kartNo == null) idx.kartNo = i;
         else if (c === 'İŞLEM NO' && idx.islemNo == null) idx.islemNo = i;
+        else if (/BAK[İI]YE/.test(c) && idx.bakiye == null) idx.bakiye = i;   // "Bakiye" / "Kalan Bakiye" / "Güncel Bakiye"
       });
       if (idx.islem != null && idx.tutar != null && idx.aciklama != null) {
         if (idx.tarih == null) idx.tarih = (idx.hareket != null ? idx.hareket : idx.islem);
@@ -1527,7 +1528,8 @@ function bankaAyristir(data) {
     const yon = bankaYon(islem, ba, aciklama);
     const giderKategori = yon === 'gider' ? giderKategoriOner(islem, aciklama) : '';
     const imza = islemNo || `${tarih}|${islem}|${tutar}|${aciklama.slice(0, 24)}`;
-    kayitlar.push({ tarih, harekettarih: idx.hareket != null ? String(row[idx.hareket] || '').trim() : '', islem, tutar, ba, aciklama, kanal, kartNo, islemNo, yon, giderKategori, egitmenId: null, kaynak: 'vakifbank', imza });
+    const bakiye = idx.bakiye != null && String(row[idx.bakiye] || '').trim() !== '' ? tutarCoz(row[idx.bakiye]) : null;
+    kayitlar.push({ tarih, harekettarih: idx.hareket != null ? String(row[idx.hareket] || '').trim() : '', islem, tutar, ba, aciklama, kanal, kartNo, islemNo, yon, giderKategori, bakiye, egitmenId: null, kaynak: 'vakifbank', imza });
   }
   return { kayitlar };
 }
@@ -1679,7 +1681,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   const mevcut = new Set((State[kol] || []).map(x => x.imza));
   const yeni = kayitlar.filter(k => !mevcut.has(k.imza));
   const tekrar = kayitlar.length - yeni.length;
-  let ozet, thead, tbody, liste, pfRows = null, dahaVar = false, kalan = 0, uyusmayan = 0;
+  let ozet, thead, tbody, liste, pfRows = null, dahaVar = false, kalan = 0, uyusmayan = 0, bakiyeUst = '', bakiyeAlt = '';
   if (isPf) {
     // her kayıt için eşleşme durumu; eşleşmeyenler üstte
     pfRows = yeni.map(k => ({ k, es: ttEslesme(k) }));
@@ -1728,13 +1730,33 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
         </div>`;
     }).join('');
     liste = `<div class="ia-liste">${tbody}</div>`;
+    // Devir (açılış) + aktarım sonrası (kapanış) bakiyesi — banka dosyasındaki Bakiye sütunundan
+    // ve dosyanın kendi bakiyesiyle tutarlılık kontrolü (tüm hareketlerin toplamı = kapanış − devir)
+    const bak = kayitlar.filter(x => x.bakiye != null && !isNaN(Number(x.bakiye)));
+    if (bak.length) {
+      const ilkT = String(kayitlar[0] && kayitlar[0].tarih || ''), sonT = String(kayitlar[kayitlar.length - 1] && kayitlar[kayitlar.length - 1].tarih || '');
+      const artan = ilkT <= sonT;   // dosya kronolojik artan mı azalan mı
+      const acilis = artan ? bak[0] : bak[bak.length - 1];
+      const kapanis = artan ? bak[bak.length - 1] : bak[0];
+      const devir = (Number(acilis.bakiye) || 0) - (Number(acilis.tutar) || 0);
+      const kapFile = Number(kapanis.bakiye) || 0;
+      const kapCalc = devir + kayitlar.reduce((s, x) => s + (Number(x.tutar) || 0), 0);
+      const uyum = Math.abs(kapFile - kapCalc) < 1;
+      bakiyeUst = `<div class="ia-bakiye ust"><span class="iab-et">${ik('banka')} Devir bakiyesi</span><span class="iab-tut mono">${TL(devir)}</span></div>`;
+      bakiyeAlt = `<div class="ia-bakiye alt ${uyum ? 'ok' : 'yok'}">
+          <div class="iab-row"><span class="iab-et">Aktarım sonrası bakiye</span><span class="iab-tut mono">${TL(kapFile)}</span></div>
+          <div class="iab-kontrol">${uyum ? `${ik('onay')} Banka dosyasıyla uyumlu` : `${ik('uyari')} Dosya bakiyesiyle ${TL(Math.abs(kapFile - kapCalc))} fark var · hesaplanan ${TL(kapCalc)}`}</div>
+        </div>`;
+    }
   }
   on.innerHTML = `
     <div class="ia-onizle">
       <div class="ia-dosad">${ik('belge')} ${kacar(dosyaAd)}</div>
       <div class="ia-ozet">${ozet}</div>
+      ${bakiyeUst}
       ${liste}
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="iaDaha">Daha fazla (+${Math.min(25, kalan)})</button>` : ''}
+      ${bakiyeAlt}
       ${uyusmayan ? `<div class="ia-uyari">${ik('uyari')} ${uyusmayan} kayıt uyuşmuyor — içe aktarmadan önce eşleştirin${isPf ? '' : ' / gider tanımlayın'}.</div>` : ''}
       <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${(yeni.length && !uyusmayan) ? '' : 'disabled'}>${ik('kaydet')} ${uyusmayan ? 'Önce uyuşmayanları çözün' : yeni.length + ' kaydı içe aktar'}</button>
     </div>`;
@@ -1795,23 +1817,10 @@ function giderTanimlaModal(k) {
 /* Banka hareketinin dosyadaki tüm alanları */
 function bankaDetayModal(k) {
   if (!k) return;
-  const yonAd = { gelir: 'Tahsilat', komisyon: 'Komisyon', gider: 'Gider', ortakOdeme: 'Ortak Ödeme' }[k.yon] || k.yon || '—';
-  const baAd = k.ba === 'A' ? 'Alacak (A)' : k.ba === 'B' ? 'Borç (B)' : (k.ba || '—');
-  const sat = (et, deg) => (deg == null || deg === '') ? '' : `<div class="hr-satir"><label>${et}</label><span class="hr-deger">${kacar(String(deg))}</span></div>`;
-  const govde = `<div class="bd-liste">
-    ${sat('Tarih', fmtTarihUzun(k.tarih))}
-    ${sat('Hareket Tarihi', k.harekettarih)}
-    ${sat('İşlem', k.islem)}
-    ${sat('Yön', yonAd)}
-    ${sat('B/A', baAd)}
-    <div class="hr-satir"><label>Tutar</label><span class="hr-deger mono ${(Number(k.tutar) || 0) < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</span></div>
-    ${sat('Açıklama', k.aciklama)}
-    ${sat('Kanal', k.kanal)}
-    ${sat('Kart No', k.kartNo)}
-    ${sat('İşlem No', k.islemNo)}
-    ${sat('Kategori', k.giderKategori)}
-  </div>`;
-  modalAc('Hareket Detayı', govde, '<button type="button" class="btn btn-ana" id="bdKapat" style="flex:1">Kapat</button>');
+  // Diğer bilgiler zaten kartta görünüyor — burada yalnız banka dosyasındaki tam açıklamayı göster
+  const acik = String(k.aciklama || '').trim();
+  const govde = `<div class="bd-aciklama">${acik ? kacar(acik) : '<span class="bd-bos">Bu hareketin açıklaması yok.</span>'}</div>`;
+  modalAc('Açıklama', govde, '<button type="button" class="btn btn-ana" id="bdKapat" style="flex:1">Kapat</button>');
   $('#bdKapat').onclick = modalKapat;
 }
 /* Eşleşmeyen banka tahsilatı: uyarı + var olan tanımla eşleştir (batch → tanımlar ekranı) */
