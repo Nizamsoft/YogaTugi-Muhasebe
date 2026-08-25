@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '185';
+const APP_SURUM = '186';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -4719,7 +4719,6 @@ SAYFALAR['ayar-giris-kul'] = function () {
   };
   ic().innerHTML = `
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="gkGeri">‹ Tanımlamalar</button></div>
-    <div class="bilgi-kutu" style="max-width:560px;margin:0 0 14px"><span class="ikon">🔑</span><div>Her ortağa <b>kullanıcı adı + şifre</b> verin. Ortak giriş yaptığında varsayılan olarak yalnızca <b>kendi</b> verilerini görür.</div></div>
     <div class="kul-list">
       <div class="kul-kart kadmin">
         <div class="kul-av f2">A</div>

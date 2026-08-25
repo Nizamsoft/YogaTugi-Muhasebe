@@ -671,6 +671,30 @@ body.tema-neon .hr-tutar.cikis label{color:#f08a80}
 /* Modal içi girdi alanı / "+ ekle" butonu / tür çipleri (Havale/Nakit/K.Kartı) */
 body.tema-neon .gp-inp{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
 body.tema-neon .gp-inp:focus{border-color:var(--neon)}
+/* ===== Ayarlar: Firma / Ortak / Kullanıcı Girişleri — neon uyumu ===== */
+body.tema-neon .gp-kart{background:linear-gradient(135deg,var(--neon),var(--amber));box-shadow:0 18px 34px -22px rgba(0,0,0,.75)}
+body.tema-neon .gp-ic{background:var(--kart)}
+body.tema-neon .gp-head h2{font-family:inherit;font-weight:800;color:var(--metin)}
+body.tema-neon .gp-head .kk{color:var(--neon)}
+body.tema-neon .gp-logo-kare{background:var(--gri);color:var(--neon);font-family:inherit;
+  box-shadow:0 0 0 3px var(--kart),0 0 0 5px var(--neon),0 12px 22px -12px rgba(0,0,0,.6)}
+body.tema-neon .gp-sec{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .gp-sec:hover{background:var(--kenar)}
+body.tema-neon .gp-kaldir{background:var(--gri);border-color:var(--kenar);color:var(--metin-soluk)}
+body.tema-neon .gp-kaydet{background:linear-gradient(135deg,#c7f24a,#a4d92f);color:var(--neon-metin);box-shadow:0 12px 22px -12px rgba(164,217,47,.5)}
+/* Ortak kartları */
+body.tema-neon .gp-ort-kart{background:var(--kenar);box-shadow:0 12px 24px -18px rgba(0,0,0,.7)}
+body.tema-neon .gp-ort-ic{background:var(--kart)}
+body.tema-neon .gp-ort-ad{font-family:inherit;font-weight:800;color:var(--metin)}
+body.tema-neon .gp-ort-foto{box-shadow:0 0 0 2px var(--kenar)}
+body.tema-neon .gp-ort-arac button{background:rgba(20,24,28,.72);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .gp-ort-arac button:hover{border-color:var(--neon);color:var(--neon)}
+/* Kullanıcı Girişleri */
+body.tema-neon .kul-kart.kadmin{background:var(--gri);border-color:var(--neon)}
+body.tema-neon .kul-rozet{background:rgba(180,232,58,.16);color:var(--neon)}
+body.tema-neon .kul-btn{color:var(--metin);background:var(--gri)}
+body.tema-neon .kul-btn:hover{border-color:var(--neon);color:var(--neon)}
+body.tema-neon .kul-btn-ekle{color:var(--neon);border-color:var(--neon)}
 body.tema-neon .ekle-btn{background:var(--gri);border-color:var(--kenar-koyu);color:var(--metin-soluk)}
 body.tema-neon .ekle-btn:hover{border-color:var(--neon);color:var(--neon)}
 body.tema-neon .turcip .tc{background:var(--gri);border-color:var(--kenar);color:var(--metin-soluk)}
@@ -680,7 +704,8 @@ body.tema-neon .turcip .tc.sec{border-color:var(--neon);background:rgba(180,232,
 body.tema-neon .uys-ara{background:var(--gri);border-color:var(--kenar)}
 body.tema-neon .gp-ekle{background:linear-gradient(135deg,#ffc24d,#f5a91f);color:var(--neon-metin);box-shadow:0 10px 18px -9px rgba(245,169,31,.5)}
 body.tema-neon .gp-ekle.gp-ekle-alt{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
-body.tema-neon .hesap-seg .rk{background:rgba(0,0,0,.22)}
+body.tema-neon .hesap-seg .hs-oge .rk{background:none;padding:0;font-size:14px}
+body.tema-neon .hesap-seg .hs-oge.sec .rk{color:var(--neon)}
 
 /* Hareket/öğrenci tablosu (Hesaplar/Ödemeler/Giderler defterlerinde ortak) */
 body.tema-neon .ogr-tablo thead th,body.tema-neon .krs-tablo thead th{background:var(--gri);color:var(--metin-soluk);border-bottom-color:var(--kenar)}
