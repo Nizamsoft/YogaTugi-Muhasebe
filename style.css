@@ -465,6 +465,21 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kk-sil:hover{color:#f0a08f}.kk-sil .uik{width:17px;height:17px}
 .kk-arac{display:flex;gap:10px;margin:14px 0}
 .kk-kaydet{width:100%;min-height:46px;justify-content:center}
+/* Kârlılık: havuz/dağıtım + eşleme */
+.kar-ust-sag{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.kar-dagitim{display:flex;align-items:center;gap:7px;margin-top:9px;padding-top:9px;border-top:1px solid var(--kenar);font-size:12px;color:var(--metin-soluk)}
+.kar-dagitim .uik{width:14px;height:14px;color:var(--neon)}
+.kar-dagitim b{color:var(--metin)}
+.kar-dagitim.bekliyor .uik{color:var(--amber)}.kar-dagitim.bekliyor b{color:var(--amber)}
+.kar-grup-esle{border:none;background:none;color:var(--neon);font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.kar-grup-esle .uik{width:14px;height:14px}
+/* Eğitmen eşleme */
+.ee-sayfa{max-width:640px;margin:0 auto}
+.ee-liste{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.ee-satir{display:flex;align-items:center;gap:12px}
+.ee-ad{flex:0 0 42%;font-weight:700;font-size:14px;color:var(--metin);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ee-sel{flex:1;min-width:0}
+.ee-kaydet{width:100%;min-height:46px;justify-content:center}
 /* Neon alt menü: aktif tile + ortadaki + (Tahsilat) dairesi */
 body.tema-neon .alt-oge .ic{color:var(--metin-soluk)}
 body.tema-neon .alt-oge .tx{color:var(--metin-soluk)}
