@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '197';
+const APP_SURUM = '198';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1007,7 +1007,7 @@ SAYFALAR['tanim-kategori'] = function kategoriKurallariSayfasi() {
 
 /* ---- Ayar: Kart komisyon oranları (kart tipi bazlı — ileride kullanılacak altyapı) ---- */
 function komisyonAyar() {
-  const d = { kampanyali: 2.39, kampanyasiz: 3.74, debit: 1.09, multinet: 0 };
+  const d = { kampanyali: 2.39, kampanyasiz: 3.74, yurtdisi: 2.0, debit: 1.09, multinet: 0 };
   return { ...d, ...((State.ayarlar && State.ayarlar.komisyonOranlari) || {}) };
 }
 // Bir tahsilatın komisyon oranı (%) — ödeme türü + kart tipine göre
@@ -1015,10 +1015,17 @@ function tahsilatKomisyonOran(odemeTuru, kartTipi) {
   const k = komisyonAyar();
   if (odemeTuru === 'multinet') return Number(k.multinet) || 0;
   if (odemeTuru !== 'kart') return 0;   // nakit / havale → komisyon yok
-  const legacy = { yurtici: 'kampanyali', yurtdisi: 'kampanyasiz' };   // eski tipleri yeni orana bağla
+  const legacy = { yurtici: 'kampanyali' };   // eski 'yurtici' → kampanyalı orana bağla
   const key = legacy[kartTipi] || kartTipi || 'kampanyali';
   return Number(k[key] != null ? k[key] : k.kampanyali) || 0;
 }
+// Tüm kart tipi seçenekleri (komisyon tutturma modalında hepsi çıkar)
+const KART_TIPLERI_TUM = [
+  { id: 'kampanyali', ad: 'Kampanyalı' },
+  { id: 'kampanyasiz', ad: 'Kampanyasız' },
+  { id: 'yurtdisi', ad: 'Yurt Dışı' },
+  { id: 'debit', ad: 'Bankamatik' },
+];
 // Bir kart tahsilatının komisyon TUTARI (₺) — banka gibi tam TL'ye yuvarlar (aşağı)
 function kartKomTutar(t, tip) { return Math.floor((Number(t.tutar) || 0) * tahsilatKomisyonOran('kart', tip || t.kartTipi) / 100); }
 SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
@@ -1027,8 +1034,9 @@ SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
   ic().innerHTML = `
     <div class="ko-sayfa" style="max-width:520px;margin:0 auto">
       <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="koGeri">‹ Geri</button></div>
-      ${alan('kampanyali', 'Kampanyalı Kredi Kartı', k.kampanyali)}
-      ${alan('kampanyasiz', 'Kampanyasız Kredi Kartı', k.kampanyasiz)}
+      ${alan('kampanyali', 'Yurt İçi KK — Kampanyalı', k.kampanyali)}
+      ${alan('kampanyasiz', 'Yurt İçi KK — Kampanyasız', k.kampanyasiz)}
+      ${alan('yurtdisi', 'Yurt Dışı Kredi Kartı', k.yurtdisi)}
       ${alan('debit', 'Bankamatik (Debit) Kartı', k.debit)}
       ${alan('multinet', 'Multinet', k.multinet)}
       <button type="button" class="btn btn-ana" id="koKaydet" style="margin-top:6px">${ik('kaydet')} Kaydet</button>
@@ -1036,7 +1044,7 @@ SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
   $('#koGeri').onclick = () => git('ayar-tanimlama');
   $('#koKaydet').onclick = () => {
     const g = id => Math.max(0, parseFloat(($('#ko_' + id).value || '').replace(',', '.')) || 0);
-    DB.ayarYaz({ ...State.ayarlar, komisyonOranlari: { kampanyali: g('kampanyali'), kampanyasiz: g('kampanyasiz'), debit: g('debit'), multinet: g('multinet') } });
+    DB.ayarYaz({ ...State.ayarlar, komisyonOranlari: { kampanyali: g('kampanyali'), kampanyasiz: g('kampanyasiz'), yurtdisi: g('yurtdisi'), debit: g('debit'), multinet: g('multinet') } });
     bildir('Komisyon oranları kaydedildi.', 'basari');
     git('ayar-tanimlama');
   };
@@ -1179,13 +1187,14 @@ const ODEME_TURLERI_TT = [
   { id: 'havale', ad: 'Havale', roz: 'rz-banka' },
   { id: 'multinet', ad: 'Multinet', roz: 'rz-transfer' },
 ];
+// Tahsilat oluştururken gösterilen 3 fiziksel seçenek (varsayılan orana bağlanır)
 const KART_TIPLERI_TT = [
-  { id: 'kampanyali', ad: 'Kampanyalı' },
-  { id: 'kampanyasiz', ad: 'Kampanyasız' },
-  { id: 'debit', ad: 'Bankamatik' },
+  { id: 'kampanyali', ad: 'Yurt İçi KK' },
+  { id: 'yurtdisi', ad: 'Yurt Dışı KK' },
+  { id: 'debit', ad: 'Debit' },
 ];
 function odemeTuruRoz(id) { const m = ODEME_TURLERI_TT.find(x => x.id === id) || {}; return `<span class="rozet-etk ${m.roz || 'rz-notr'}">${m.ad || id}</span>`; }
-function kartTipiAd(id) { const m = KART_TIPLERI_TT.find(x => x.id === id); return m ? m.ad : ''; }
+function kartTipiAd(id) { return ({ kampanyali: 'Yurt İçi KK', kampanyasiz: 'Yurt İçi KK (kampanyasız)', yurtdisi: 'Yurt Dışı KK', debit: 'Debit' })[id] || id || ''; }
 
 /* En yeni önce sıralı tahsilat tanımları */
 function ttSirali() {
@@ -1711,7 +1720,7 @@ function komisyonTuttur(k) {
     return;
   }
   komTutForm = kartlar.map(t => ({ id: t.id, ogrenciAd: t.ogrenciAd, tutar: Number(t.tutar) || 0, tip: (t.kartTipi || 'kampanyali') }));
-  const TIP = [{ id: 'kampanyali', ad: 'Kampanyalı' }, { id: 'kampanyasiz', ad: 'Kampanyasız' }, { id: 'debit', ad: 'Bankamatik' }];
+  const TIP = KART_TIPLERI_TUM;   // tüm ihtimaller: Kampanyalı / Kampanyasız / Yurt Dışı / Bankamatik
   const komTur = tip => tahsilatKomisyonOran('kart', tip);
   const govde = () => {
     const top = komTutForm.reduce((s, r) => s + Math.floor(r.tutar * komTur(r.tip) / 100), 0);
@@ -1744,10 +1753,10 @@ function komisyonTuttur(k) {
     modalKapat(); iaOnizleTazele(); bildir('Kart tipleri güncellendi.', 'basari');
   };
 }
-/* 3^N kombinasyon arayarak floor'lu komisyon toplamı = hedef olan tip atamasını bulur (N≤12) */
+/* 4^N kombinasyon arayarak floor'lu komisyon toplamı = hedef olan tip atamasını bulur (N≤10) */
 function komisyonKombinasyonAra(kartlar, hedef) {
-  const N = kartlar.length; if (!N || N > 12) return null;
-  const tipler = ['kampanyali', 'kampanyasiz', 'debit'];
+  const N = kartlar.length; if (!N || N > 10) return null;
+  const tipler = ['kampanyali', 'kampanyasiz', 'yurtdisi', 'debit'];
   const kom = (tutar, tip) => Math.floor(tutar * tahsilatKomisyonOran('kart', tip) / 100);
   let sonuc = null;
   const rec = (i, acc, secim) => {

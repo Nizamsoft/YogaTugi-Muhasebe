@@ -446,8 +446,8 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kt-ust{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
 .kt-ogr{font-weight:800;font-size:14px;color:var(--metin)}
 .kt-tut{font-weight:800;font-size:14px;color:var(--metin)}
-.kt-tipler{gap:6px}
-.kt-tipler .tc{flex:1;flex-direction:column;gap:1px;padding:8px 6px;font-size:12px;line-height:1.15;text-align:center}
+.turcip.kt-tipler{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.kt-tipler .tc{flex:none;min-width:0;flex-direction:column;gap:1px;padding:8px 6px;font-size:12px;line-height:1.15;text-align:center}
 .kt-tipler .tc small{font-weight:700;opacity:.75;font-size:10px}
 .kt-ipuc{font-size:11.5px;color:var(--metin-soluk);margin-top:11px;line-height:1.4}
 .kt-bos{font-size:13.5px;color:var(--metin);line-height:1.5}
