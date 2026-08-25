@@ -527,6 +527,30 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ee-ad{flex:0 0 42%;font-weight:700;font-size:14px;color:var(--metin);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ee-sel{flex:1;min-width:0}
 .ee-kaydet{width:100%;min-height:46px;justify-content:center}
+/* Tahsilat Tanımla */
+.tt-sayfa{max-width:820px;margin:0 auto}
+.tt-ust{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.tt-baslik{margin:0;font-size:20px;font-weight:800}
+.tt-ozetsat{font-size:13px;color:var(--metin-soluk);margin:0 2px 12px}
+.tt-ozetsat b{color:var(--metin)}
+.tt-liste{display:flex;flex-direction:column;gap:10px}
+.tt-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:15px;padding:13px 15px}
+.tt-bas{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tt-ogr{font-size:16px;font-weight:800;color:var(--metin)}
+.tt-tut{font-size:16px;font-weight:800;color:var(--metin)}
+.tt-satir{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:9px 0;font-size:12px;color:var(--metin-soluk)}
+.tt-kt{font-weight:700;color:var(--amber)}
+.tt-eg,.tt-pk{display:inline-flex;align-items:center;gap:4px;font-weight:600}
+.tt-eg .uik{width:13px;height:13px}
+.tt-alt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:9px;border-top:1px solid var(--kenar)}
+.tt-es{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--metin-soluk)}
+.tt-es .uik{width:15px;height:15px}
+.tt-es.ok{color:#5cc98a}
+.tt-arac{display:inline-flex;gap:6px}
+.tt-duz,.tt-sil{border:none;background:none;cursor:pointer;padding:5px;display:inline-flex;color:var(--metin-soluk)}
+.tt-duz:hover{color:var(--neon)}.tt-sil:hover{color:#f0a08f}
+.tt-duz .uik,.tt-sil .uik{width:17px;height:17px}
+.tt-komnot{font-size:12px;color:var(--amber);font-weight:700;margin-top:7px}
 /* Neon alt menü: aktif tile + ortadaki + (Tahsilat) dairesi */
 body.tema-neon .alt-oge .ic{color:var(--metin-soluk)}
 body.tema-neon .alt-oge .tx{color:var(--metin-soluk)}

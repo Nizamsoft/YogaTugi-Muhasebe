@@ -33,6 +33,7 @@ const State = {
   bankaHareketleri: [],  // {id, tarih:'YYYY-MM-DD', harekettarih, islem, tutar(signed), ba:'B'|'A', aciklama, kanal, kartNo, islemNo, yon:'gelir'|'gider'|'komisyon'|'ortakOdeme'|'transfer', giderKategoriId?, egitmenId?, eslesmeId?, kaynak:'vakifbank', imza, olusturma}
   eslesmeler: [],        // {id, tip:'batch'|'havale', bankaIds:[], planformiIds:[], durum:'otomatik'|'onayli'|'manuel'|'uyumsuz', beklenen, gerceklesen, komisyon, fark, not, olusturma}
   kategoriKurallari: [], // {id, anahtar, giderKategoriId, yon, olusturma}  — banka açıklama → kategori önerisi
+  tahsilatTanimlari: [], // {id, ogrenciAd, odemeTuru:'nakit'|'kart'|'havale'|'multinet', kartTipi?:'yurtici'|'yurtdisi'|'debit', tutar, komisyonOran, egitmenAd, egitmenId?, dersPaketi, tarih, eslesmeId?, olusturma}
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -273,7 +274,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.r
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar', 'planformiTahsilat', 'bankaHareketleri', 'eslesmeler', 'kategoriKurallari'];   // + yeni muhasebe/mutabakat koleksiyonları
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar', 'planformiTahsilat', 'bankaHareketleri', 'eslesmeler', 'kategoriKurallari', 'tahsilatTanimlari'];   // + yeni muhasebe/mutabakat koleksiyonları
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -463,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '179';
+const APP_SURUM = '180';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '22:20';
+const APP_SURUM_SAAT = '23:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -505,6 +506,7 @@ async function veriYukle() {
   State.bankaHareketleri = DB._oku('bankaHareketleri');
   State.eslesmeler = DB._oku('eslesmeler');
   State.kategoriKurallari = DB._oku('kategoriKurallari');
+  State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = [];
 }
@@ -981,21 +983,36 @@ SAYFALAR['tanim-kategori'] = function kategoriKurallariSayfasi() {
 };
 
 /* ---- Ayar: Kart komisyon oranları (kart tipi bazlı — ileride kullanılacak altyapı) ---- */
+function komisyonAyar() {
+  const d = { yurtici: 2, yurtdisi: 3.74, debit: 1.09, multinet: 0 };
+  return { ...d, ...((State.ayarlar && State.ayarlar.komisyonOranlari) || {}) };
+}
+// Bir tahsilatın komisyon oranı (%) — ödeme türü + kart tipine göre
+function tahsilatKomisyonOran(odemeTuru, kartTipi) {
+  const k = komisyonAyar();
+  if (odemeTuru === 'multinet') return Number(k.multinet) || 0;
+  if (odemeTuru === 'kart') return Number(kartTipi === 'yurtdisi' ? k.yurtdisi : kartTipi === 'debit' ? k.debit : k.yurtici) || 0;
+  return 0;   // nakit / havale → komisyon yok
+}
 SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
-  const k = (State.ayarlar && State.ayarlar.komisyonOranlari) || { debit: 0, kredi: 3.8, yurtdisi: 4.8 };
-  const alan = (id, ad, v) => `<div class="form-alan"><label>${ad} (%)</label><input type="number" step="0.01" min="0" id="ko_${id}" value="${v}"></div>`;
+  const k = komisyonAyar();
+  const alan = (id, ad, v) => `<div class="form-alan uy-birimli" style="max-width:280px"><label>${ad}</label><input type="text" inputmode="decimal" class="gp-inp" id="ko_${id}" value="${String(v).replace('.', ',')}"><span class="uy-birim">%</span></div>`;
   ic().innerHTML = `
     <div class="ko-sayfa" style="max-width:520px;margin:0 auto">
-      <div class="bilgi-kutu"><span class="ikon">${ik('kart')}</span><div>Kart tipine göre <b>beklenen</b> komisyon oranları. Not: şu an komisyon bankadaki gerçek “Batch Komisyonu”ndan alınıp dağıtılıyor; bu oranlar ileride beklenen komisyonu karşılaştırmak için kullanılacak.</div></div>
-      ${alan('debit', 'Debit Kart', k.debit)}
-      ${alan('kredi', 'Kredi Kartı', k.kredi)}
-      ${alan('yurtdisi', 'Yurt Dışı Kart', k.yurtdisi)}
-      <button type="button" class="btn btn-ana" id="koKaydet">${ik('kaydet')} Kaydet</button>
+      <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="koGeri">‹ Geri</button></div>
+      <div class="bilgi-kutu"><span class="ikon">${ik('kart')}</span><div>Kredi kartı / Multinet tahsilatlarında uygulanan komisyon oranları. <b>Tahsilat Tanımla</b>'da kart tipi seçilince oran buradan gelir.</div></div>
+      ${alan('yurtici', 'Yurt İçi Kredi Kartı', k.yurtici)}
+      ${alan('yurtdisi', 'Yurt Dışı Kredi Kartı', k.yurtdisi)}
+      ${alan('debit', 'Bankamatik (Debit) Kartı', k.debit)}
+      ${alan('multinet', 'Multinet', k.multinet)}
+      <button type="button" class="btn btn-ana" id="koKaydet" style="margin-top:6px">${ik('kaydet')} Kaydet</button>
     </div>`;
+  $('#koGeri').onclick = () => git('ayar-tanimlama');
   $('#koKaydet').onclick = () => {
-    const g = id => Math.max(0, parseFloat($('#ko_' + id).value) || 0);
-    DB.ayarYaz({ ...State.ayarlar, komisyonOranlari: { debit: g('debit'), kredi: g('kredi'), yurtdisi: g('yurtdisi') } });
+    const g = id => Math.max(0, parseFloat(($('#ko_' + id).value || '').replace(',', '.')) || 0);
+    DB.ayarYaz({ ...State.ayarlar, komisyonOranlari: { yurtici: g('yurtici'), yurtdisi: g('yurtdisi'), debit: g('debit'), multinet: g('multinet') } });
     bildir('Komisyon oranları kaydedildi.', 'basari');
+    git('ayar-tanimlama');
   };
 };
 
@@ -1128,74 +1145,88 @@ async function mutabakatBoz(eslesmeId) {
   await DB.sil('eslesmeler', eslesmeId);
   State.eslesmeler = DB._oku('eslesmeler'); State.bankaHareketleri = DB._oku('bankaHareketleri'); State.planformiTahsilat = DB._oku('planformiTahsilat');
 }
-SAYFALAR['mutabakat'] = function mutabakatSayfasi() {
-  const r = mutabakatAnaliz();
-  const bosVeri = !(State.planformiTahsilat || []).length && !(State.bankaHareketleri || []).length;
-  const tarihG = t => kisaTarih(t);
-  const oneriKart = (o) => {
-    const sag = o.tip === 'batch'
-      ? `${o.planformiler.length} kart tahsilatı${o.komisyon ? ` · komisyon ${TL(o.komisyon)}` : ''}`
-      : `${kacar(o.planformiler[0].uyeAd)}${o.isimli ? '' : ' <span class="mt-soru">?</span>'} · ${kacar(o.planformiler[0].egitmenAd)}`;
-    const farkli = Math.abs(o.fark) >= 1;
-    return `<div class="mt-oneri">
-      <div class="mt-satir">
-        <div class="mt-yan banka"><span class="mt-et">BANKA</span><span class="mt-ad">${kacar(o.banka.islem)}</span><span class="mt-tar">${tarihG(o.banka.tarih)}</span></div>
-        <div class="mt-orta">${ik('link')}</div>
-        <div class="mt-yan pf"><span class="mt-et">PLAN4ME</span><span class="mt-ad">${sag}</span></div>
-        <div class="mt-tutar">${TL(o.gerceklesen)}${farkli ? `<span class="mt-fark">Δ ${TL(o.fark)}</span>` : ''}</div>
+/* ==========================================================
+   TAHSİLAT TANIMLA — öğrenci tahsilat tanımları (Plan4me ile eşleşir)
+   ========================================================== */
+const ODEME_TURLERI_TT = [
+  { id: 'nakit', ad: 'Nakit', roz: 'rz-kasa' },
+  { id: 'kart', ad: 'Kredi Kartı', roz: 'rz-kk' },
+  { id: 'havale', ad: 'Havale', roz: 'rz-banka' },
+  { id: 'multinet', ad: 'Multinet', roz: 'rz-transfer' },
+];
+const KART_TIPLERI_TT = [
+  { id: 'yurtici', ad: 'Yurt İçi' },
+  { id: 'yurtdisi', ad: 'Yurt Dışı' },
+  { id: 'debit', ad: 'Bankamatik' },
+];
+function odemeTuruRoz(id) { const m = ODEME_TURLERI_TT.find(x => x.id === id) || {}; return `<span class="rozet-etk ${m.roz || 'rz-notr'}">${m.ad || id}</span>`; }
+function kartTipiAd(id) { const m = KART_TIPLERI_TT.find(x => x.id === id); return m ? m.ad : ''; }
+
+SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
+  const liste = (State.tahsilatTanimlari || []).slice().sort((a, b) => (b.olusturma || '').localeCompare(a.olusturma || ''));
+  const pf = State.planformiTahsilat || [];
+  const eslesenMi = (t) => pf.some(p => adNorm(p.uyeAd) === adNorm(t.ogrenciAd) && Math.abs((Number(p.tutar) || 0) - (Number(t.tutar) || 0)) < 1);
+  const toplam = liste.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+  const kart = (t) => {
+    const es = eslesenMi(t);
+    const kom = tahsilatKomisyonOran(t.odemeTuru, t.kartTipi);
+    return `<div class="tt-kart">
+      <div class="tt-bas"><span class="tt-ogr">${kacar(t.ogrenciAd)}</span><span class="tt-tut mono">${TL(t.tutar)}</span></div>
+      <div class="tt-satir">${odemeTuruRoz(t.odemeTuru)}${t.odemeTuru === 'kart' ? `<span class="tt-kt">${kacar(kartTipiAd(t.kartTipi))} · %${String(kom).replace('.', ',')}</span>` : ''}${t.egitmenAd ? `<span class="tt-eg">${ik('kisi')} ${kacar(t.egitmenAd)}</span>` : ''}${t.dersPaketi ? `<span class="tt-pk">${kacar(t.dersPaketi)}</span>` : ''}</div>
+      <div class="tt-alt">
+        <span class="tt-es ${es ? 'ok' : ''}">${ik(es ? 'onay' : 'sure')} ${es ? 'Plan4me ile eşleşti' : 'Plan4me bekliyor'}</span>
+        <span class="tt-arac"><button type="button" class="tt-duz" data-duz="${t.id}" title="Düzenle">${ik('kalem')}</button><button type="button" class="tt-sil" data-sil="${t.id}" title="Sil">${ik('cop')}</button></span>
       </div>
-      <div class="mt-alt">
-        <span class="mt-durum ${o.tip}">${o.tip === 'batch' ? 'Kart / Batch' : 'Havale'}${farkli ? ' · tutar farkı' : ''}</span>
-        <button type="button" class="btn btn-kucuk mt-onay" data-onay="${o.id}">${ik('onay')} Onayla</button>
-      </div>
-    </div>`;
-  };
-  const yalnizKart = (y, taraf) => {
-    const b = y.banka || y.p;
-    const ad = taraf === 'banka' ? b.islem : `${kacar(b.uyeAd)} · ${kacar(b.egitmenAd)}`;
-    const neden = taraf === 'banka'
-      ? ({ yok: 'Plan4me’de karşılığı yok', tutar: `Plan4me kart toplamı uymuyor (${TL(y.adaySum)})`, coklu: `${y.adaySay} olası eşleşme` }[y.neden] || '')
-      : 'Bankada karşılığı yok';
-    return `<div class="mt-yalniz ${taraf}">
-      <span class="mt-y-et">${taraf === 'banka' ? 'BANKA' : 'PLAN4ME'}</span>
-      <span class="mt-y-ad">${kacar(ad)}</span>
-      <span class="mt-y-tar">${tarihG(b.tarih)}</span>
-      <span class="mt-y-tut ${(b.tutar||b.tutar)<0?'negatif':''}">${TL(taraf === 'banka' ? b.tutar : b.tutar)}</span>
-      <span class="mt-y-neden">${ik('uyari')} ${neden}</span>
-    </div>`;
-  };
-  const onayliKart = (e) => {
-    const ad = e.tip === 'batch' ? `Kart / Batch · ${(e.planformiIds || []).length} tahsilat` : 'Havale';
-    return `<div class="mt-onayli">
-      <span class="mt-o-ik">${ik('onay')}</span>
-      <span class="mt-o-ad">${ad}${e.komisyon ? ` · komisyon ${TL(e.komisyon)}` : ''}</span>
-      <span class="mt-o-tut">${TL(e.gerceklesen)}</span>
-      <button type="button" class="mt-boz" data-boz="${e.id}" title="Eşleşmeyi boz">${ik('geri')}</button>
     </div>`;
   };
   ic().innerHTML = `
-    <div class="mt-sayfa">
-      <div class="mt-ozet">
-        ${mtChip(r.oneri.length, 'Öneri', 'lime')}
-        ${mtChip(r.onayli.length, 'Onaylı', 'yesil')}
-        ${mtChip(r.bankaYalniz.length + r.planformiYalniz.length, 'Uyumsuz', 'amber')}
-        ${r.oneri.length ? `<button type="button" class="btn btn-ana mt-tumu" id="mtTumu">${ik('onay')} Tümünü Onayla (${r.oneri.length})</button>` : ''}
-      </div>
-      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Mutabakat için veri yok</h3><p>Önce “İçe Aktar” ile Plan4me ve banka dosyalarını yükleyin.</p></div>` : ''}
-      ${r.oneri.length ? `<div class="mt-blok"><h4>${ik('link')} Eşleşme Önerileri</h4>${r.oneri.map(oneriKart).join('')}</div>` : ''}
-      ${(r.bankaYalniz.length || r.planformiYalniz.length) ? `<div class="mt-blok"><h4>${ik('uyari')} Eşleşmeyenler</h4>
-        ${r.bankaYalniz.map(y => yalnizKart(y, 'banka')).join('')}
-        ${r.planformiYalniz.map(y => yalnizKart(y, 'pf')).join('')}</div>` : ''}
-      ${r.onayli.length ? `<div class="mt-blok"><h4>${ik('onay')} Onaylananlar (${r.onayli.length})</h4>${r.onayli.map(onayliKart).join('')}</div>` : ''}
-      ${!bosVeri && !r.oneri.length && !r.bankaYalniz.length && !r.planformiYalniz.length && !r.onayli.length
-        ? `<div class="mt-tamam">${ik('onay')} Eşleştirilecek kart/havale tahsilatı yok. (Nakit tahsilatlar bankaya düşmez.)</div>` : ''}
+    <div class="tt-sayfa">
+      <div class="tt-ust"><h3 class="tt-baslik">Tahsilat Tanımla</h3><button type="button" class="btn btn-ana" id="ttYeni">${ik('yeni')} Yeni Tahsilat</button></div>
+      <div class="bilgi-kutu"><span class="ikon">${ik('belge')}</span><div>Öğrenci tahsilatlarını tanımlayın (ödeme türü, kart tipi/komisyon, tutar, eğitmen, paket). <b>Plan4me</b> dosyası yüklenince bu tanımlarla eşleşir; ödeme yöntemi de burada belirlenmiş olur.</div></div>
+      ${liste.length ? `<div class="tt-ozetsat"><b>${liste.length}</b> tanım · ${TL(toplam)}</div><div class="tt-liste">${liste.map(kart).join('')}</div>`
+      : `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Henüz tahsilat tanımı yok</h3><p>“Yeni Tahsilat” ile başlayın; Plan4me yüklenince eşleşecek.</p></div>`}
     </div>`;
-  const oneriMap = {}; r.oneri.forEach(o => oneriMap[o.id] = o);
-  $$('.mt-onay').forEach(b => b.onclick = async () => { await mutabakatOnayla(oneriMap[b.dataset.onay]); SAYFALAR['mutabakat'](); bildir('Eşleşme onaylandı.', 'basari'); });
-  const t = $('#mtTumu'); if (t) t.onclick = async () => { for (const o of r.oneri) await mutabakatOnayla(o); SAYFALAR['mutabakat'](); bildir(`${r.oneri.length} eşleşme onaylandı.`, 'basari'); };
-  $$('.mt-boz').forEach(b => b.onclick = async () => { await mutabakatBoz(b.dataset.boz); SAYFALAR['mutabakat'](); bildir('Eşleşme bozuldu.', ''); });
-  function mtChip(n, l, c) { return `<span class="mt-ozk ${c}"><b>${n}</b> ${l}</span>`; }
+  $('#ttYeni').onclick = () => tahsilatTanimModal();
+  $$('.tt-duz').forEach(b => b.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.duz)));
+  $$('.tt-sil').forEach(b => b.onclick = () => onayModal('Sil', 'Bu tahsilat tanımı silinsin mi?', async () => { await DB.sil('tahsilatTanimlari', b.dataset.sil); State.tahsilatTanimlari = DB._oku('tahsilatTanimlari'); SAYFALAR['mutabakat'](); }));
 };
+let ttForm = null;
+function tahsilatTanimModal(mevcut) {
+  ttForm = mevcut ? { ...mevcut } : { ogrenciAd: '', odemeTuru: 'nakit', kartTipi: 'yurtici', tutar: '', egitmenAd: '', dersPaketi: '' };
+  const ortAd = (State.ortaklar || []).filter(o => o.aktif !== false).map(o => o.ad);
+  const seg = (arr, sel, attr) => arr.map(x => `<button type="button" class="tc ${sel === x.id ? 'sec' : ''}" data-${attr}="${x.id}">${kacar(x.ad)}</button>`).join('');
+  const govde = `
+    <div class="gp-alan"><label>Öğrenci Adı</label><input type="text" class="gp-inp" id="ttOgr" value="${kacar(ttForm.ogrenciAd)}" placeholder="Örn. Ayşe Yılmaz" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan"><label>Ödeme Türü</label><div class="turcip" id="ttTur">${seg(ODEME_TURLERI_TT, ttForm.odemeTuru, 'tur')}</div></div>
+    <div class="gp-alan ${ttForm.odemeTuru === 'kart' ? '' : 'gizli'}" id="ttKartWrap"><label>Kart Tipi</label><div class="turcip" id="ttKt">${seg(KART_TIPLERI_TT, ttForm.kartTipi, 'kt')}</div><div class="tt-komnot" id="ttKomNot"></div></div>
+    <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="ttTutar" inputmode="decimal" placeholder="0 ₺" autocomplete="off"></div>
+    <div class="gp-alan"><label>Eğitmen</label><input type="text" class="gp-inp" id="ttEg" list="ttEgList" value="${kacar(ttForm.egitmenAd)}" placeholder="Eğitmen adı" autocomplete="off"><datalist id="ttEgList">${ortAd.map(a => `<option value="${kacar(a)}">`).join('')}</datalist></div>
+    <div class="gp-alan" style="margin:0"><label>Ders Paketi</label><input type="text" class="gp-inp" id="ttPk" value="${kacar(ttForm.dersPaketi)}" placeholder="Örn. 8 Ders" autocomplete="off"></div>`;
+  const alt = `<button type="button" class="btn" id="ttIptal">Vazgeç</button><button type="button" class="btn btn-ana" id="ttKaydet">${ik('kaydet')} Kaydet</button>`;
+  modalAc(mevcut ? 'Tahsilat Düzenle' : 'Yeni Tahsilat', govde, alt);
+  tutarKutusuBagla($('#ttTutar'), ttForm.tutar || '');
+  const komNot = () => { const el = $('#ttKomNot'); if (el) el.textContent = `Komisyon: %${String(tahsilatKomisyonOran('kart', ttForm.kartTipi)).replace('.', ',')}`; };
+  komNot();
+  $$('#ttTur .tc').forEach(b => b.onclick = () => { ttForm.odemeTuru = b.dataset.tur; $$('#ttTur .tc').forEach(x => x.classList.toggle('sec', x === b)); $('#ttKartWrap').classList.toggle('gizli', ttForm.odemeTuru !== 'kart'); });
+  $$('#ttKt .tc').forEach(b => b.onclick = () => { ttForm.kartTipi = b.dataset.kt; $$('#ttKt .tc').forEach(x => x.classList.toggle('sec', x === b)); komNot(); });
+  $('#ttIptal').onclick = modalKapat;
+  $('#ttKaydet').onclick = async () => {
+    const ogrenciAd = ($('#ttOgr').value || '').trim();
+    const tutar = tutarSayi($('#ttTutar').value);
+    if (!ogrenciAd) { bildir('Öğrenci adı gerekli.', 'uyari'); return; }
+    if (!tutar) { bildir('Tutar gerekli.', 'uyari'); return; }
+    const egitmenAd = ($('#ttEg').value || '').trim();
+    const kayit = {
+      ogrenciAd, odemeTuru: ttForm.odemeTuru, kartTipi: ttForm.odemeTuru === 'kart' ? ttForm.kartTipi : null,
+      tutar, komisyonOran: tahsilatKomisyonOran(ttForm.odemeTuru, ttForm.kartTipi),
+      egitmenAd, egitmenId: egitmenEsle(egitmenAd), dersPaketi: ($('#ttPk').value || '').trim(),
+      tarih: (mevcut && mevcut.tarih) ? mevcut.tarih : bugunISO(),
+    };
+    if (mevcut) await DB.guncelle('tahsilatTanimlari', mevcut.id, kayit); else await DB.ekle('tahsilatTanimlari', kayit);
+    State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
+    modalKapat(); SAYFALAR['mutabakat'](); bildir('Tahsilat tanımı kaydedildi.', 'basari');
+  };
+}
 
 /* ==========================================================
    İÇE AKTAR — Plan4me (Alınan Ödemeler) + Banka (VakıfBank) importer
