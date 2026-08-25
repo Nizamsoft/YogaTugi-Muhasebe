@@ -280,6 +280,20 @@ body.tema-koyu .ust-arac{background:#2c2a20;color:#e7d9a6}
 #notAlan{display:block;width:100%;box-sizing:border-box;border:none;background:transparent;color:var(--metin);font-family:inherit;font-size:14px;line-height:1.55;padding:12px 13px;resize:vertical;min-height:130px;max-height:60vh;outline:none}
 #notAlan::placeholder{color:var(--metin-soluk)}
 @keyframes notIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+/* Bakım / Güncelleme ekranı (admin dışı kullanıcılar) */
+.bakim-ekrani{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:26px;
+  background:repeating-linear-gradient(118deg,rgba(255,255,255,.016) 0 1px,transparent 1px 28px),radial-gradient(130% 70% at 50% -8%,rgba(180,232,58,.12),transparent 55%),linear-gradient(180deg,#1f242c,#171b21)}
+.bakim-ic{max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:13px;
+  background:linear-gradient(180deg,rgba(44,51,61,.72),rgba(23,27,33,.72));border:1.5px solid rgba(180,232,58,.22);border-radius:24px;padding:40px 26px;
+  box-shadow:0 24px 48px -26px rgba(0,0,0,.6),0 0 42px -18px rgba(180,232,58,.3)}
+.bakim-wm{font-family:'Quicksand',"Segoe UI",system-ui,sans-serif;font-weight:600;font-size:26px;line-height:1.05;color:#f1f4f6}
+.bakim-wm small{display:block;font-size:.62em;color:#9aa4ae}
+.bakim-ik{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;background:rgba(180,232,58,.12);color:#b4e83a;margin-top:4px}
+.bakim-ik .uik{width:38px;height:38px}
+.bakim-ekrani h2{margin:0;font-size:20px;font-weight:800;color:#f1f4f6}
+.bakim-ekrani p{margin:0;font-size:14px;line-height:1.6;color:#9aa4ae}
+.bakim-cikis{margin-top:8px;border:1px solid #363f49;background:#262c34;color:#f1f4f6;border-radius:12px;padding:11px 22px;font-family:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
+.bakim-cikis:hover{border-color:#b4e83a;color:#b4e83a}
 /* Kullanıcı çipi — gold çerçeveli görsel + ad soyad */
 .kchip{display:flex;align-items:center;gap:11px;padding:5px 12px 5px 6px;border-radius:999px;cursor:pointer;user-select:none;
   background:linear-gradient(135deg,rgba(198,154,76,.12),rgba(198,154,76,.04));

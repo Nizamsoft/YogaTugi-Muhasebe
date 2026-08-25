@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '176';
+const APP_SURUM = '177';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '20:40';
+const APP_SURUM_SAAT = '21:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -6908,6 +6908,18 @@ function kullaniciBilgiCiz() {
   setHTML('kmFoto', ic); setTxt('kmAd', ad); setTxt('kmRol', rol);
   const nb = $('#notBtn'); if (nb) nb.classList.toggle('gizli', !admin);   // not kalemi sadece admin
   if (!admin) { const np = $('#notPaneli'); if (np) np.classList.add('gizli'); }
+  bakimGuncelle();   // admin dışı kullanıcılar → bakım ekranı
+}
+/* Admin dışı kullanıcılara "Program Güncelleme Aşamasında" ekranı (geçici) */
+function bakimGuncelle() {
+  const el = $('#bakimEkrani'); if (!el) return;
+  const goster = !!(State.kullanici && !adminMi());
+  el.classList.toggle('gizli', !goster);
+  if (goster) {
+    const ik0 = $('#bakimIkon'); if (ik0 && !ik0.innerHTML) ik0.innerHTML = ik('guncel');
+    const c = $('#bakimCikis'); if (c) c.onclick = cikisYap;
+    document.body.classList.remove('menu-acik');
+  }
 }
 /* Üst panel not kalemi (sadece admin) — cihazda saklanan serbest not alanı */
 function notlarKur() {
