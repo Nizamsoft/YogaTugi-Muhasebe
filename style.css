@@ -2312,6 +2312,18 @@ body.tema-koyu .blok-bas .bi{color:#5a4109}
 .iy-seg button .uik{width:18px;height:18px}
 .iy-seg button.g.sec{background:linear-gradient(135deg,#7ec284,#4f8f58);color:#fff;box-shadow:0 8px 18px -8px rgba(79,116,82,.7)}
 .iy-seg button.d.sec{background:linear-gradient(135deg,#ef8f7f,#d24d3d);color:#fff;box-shadow:0 8px 18px -8px rgba(192,72,63,.7)}
+/* Ders Takibi üst segment (Dersler / Öğrenciler / Stüdyolar) */
+.dt-seg{display:flex;gap:5px;background:#efe6d2;border:1px solid rgba(198,154,76,.4);border-radius:16px;padding:5px;margin:0 0 16px}
+.dt-oge{flex:1 1 0;min-width:0;border:none;background:transparent;font-family:inherit;font-weight:800;font-size:13.5px;padding:11px 6px;border-radius:12px;cursor:pointer;color:#8a7f68;display:flex;align-items:center;justify-content:center;gap:7px;transition:.18s;white-space:nowrap}
+.dt-oge .dt-ik{display:inline-flex}
+.dt-oge .dt-ik .uik{width:18px;height:18px}
+.dt-oge.sec{background:linear-gradient(135deg,#7ec284,#4f8f58);color:#fff;box-shadow:0 8px 18px -8px rgba(79,116,82,.7)}
+body.tema-koyu .dt-seg{background:#2c2a20}
+@media(max-width:640px){
+  .dt-oge{font-size:12px;padding:10px 3px;gap:5px}
+  .dt-oge .dt-ik .uik{width:16px;height:16px}
+}
+@media(max-width:380px){ .dt-oge .dt-tx{font-size:11px} }
 .iy-gec{animation:iyGec .22s ease}
 @keyframes iyGec{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.iy-gec{animation:none}}

@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '156';
+const APP_SURUM = '157';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -595,11 +595,7 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: 'panel', baslik: 'Gösterge Paneli' },
-  { grup: 'Ders Takibi', ikon: 'hedef', ogeler: [
-    { id: 'dersler', ad: 'Dersler', ikon: 'dersler', baslik: 'Dersler' },
-    { id: 'ogrenciler', ad: 'Öğrenciler', ikon: 'ogrenci', baslik: 'Öğrenciler' },
-    { id: 'studyolar', ad: 'Stüdyolar', ikon: 'studyo', baslik: 'Stüdyolar' },
-  ] },
+  { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi' },
   { grup: 'Muhasebe', ikon: 'muhasebe', ogeler: [
     { id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe', baslik: 'Hesaplar' },
     { id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar', baslik: 'Ortaklar' },
@@ -743,6 +739,8 @@ function menuBul(id) {
 }
 
 function git(sayfa) {
+  // Dersler / Öğrenciler / Stüdyolar → tek "Ders Takibi" ekranında ilgili sekme
+  if (sayfa === 'dersler' || sayfa === 'ogrenciler' || sayfa === 'studyolar') { dtSekme = sayfa; sayfa = 'ders-takibi'; }
   State.aktifSayfa = sayfa;
   const m = menuBul(sayfa) || { baslik: '—' };
   $('#sayfaBaslik').textContent = m.baslik;
@@ -797,6 +795,35 @@ window.addEventListener('resize', tabloSigdirGec);
    ========================================================== */
 const SAYFALAR = {};
 const ic = () => $('#icerik');
+
+/* ==========================================================
+   DERS TAKİBİ — Dersler / Öğrenciler / Stüdyolar tek ekran (3 sekme)
+   ========================================================== */
+let dtSekme = 'dersler';   // aktif alt görünüm
+const DT_SEKME = [
+  { id: 'dersler', ad: 'Dersler', ikon: 'dersler' },
+  { id: 'ogrenciler', ad: 'Öğrenciler', ikon: 'ogrenci' },
+  { id: 'studyolar', ad: 'Stüdyolar', ikon: 'studyo' },
+];
+/* Alt sayfaların yazacağı hedef: Ders Takibi açıkken ortak kap, değilse #icerik */
+function dtHedef() { return document.getElementById('dtGovde') || ic(); }
+SAYFALAR['ders-takibi'] = function () {
+  if (!DT_SEKME.some(s => s.id === dtSekme)) dtSekme = 'dersler';
+  ic().innerHTML = `
+    <div class="dt-seg" id="dtSeg">
+      ${DT_SEKME.map(s => `<button type="button" class="dt-oge ${dtSekme === s.id ? 'sec' : ''}" data-dt="${s.id}"><span class="dt-ik">${ik(s.ikon)}</span><span class="dt-tx">${kacar(s.ad)}</span></button>`).join('')}
+    </div>
+    <div id="dtGovde"></div>`;
+  $$('#dtSeg .dt-oge').forEach(b => b.onclick = () => {
+    if (dtSekme === b.dataset.dt) return;
+    dtSekme = b.dataset.dt;
+    $$('#dtSeg .dt-oge').forEach(x => x.classList.toggle('sec', x === b));
+    SAYFALAR[dtSekme]();
+    const g = document.getElementById('dtGovde'); if (g) { g.classList.remove('sayfa-gir'); void g.offsetWidth; g.classList.add('sayfa-gir'); }
+    tabloSigdir();
+  });
+  SAYFALAR[dtSekme]();   // aktif alt görünümü #dtGovde içine çiz
+};
 
 /* -------- DASHBOARD -------- */
 let dashDonem = buAy();   // Gösterge Paneli'nde görüntülenen dönem
@@ -4217,7 +4244,7 @@ SAYFALAR['ogrenciler'] = function () {
 
   const govde = ogrenciAktifSekme === 'potansiyel' ? potTablo
     : ogrenciAktifSekme === 'pasif' ? pasifTablo : ogrenciTablo;
-  ic().innerHTML = `
+  dtHedef().innerHTML = `
     <div class="ogr-sayfa">
       <div class="ogr-ust">
         <div class="ogr-seg">
@@ -4568,7 +4595,7 @@ SAYFALAR['dersler'] = function () {
   };
   const bosMetin = dersAktifSekme === 'bekliyor' ? 'Planlanan ders yok. “＋ Ders Oluştur” ile başlayın.'
     : dersAktifSekme === 'gerceklesti' ? 'Gerçekleşen ders yok.' : 'İptal edilmiş ders yok.';
-  ic().innerHTML = `
+  dtHedef().innerHTML = `
     <div class="ders-sayfa">
       <div class="ogr-ust">
         <div class="ogr-seg">
@@ -4576,7 +4603,7 @@ SAYFALAR['dersler'] = function () {
           <button type="button" class="seg-grc ${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
           <button type="button" class="seg-ipt ${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
         </div>
-        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle gp-ekle-alt" id="dersStudyoBtn">${ik('studyo')} Stüdyolar</button><button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
+        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
       </div>
       ${liste.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
@@ -4586,7 +4613,6 @@ SAYFALAR['dersler'] = function () {
         : `<div class="gp-bos">${bosMetin}</div>`}
     </div>`;
   $('#dersEkle').onclick = () => dersOlusturModal();
-  { const sb = $('#dersStudyoBtn'); if (sb) sb.onclick = () => git('studyolar'); }
   ortakGosterBtnBagla(() => SAYFALAR['dersler']());
   $$('[data-dsek]').forEach(b => b.onclick = () => { dersAktifSekme = b.dataset.dsek; SAYFALAR['dersler'](); });
   $$('[data-drz]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d, b); });
@@ -4882,7 +4908,7 @@ SAYFALAR['studyolar'] = function () {
     : (admin
         ? `<div class="std-bos-kart"><div class="std-bos-ik">${ik('studyo')}</div><div class="std-bos-bas">Henüz stüdyo yok</div><div class="std-bos-alt">Ders oluşturmak için önce en az bir stüdyo (salon/oda) ekleyin.</div><button type="button" class="gp-ekle" id="stdEkleBos">＋ İlk Stüdyoyu Ekle</button></div>`
         : `<div class="gp-bos">Henüz stüdyo yok.</div>`);
-  ic().innerHTML = `
+  dtHedef().innerHTML = `
     <div class="ortk-ust">
       <span class="ortk-bas">Stüdyolar</span>
       ${gunNavHTML(studyoGun)}
@@ -6109,7 +6135,7 @@ function ustCubukKur() {
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel', merkez: true },
-  { tip: 'grup', grup: 'Ders Takibi', ad: 'Dersler', ikon: 'dersler' },   // Dersler / Öğrenciler / Stüdyolar
+  { tip: 'sayfa', id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'dersler' },   // Dersler / Öğrenciler / Stüdyolar tek ekran
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
   { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
@@ -6118,6 +6144,7 @@ const ALT_MENU = [
 function altMenuAktifId(sayfa) {
   // Doğrudan alt-menüde olan sayfa (dashboard, ogrenciler, dersler, hesap-defter, ortaklar, ayar-tanimlama)
   if (ALT_MENU.some(m => m.tip === 'sayfa' && m.id === sayfa)) return sayfa;
+  if (sayfa === 'dersler' || sayfa === 'ogrenciler' || sayfa === 'studyolar') return 'ders-takibi';   // Ders Takibi alt görünümleri
   if (TANIM_ALT.includes(sayfa)) return 'ayar-tanimlama';                 // Tanımlamalar alt sayfaları
   if (sayfa === 'hesap-ortak') return 'ortaklar';                          // Ortaklar Hesabı → Ortaklar sekmesi
   // Hesaplar sekmesine ait diğer sayfalar (kart sayfaları, Potansiyel/Müşteriler, Plan4Me)
