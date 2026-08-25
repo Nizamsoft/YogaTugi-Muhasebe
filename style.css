@@ -427,7 +427,12 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-uyari{flex-basis:100%;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--amber);margin-top:2px}
 .ia-uyari .uik{width:16px;height:16px;flex:0 0 auto}
 .ia-tablo{font-size:12.5px}
-.ia-tablo .ia-islem{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ia-tablo .ia-islem{max-width:200px}
+/* Banka satırları biraz büyük + işlem altında kısa açıklama */
+.ia-tablo tr.ia-bank td{padding-top:11px;padding-bottom:11px;vertical-align:top}
+.ia-islem-ad{display:block;font-weight:700;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ia-islem-ac{display:block;font-size:10.5px;color:var(--metin-soluk);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.ia-esles-ok.gid{color:var(--metin);background:var(--gri);border-radius:999px;padding:2px 9px;font-size:11px}
 .ia-e0{color:var(--amber);font-weight:800}
 .ia-chip.kirmizi{background:rgba(240,110,95,.16);color:#f0a08f}
 /* Eşleştirme önizlemesi: eşleşen yeşil / eşleşmeyen kırmızı satır */

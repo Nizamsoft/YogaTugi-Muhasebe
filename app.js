@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '200';
+const APP_SURUM = '201';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1404,10 +1404,12 @@ const VARSAYILAN_KATEGORI_KURAL = [
   { anahtar: 'e-ticaret', kategori: 'Vergi' }, { anahtar: 'vergi', kategori: 'Vergi' },
   { anahtar: 'pos-alışveriş', kategori: 'POS Harcama' },
 ];
+/* Türkçe büyük/küçük harf katlaması — I/İ/ı hepsi 'i'ye iner (banka BÜYÜK açıklaması ↔ kural eşleşsin) */
+function trFold(s) { return String(s || '').replace(/[İIı]/g, 'i').toLowerCase().replace(/̇/g, ''); }
 function giderKategoriOner(islem, aciklama) {
-  const metin = (String(islem || '') + ' ' + String(aciklama || '')).toLocaleLowerCase('tr');
-  const kurallar = (State.kategoriKurallari && State.kategoriKurallari.length) ? State.kategoriKurallari : VARSAYILAN_KATEGORI_KURAL;
-  for (const k of kurallar) { const a = String(k.anahtar || '').toLocaleLowerCase('tr'); if (a && metin.includes(a)) return k.kategori || ''; }
+  const metin = trFold(String(islem || '') + ' ' + String(aciklama || ''));
+  const kurallar = [...(State.kategoriKurallari || []), ...VARSAYILAN_KATEGORI_KURAL];   // kullanıcı kuralları öncelikli + varsayılanlar yedek
+  for (const k of kurallar) { const a = trFold(k.anahtar || ''); if (a && metin.includes(a)) return k.kategori || ''; }
   return '';
 }
 function bankaYon(islem, ba, aciklama) {
@@ -1607,6 +1609,36 @@ function ttEslesme(p) {
     Math.abs(gunFark(t.tarih, p.tarih)) <= 1);
 }
 function iaOnizleTazele() { if (iaSonKayitlar) iaOnizleCiz(iaSonKayitlar, iaSonDosya); }
+/* Banka açıklamasının ilgili/kısa kısmı — uzun referans kodları atılır */
+function bankaAciklamaKisa(a) {
+  let s = String(a || '').replace(/\s+/g, ' ').trim();
+  s = s.replace(/\b\d{6,}\b/g, '').replace(/\s{2,}/g, ' ').trim();   // uzun referans numaralarını at
+  return s.length > 46 ? s.slice(0, 44).trim() + '…' : s;
+}
+/* Açıklamadan gider eşleştirme anahtarı (ilk anlamlı kelime) */
+function giderAnahtar(a) {
+  const kel = trFold(a).replace(/[^\p{L} ]/gu, ' ').split(/\s+/).filter(w => w.length >= 3);
+  return kel[0] || '';
+}
+/* Banka gider satırı ↔ gider kategorisi (kural VEYA önceki benzer açıklama) */
+function bankaGiderEsle(k) {
+  const kat = giderKategoriOner(k.islem, k.aciklama);
+  if (kat) return kat;
+  const an = giderAnahtar(k.aciklama);
+  if (an) { const onc = (State.bankaHareketleri || []).find(b => b.yon === 'gider' && b.giderKategori && giderAnahtar(b.aciklama) === an); if (onc) return onc.giderKategori; }
+  return '';
+}
+/* ISO tarihe gün ekle/çıkar (YYYY-MM-DD) */
+function tarihGunKaydir(iso, gun) {
+  const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+  d.setDate(d.getDate() + (Number(gun) || 0));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+/* Banka satırının ilgili tahsilat günü: batch/komisyon → 1 gün önce; diğer → aynı gün */
+function bankaIlgiliGun(k) {
+  return (/batch\s*yatan/i.test(k.islem || '') || k.yon === 'komisyon') ? tarihGunKaydir(k.tarih, -1) : String(k.tarih || '').slice(0, 10);
+}
+function bankaGunGoster(k) { ttGunFiltre = bankaIlgiliGun(k); if (State.aktifSayfa === 'mutabakat') SAYFALAR['mutabakat'](); else git('mutabakat'); }
 /* Banka satırı ↔ tahsilatTanimlari eşleşmesi (kesin tarih kuralları):
    Havale (gelir): açıklamada ad (isimGecer) + tutar(tam) + AYNI GÜN.
    Batch Yatan (kart gelir): D-1 tarihli kart tanımlarının tutar TOPLAMI = batch tutarı.
@@ -1662,14 +1694,18 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     const bkesit = yeni.slice(0, iaOnLimit);
     dahaVar = yeni.length > iaOnLimit; kalan = yeni.length - iaOnLimit;
     tbody = bkesit.map((k, i) => {
-      const es = bankaTahsilatEslesme(k);
-      const rcls = es ? ` ia-r-${es.durum}` : '';
-      const okEt = es && (es.tip === 'batch' ? 'Toplu' : es.tip === 'komisyon' ? 'Komisyon' : 'Eşleşti');
-      const durum = !es ? '<span class="ia-durum-notr">—</span>'
-        : es.durum === 'ok' ? `<span class="ia-esles-ok">✓ ${okEt}</span>`
-        : es.tip === 'komisyon' ? `<button type="button" class="ia-esles-btn uyus" data-kom="${i}">Uyuşmuyor</button>`
-        : `<button type="button" class="ia-esles-btn" data-besl="${i}">Eşleştir</button>`;
-      return `<tr class="ia-bank${rcls}" data-brow="${i}"><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem">${kacar(k.islem)}</td><td>${yonRoz(k.yon)}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td><td>${durum}</td></tr>`;
+      const acik = bankaAciklamaKisa(k.aciklama);
+      let durum, rcls = '';
+      if (k.yon === 'gider') {
+        const gk = bankaGiderEsle(k);
+        rcls = gk ? ' ia-r-ok' : ' ia-r-yok';
+        durum = gk ? `<span class="ia-esles-ok gid">${kacar(gk)}</span>` : `<button type="button" class="ia-esles-btn" data-gtan="${i}">Gider Tanımla</button>`;
+      } else {
+        const es = bankaTahsilatEslesme(k);
+        if (!es) durum = '<span class="ia-durum-notr">—</span>';
+        else { rcls = ' ia-r-' + es.durum; durum = es.durum === 'ok' ? '<span class="ia-esles-ok">✓ Uyuştu</span>' : `<button type="button" class="ia-esles-btn uyus" data-uyum="${i}">Uyuşmadı</button>`; }
+      }
+      return `<tr class="ia-bank${rcls}" data-brow="${i}"><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem"><span class="ia-islem-ad">${kacar(k.islem)}</span>${acik ? `<span class="ia-islem-ac">${kacar(acik)}</span>` : ''}</td><td>${yonRoz(k.yon)}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td><td>${durum}</td></tr>`;
     }).join('');
   }
   on.innerHTML = `
@@ -1685,11 +1721,12 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   if (pfRows) $$('.ia-esles-btn', on).forEach(b => b.onclick = () => { const r = pfRows[+b.dataset.esl]; if (r) ttEslestirSec(r.k); });
   if (!isPf) {
     $$('.ia-bank', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
-    $$('.ia-esles-btn[data-besl]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); bankaEslestir(yeni[+b.dataset.besl]); });
-    $$('.ia-esles-btn[data-kom]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); komisyonTuttur(yeni[+b.dataset.kom]); });
+    $$('.ia-esles-btn[data-uyum]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); const k = yeni[+b.dataset.uyum]; if (k.yon === 'komisyon') komisyonTuttur(k); else bankaGunGoster(k); });
+    $$('.ia-esles-btn[data-gtan]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); giderTanimlaModal(yeni[+b.dataset.gtan]); });
   }
   $('#iaKaydet').onclick = async () => {
     const btn = $('#iaKaydet'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
+    if (!isPf) yeni.forEach(k => { if (k.yon === 'gider') k.giderKategori = bankaGiderEsle(k); });   // güncel kural/eşleşmeyi commit'e yaz
     await DB.topluEkle(kol, yeni);
     State[kol] = DB._oku(kol);
     bildir(`${yeni.length} kayıt içe aktarıldı.`, 'basari');
@@ -1698,6 +1735,37 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   function chip(t, c) { return `<span class="ia-chip ${c}">${kacar(t)}</span>`; }
   function turRoz(t) { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; }
   function yonRoz(y) { const m = { gelir: ['rz-gelir', 'Tahsilat'], komisyon: ['rz-kk', 'Komisyon'], gider: ['rz-gider', 'Gider'], ortakOdeme: ['rz-transfer', 'Ortak'] }; const v = m[y] || ['rz-notr', y]; return `<span class="rozet-etk ${v[0]}">${v[1]}</span>`; }
+}
+/* Gider Tanımla — banka gider satırı için kategori seç/yaz; benzer açıklamaya kural ekle */
+function giderTanimlaModal(k) {
+  if (!k) return;
+  const an = giderAnahtar(k.aciklama);
+  const katlar = Array.from(new Set([...(State.kategoriKurallari || []).map(r => r.kategori), ...VARSAYILAN_KATEGORI_KURAL.map(r => r.kategori)].filter(Boolean)));
+  const item = (ad) => `<div class="ds-osat" data-kat="${kacar(ad)}"><span class="oav-mini">${kacar((ad[0] || '?').toLocaleUpperCase('tr'))}</span><span class="ds-obil"><span class="ad">${kacar(ad)}</span></span></div>`;
+  const sec = async (ad) => {
+    ad = String(ad).trim(); if (!ad) return;
+    if (an) await DB.ekle('kategoriKurallari', { anahtar: an, kategori: ad, yon: 'gider' });   // benzer açıklamalar bundan sonra otomatik eşleşsin
+    State.kategoriKurallari = DB._oku('kategoriKurallari');
+    m.kapat(); iaOnizleTazele(); bildir(`“${ad}” gideri tanımlandı.`, 'basari');
+  };
+  const govde = `
+    <div class="tt-esl-bilg" style="margin-bottom:10px"><b>${kacar(bankaAciklamaKisa(k.aciklama) || k.islem)}</b> · ${TL(k.tutar)}</div>
+    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="gtAra" placeholder="Gider adı ara / yeni yaz…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="to-ekle gizli" id="gtEkle"></div>
+    <div class="ds-oliste sec-liste-kaydir" id="gtListe">${katlar.map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Kayıtlı gider yok. Adı yazıp ekleyin.</div>'}</div>`;
+  const m = ustKatModal('Gider Tanımla', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  const bind = () => m.qq('#gtListe [data-kat]').forEach(el => el.onclick = () => sec(el.dataset.kat));
+  bind();
+  m.q('#gtAra').addEventListener('input', () => {
+    const ham = (m.q('#gtAra').value || '').trim(); const q = adNorm(ham);
+    const suz = katlar.filter(a => adNorm(a).includes(q));
+    m.q('#gtListe').innerHTML = suz.map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Eşleşen yok.</div>';
+    bind();
+    const ek = m.q('#gtEkle'); const tam = katlar.some(a => adNorm(a) === q);
+    if (ham && !tam) { ek.classList.remove('gizli'); ek.innerHTML = `<button type="button" class="to-ekbtn">${ik('arti')} “<b>${kacar(ham)}</b>” gider olarak ekle</button>`; ek.querySelector('.to-ekbtn').onclick = () => sec(ham); }
+    else ek.classList.add('gizli');
+  });
+  m.q('[data-geri]').onclick = m.kapat;
 }
 /* Banka hareketinin dosyadaki tüm alanları */
 function bankaDetayModal(k) {
@@ -7381,7 +7449,7 @@ function ustCubukKur() {
         });
       };
   } }
-  $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
+  $('#kmCikis').onclick = () => { kulMenuKapat(); onayModal('Çıkış Yap', 'Oturumu kapatmak istediğinize emin misiniz?', () => cikisYap()); };
   document.addEventListener('click', (e) => {
     if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
   });
