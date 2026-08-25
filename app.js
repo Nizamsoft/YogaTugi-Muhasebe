@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '198';
+const APP_SURUM = '199';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1026,8 +1026,8 @@ const KART_TIPLERI_TUM = [
   { id: 'yurtdisi', ad: 'Yurt Dışı' },
   { id: 'debit', ad: 'Bankamatik' },
 ];
-// Bir kart tahsilatının komisyon TUTARI (₺) — banka gibi tam TL'ye yuvarlar (aşağı)
-function kartKomTutar(t, tip) { return Math.floor((Number(t.tutar) || 0) * tahsilatKomisyonOran('kart', tip || t.kartTipi) / 100); }
+// Bir kart tahsilatının komisyon TUTARI (₺) — banka gibi tam TL'ye YUVARLAR (en yakın)
+function kartKomTutar(t, tip) { return Math.round((Number(t.tutar) || 0) * tahsilatKomisyonOran('kart', tip || t.kartTipi) / 100); }
 SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
   const k = komisyonAyar();
   const alan = (id, ad, v) => `<div class="form-alan uy-birimli" style="max-width:280px"><label>${ad}</label><input type="text" inputmode="decimal" class="gp-inp" id="ko_${id}" value="${String(v).replace('.', ',')}"><span class="uy-birim">%</span></div>`;
@@ -1592,8 +1592,8 @@ function bankaTahsilatEslesme(k) {
   const ayniGun = t => Math.round(gunFark(t.tarih, k.tarih)) === 0;     // aynı gün
   if (k.yon === 'komisyon') {
     const kartlar = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && gunOncesi(t));
-    const komTop = kartlar.reduce((s, t) => s + kartKomTutar(t), 0);   // banka gibi tam TL (aşağı yuvarlı)
-    return { tip: 'komisyon', durum: (kartlar.length && komTop === Math.round(Math.abs(Number(k.tutar) || 0))) ? 'ok' : 'yok', toplam: komTop };
+    const komTop = kartlar.reduce((s, t) => s + kartKomTutar(t), 0);   // banka gibi tam TL (yuvarlı)
+    return { tip: 'komisyon', durum: (kartlar.length && Math.abs(komTop - Math.round(Math.abs(Number(k.tutar) || 0))) <= 1) ? 'ok' : 'yok', toplam: komTop };
   }
   if (k.yon !== 'gelir') return null;
   if (/batch\s*yatan/i.test(k.islem || '')) {
@@ -1722,13 +1722,14 @@ function komisyonTuttur(k) {
   komTutForm = kartlar.map(t => ({ id: t.id, ogrenciAd: t.ogrenciAd, tutar: Number(t.tutar) || 0, tip: (t.kartTipi || 'kampanyali') }));
   const TIP = KART_TIPLERI_TUM;   // tüm ihtimaller: Kampanyalı / Kampanyasız / Yurt Dışı / Bankamatik
   const komTur = tip => tahsilatKomisyonOran('kart', tip);
+  const komTut = (tutar, tip) => Math.round(tutar * komTur(tip) / 100);   // banka gibi en yakın TL
   const govde = () => {
-    const top = komTutForm.reduce((s, r) => s + Math.floor(r.tutar * komTur(r.tip) / 100), 0);
-    const tut = top === hedef;
+    const top = komTutForm.reduce((s, r) => s + komTut(r.tutar, r.tip), 0);
+    const tut = Math.abs(top - hedef) <= 1;   // ±1 TL: banka yuvarlama farkı
     return `<div class="kt-hedef">Banka komisyonu: <b>${TL(hedef)}</b> · Tanım toplamı: <b class="${tut ? 'kt-ok' : 'kt-yok'}">${TL(top)}</b> ${tut ? '✓' : ''}</div>
       <div class="kt-liste">${komTutForm.map((r, i) => `<div class="kt-satir">
         <div class="kt-ust"><span class="kt-ogr">${kacar(r.ogrenciAd)}</span><span class="kt-tut mono">${TL(r.tutar)}</span></div>
-        <div class="turcip kt-tipler" data-i="${i}">${TIP.map(x => `<button type="button" class="tc ${r.tip === x.id ? 'sec' : ''}" data-tip="${x.id}">${x.ad} <small>%${String(komTur(x.id)).replace('.', ',')} → ${Math.floor(r.tutar * komTur(x.id) / 100)}₺</small></button>`).join('')}</div>
+        <div class="turcip kt-tipler" data-i="${i}">${TIP.map(x => `<button type="button" class="tc ${r.tip === x.id ? 'sec' : ''}" data-tip="${x.id}">${x.ad} <small>%${String(komTur(x.id)).replace('.', ',')} → ${komTut(r.tutar, x.id)}₺</small></button>`).join('')}</div>
       </div>`).join('')}</div>
       <div class="kt-ipuc">İpucu: “Otomatik Dene” tutturan bir kombinasyon arar. Bulunca uygular; sonra Kaydet'e bas.</div>`;
   };
@@ -1757,11 +1758,11 @@ function komisyonTuttur(k) {
 function komisyonKombinasyonAra(kartlar, hedef) {
   const N = kartlar.length; if (!N || N > 10) return null;
   const tipler = ['kampanyali', 'kampanyasiz', 'yurtdisi', 'debit'];
-  const kom = (tutar, tip) => Math.floor(tutar * tahsilatKomisyonOran('kart', tip) / 100);
+  const kom = (tutar, tip) => Math.round(tutar * tahsilatKomisyonOran('kart', tip) / 100);   // banka gibi en yakın TL
   let sonuc = null;
   const rec = (i, acc, secim) => {
     if (sonuc) return;
-    if (i === N) { if (acc === hedef) sonuc = secim.slice(); return; }
+    if (i === N) { if (Math.abs(acc - hedef) <= 1) sonuc = secim.slice(); return; }   // ±1 TL tolerans
     for (const tip of tipler) { secim[i] = tip; rec(i + 1, acc + kom(kartlar[i].tutar, tip), secim); if (sonuc) return; }
   };
   rec(0, 0, new Array(N));
