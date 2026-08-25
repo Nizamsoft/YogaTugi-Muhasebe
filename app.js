@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '202';
-const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '23:50';
+const APP_SURUM = '203';
+const APP_SURUM_TARIH = '26 Ağu 2026';
+const APP_SURUM_SAAT = '00:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -1679,7 +1679,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   const mevcut = new Set((State[kol] || []).map(x => x.imza));
   const yeni = kayitlar.filter(k => !mevcut.has(k.imza));
   const tekrar = kayitlar.length - yeni.length;
-  let ozet, thead, tbody, pfRows = null, dahaVar = false, kalan = 0, uyusmayan = 0;
+  let ozet, thead, tbody, liste, pfRows = null, dahaVar = false, kalan = 0, uyusmayan = 0;
   if (isPf) {
     // her kayıt için eşleşme durumu; eşleşmeyenler üstte
     pfRows = yeni.map(k => ({ k, es: ttEslesme(k) }));
@@ -1698,6 +1698,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     tbody = kesit.length
       ? kesit.map(r => `<tr class="ia-r-${r.es ? 'ok' : 'yok'}"><td>${kacar(kisaTarih(r.k.tarih))}</td><td>${kacar(r.k.uyeAd)}</td><td>${turRoz(r.k.tur)}</td><td class="sag mono">${TL(r.k.tutar)}</td><td>${r.es ? '<span class="ia-esles-ok">✓ Eşleşti</span>' : `<button type="button" class="ia-esles-btn" data-esl="${r.gi}">Eşleştir</button>`}</td></tr>`).join('')
       : '<tr><td colspan="5" class="ia-bosgrup">Bu grupta kayıt yok.</td></tr>';
+    liste = `<div class="tablo-sar"><table class="tablo ia-tablo"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
   } else {
     const grp = y => yeni.filter(k => k.yon === y);
     ozet = `${chip(`${yeni.length} yeni hareket`, 'lime')}${tekrar ? chip(`${tekrar} tekrar atlandı`, 'notr') : ''}
@@ -1722,14 +1723,19 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
         if (!es) durum = '<span class="ia-durum-notr">—</span>';
         else { rcls = ' ia-r-' + es.durum; durum = es.durum === 'ok' ? '<span class="ia-esles-ok">✓ Uyuştu</span>' : `<button type="button" class="ia-esles-btn uyus" data-uyum="${i}">Uyuşmadı</button>`; }
       }
-      return `<tr class="ia-bank${rcls}" data-brow="${i}"><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem"><span class="ia-islem-ad">${kacar(k.islem)}</span>${acik ? `<span class="ia-islem-ac">${kacar(acik)}</span>` : ''}</td><td>${yonRoz(k.yon)}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td><td>${durum}</td></tr>`;
+      return `<div class="ia-kart${rcls}" data-brow="${i}">
+          <div class="iak-ust"><span class="iak-ad">${kacar(k.islem)}</span><span class="iak-tut mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</span></div>
+          ${acik ? `<div class="iak-ac">${kacar(acik)}</div>` : ''}
+          <div class="iak-alt"><span class="iak-tar">${kacar(kisaTarih(k.tarih))}</span>${yonRoz(k.yon)}<span class="iak-durum">${durum}</span></div>
+        </div>`;
     }).join('');
+    liste = `<div class="ia-kartlar">${tbody}</div>`;
   }
   on.innerHTML = `
     <div class="ia-onizle">
       <div class="ia-dosad">${ik('belge')} ${kacar(dosyaAd)}</div>
       <div class="ia-ozet">${ozet}</div>
-      <div class="tablo-sar"><table class="tablo ia-tablo"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+      ${liste}
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="iaDaha">Daha fazla (+${Math.min(25, kalan)})</button>` : ''}
       ${uyusmayan ? `<div class="ia-uyari">${ik('uyari')} ${uyusmayan} kayıt uyuşmuyor — içe aktarmadan önce eşleştirin${isPf ? '' : ' / gider tanımlayın'}.</div>` : ''}
       <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${(yeni.length && !uyusmayan) ? '' : 'disabled'}>${ik('kaydet')} ${uyusmayan ? 'Önce uyuşmayanları çözün' : yeni.length + ' kaydı içe aktar'}</button>
@@ -1738,7 +1744,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
   if (pfRows) $$('.ia-esles-btn', on).forEach(b => b.onclick = () => { const r = pfRows[+b.dataset.esl]; if (r) ttEslestirSec(r.k); });
   if (!isPf) {
-    $$('.ia-bank', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
+    $$('.ia-kart', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
     $$('.ia-esles-btn[data-uyum]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); const k = yeni[+b.dataset.uyum]; if (k.yon === 'komisyon') komisyonTuttur(k); else bankaGunGoster(k); });
     $$('.ia-esles-btn[data-gtan]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); giderTanimlaModal(yeni[+b.dataset.gtan]); });
   }
