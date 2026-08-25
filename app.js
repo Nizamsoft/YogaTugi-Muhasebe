@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '180';
+const APP_SURUM = '181';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '23:10';
+const APP_SURUM_SAAT = '23:50';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -7369,9 +7369,34 @@ document.addEventListener('DOMContentLoaded', () => {
   girisKur();
   yakinlastirmaKapat();
   autofillKapatKur();
+  acilisBicimi();
   pullToRefreshKur();
+  olcumGoster();
   surumKontrol();
 });
+
+/* Ana ekrandan mı (uygulama) yoksa tarayıcı sekmesinden mi açıldı? Alt çubuğun
+   home-indicator payı buna göre veriliyor. display-mode eski iOS'ta çalışmadığından
+   navigator.standalone yedeğiyle html sınıfı da işaretlenir. */
+function acilisBicimi() {
+  const uyg = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  document.documentElement.classList.toggle('uygulama', !!uyg);
+  document.documentElement.classList.toggle('tarayici', !uyg);
+}
+/* Geçici ölçüm — yalnız ?olcum=1 ile (iOS standalone teşhisi). Depoda kalması sorun değil; gizli. */
+function olcumGoster() {
+  if (!/[?&]olcum=1/.test(location.search)) return;
+  const vv = window.visualViewport || {};
+  const html = `screen.height     ${screen.height}
+innerHeight       ${window.innerHeight}
+visualViewport    ${Math.round(vv.height || 0)}
+body.clientHeight ${document.body.clientHeight}
+standalone        ${window.navigator.standalone === true}
+display-mode      ${matchMedia('(display-mode: standalone)').matches}
+status-bar        black
+sürüm             ${APP_SURUM}`;
+  document.body.insertAdjacentHTML('beforeend', `<pre id="olcumKutu" style="position:fixed;left:8px;top:8px;z-index:99999;margin:0;padding:8px;background:#000;color:#0f0;font:11px monospace;border-radius:6px;white-space:pre">${html}</pre>`);
+}
 
 /* Aşağı çekince yenile — .ana kaydırıcısında, en üstteyken aşağı çekiş eşiği aşınca hard reload.
    Pürüzsüz çekiş için çekiş sırasında preventDefault; asla takılmasın diye güvenlik zamanlayıcısı. */

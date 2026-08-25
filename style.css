@@ -941,7 +941,7 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   /* --- Güzelleştirilmiş üst panel (harman: gradyan zemin + serif isim + kullanıcı çipi) --- */
   .ust-cubuk{gap:9px;position:sticky;top:0;z-index:30;border-bottom:none;
     background:radial-gradient(circle at 93% -30%, rgba(111,154,114,.13), transparent 55%), linear-gradient(180deg, var(--kart), var(--krem));
-    padding-top:max(46px, calc(env(safe-area-inset-top, 0px) + 15px));padding-bottom:15px;
+    padding-top:calc(env(safe-area-inset-top, 0px) + 14px);padding-bottom:14px;
     padding-left:max(15px, env(safe-area-inset-left, 0px));padding-right:max(15px, env(safe-area-inset-right, 0px))}
   .ust-cubuk::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.5px;
     background:linear-gradient(90deg, var(--yesil), var(--gold))}
@@ -961,10 +961,12 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   .ust-arac{width:38px;height:38px}
   .ust-cubuk .destek{order:9;flex:0 0 auto}   /* destek en sağda */
 
-  /* Yapısal düzen: uygulama tam-yükseklik kolon → içerik kaydırılır, alt çubuk kolon
-     dibine oturur. iOS standalone'da 'position:fixed;bottom:0'ın fiziksel dibe ulaşmama
-     sorunu böylece ortadan kalkar (çubuk artık akışta, kolonun gerçek dibinde). */
-  .uygulama{flex-direction:column;height:100vh;height:100dvh;min-height:0;overflow:hidden}
+  /* Yapısal düzen: sayfanın KENDİSİ kaymasın (body:fixed) → iOS'un adres-çubuğu
+     oyunları alt çubuğu oynatamaz; içerik .ana içinde kaydırılır. Alt çubuk akışta,
+     kolonun gerçek dibinde. Böylece standalone'da altta boş bant kalmaz. */
+  html{height:100%;overscroll-behavior:none}
+  body{position:fixed;top:0;left:0;right:0;bottom:0;height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
+  .uygulama{flex-direction:column;height:100%;min-height:0;overflow:hidden}
   .ana{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
   /* Alt menü çubuğu — akışta, kolon dibinde */
@@ -991,10 +993,13 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   body.tema-koyu .alt-menu{background:linear-gradient(180deg,#2c2a20,#242219)}
   body.tema-koyu .alt-oge.merkez .ic{background:linear-gradient(180deg,#34301f,#2a2718)}
   .icerik{padding-bottom:24px}   /* çubuk artık akışta; içeriğin altına ekstra pay gerekmez */
-  /* Home-indicator payı yalnız uygulama (standalone) kipinde — tarayıcıda çift pay olmasın. */
+  /* Home-indicator (ana ekran çizgisi) payı YALNIZ uygulama kipinde — tarayıcıda
+     Safari'nin kendi çubuğu zaten pay bıraktığından çift pay olmasın. display-mode
+     eski iOS'ta çalışmadığından html.uygulama (navigator.standalone) yedeği de var. */
   @media (display-mode: standalone){
     .alt-menu{padding-bottom:calc(11px + env(safe-area-inset-bottom, 0px))}
   }
+  html.uygulama .alt-menu{padding-bottom:calc(11px + env(safe-area-inset-bottom, 0px))}
 
   /* Grup sheet (alttan açılan alt sayfa listesi) */
   .sheet-perde{display:block;position:fixed;inset:0;background:rgba(22,26,20,.34);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:44;opacity:0;pointer-events:none;transition:opacity .22s}
