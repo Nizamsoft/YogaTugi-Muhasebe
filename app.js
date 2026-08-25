@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '169';
+const APP_SURUM = '170';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '17:00';
+const APP_SURUM_SAAT = '17:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -817,9 +817,252 @@ function fazPlaceholder(baslik, aciklama, ikonAd) {
       <p>${kacar(aciklama)}</p>
     </div>`;
 }
-SAYFALAR['ice-aktar'] = () => fazPlaceholder('İçe Aktar', 'Planformi tahsilat dosyası ve banka ekstresi buradan yüklenecek.', 'indir');
 SAYFALAR['mutabakat'] = () => fazPlaceholder('Banka Mutabakatı', 'Planformi tahsilatları ile banka hareketleri burada eşleştirilecek.', 'onay');
 SAYFALAR['karlilik'] = () => fazPlaceholder('Eğitmen / Ortak Kârlılığı', 'Her eğitmen/ortak için brüt tahsilat, komisyon, vergi, gider ve net kâr burada gösterilecek.', 'ortaklar');
+
+/* ==========================================================
+   İÇE AKTAR — Planformi (Alınan Ödemeler) + Banka (VakıfBank) importer
+   ========================================================== */
+// Hem TR (1.234,56) hem US (1,234.56) hem düz sayı biçimini çözen işaretli tutar
+function tutarCoz(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v == null ? '' : v).replace(/[^\d,.\-]/g, '').trim();
+  if (!s) return 0;
+  const c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+  if (c > -1 && d > -1) s = (c > d) ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (c > -1) s = (s.length - 1 - c <= 2) ? s.replace(',', '.') : s.replace(/,/g, '');
+  else if (d > -1 && s.length - 1 - d > 2) s = s.replace(/\./g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function adNorm(s) { return String(s || '').toLocaleLowerCase('tr').replace(/\s+/g, ' ').trim(); }
+function egitmenEsle(ad) { const n = adNorm(ad); const o = State.ortaklar.find(x => adNorm(x.ad) === n); return o ? o.id : null; }
+function odemeTipiNormalize(s) {
+  const t = String(s || '').toLocaleLowerCase('tr');
+  if (/havale|eft|fast/.test(t)) return 'havale';
+  if (/kart|kredi|pos/.test(t)) return 'kart';
+  return 'nakit';
+}
+const VARSAYILAN_KATEGORI_KURAL = [
+  { anahtar: 'kira', kategori: 'Kira' },
+  { anahtar: 'sgk', kategori: 'SGK' },
+  { anahtar: 'maaş', kategori: 'Maaş' }, { anahtar: 'maas', kategori: 'Maaş' },
+  { anahtar: 'aidat', kategori: 'Aidat' },
+  { anahtar: 'e-ticaret', kategori: 'Vergi' }, { anahtar: 'vergi', kategori: 'Vergi' },
+  { anahtar: 'pos-alışveriş', kategori: 'POS Harcama' },
+];
+function giderKategoriOner(islem, aciklama) {
+  const metin = (String(islem || '') + ' ' + String(aciklama || '')).toLocaleLowerCase('tr');
+  const kurallar = (State.kategoriKurallari && State.kategoriKurallari.length) ? State.kategoriKurallari : VARSAYILAN_KATEGORI_KURAL;
+  for (const k of kurallar) { const a = String(k.anahtar || '').toLocaleLowerCase('tr'); if (a && metin.includes(a)) return k.kategori || ''; }
+  return '';
+}
+function bankaYon(islem, ba, aciklama) {
+  const i = String(islem || '').toLocaleLowerCase('tr');
+  const a = String(aciklama || '').toLocaleLowerCase('tr');
+  if (/komisyon/.test(i)) return 'komisyon';
+  if (/batch yatan/.test(i)) return 'gelir';
+  if (/huzur\s*(hakk|pay)/.test(a)) return 'ortakOdeme';
+  const b = String(ba || '').toLocaleUpperCase('tr');
+  if (b === 'A') return 'gelir';
+  if (b === 'B') return 'gider';
+  return 'gider';
+}
+
+// Dosyayı oku → {names:[...], sheet:{ad:rows[][]}}  (xlsx: tüm sayfalar, csv: tek sayfa)
+function iaDosyaOku(file, cb) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const fr = new FileReader();
+  fr.onerror = () => cb(null, 'Dosya okunamadı.');
+  fr.onload = () => {
+    try {
+      if (ext === 'csv') { cb({ names: ['CSV'], sheet: { CSV: csvAyristir(fr.result) } }, null); return; }
+      if (typeof XLSX === 'undefined') { cb(null, 'Excel okuma kütüphanesi (xlsx) yüklenmemiş.'); return; }
+      const wb = XLSX.read(new Uint8Array(fr.result), { type: 'array' });
+      const sheet = {};
+      wb.SheetNames.forEach(n => { sheet[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' }); });
+      cb({ names: wb.SheetNames, sheet }, null);
+    } catch (e) { cb(null, String(e && e.message || e)); }
+  };
+  if (ext === 'csv') fr.readAsText(file, 'utf-8'); else fr.readAsArrayBuffer(file);
+}
+
+// Planformi "Alınan Ödemeler" tablosunu bul (2 tablolu sayfada A–E)
+function pfAyristir(data) {
+  let f = null;
+  for (const name of data.names) {
+    const rows = data.sheet[name] || [];
+    for (let r = 0; r < Math.min(rows.length, 15); r++) {
+      const row = (rows[r] || []).map(c => String(c || '').toLocaleLowerCase('tr').trim());
+      const idx = {};
+      row.forEach((c, i) => {
+        if (/^tarih/.test(c) && idx.tarih == null) idx.tarih = i;
+        else if (/(eğitmen|egitmen)/.test(c) && idx.egitmen == null) idx.egitmen = i;
+        else if (/^(üye|uye)/.test(c) && idx.uye == null) idx.uye = i;
+        else if (/(ödeme|odeme)/.test(c) && idx.tur == null) idx.tur = i;
+        else if (/tutar/.test(c) && idx.tutar == null) idx.tutar = i;
+      });
+      if (idx.tarih != null && idx.egitmen != null && idx.uye != null && idx.tur != null && idx.tutar != null) { f = { rows, headerRow: r, idx }; break; }
+    }
+    if (f) break;
+  }
+  if (!f) return { hata: 'Planformi “Alınan Ödemeler” tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) bulunamadı.' };
+  const { rows, headerRow, idx } = f;
+  const kayitlar = [];
+  for (let r = headerRow + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const tarihHam = String(row[idx.tarih] || '').trim();
+    if (!tarihHam) break;                       // tablo bitti (Alınan Ödemeler A–E)
+    const tutar = tutarCoz(row[idx.tutar]);
+    if (!tutar) continue;
+    const tarih = tarihNormalize(tarihHam);
+    if (!tarih) continue;
+    const sm = tarihHam.match(/(\d{1,2}:\d{2})/); const saat = sm ? sm[1] : '';
+    const egitmenAd = baslikHarf(String(row[idx.egitmen] || '').trim());
+    const uyeAd = baslikHarf(String(row[idx.uye] || '').trim());
+    const tur = odemeTipiNormalize(row[idx.tur]);
+    const imza = `${tarih}|${saat}|${adNorm(egitmenAd)}|${adNorm(uyeAd)}|${tutar}|${tur}`;
+    kayitlar.push({ tarih, saat, egitmenAd, egitmenId: egitmenEsle(egitmenAd), uyeAd, tur, tutar, kaynak: 'planformi', imza });
+  }
+  return { kayitlar };
+}
+
+// Banka ekstresi (VakıfBank) — başlık satırını bul, hareketleri sınıflandır
+function bankaAyristir(data) {
+  let f = null;
+  for (const name of data.names) {
+    const rows = data.sheet[name] || [];
+    for (let r = 0; r < Math.min(rows.length, 25); r++) {
+      const row = (rows[r] || []).map(c => String(c || '').toLocaleUpperCase('tr').trim());
+      const idx = {};
+      row.forEach((c, i) => {
+        if (c === 'İŞLEM TARİHİ' && idx.tarih == null) idx.tarih = i;
+        else if (c === 'HAREKET TARIH' && idx.hareket == null) idx.hareket = i;
+        else if (c === 'İŞLEM' && idx.islem == null) idx.islem = i;
+        else if (c === 'TUTAR' && idx.tutar == null) idx.tutar = i;
+        else if ((c === 'B/A' || c === 'BA') && idx.ba == null) idx.ba = i;
+        else if (c === 'AÇIKLAMA' && idx.aciklama == null) idx.aciklama = i;
+        else if (c === 'KANAL' && idx.kanal == null) idx.kanal = i;
+        else if (c === 'KART NO' && idx.kartNo == null) idx.kartNo = i;
+        else if (c === 'İŞLEM NO' && idx.islemNo == null) idx.islemNo = i;
+      });
+      if (idx.islem != null && idx.tutar != null && idx.aciklama != null) {
+        if (idx.tarih == null) idx.tarih = (idx.hareket != null ? idx.hareket : idx.islem);
+        f = { rows, headerRow: r, idx }; break;
+      }
+    }
+    if (f) break;
+  }
+  if (!f) return { hata: 'Banka ekstresi başlık satırı (İŞLEM · TUTAR · AÇIKLAMA) bulunamadı.' };
+  const { rows, headerRow, idx } = f;
+  const kayitlar = [];
+  for (let r = headerRow + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const islem = String(row[idx.islem] || '').trim();
+    const tutarHam = String(row[idx.tutar] || '').trim();
+    if (!islem || !tutarHam) continue;          // boş / footer satırı atla
+    const tarih = tarihNormalize(row[idx.tarih]);
+    if (!tarih) continue;
+    const tutar = tutarCoz(row[idx.tutar]);
+    const ba = idx.ba != null ? String(row[idx.ba] || '').trim().toLocaleUpperCase('tr') : (tutar < 0 ? 'B' : 'A');
+    const aciklama = idx.aciklama != null ? String(row[idx.aciklama] || '').trim() : '';
+    const kanal = idx.kanal != null ? String(row[idx.kanal] || '').trim() : '';
+    const kartNo = idx.kartNo != null ? String(row[idx.kartNo] || '').trim() : '';
+    const islemNo = idx.islemNo != null ? String(row[idx.islemNo] || '').trim() : '';
+    const yon = bankaYon(islem, ba, aciklama);
+    const giderKategori = yon === 'gider' ? giderKategoriOner(islem, aciklama) : '';
+    const imza = islemNo || `${tarih}|${islem}|${tutar}|${aciklama.slice(0, 24)}`;
+    kayitlar.push({ tarih, harekettarih: idx.hareket != null ? String(row[idx.hareket] || '').trim() : '', islem, tutar, ba, aciklama, kanal, kartNo, islemNo, yon, giderKategori, egitmenId: null, kaynak: 'vakifbank', imza });
+  }
+  return { kayitlar };
+}
+
+let iaSekme = 'planformi';
+SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
+  const pfN = (State.planformiTahsilat || []).length, bhN = (State.bankaHareketleri || []).length;
+  ic().innerHTML = `
+    <div class="ia-sayfa">
+      <div class="ia-seg">
+        <button type="button" class="ia-oge ${iaSekme === 'planformi' ? 'sec' : ''}" data-ia="planformi">Planformi${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
+        <button type="button" class="ia-oge ${iaSekme === 'banka' ? 'sec' : ''}" data-ia="banka">Banka${bhN ? ` <span class="ia-rk">${bhN}</span>` : ''}</button>
+      </div>
+      <div id="iaGovde"></div>
+    </div>`;
+  $$('.ia-oge').forEach(b => b.onclick = () => { iaSekme = b.dataset.ia; SAYFALAR['ice-aktar'](); });
+  iaTabCiz();
+};
+function iaTabCiz() {
+  const g = $('#iaGovde'); const isPf = iaSekme === 'planformi';
+  g.innerHTML = `
+    <div class="ia-aciklama">${isPf
+      ? 'Planformi “Aylık Rapor” Excel’ini yükleyin. Yalnızca <b>Alınan Ödemeler</b> tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) okunur; diğer sayfa/tablolar atlanır.'
+      : 'Banka ekstresini (.xlsx / .csv) yükleyin. Hareketler otomatik sınıflandırılır: <b>tahsilat · komisyon · gider · ortak ödemesi</b>.'}</div>
+    <label class="ia-drop" id="iaDrop">
+      <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
+      <span class="ia-ik">${ik('indir')}</span>
+      <span class="ia-dt">Dosya seç veya sürükle</span>
+      <span class="ia-ds">.xlsx · .csv</span>
+    </label>
+    <div id="iaOnizle"></div>`;
+  const drop = $('#iaDrop'), inp = $('#iaFile');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('uzeri'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('uzeri'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('uzeri'); if (e.dataTransfer.files[0]) iaIsle(e.dataTransfer.files[0]); });
+  inp.onchange = () => { if (inp.files[0]) iaIsle(inp.files[0]); };
+}
+function iaIsle(file) {
+  const on = $('#iaOnizle'); on.innerHTML = '<div class="ia-yukleniyor">Okunuyor…</div>';
+  iaDosyaOku(file, (data, err) => {
+    if (err) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} ${kacar(err)}</div>`; return; }
+    const sonuc = iaSekme === 'planformi' ? pfAyristir(data) : bankaAyristir(data);
+    if (sonuc.hata) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} ${kacar(sonuc.hata)}</div>`; return; }
+    if (!sonuc.kayitlar.length) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} Dosyada uygun kayıt bulunamadı.</div>`; return; }
+    iaOnizleCiz(sonuc.kayitlar, file.name);
+  });
+}
+function iaOnizleCiz(kayitlar, dosyaAd) {
+  const on = $('#iaOnizle'); const isPf = iaSekme === 'planformi';
+  const kol = isPf ? 'planformiTahsilat' : 'bankaHareketleri';
+  const mevcut = new Set((State[kol] || []).map(x => x.imza));
+  const yeni = kayitlar.filter(k => !mevcut.has(k.imza));
+  const tekrar = kayitlar.length - yeni.length;
+  let ozet, thead, tbody;
+  if (isPf) {
+    const say = t => yeni.filter(k => k.tur === t).length;
+    const top = yeni.reduce((s, k) => s + k.tutar, 0);
+    const eslesmeyen = yeni.filter(k => !k.egitmenId).length;
+    ozet = `${chip(`${yeni.length} yeni kayıt`, 'lime')}${tekrar ? chip(`${tekrar} tekrar atlandı`, 'notr') : ''}${chip(TL(top), 'amber')}
+      <span class="ia-ozk">Nakit ${say('nakit')} · Havale ${say('havale')} · Kart ${say('kart')}</span>
+      ${eslesmeyen ? `<div class="ia-uyari">${ik('uyari')} ${eslesmeyen} kaydın eğitmeni mevcut ortaklarla eşleşmedi (kayıt yine de eğitmen adıyla saklanır).</div>` : ''}`;
+    thead = '<tr><th>Tarih</th><th>Eğitmen</th><th>Üye</th><th>Tip</th><th class="sag">Tutar</th></tr>';
+    tbody = yeni.slice(0, 14).map(k => `<tr><td>${kacar(kisaTarih(k.tarih))}</td><td>${kacar(k.egitmenAd)}${k.egitmenId ? '' : ' <span class="ia-e0">?</span>'}</td><td>${kacar(k.uyeAd)}</td><td>${turRoz(k.tur)}</td><td class="sag mono">${TL(k.tutar)}</td></tr>`).join('');
+  } else {
+    const grp = y => yeni.filter(k => k.yon === y);
+    const topAbs = arr => arr.reduce((s, k) => s + Math.abs(k.tutar), 0);
+    ozet = `${chip(`${yeni.length} yeni hareket`, 'lime')}${tekrar ? chip(`${tekrar} tekrar atlandı`, 'notr') : ''}
+      <span class="ia-ozk">Tahsilat ${grp('gelir').length} · Komisyon ${grp('komisyon').length} · Gider ${grp('gider').length} · Ortak ${grp('ortakOdeme').length}</span>`;
+    thead = '<tr><th>Tarih</th><th>İşlem</th><th>Yön</th><th>Kategori</th><th class="sag">Tutar</th></tr>';
+    tbody = yeni.slice(0, 16).map(k => `<tr><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem">${kacar(k.islem)}</td><td>${yonRoz(k.yon)}</td><td>${kacar(k.giderKategori || '')}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td></tr>`).join('');
+  }
+  on.innerHTML = `
+    <div class="ia-onizle">
+      <div class="ia-dosad">${ik('belge')} ${kacar(dosyaAd)}</div>
+      <div class="ia-ozet">${ozet}</div>
+      <div class="tablo-sar"><table class="tablo ia-tablo"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+      ${yeni.length > (isPf ? 14 : 16) ? `<div class="ia-daha">… ve ${yeni.length - (isPf ? 14 : 16)} kayıt daha</div>` : ''}
+      <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${yeni.length ? '' : 'disabled'}>${ik('kaydet')} ${yeni.length} kaydı içe aktar</button>
+    </div>`;
+  $('#iaKaydet').onclick = async () => {
+    const btn = $('#iaKaydet'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
+    await DB.topluEkle(kol, yeni);
+    State[kol] = DB._oku(kol);
+    bildir(`${yeni.length} kayıt içe aktarıldı.`, 'basari');
+    SAYFALAR['ice-aktar']();
+  };
+  function chip(t, c) { return `<span class="ia-chip ${c}">${kacar(t)}</span>`; }
+  function turRoz(t) { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; }
+  function yonRoz(y) { const m = { gelir: ['rz-gelir', 'Tahsilat'], komisyon: ['rz-kk', 'Komisyon'], gider: ['rz-gider', 'Gider'], ortakOdeme: ['rz-transfer', 'Ortak'] }; const v = m[y] || ['rz-notr', y]; return `<span class="rozet-etk ${v[0]}">${v[1]}</span>`; }
+}
 
 /* ==========================================================
    DERS TAKİBİ — Dersler / Öğrenciler / Stüdyolar tek ekran (3 sekme)
