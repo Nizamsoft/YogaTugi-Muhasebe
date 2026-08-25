@@ -339,11 +339,11 @@ body.tema-koyu .ust-arac{background:#2c2a20;color:#e7d9a6}
 body.tema-neon .km-tema-sec button.sec{border-color:var(--neon);background:var(--neon);color:var(--neon-metin)}
 /* Neon: üst panel + alt menü vurguları koyu/neon */
 body.tema-neon .ust-cubuk::after{background:linear-gradient(90deg,var(--neon),var(--amber))}
-body.tema-neon .alt-menu{background:linear-gradient(180deg,#242a31,#1b2026)}
+body.tema-neon .alt-menu{background:rgba(24,29,36,.68);border-color:rgba(180,232,58,.14)}
 body.tema-neon .alt-menu::before{background:linear-gradient(90deg,transparent,rgba(180,232,58,.55),transparent)}
 body.tema-neon .alt-oge.aktif{color:var(--neon)}
 /* ===== Neon ana ekran (pilot) ===== */
-.neon-home{display:flex;flex-direction:column;gap:14px;padding:4px 2px 96px}
+.neon-home{display:flex;flex-direction:column;gap:14px;padding:4px 2px 8px}   /* alt pay artık .icerik'te (yüzen çubuk) */
 .neon-ozet{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:16px 18px;cursor:pointer;box-shadow:0 6px 16px -12px rgba(0,0,0,.5);transition:transform .2s cubic-bezier(.34,1.3,.5,1),box-shadow .38s ease,border-color .38s ease}
 .neon-ozet:active{transform:scale(.99)}
 /* Açıkken derinlik: yumuşak gölge + hafif neon kenar */
@@ -429,14 +429,33 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-tablo{font-size:12.5px}
 .ia-tablo .ia-islem{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ia-e0{color:var(--amber);font-weight:800}
+.ia-chip.kirmizi{background:rgba(240,110,95,.16);color:#f0a08f}
+/* Eşleştirme önizlemesi: eşleşen yeşil / eşleşmeyen kırmızı satır */
+.ia-tablo tr.ia-r-ok td{background:rgba(180,232,58,.07)}
+.ia-tablo tr.ia-r-yok td{background:rgba(240,110,95,.09)}
+.ia-esles-ok{color:#7ee0a4;font-weight:800;font-size:12px;white-space:nowrap}
+.ia-esles-btn{border:1.5px solid var(--neon);background:rgba(180,232,58,.1);color:var(--neon);border-radius:9px;padding:5px 11px;font-family:inherit;font-weight:800;font-size:11.5px;cursor:pointer;white-space:nowrap;transition:transform .18s cubic-bezier(.34,1.35,.5,1),background .18s}
+.ia-esles-btn:active{transform:scale(.94)}
+/* Eşleştir seçim modalı (yeni tanım / var olan) */
+.tt-esl-sec{display:flex;flex-direction:column;gap:10px}
+.tt-esl-bilg{font-size:13px;color:var(--metin-soluk)}
+.tt-esl-bilg b{color:var(--metin)}
+.tt-esl-sec .btn{width:100%;justify-content:center}
 .ia-daha{font-size:12px;color:var(--metin-soluk);text-align:center;padding:8px}
 .ia-kaydet{width:100%;margin-top:12px;min-height:48px;justify-content:center;font-size:14.5px}
 /* İçe Aktar — üst satır + arşiv */
 .ia-ust{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .ia-ust .ia-seg{margin-bottom:0}
-.ia-arsiv-btn{margin-left:auto;width:42px;height:42px;border-radius:12px;border:1px solid var(--kenar);background:var(--gri);color:var(--metin-soluk);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.ia-arsiv-btn{margin-left:auto;height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--kenar);background:var(--gri);color:var(--metin-soluk);display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;flex:0 0 auto;transition:transform .2s cubic-bezier(.34,1.35,.5,1),box-shadow .22s ease,background .22s ease,color .2s ease,border-color .2s ease}
 .ia-arsiv-btn .uik{width:20px;height:20px}
-.ia-arsiv-btn.sec,.ia-arsiv-btn:hover{border-color:var(--neon);color:var(--neon)}
+.ia-arsiv-btn:hover{border-color:var(--neon);color:var(--neon)}
+.ia-arsiv-btn:active{transform:scale(.94)}
+/* Açık (arşivdeyken) — belirgin: neon dolgu + parıltı, hover'dan ayrı */
+.ia-arsiv-btn.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);border-color:transparent;color:var(--neon-metin);box-shadow:0 0 0 3px rgba(180,232,58,.22),0 10px 20px -8px rgba(164,217,47,.6)}
+.ia-arsiv-btn.sec:hover{color:var(--neon-metin)}
+.ia-arsiv{animation:iaArsivGir .3s cubic-bezier(.33,.05,.2,1)}
+@keyframes iaArsivGir{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ia-arsiv{animation:none}}
 .ia-ars-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-size:13px;color:var(--metin-soluk)}
 .ia-ars-bas b{color:var(--metin)}
 .ia-arliste{display:flex;flex-direction:column;gap:6px}
@@ -1072,12 +1091,15 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   .ana{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
   /* Alt menü çubuğu — akışta, kolon dibinde */
-  .alt-menu{display:flex;position:relative;z-index:41;flex:0 0 auto;gap:2px;
-    padding:9px 8px 11px;
-    background:linear-gradient(180deg,#fffdf7,#f6ecd7);border-top:1px solid rgba(198,154,76,.32);
-    box-shadow:0 -10px 26px -6px rgba(120,90,20,.16)}
-  .alt-menu::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
-    background:linear-gradient(90deg,transparent,rgba(246,230,173,.9),rgba(198,154,76,.5),rgba(246,230,173,.9),transparent)}
+  /* Yüzen buzlu-cam (ice glass) oval çubuk — akıştan çıkar, ekranın dibinde havada durur */
+  .alt-menu{display:flex;position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(10px + env(safe-area-inset-bottom, 0px));
+    width:min(500px, calc(100% - 24px));z-index:41;gap:2px;overflow:visible;
+    padding:8px 12px;border-radius:32px;
+    background:rgba(255,253,247,.72);border:1px solid rgba(255,255,255,.16);
+    backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35);
+    box-shadow:0 18px 44px -14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.14)}
+  .alt-menu::before{content:none}
   .alt-oge{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:3px 2px;border:none;background:none;font-family:inherit;cursor:pointer}
   .alt-oge .ic{width:46px;height:38px;border-radius:14px;display:grid;place-items:center;font-size:19px;color:var(--metin-soluk);position:relative;transition:transform .28s cubic-bezier(.34,1.4,.5,1),background .2s,box-shadow .25s,color .2s}
   .alt-oge .tx{font-size:10px;font-weight:800;letter-spacing:.2px;color:#8a8069;transition:color .2s}
@@ -1097,14 +1119,8 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   .alt-oge.merkez .tx{transform:translateY(-8px)}
   body.tema-koyu .alt-menu{background:linear-gradient(180deg,#2c2a20,#242219)}
   body.tema-koyu .alt-oge.merkez .ic{background:linear-gradient(180deg,#34301f,#2a2718)}
-  .icerik{padding-bottom:24px}   /* çubuk artık akışta; içeriğin altına ekstra pay gerekmez */
-  /* Home-indicator (ana ekran çizgisi) payı YALNIZ uygulama kipinde — tarayıcıda
-     Safari'nin kendi çubuğu zaten pay bıraktığından çift pay olmasın. display-mode
-     eski iOS'ta çalışmadığından html.uygulama (navigator.standalone) yedeği de var. */
-  @media (display-mode: standalone){
-    .alt-menu{padding-bottom:calc(11px + env(safe-area-inset-bottom, 0px))}
-  }
-  html.uygulama .alt-menu{padding-bottom:calc(11px + env(safe-area-inset-bottom, 0px))}
+  /* Çubuk artık yüzen overlay → içeriğin altına çubuk+boşluk+safe-area kadar pay bırak (son satır çubuğun arkasında kalmasın) */
+  .icerik{padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px))}
 
   /* Grup sheet (alttan açılan alt sayfa listesi) */
   .sheet-perde{display:block;position:fixed;inset:0;background:rgba(22,26,20,.34);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:44;opacity:0;pointer-events:none;transition:opacity .22s}
