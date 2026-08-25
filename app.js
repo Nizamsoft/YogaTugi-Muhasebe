@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '203';
+const APP_SURUM = '204';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '00:20';
+const APP_SURUM_SAAT = '00:45';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -1713,23 +1713,21 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     }, 0);
     tbody = bkesit.map((k, i) => {
       const acik = bankaAciklamaKisa(k.aciklama);
-      let durum, rcls = '';
+      let durum;
       if (k.yon === 'gider') {
         const gk = bankaGiderEsle(k);
-        rcls = gk ? ' ia-r-ok' : ' ia-r-yok';
-        durum = gk ? `<button type="button" class="ia-esles-ok gid" data-gtan="${i}">${kacar(gk)}</button>` : `<button type="button" class="ia-esles-btn" data-gtan="${i}">Gider Tanımla</button>`;
+        durum = gk ? `<button type="button" class="ia-sd-durum gider" data-gtan="${i}">${kacar(gk)}</button>` : `<button type="button" class="ia-sd-durum tanimla" data-gtan="${i}">Gider Tanımla</button>`;
       } else {
         const es = bankaTahsilatEslesme(k);
-        if (!es) durum = '<span class="ia-durum-notr">—</span>';
-        else { rcls = ' ia-r-' + es.durum; durum = es.durum === 'ok' ? '<span class="ia-esles-ok">✓ Uyuştu</span>' : `<button type="button" class="ia-esles-btn uyus" data-uyum="${i}">Uyuşmadı</button>`; }
+        if (!es) durum = '<span class="ia-sd-durum notr">—</span>';
+        else durum = es.durum === 'ok' ? '<span class="ia-sd-durum ok">✓ Uyuştu</span>' : `<button type="button" class="ia-sd-durum yok" data-uyum="${i}">Uyuşmadı</button>`;
       }
-      return `<div class="ia-kart${rcls}" data-brow="${i}">
-          <div class="iak-ust"><span class="iak-ad">${kacar(k.islem)}</span><span class="iak-tut mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</span></div>
-          ${acik ? `<div class="iak-ac">${kacar(acik)}</div>` : ''}
-          <div class="iak-alt"><span class="iak-tar">${kacar(kisaTarih(k.tarih))}</span>${yonRoz(k.yon)}<span class="iak-durum">${durum}</span></div>
+      return `<div class="ia-satir" data-brow="${i}">
+          <div class="ia-sd-sol"><span class="ia-eyb">${kacar(kisaTarih(k.tarih))}</span><span class="ia-sd-ad">${kacar(k.islem)}</span>${acik ? `<span class="ia-sd-ac">${kacar(acik)}</span>` : ''}</div>
+          <div class="ia-sd-sag"><span class="ia-eyb">${yonAdi(k.yon)}</span><span class="ia-sd-tut ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</span>${durum}</div>
         </div>`;
     }).join('');
-    liste = `<div class="ia-kartlar">${tbody}</div>`;
+    liste = `<div class="ia-liste">${tbody}</div>`;
   }
   on.innerHTML = `
     <div class="ia-onizle">
@@ -1744,9 +1742,9 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
   if (pfRows) $$('.ia-esles-btn', on).forEach(b => b.onclick = () => { const r = pfRows[+b.dataset.esl]; if (r) ttEslestirSec(r.k); });
   if (!isPf) {
-    $$('.ia-kart', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
-    $$('.ia-esles-btn[data-uyum]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); const k = yeni[+b.dataset.uyum]; if (k.yon === 'komisyon') komisyonTuttur(k); else bankaGunGoster(k); });
-    $$('.ia-esles-btn[data-gtan]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); giderTanimlaModal(yeni[+b.dataset.gtan]); });
+    $$('.ia-satir', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
+    $$('[data-uyum]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); const k = yeni[+b.dataset.uyum]; if (k.yon === 'komisyon') komisyonTuttur(k); else bankaGunGoster(k); });
+    $$('[data-gtan]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); giderTanimlaModal(yeni[+b.dataset.gtan]); });
   }
   $('#iaKaydet').onclick = async () => {
     const btn = $('#iaKaydet'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
@@ -1759,6 +1757,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   function chip(t, c) { return `<span class="ia-chip ${c}">${kacar(t)}</span>`; }
   function turRoz(t) { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; }
   function yonRoz(y) { const m = { gelir: ['rz-gelir', 'Tahsilat'], komisyon: ['rz-kk', 'Komisyon'], gider: ['rz-gider', 'Gider'], ortakOdeme: ['rz-transfer', 'Ortak'] }; const v = m[y] || ['rz-notr', y]; return `<span class="rozet-etk ${v[0]}">${v[1]}</span>`; }
+  function yonAdi(y) { return ({ gelir: 'Tahsilat', komisyon: 'Komisyon', gider: 'Gider', ortakOdeme: 'Ortak' })[y] || y; }
 }
 /* Gider Tanımla — banka gider satırı, uygulamadaki TANIMLI gider kalemleriyle (State.giderler)
    eşleşmek ZORUNLU. Listede yoksa yeni gider kalemi olarak eklenir. Benzer açıklamaya kural yazılır. */

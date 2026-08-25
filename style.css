@@ -428,19 +428,23 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-uyari .uik{width:16px;height:16px;flex:0 0 auto}
 .ia-tablo{font-size:12.5px}
 .ia-tablo .ia-islem{max-width:200px}
-/* Banka hareketleri: ferah kart satırları (Boy 2) — işlem+tutar üstte, tarih/yön/durum altta */
-.ia-kartlar{display:flex;flex-direction:column;gap:9px}
-.ia-kart{padding:14px 15px;border-radius:16px;background:var(--kart);border:1px solid var(--kenar);cursor:pointer;transition:transform .12s ease}
-.ia-kart:active{transform:scale(.99)}
-.ia-kart.ia-r-ok{background:rgba(180,232,58,.06);border-color:rgba(180,232,58,.2)}
-.ia-kart.ia-r-yok{background:rgba(240,110,95,.07);border-color:rgba(240,110,95,.26)}
-.iak-ust{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.iak-ad{font-weight:800;font-size:15px;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.iak-tut{font-size:15px;font-weight:800;white-space:nowrap;flex:0 0 auto}
-.iak-ac{font-size:12px;color:var(--metin-soluk);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.iak-alt{display:flex;align-items:center;gap:9px;margin-top:11px}
-.iak-tar{font-size:12px;color:var(--metin-soluk);font-weight:700;font-variant-numeric:tabular-nums}
-.iak-durum{margin-left:auto;display:flex;align-items:center}
+/* Banka hareketleri: sade simetrik satırlar (zemin boyaması yok, sadece ayraç çizgisi)
+   Sol: tarih üst-etiket → işlem adı → açıklama · Sağ: yön üst-etiket → tutar → durum */
+.ia-liste{display:flex;flex-direction:column}
+.ia-satir{display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--kenar);cursor:pointer}
+.ia-satir:last-child{border-bottom:0}
+.ia-satir:active{background:rgba(255,255,255,.02)}
+.ia-sd-sol{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.ia-sd-sag{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto;text-align:right}
+.ia-eyb{font-size:11px;color:var(--metin-soluk);font-weight:700;letter-spacing:.2px;text-transform:uppercase;opacity:.85;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ia-sd-ad{font-weight:800;font-size:16.5px;color:var(--metin);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+.ia-sd-tut{font-size:16.5px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.15}
+.ia-sd-ac{font-size:11.5px;color:var(--metin-soluk);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+.ia-sd-durum{font-size:12px;font-weight:800;white-space:nowrap;background:none;border:0;font-family:inherit;cursor:pointer;padding:0;line-height:1.1}
+.ia-sd-durum.ok{color:#8fe07a}
+.ia-sd-durum.yok,.ia-sd-durum.tanimla{color:var(--amber)}
+.ia-sd-durum.gider{color:var(--metin)}
+.ia-sd-durum.notr{color:var(--metin-soluk);opacity:.5;font-weight:700;cursor:default}
 .ia-esles-ok.gid{color:var(--metin);background:var(--gri);border:1px solid var(--kenar);border-radius:999px;padding:5px 13px;font-size:11.5px;font-family:inherit;font-weight:800;cursor:pointer;white-space:nowrap}
 .ia-esles-ok.gid:active{transform:scale(.95)}
 .ia-e0{color:var(--amber);font-weight:800}
