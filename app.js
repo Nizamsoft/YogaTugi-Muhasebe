@@ -28,7 +28,7 @@ const State = {
   studyolar: [],     // {id, ad, aktif, olusturma}  — Ders stüdyoları (salonlar)
   odemeler: [],      // {id, ogrenciId, tutar, tarih:'YYYY-MM-DD', tur:'nakit'|'kart'|'havale', dusumler:[{paketId,tutar}], olusturma}
   talepler: [],      // {id, kullaniciId, kullaniciAd, sayfa, baslik, aciklama, cevap, cevapAd, durum:'bekliyor'|'cevaplandi', olusturma, cevapTarih}  — İstek ve Öneri
-  // ---- Yeni muhasebe/mutabakat modeli (Planformi + Banka) ----
+  // ---- Yeni muhasebe/mutabakat modeli (Plan4me + Banka) ----
   planformiTahsilat: [], // {id, tarih:'YYYY-MM-DD', saat, egitmenAd, egitmenId?, uyeAd, tur:'nakit'|'havale'|'kart', tutar, eslesmeId?, kaynak:'planformi', imza, olusturma}
   bankaHareketleri: [],  // {id, tarih:'YYYY-MM-DD', harekettarih, islem, tutar(signed), ba:'B'|'A', aciklama, kanal, kartNo, islemNo, yon:'gelir'|'gider'|'komisyon'|'ortakOdeme'|'transfer', giderKategoriId?, egitmenId?, eslesmeId?, kaynak:'vakifbank', imza, olusturma}
   eslesmeler: [],        // {id, tip:'batch'|'havale', bankaIds:[], planformiIds:[], durum:'otomatik'|'onayli'|'manuel'|'uyumsuz', beklenen, gerceklesen, komisyon, fark, not, olusturma}
@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '172';
+const APP_SURUM = '173';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '19:00';
+const APP_SURUM_SAAT = '19:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -614,7 +614,7 @@ const MENU = [
   { grup: 'Ayarlar', ikon: 'ayarlar', ogeler: [
     { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: 'tanimlar', baslik: 'Tanımlamalar' },
   ] },
-  // Operasyonel (Planformi'de yönetiliyor) — menüde gizli, kod dursun:
+  // Operasyonel (Plan4me'de yönetiliyor) — menüde gizli, kod dursun:
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
@@ -818,7 +818,7 @@ function fazPlaceholder(baslik, aciklama, ikonAd) {
     </div>`;
 }
 /* ==========================================================
-   KÂRLILIK — eğitmen/ortak bazlı P&L (Planformi + Banka + eşleşmeler)
+   KÂRLILIK — eğitmen/ortak bazlı P&L (Plan4me + Banka + eşleşmeler)
    ========================================================== */
 function egitmenKarlilik(donem) {
   const pf = (State.planformiTahsilat || []).filter(p => donemStr(p.tarih) === donem);
@@ -895,7 +895,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="kar-ust"><h3 class="kar-baslik">Kârlılık</h3>${ayNavHTML(donem)}</div>
-      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “İçe Aktar” ile Planformi ve banka dosyalarını yükleyin, ardından “Mutabakat”ta eşleştirin.</p></div>` : `
+      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “İçe Aktar” ile Plan4me ve banka dosyalarını yükleyin, ardından “Mutabakat”ta eşleştirin.</p></div>` : `
       <div class="kar-genel">
         <div class="kg-kutu"><span>Brüt Tahsilat</span><b>${TL(gBrut)}</b></div>
         <div class="kg-kutu"><span>Komisyon</span><b>−${TL(gKom)}</b></div>
@@ -965,7 +965,7 @@ SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
 };
 
 /* ==========================================================
-   MUTABAKAT — Planformi ↔ Banka eşleştirme motoru
+   MUTABAKAT — Plan4me ↔ Banka eşleştirme motoru
    ========================================================== */
 function gunFark(a, b) { const d = (new Date(a) - new Date(b)) / 86400000; return isNaN(d) ? 999 : d; }
 function isimGecer(aciklama, ad) {
@@ -1058,7 +1058,7 @@ SAYFALAR['mutabakat'] = function mutabakatSayfasi() {
       <div class="mt-satir">
         <div class="mt-yan banka"><span class="mt-et">BANKA</span><span class="mt-ad">${kacar(o.banka.islem)}</span><span class="mt-tar">${tarihG(o.banka.tarih)}</span></div>
         <div class="mt-orta">${ik('link')}</div>
-        <div class="mt-yan pf"><span class="mt-et">PLANFORMİ</span><span class="mt-ad">${sag}</span></div>
+        <div class="mt-yan pf"><span class="mt-et">PLAN4ME</span><span class="mt-ad">${sag}</span></div>
         <div class="mt-tutar">${TL(o.gerceklesen)}${farkli ? `<span class="mt-fark">Δ ${TL(o.fark)}</span>` : ''}</div>
       </div>
       <div class="mt-alt">
@@ -1071,10 +1071,10 @@ SAYFALAR['mutabakat'] = function mutabakatSayfasi() {
     const b = y.banka || y.p;
     const ad = taraf === 'banka' ? b.islem : `${kacar(b.uyeAd)} · ${kacar(b.egitmenAd)}`;
     const neden = taraf === 'banka'
-      ? ({ yok: 'Planformi’de karşılığı yok', tutar: `Planformi kart toplamı uymuyor (${TL(y.adaySum)})`, coklu: `${y.adaySay} olası eşleşme` }[y.neden] || '')
+      ? ({ yok: 'Plan4me’de karşılığı yok', tutar: `Plan4me kart toplamı uymuyor (${TL(y.adaySum)})`, coklu: `${y.adaySay} olası eşleşme` }[y.neden] || '')
       : 'Bankada karşılığı yok';
     return `<div class="mt-yalniz ${taraf}">
-      <span class="mt-y-et">${taraf === 'banka' ? 'BANKA' : 'PLANFORMİ'}</span>
+      <span class="mt-y-et">${taraf === 'banka' ? 'BANKA' : 'PLAN4ME'}</span>
       <span class="mt-y-ad">${kacar(ad)}</span>
       <span class="mt-y-tar">${tarihG(b.tarih)}</span>
       <span class="mt-y-tut ${(b.tutar||b.tutar)<0?'negatif':''}">${TL(taraf === 'banka' ? b.tutar : b.tutar)}</span>
@@ -1098,7 +1098,7 @@ SAYFALAR['mutabakat'] = function mutabakatSayfasi() {
         ${mtChip(r.bankaYalniz.length + r.planformiYalniz.length, 'Uyumsuz', 'amber')}
         ${r.oneri.length ? `<button type="button" class="btn btn-ana mt-tumu" id="mtTumu">${ik('onay')} Tümünü Onayla (${r.oneri.length})</button>` : ''}
       </div>
-      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Mutabakat için veri yok</h3><p>Önce “İçe Aktar” ile Planformi ve banka dosyalarını yükleyin.</p></div>` : ''}
+      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Mutabakat için veri yok</h3><p>Önce “İçe Aktar” ile Plan4me ve banka dosyalarını yükleyin.</p></div>` : ''}
       ${r.oneri.length ? `<div class="mt-blok"><h4>${ik('link')} Eşleşme Önerileri</h4>${r.oneri.map(oneriKart).join('')}</div>` : ''}
       ${(r.bankaYalniz.length || r.planformiYalniz.length) ? `<div class="mt-blok"><h4>${ik('uyari')} Eşleşmeyenler</h4>
         ${r.bankaYalniz.map(y => yalnizKart(y, 'banka')).join('')}
@@ -1115,7 +1115,7 @@ SAYFALAR['mutabakat'] = function mutabakatSayfasi() {
 };
 
 /* ==========================================================
-   İÇE AKTAR — Planformi (Alınan Ödemeler) + Banka (VakıfBank) importer
+   İÇE AKTAR — Plan4me (Alınan Ödemeler) + Banka (VakıfBank) importer
    ========================================================== */
 // Hem TR (1.234,56) hem US (1,234.56) hem düz sayı biçimini çözen işaretli tutar
 function tutarCoz(v) {
@@ -1181,7 +1181,7 @@ function iaDosyaOku(file, cb) {
   if (ext === 'csv') fr.readAsText(file, 'utf-8'); else fr.readAsArrayBuffer(file);
 }
 
-// Planformi "Alınan Ödemeler" tablosunu bul (2 tablolu sayfada A–E)
+// Plan4me "Alınan Ödemeler" tablosunu bul (2 tablolu sayfada A–E)
 function pfAyristir(data) {
   let f = null;
   for (const name of data.names) {
@@ -1200,7 +1200,7 @@ function pfAyristir(data) {
     }
     if (f) break;
   }
-  if (!f) return { hata: 'Planformi “Alınan Ödemeler” tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) bulunamadı.' };
+  if (!f) return { hata: 'Plan4me “Alınan Ödemeler” tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) bulunamadı.' };
   const { rows, headerRow, idx } = f;
   const kayitlar = [];
   for (let r = headerRow + 1; r < rows.length; r++) {
@@ -1277,7 +1277,7 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   ic().innerHTML = `
     <div class="ia-sayfa">
       <div class="ia-seg">
-        <button type="button" class="ia-oge ${iaSekme === 'planformi' ? 'sec' : ''}" data-ia="planformi">Planformi${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
+        <button type="button" class="ia-oge ${iaSekme === 'planformi' ? 'sec' : ''}" data-ia="planformi">Plan4me${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
         <button type="button" class="ia-oge ${iaSekme === 'banka' ? 'sec' : ''}" data-ia="banka">Banka${bhN ? ` <span class="ia-rk">${bhN}</span>` : ''}</button>
       </div>
       <div id="iaGovde"></div>
@@ -1289,7 +1289,7 @@ function iaTabCiz() {
   const g = $('#iaGovde'); const isPf = iaSekme === 'planformi';
   g.innerHTML = `
     <div class="ia-aciklama">${isPf
-      ? 'Planformi “Aylık Rapor” Excel’ini yükleyin. Yalnızca <b>Alınan Ödemeler</b> tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) okunur; diğer sayfa/tablolar atlanır.'
+      ? 'Plan4me “Aylık Rapor” Excel’ini yükleyin. Yalnızca <b>Alınan Ödemeler</b> tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) okunur; diğer sayfa/tablolar atlanır.'
       : 'Banka ekstresini (.xlsx / .csv) yükleyin. Hareketler otomatik sınıflandırılır: <b>tahsilat · komisyon · gider · ortak ödemesi</b>.'}</div>
     <label class="ia-drop" id="iaDrop">
       <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
@@ -1387,7 +1387,7 @@ SAYFALAR['ders-takibi'] = function () {
   SAYFALAR[dtSekme]();   // aktif alt görünümü #dtGovde içine çiz
 };
 
-/* -------- FİNANS ANA EKRAN (Planformi + Banka mutabakat) -------- */
+/* -------- FİNANS ANA EKRAN (Plan4me + Banka mutabakat) -------- */
 let neonOzetAcik = true;
 function neonAnaEkran() {
   const donem = buAy();
@@ -1434,7 +1434,7 @@ function neonAnaEkran() {
       <div class="neon-seans-bas"><span>Mutabakat</span><button type="button" class="neon-takvim" data-git="mutabakat">Aç ›</button></div>
       <div class="neon-seanslar">
         ${bosVeri
-          ? '<div class="neon-bos">Henüz veri yok. “İçe Aktar” ile Planformi ve banka dosyalarını yükleyin.</div>'
+          ? '<div class="neon-bos">Henüz veri yok. “İçe Aktar” ile Plan4me ve banka dosyalarını yükleyin.</div>'
           : `<div class="neon-seans" data-git="mutabakat"><span class="ns-bar"></span><div class="ns-ic"><div class="ns-ad">Eşleşen ${esOk} · Uyumsuz ${esUyumsuz}</div><div class="ns-saat">${pf.length} tahsilat · ${bh.length} banka hareketi</div></div></div>`}
       </div>
     </div>`;
