@@ -128,44 +128,45 @@ h1,h2,h3,h4{line-height:1.25}
 .mono{font-variant-numeric:tabular-nums}
 
 /* ============ GİRİŞ EKRANI ============ */
-/* ---- Premium / Gold giriş ekranı ---- */
+/* ---- Neon giriş ekranı ---- */
 #girisEkrani{
   position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:22px;overflow:hidden;
   background:
-    radial-gradient(90% 60% at 50% -8%,rgba(217,178,90,.28),transparent 60%),
-    radial-gradient(80% 50% at 50% 112%,rgba(123,169,126,.22),transparent 60%),
-    linear-gradient(180deg,#2c3b2f,#232d27);
+    repeating-linear-gradient(118deg, rgba(255,255,255,.016) 0 1px, transparent 1px 28px),
+    radial-gradient(130% 70% at 50% -8%, rgba(180,232,58,.14), transparent 58%),
+    radial-gradient(90% 55% at 50% 112%, rgba(245,169,31,.08), transparent 60%),
+    linear-gradient(180deg,#1f242c,#171b21);
 }
 .giris-orta{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px;animation:girisGir .5s ease both}
 @keyframes girisGir{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 /* dış çerçeve: yazı-logo + form birlikte, tek panel */
-.giris-cerceve{width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;border:1.5px solid rgba(224,192,106,.5);border-radius:26px;padding:40px 24px 34px;
-  background:linear-gradient(180deg,rgba(247,233,180,.05),rgba(0,0,0,.10));
-  box-shadow:0 24px 48px -26px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.15)}
+.giris-cerceve{width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;border:1.5px solid rgba(180,232,58,.22);border-radius:26px;padding:40px 24px 34px;
+  background:linear-gradient(180deg,rgba(44,51,61,.72),rgba(23,27,33,.72));
+  box-shadow:0 24px 48px -26px rgba(0,0,0,.6),inset 0 1px 0 rgba(180,232,58,.08),0 0 0 1px rgba(0,0,0,.25),0 0 42px -18px rgba(180,232,58,.35)}
 #girisGovde{width:100%}
-.giris-wm{font-family:'Quicksand',"Segoe UI",system-ui,sans-serif;font-weight:600;font-size:31px;line-height:1.04;color:#f3ecd8;text-align:center;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.giris-wm{font-family:'Quicksand',"Segoe UI",system-ui,sans-serif;font-weight:600;font-size:31px;line-height:1.04;color:#f1f4f6;text-align:center;text-shadow:0 2px 14px rgba(0,0,0,.45)}
 .giris-wm small{display:block}
 .giris-orn{display:flex;align-items:center;justify-content:center;gap:9px;margin:13px 0 30px}
-.giris-orn .l{width:46px;height:1.5px;background:linear-gradient(90deg,transparent,#e0c06a)}
-.giris-orn .l.r{background:linear-gradient(90deg,#e0c06a,transparent)}
-.giris-orn .d{color:#e0c06a;font-size:11px}
-.giris-alan{display:flex;align-items:center;gap:10px;border:1px solid rgba(224,192,106,.35);border-radius:13px;padding:13px 14px;background:rgba(20,26,21,.5);box-shadow:inset 0 1px 3px rgba(0,0,0,.25);margin-top:15px}
+.giris-orn .l{width:46px;height:1.5px;background:linear-gradient(90deg,transparent,#b4e83a)}
+.giris-orn .l.r{background:linear-gradient(90deg,#b4e83a,transparent)}
+.giris-orn .d{color:#b4e83a;font-size:11px}
+.giris-alan{display:flex;align-items:center;gap:10px;border:1px solid rgba(180,232,58,.28);border-radius:13px;padding:13px 14px;background:rgba(16,20,25,.55);box-shadow:inset 0 1px 3px rgba(0,0,0,.35);margin-top:15px}
 .giris-alan.ilk{margin-top:0}
-.giris-alan:focus-within{border-color:#e0c06a;box-shadow:inset 0 1px 3px rgba(0,0,0,.25),0 0 0 2px rgba(224,192,106,.25)}
-.giris-ik{width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;background:linear-gradient(135deg,#f7e6ad,#e6c574);color:#8a6417;font-size:13px}
-.giris-alan input{border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:#f3ecd8;flex:1;min-width:0}
-.giris-alan input::placeholder{color:#9aa895}
+.giris-alan:focus-within{border-color:#b4e83a;box-shadow:inset 0 1px 3px rgba(0,0,0,.35),0 0 0 2px rgba(180,232,58,.25)}
+.giris-ik{width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;background:linear-gradient(135deg,#c7f24a,#a4d92f);color:#14181c;font-size:13px}
+.giris-alan input{border:none;outline:none;background:transparent;font-family:inherit;font-size:14.5px;color:#f1f4f6;flex:1;min-width:0}
+.giris-alan input::placeholder{color:#8a95a0}
 .giris-hata{color:#f0a08f;font-size:12.5px;margin:10px 2px 0;min-height:16px}
-.btn-giris{position:relative;overflow:hidden;width:100%;margin-top:26px;border:none;border-radius:14px;padding:15px;font-weight:800;font-size:15.5px;color:#40320f;cursor:pointer;font-family:inherit;
-  background:linear-gradient(135deg,#f7e08a,#e6bb4e 45%,#cf9a2f);box-shadow:0 12px 24px -10px rgba(200,150,40,.8),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s}
+.btn-giris{position:relative;overflow:hidden;width:100%;margin-top:26px;border:none;border-radius:14px;padding:15px;font-weight:800;font-size:15.5px;color:#14181c;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#c7f24a,#a4d92f 55%,#8bc31d);box-shadow:0 12px 26px -10px rgba(140,195,29,.75),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .12s}
 .btn-giris::after{content:"";position:absolute;top:0;left:-45%;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);animation:girisSh 3.4s ease-in-out infinite}
 @keyframes girisSh{0%,62%{left:-45%}100%{left:130%}}
 .btn-giris:active{transform:translateY(1px)}
-.giris-guv{margin-top:16px;font-size:11px;color:#c8b98f;text-align:center}
+.giris-guv{margin-top:16px;font-size:11px;color:#8a95a0;text-align:center}
 .giris-yuk{display:flex;flex-direction:column;align-items:center;padding-top:4px;animation:girisGir .3s ease both}
-.giris-ring{width:52px;height:52px;border-radius:50%;border:4px solid rgba(224,192,106,.22);border-top-color:#e0c06a;animation:girisSpin 1s linear infinite}
+.giris-ring{width:52px;height:52px;border-radius:50%;border:4px solid rgba(180,232,58,.2);border-top-color:#b4e83a;animation:girisSpin 1s linear infinite}
 @keyframes girisSpin{to{transform:rotate(360deg)}}
-.giris-hz{margin-top:15px;font-size:12.5px;font-weight:700;color:#d8c79a;letter-spacing:.3px}
+.giris-hz{margin-top:15px;font-size:12.5px;font-weight:700;color:#9aa4ae;letter-spacing:.3px}
 @media (prefers-reduced-motion:reduce){.btn-giris::after,.giris-orta,.giris-yuk{animation:none}}
 
 /* ============ UYGULAMA İSKELETİ ============ */
@@ -358,6 +359,146 @@ body.tema-neon .alt-oge.merkez .ic{background:linear-gradient(135deg,#c7f24a,#a4
 body.tema-neon .alt-oge.merkez.aktif .ic{background:linear-gradient(135deg,#c7f24a,#a4d92f);color:var(--neon-metin)}
 body.tema-neon .alt-oge.merkez .ic .uik{width:26px;height:26px}
 body.tema-neon .alt-oge.merkez .tx{color:var(--neon)}
+
+/* =========================================================
+   NEON — GENEL UYARLAMA (modal / seçici / buton / rozet / segment)
+   Koyu temanın body.tema-koyu override desenlerinin neon karşılığı.
+   Semantik renk kodları korunur; açık/krem zeminler koyulaşır;
+   birincil aksiyon aksanları neon lime olur.
+   Not: Ders/Öğrenci/Stüdyo sayfalarına özgü sınıflar (.ogr-seg,
+   .std-*, .dt-*) burada hedeflenmez — o sayfalar pasif.
+   ========================================================= */
+/* Birincil aksiyon (lime + koyu metin) */
+body.tema-neon .btn-ana,
+body.tema-neon .btn-ana:hover,
+body.tema-neon .modal-alt .btn-ana,
+body.tema-neon .modal-alt .btn-ana:hover,
+body.tema-neon .modal .hr-kaydet,
+body.tema-neon .modal .hr-kaydet:hover,
+body.tema-neon .picker-tamam,
+body.tema-neon .tsz-t.sec,
+body.tema-neon .ods-seg button.sec{
+  background:linear-gradient(135deg,#c7f24a,#a4d92f);border-color:transparent;color:var(--neon-metin);
+  box-shadow:0 10px 22px -12px rgba(164,217,47,.55)}
+body.tema-neon .btn-ana:hover,body.tema-neon .modal .hr-kaydet:hover{filter:brightness(1.05)}
+body.tema-neon .wsel-oge.on{color:var(--neon)}
+/* İşlem Yap gelir/gider düğmeleri semantik kalsın (lime override'ından muaf) */
+body.tema-neon .btn-ana.iy-g{background:linear-gradient(135deg,#7ec284,#4f8f58);color:#fff}
+body.tema-neon .btn-ana.iy-d{background:linear-gradient(135deg,#ef8f7f,#d24d3d);color:#fff}
+
+/* Hover / aktif / focus aksanları */
+body.tema-neon .btn:hover{border-color:var(--neon);color:var(--neon)}
+body.tema-neon .sekme.aktif{color:var(--neon);border-bottom-color:var(--neon)}
+body.tema-neon .form-alan input:focus,
+body.tema-neon .form-alan select:focus,
+body.tema-neon .form-alan textarea:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(180,232,58,.18)}
+body.tema-neon .kisi-chip:hover,
+body.tema-neon .gs-geri:hover,
+body.tema-neon .gd-trig.acik{border-color:var(--neon);box-shadow:0 0 0 3px rgba(180,232,58,.15)}
+
+/* Modal gövdesi → koyu neon kart */
+body.tema-neon .modal-perde{background:rgba(8,11,14,.6)}
+body.tema-neon .modal{background:linear-gradient(180deg,#2c333d,#232932);border-color:rgba(180,232,58,.18);
+  box-shadow:0 30px 64px -26px rgba(0,0,0,.7),inset 0 1px 0 rgba(180,232,58,.06)}
+body.tema-neon .modal::before{background:linear-gradient(90deg,transparent,rgba(180,232,58,.6),rgba(245,169,31,.45),rgba(180,232,58,.6),transparent)}
+body.tema-neon .modal-ust{border-bottom-color:rgba(180,232,58,.14)}
+body.tema-neon .modal-kapat{background:var(--gri);border-color:var(--kenar);color:var(--metin-soluk)}
+body.tema-neon .modal-kapat:hover{border-color:var(--neon);color:var(--neon)}
+body.tema-neon .modal-alt{border-top-color:rgba(180,232,58,.14);background:linear-gradient(180deg,rgba(44,51,61,0),rgba(23,27,33,.5))}
+
+/* Premium rozet / onay ikon → koyu tile + lime/amber aksan */
+body.tema-neon .hr-rozet{background:rgba(180,232,58,.1);border-color:rgba(180,232,58,.3);color:var(--neon)}
+body.tema-neon .hr-rz-ik{background:linear-gradient(135deg,#c7f24a,#a4d92f);color:var(--neon-metin)}
+body.tema-neon .onay-ik{background:rgba(245,169,31,.14);color:var(--amber)}
+
+/* Form içi tetik butonları (tarih/saat/seçim) — beyaz zemin → koyu */
+body.tema-neon .sec-trig,
+body.tema-neon .pa-trig,
+body.tema-neon .gd-trig,
+body.tema-neon .saat-trig{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .saat-trig .uik{color:var(--neon)}
+body.tema-neon .hr-tutar{background:rgba(180,232,58,.08);border-color:rgba(180,232,58,.24)}
+body.tema-neon .hr-tutar label{color:var(--neon)}
+body.tema-neon .hr-tutar.cikis{background:rgba(192,72,63,.14);border-color:rgba(192,72,63,.35)}
+body.tema-neon .hr-tutar.cikis label{color:#f08a80}
+/* Modal içi girdi alanı / "+ ekle" butonu / tür çipleri (Havale/Nakit/K.Kartı) */
+body.tema-neon .gp-inp{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .gp-inp:focus{border-color:var(--neon)}
+body.tema-neon .ekle-btn{background:var(--gri);border-color:var(--kenar-koyu);color:var(--metin-soluk)}
+body.tema-neon .ekle-btn:hover{border-color:var(--neon);color:var(--neon)}
+body.tema-neon .turcip .tc{background:var(--gri);border-color:var(--kenar);color:var(--metin-soluk)}
+body.tema-neon .turcip .tc.sec{border-color:var(--neon);background:rgba(180,232,58,.16);color:var(--neon)}
+
+/* Arama kutusu + "İşlem Yap"/ekle butonu (Hesaplar vb.) */
+body.tema-neon .uys-ara{background:var(--gri);border-color:var(--kenar)}
+body.tema-neon .gp-ekle{background:linear-gradient(135deg,#ffc24d,#f5a91f);color:var(--neon-metin);box-shadow:0 10px 18px -9px rgba(245,169,31,.5)}
+body.tema-neon .gp-ekle.gp-ekle-alt{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .hesap-seg .rk{background:rgba(0,0,0,.22)}
+
+/* Hareket/öğrenci tablosu (Hesaplar/Ödemeler/Giderler defterlerinde ortak) */
+body.tema-neon .ogr-tablo thead th,body.tema-neon .krs-tablo thead th{background:var(--gri);color:var(--metin-soluk);border-bottom-color:var(--kenar)}
+body.tema-neon .ogr-tablo tbody tr:nth-child(odd){background:var(--kart)}
+body.tema-neon .ogr-tablo tbody tr:nth-child(even){background:var(--gri)}
+body.tema-neon .ogr-tablo tbody tr+tr td{border-top-color:var(--kenar)}
+body.tema-neon .ogr-tablo tbody tr:hover td{background:rgba(180,232,58,.06)}
+body.tema-neon .ogr-av{background:linear-gradient(135deg,#3a4550,#2c333d);color:var(--neon)}
+
+/* Ay gezinme çubuğu (Ortaklar/Raporlar) */
+body.tema-neon .ay-nav{background:linear-gradient(180deg,#2c333d,#232932)}
+body.tema-neon .ay-nav button{background:linear-gradient(180deg,#333c46,#2a323b);color:var(--neon)}
+body.tema-neon .ay-nav button:hover{background:linear-gradient(135deg,#a4d92f,#8bc31d);color:var(--neon-metin);box-shadow:0 6px 12px -4px rgba(164,217,47,.5)}
+body.tema-neon .ay-nav .ay .m{color:var(--metin)}
+body.tema-neon .ay-nav .ay .y{color:var(--metin-soluk)}
+
+/* Ortak özet kartı + düzenle butonu + tanım ikon tile */
+body.tema-neon .ok-ozet{background:linear-gradient(180deg,#2c333d,#262c34)}
+body.tema-neon .duz-btn{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .duz-btn:hover{border-color:var(--neon);color:var(--neon)}
+body.tema-neon .tnm-ik{background:var(--gri);box-shadow:inset 0 0 0 1px var(--kenar);color:var(--neon)}
+
+/* Ortak kartı monogram panelleri — koyu tonlu, ortak rengi (hue) korunur */
+body.tema-neon .ok-kare{background:linear-gradient(135deg,#2e3b30,#232c26)}
+body.tema-neon .ok-kart.f1 .ok-kare{background:linear-gradient(135deg,#38311f,#2b2517)}
+body.tema-neon .ok-kart.f2 .ok-kare{background:linear-gradient(135deg,#232f3d,#1d2531)}
+body.tema-neon .ok-kart.f3 .ok-kare{background:linear-gradient(135deg,#3a2831,#2c2027)}
+body.tema-neon .ok-mono{color:#7fc38a}
+body.tema-neon .ok-kart.f1 .ok-mono{color:#e0b25a}
+body.tema-neon .ok-kart.f2 .ok-mono{color:#7ba6de}
+body.tema-neon .ok-kart.f3 .ok-mono{color:#e08bab}
+body.tema-neon .ok-kart.acik{border-color:var(--neon);box-shadow:0 0 0 2px var(--neon),0 22px 44px -16px rgba(164,217,47,.4)}
+body.tema-neon .ok-kart.acik .ok-kare{box-shadow:inset 0 0 0 2px rgba(180,232,58,.5)}
+
+/* Seçiciler (tarih / saat) */
+body.tema-neon .picker-perde{background:rgba(8,11,14,.5)}
+body.tema-neon .picker-iptal{background:var(--gri);border-color:var(--kenar);color:var(--metin-soluk)}
+body.tema-neon .tsz-nav{background:var(--gri);border-color:var(--kenar);color:var(--neon)}
+body.tema-neon .tsz-t:hover{background:var(--gri)}
+body.tema-neon .tsz-t.gecmis{color:#5c6670}
+body.tema-neon .tsz-t.bugun{box-shadow:inset 0 0 0 1.5px rgba(180,232,58,.5)}
+body.tema-neon .ssz-dolu{background:rgba(245,169,31,.12);border-color:rgba(245,169,31,.3);color:var(--amber)}
+body.tema-neon .ssz-kolon{color:var(--neon)}
+body.tema-neon .wsel-band{background:rgba(180,232,58,.14);box-shadow:inset 0 0 0 1px rgba(180,232,58,.35)}
+
+/* Rozetler / özet ikonları — semantik ton korunur, zemin koyu yarı-saydam */
+body.tema-neon .rz-gelir,body.tema-neon .ozet.gelir .ikon-daire{background:rgba(47,143,91,.18);color:#5cc98a}
+body.tema-neon .rz-gider,body.tema-neon .ozet.gider .ikon-daire{background:rgba(192,72,63,.2);color:#f08a80}
+body.tema-neon .rz-transfer,body.tema-neon .rz-banka,body.tema-neon .ozet.pay .ikon-daire{background:rgba(74,114,168,.2);color:#7ba6de}
+body.tema-neon .rz-kk{background:rgba(139,92,199,.2);color:#b189e0}
+
+/* Segment konteynerleri (kart-özel .hs-* gradientleri semantik kalır) */
+body.tema-neon .ods-seg,body.tema-neon .hesap-seg{background:var(--gri);border-color:var(--kenar)}
+
+/* Ödeme / tip çipleri + bölüm başlıkları */
+body.tema-neon .od-baslik,body.tema-neon .gd-grpbas,body.tema-neon .gs-geri,body.tema-neon .gs-geri:hover{color:var(--neon)}
+body.tema-neon .od-tur.nakit{background:rgba(78,122,82,.24);color:#7fc384}
+body.tema-neon .od-tur.kart,body.tema-neon .od-tur.banka{background:rgba(63,98,150,.26);color:#7ba6de}
+body.tema-neon .od-tur.havale{background:rgba(245,169,31,.16);color:var(--amber)}
+body.tema-neon .gid-tutar{color:#f08a80}
+body.tema-neon .gid-tum{background:rgba(47,143,91,.16);border-color:rgba(47,143,91,.3);color:#5cc98a}
+
+/* Bilgi kutusu kenarları */
+body.tema-neon .bilgi-kutu{border-color:rgba(180,232,58,.22)}
+body.tema-neon .bilgi-kutu.uyari{border-color:rgba(245,169,31,.35)}
 
 /* Mobil alt menü + grup sheet — varsayılan gizli, mobilde açılır */
 .alt-menu{display:none}
@@ -2559,13 +2700,13 @@ body.tema-koyu .saat-trig{background:#26241b;color:var(--metin)}
 
 /* ===== Giriş: demo notu + ana ekrana ekle ===== */
 .giris-demo{display:flex;gap:9px;align-items:flex-start;text-align:left;margin-top:14px;padding:11px 13px;border-radius:12px;
-  background:rgba(224,192,106,.12);border:1px solid rgba(224,192,106,.35);color:#e7d9a6;font-size:11.5px;line-height:1.5}
-.giris-demo .uik{width:18px;height:18px;flex:0 0 auto;margin-top:1px;color:#e0c06a}
-.giris-demo b{color:#f3ecd8}
-.giris-ekle{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;width:100%;background:none;border:1px dashed rgba(224,192,106,.5);color:#e7d9a6;
+  background:rgba(180,232,58,.09);border:1px solid rgba(180,232,58,.28);color:#c3d3b0;font-size:11.5px;line-height:1.5}
+.giris-demo .uik{width:18px;height:18px;flex:0 0 auto;margin-top:1px;color:#b4e83a}
+.giris-demo b{color:#f1f4f6}
+.giris-ekle{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;width:100%;background:none;border:1px dashed rgba(180,232,58,.4);color:#c3d3b0;
   border-radius:12px;padding:11px;font-family:inherit;font-weight:800;font-size:12.5px;cursor:pointer}
-.giris-ekle:hover{border-color:#e0c06a;background:rgba(224,192,106,.08)}
-.giris-ekle .uik{width:17px;height:17px;color:#e0c06a}
+.giris-ekle:hover{border-color:#b4e83a;background:rgba(180,232,58,.08)}
+.giris-ekle .uik{width:17px;height:17px;color:#b4e83a}
 
 /* ===== Ana Ekrana Ekle yardım modalı ===== */
 .aee-bas{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}

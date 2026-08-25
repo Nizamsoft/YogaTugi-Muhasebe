@@ -458,9 +458,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '167';
-const APP_SURUM_TARIH = '19 Ağu 2026';
-const APP_SURUM_SAAT = '12:40';
+const APP_SURUM = '168';
+const APP_SURUM_TARIH = '25 Ağu 2026';
+const APP_SURUM_SAAT = '15:30';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -4475,7 +4475,7 @@ function paketAtaModal(o) {
   const paketTrigIc = () => {
     const p = paketler.find(x => x.id === uyelikId);
     if (!p) return `<span class="st-col"><span class="st-ph">Paket seçin</span></span><span class="st-ok">›</span>`;
-    if (secIdx < 0) return `<span class="pa-pk">${ik('uyelik')}</span><span class="st-col"><span class="st-nm">${kacar(p.ad)}</span><span class="st-sub" style="color:#b06a43;font-weight:700">Ders sayısı seçilmedi — dokun</span></span><span class="st-ok">›</span>`;
+    if (secIdx < 0) return `<span class="pa-pk">${ik('uyelik')}</span><span class="st-col"><span class="st-nm">${kacar(p.ad)}</span><span class="st-sub" style="color:var(--amber);font-weight:700">Ders sayısı seçilmedi — dokun</span></span><span class="st-ok">›</span>`;
     const secler = uyelikSecenekleri(p);
     const s = secler[secIdx] || {};
     return `<span class="pa-pk">${ik('uyelik')}</span><span class="st-col"><span class="st-nm">${kacar(p.ad)} — ${Number(s.dersSayisi) || 0} ders</span><span class="st-sub">${binlik(s.fiyat || 0)} ₺ · ${Number(p.gecerlilikGun) || 0} gün geçerli</span></span><span class="st-ok">›</span>`;
@@ -4998,7 +4998,7 @@ function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
     baslik.textContent = 'Ders Sayısı'; rozet.textContent = '🎟️ Paket · 2/2';
     govde.className = '';
     govde.innerHTML = `<div class="pa-oge sec-oge sec" style="margin-bottom:12px"><span class="pa-pk">${ik('uyelik')}</span><span class="pa-metin"><span class="ad">${kacar(p.ad)}</span><span class="alt">${Number(p.gecerlilikGun) || 0} gün geçerli</span></span></div>
-      <div class="sec-mini-bas">Kaç derslik alsın? ${sidx < 0 ? '<span style="color:#b06a43;font-weight:700">(bir seçenek seç)</span>' : ''}</div>
+      <div class="sec-mini-bas">Kaç derslik alsın? ${sidx < 0 ? '<span style="color:var(--amber);font-weight:700">(bir seçenek seç)</span>' : ''}</div>
       <div class="sec-cip" id="psSecList">${secler.map((s, i) => `<div class="scip ${sidx === i ? 'sec' : ''}" data-si="${i}"><span class="d">${Number(s.dersSayisi) || 0} <small>ders</small></span><span class="scip-sag"><span class="f">${binlik(s.fiyat)} ₺</span>${sidx === i ? '<span class="tik">✓</span>' : ''}</span></div>`).join('')}</div>`;
     alt.innerHTML = `<button class="btn" type="button" data-geri2 style="flex:1">‹ Geri</button><button class="btn btn-ana" type="button" data-sec style="flex:1">Seç</button>`;
     govde.querySelectorAll('[data-si]').forEach(el => el.onclick = () => { sidx = Number(el.dataset.si); cizSayi(); });
@@ -6588,7 +6588,7 @@ function faviconUygula() {
     const ad = (a.firmaAd || 'Green Village Pilates').trim();
     const mani = {
       name: ad, short_name: (ad.split(/\s+/)[0] || ad).slice(0, 12),
-      start_url: '.', display: 'standalone', background_color: '#efe6d6', theme_color: '#e7ddca',
+      start_url: '.', display: 'standalone', background_color: '#171b21', theme_color: '#1b2026',
       icons: [{ src, sizes: '240x240', type: 'image/jpeg', purpose: 'any' }],
     };
     if (_maniURL) URL.revokeObjectURL(_maniURL);
