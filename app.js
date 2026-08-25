@@ -28,6 +28,11 @@ const State = {
   studyolar: [],     // {id, ad, aktif, olusturma}  — Ders stüdyoları (salonlar)
   odemeler: [],      // {id, ogrenciId, tutar, tarih:'YYYY-MM-DD', tur:'nakit'|'kart'|'havale', dusumler:[{paketId,tutar}], olusturma}
   talepler: [],      // {id, kullaniciId, kullaniciAd, sayfa, baslik, aciklama, cevap, cevapAd, durum:'bekliyor'|'cevaplandi', olusturma, cevapTarih}  — İstek ve Öneri
+  // ---- Yeni muhasebe/mutabakat modeli (Planformi + Banka) ----
+  planformiTahsilat: [], // {id, tarih:'YYYY-MM-DD', saat, egitmenAd, egitmenId?, uyeAd, tur:'nakit'|'havale'|'kart', tutar, eslesmeId?, kaynak:'planformi', imza, olusturma}
+  bankaHareketleri: [],  // {id, tarih:'YYYY-MM-DD', harekettarih, islem, tutar(signed), ba:'B'|'A', aciklama, kanal, kartNo, islemNo, yon:'gelir'|'gider'|'komisyon'|'ortakOdeme'|'transfer', giderKategoriId?, egitmenId?, eslesmeId?, kaynak:'vakifbank', imza, olusturma}
+  eslesmeler: [],        // {id, tip:'batch'|'havale', bankaIds:[], planformiIds:[], durum:'otomatik'|'onayli'|'manuel'|'uyumsuz', beklenen, gerceklesen, komisyon, fark, not, olusturma}
+  kategoriKurallari: [], // {id, anahtar, giderKategoriId, yon, olusturma}  — banka açıklama → kategori önerisi
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -268,7 +273,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.r
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar'];   // + Ödemeler, İstek/Öneri, Stüdyolar
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar', 'planformiTahsilat', 'bankaHareketleri', 'eslesmeler', 'kategoriKurallari'];   // + yeni muhasebe/mutabakat koleksiyonları
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -458,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '168';
+const APP_SURUM = '169';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '15:30';
+const APP_SURUM_SAAT = '17:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -496,6 +501,10 @@ async function veriYukle() {
   State.odemeler = DB._oku('odemeler');
   State.talepler = DB._oku('talepler');
   State.studyolar = DB._oku('studyolar');
+  State.planformiTahsilat = DB._oku('planformiTahsilat');
+  State.bankaHareketleri = DB._oku('bankaHareketleri');
+  State.eslesmeler = DB._oku('eslesmeler');
+  State.kategoriKurallari = DB._oku('kategoriKurallari');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = [];
 }
@@ -594,26 +603,27 @@ const Hesapla = {
    4) MENÜ & YÖNLENDİRME
    ========================================================== */
 const MENU = [
-  { id: 'dashboard', ad: 'Gösterge Paneli', ikon: 'panel', baslik: 'Gösterge Paneli' },
-  { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },   // menüde gizli; ana ekran kartlarından açılır
+  { id: 'dashboard', ad: 'Panel', ikon: 'panel', baslik: 'Finans Paneli' },
   { grup: 'Muhasebe', ikon: 'muhasebe', ogeler: [
+    { id: 'ice-aktar', ad: 'İçe Aktar', ikon: 'indir', baslik: 'İçe Aktar' },
+    { id: 'mutabakat', ad: 'Mutabakat', ikon: 'onay', baslik: 'Banka Mutabakatı' },
     { id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe', baslik: 'Hesaplar' },
-    { id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar', baslik: 'Ortaklar' },
-  ] },
-  { grup: 'Raporlar', ikon: 'raporlar', ogeler: [
-    { id: 'rapor-giderler', ad: 'Giderler Raporu', ikon: 'gider', baslik: 'Giderler Raporu' },
+    { id: 'karlilik', ad: 'Kârlılık', ikon: 'ortaklar', baslik: 'Eğitmen / Ortak Kârlılığı' },
+    { id: 'giderler', ad: 'Giderler', ikon: 'gider', baslik: 'Giderler' },
   ] },
   { grup: 'Ayarlar', ikon: 'ayarlar', ogeler: [
     { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: 'tanimlar', baslik: 'Tanımlamalar' },
   ] },
+  // Operasyonel (Planformi'de yönetiliyor) — menüde gizli, kod dursun:
+  { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-uyelik': 'Üyelikler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Gelir Vergisi', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Gelir Vergisi', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
-const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-uyelik', 'tanim-gider', 'ayar-vergi', 'ayar-giris-kul'];
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-gider', 'ayar-vergi', 'ayar-giris-kul'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
-const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak', 'Müşteri & Planlama'];
+const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak'];
 const HESAP_KARTLARI = [
   { id: 'hesap-banka', grup: 'Para Hesapları',        ad: 'Banka Hesabı',    baslik: 'Bankalar',              ikon: '🏦', aciklama: 'Banka işlemlerini izleyin' },
   { id: 'hesap-kk',    grup: 'Para Hesapları',        ad: 'Kredi Kartı',     baslik: 'Kredi Kartı Hesapları', ikon: '💳', aciklama: 'Kart harcamalarını izleyin' },
@@ -621,9 +631,9 @@ const HESAP_KARTLARI = [
   { id: 'hesap-gider', grup: 'Gelir · Gider · Ortak', ad: 'Giderler Hesabı', baslik: 'Giderler Hesabı',       ikon: '📉', aciklama: 'Giderleri kalem kalem', gizli: true },
   { id: 'hesap-gelir', grup: 'Gelir · Gider · Ortak', ad: 'Gelirler Hesabı', baslik: 'Gelirler Hesabı',       ikon: '📈', aciklama: 'Gelirleri kalem kalem', gizli: true },
   { id: 'hesap-ortak', grup: 'Gelir · Gider · Ortak', ad: 'Ortaklar Hesabı', baslik: 'Ortaklar Hesabı',       ikon: '🤝', aciklama: 'Hak ediş ve ödemeler', gizli: true },
-  { id: 'plan4me',     grup: 'Müşteri & Planlama',    ad: 'Plan4Me',         baslik: 'Plan4Me — Ders Kayıtları', ikon: '🧘', aciklama: 'Ders gelirlerini gir' },
-  { id: 'musteriler',  grup: 'Müşteri & Planlama',    ad: 'Müşteriler',      baslik: 'Müşteriler',            ikon: '👥', aciklama: 'Ders / ödeme / borç (cari)' },
-  { id: 'potansiyel',  grup: 'Müşteri & Planlama',    ad: 'Potansiyel Müşteriler', baslik: 'Potansiyel Müşteriler', ikon: '🌱', aciklama: 'İlgilenenleri takip et' },
+  { id: 'plan4me',     grup: 'Müşteri & Planlama',    ad: 'Plan4Me',         baslik: 'Plan4Me — Ders Kayıtları', ikon: '🧘', aciklama: 'Ders gelirlerini gir', gizli: true },
+  { id: 'musteriler',  grup: 'Müşteri & Planlama',    ad: 'Müşteriler',      baslik: 'Müşteriler',            ikon: '👥', aciklama: 'Ders / ödeme / borç (cari)', gizli: true },
+  { id: 'potansiyel',  grup: 'Müşteri & Planlama',    ad: 'Potansiyel Müşteriler', baslik: 'Potansiyel Müşteriler', ikon: '🌱', aciklama: 'İlgilenenleri takip et', gizli: true },
 ];
 // Hesap kartları için şık çizim (line/duotone) ikonlar
 const HESAP_IKON = {
@@ -798,6 +808,19 @@ window.addEventListener('resize', tabloSigdirGec);
 const SAYFALAR = {};
 const ic = () => $('#icerik');
 
+/* ---- Yeni muhasebe ekranları — iskelet (F2–F4'te doldurulacak) ---- */
+function fazPlaceholder(baslik, aciklama, ikonAd) {
+  ic().innerHTML = `
+    <div class="faz-bos">
+      <div class="faz-ik">${ik(ikonAd || 'belge')}</div>
+      <h3>${kacar(baslik)}</h3>
+      <p>${kacar(aciklama)}</p>
+    </div>`;
+}
+SAYFALAR['ice-aktar'] = () => fazPlaceholder('İçe Aktar', 'Planformi tahsilat dosyası ve banka ekstresi buradan yüklenecek.', 'indir');
+SAYFALAR['mutabakat'] = () => fazPlaceholder('Banka Mutabakatı', 'Planformi tahsilatları ile banka hareketleri burada eşleştirilecek.', 'onay');
+SAYFALAR['karlilik'] = () => fazPlaceholder('Eğitmen / Ortak Kârlılığı', 'Her eğitmen/ortak için brüt tahsilat, komisyon, vergi, gider ve net kâr burada gösterilecek.', 'ortaklar');
+
 /* ==========================================================
    DERS TAKİBİ — Dersler / Öğrenciler / Stüdyolar tek ekran (3 sekme)
    ========================================================== */
@@ -827,52 +850,59 @@ SAYFALAR['ders-takibi'] = function () {
   SAYFALAR[dtSekme]();   // aktif alt görünümü #dtGovde içine çiz
 };
 
-/* -------- NEON ANA EKRAN (pilot) -------- */
-let neonOzetAcik = false;
+/* -------- FİNANS ANA EKRAN (Planformi + Banka mutabakat) -------- */
+let neonOzetAcik = true;
 function neonAnaEkran() {
-  const veri = ortakAyHesap(buAy());
-  const hakEdis = veri.reduce((s, r) => s + (Number(r.verilecek) || 0), 0);
-  const sonBak = (h) => h.length ? h[h.length - 1].bakiye : 0;
-  const bankaBak = sonBak(hesapHareketleri('banka'));
-  const kasaBak = sonBak(hesapHareketleri('nakit'));
-  const kartB = kartBorcu();
-  const bugun = bugunISO();
-  const benim = benId();
-  const aktifOrt = State.ortaklar.filter(o => o.aktif !== false);
-  const panelOrt = benim || (aktifOrt[0] ? aktifOrt[0].id : null);
-  const seanslar = (State.dersler || []).filter(d => d.egitmenId === panelOrt && d.durum !== 'iptal' && d.tarih === bugun)
-    .sort((x, y) => (x.saat || '').localeCompare(y.saat || ''));
-  const seansSatir = (d) => {
-    const ids = d.ogrenciIds || [];
-    const ad = ids.length > 1 ? (d.dersAd || 'Grup Seansı') : (ids.length ? ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0])) : (d.dersAd || 'Seans'));
-    const yapildi = d.durum === 'gerceklesti';
-    return `<div class="neon-seans${yapildi ? ' yapildi' : ''}" data-git="dersler"><span class="ns-bar"></span><div class="ns-ic"><div class="ns-ad">${kacar(ad)}</div><div class="ns-saat">${kacar(d.saat || '')}${d.bitis ? ' - ' + kacar(d.bitis) : ''}</div></div></div>`;
-  };
+  const donem = buAy();
+  const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
+  const pf = (State.planformiTahsilat || []).filter(p => donemStr(p.tarih) === donem);
+  const bru = topla(pf);
+  const nakit = topla(pf.filter(p => p.tur === 'nakit'));
+  const havale = topla(pf.filter(p => p.tur === 'havale'));
+  const kartT = topla(pf.filter(p => p.tur === 'kart'));
+  const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem);
+  const komisyon = bh.filter(b => b.yon === 'komisyon').reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
+  const gider = bh.filter(b => b.yon === 'gider').reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
+  const net = bru - komisyon - gider;
+  const es = State.eslesmeler || [];
+  const esOk = es.filter(x => ['otomatik', 'onayli', 'manuel'].includes(x.durum)).length;
+  const esUyumsuz = es.filter(x => x.durum === 'uyumsuz').length;
+  const bosVeri = !pf.length && !bh.length;
   const kart = (ikAd, et, sayfa) => `<button type="button" class="neon-kart" data-git="${sayfa}"><span class="nk-ik">${ik(ikAd)}</span><span class="nk-et">${kacar(et)}</span></button>`;
-  const ozetSat = (l, v) => `<div class="no-sat"><span>${l}</span><b>${v}</b></div>`;
+  const ozetSat = (l, v, cls = '') => `<div class="no-sat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
   ic().innerHTML = `
     <div class="neon-home">
       <div class="neon-ozet ${neonOzetAcik ? 'acik' : ''}" id="neonOzet">
-        <div class="no-head"><span class="no-bas">Özet</span><span class="no-ok">▾</span></div>
-        <div class="no-govde">${ozetSat('Hak Ediş', TL(hakEdis))}${ozetSat('Banka', TL(bankaBak))}${ozetSat('Kasa', TL(kasaBak))}${ozetSat('Kredi Kartı Borcu', TL(kartB))}</div>
+        <div class="no-head"><span class="no-bas">${donemAdi(donem)} · Özet</span><span class="no-ok">▾</span></div>
+        <div class="no-govde">
+          ${ozetSat('Brüt Tahsilat', TL(bru))}
+          ${ozetSat('Nakit', TL(nakit))}
+          ${ozetSat('Havale', TL(havale))}
+          ${ozetSat('Kart', TL(kartT))}
+          ${ozetSat('Kart Komisyonu', komisyon ? '−' + TL(komisyon) : TL(0))}
+          ${ozetSat('Gider', gider ? '−' + TL(gider) : TL(0))}
+          ${ozetSat('Net', TL(net), net < 0 ? 'negatif' : 'pozitif')}
+        </div>
       </div>
       <div class="neon-aksiyon">
-        <button type="button" class="neon-abtn lime" id="neonUye"><span class="na-ik">${ik('yeni')}</span><span>Üye Ekle</span></button>
-        <button type="button" class="neon-abtn amber" id="neonSeans"><span class="na-ik">${ik('dersler')}</span><span>Seans Ekle</span></button>
+        <button type="button" class="neon-abtn lime" data-git="ice-aktar"><span class="na-ik">${ik('indir')}</span><span>İçe Aktar</span></button>
+        <button type="button" class="neon-abtn amber" data-git="mutabakat"><span class="na-ik">${ik('onay')}</span><span>Mutabakat</span></button>
       </div>
       <div class="neon-grid">
-        ${kart('ogrenci', 'Üyeler', 'ogrenciler')}
-        ${kart('dersler', 'Seanslar', 'dersler')}
-        ${kart('muhasebe', 'Finans', 'hesap-defter')}
-        ${kart('ortaklar', 'Eğitmenler', 'ortaklar')}
+        ${kart('muhasebe', 'Hesaplar', 'hesap-defter')}
+        ${kart('ortaklar', 'Kârlılık', 'karlilik')}
+        ${kart('gider', 'Giderler', 'giderler')}
+        ${kart('tanimlar', 'Ayarlar', 'ayar-tanimlama')}
       </div>
-      <div class="neon-seans-bas"><span>Bugünkü Seanslarım</span><button type="button" class="neon-takvim" data-git="studyolar">Takvim ›</button></div>
-      <div class="neon-seanslar">${seanslar.length ? seanslar.map(seansSatir).join('') : '<div class="neon-bos">Bugün için seans yok.</div>'}</div>
+      <div class="neon-seans-bas"><span>Mutabakat</span><button type="button" class="neon-takvim" data-git="mutabakat">Aç ›</button></div>
+      <div class="neon-seanslar">
+        ${bosVeri
+          ? '<div class="neon-bos">Henüz veri yok. “İçe Aktar” ile Planformi ve banka dosyalarını yükleyin.</div>'
+          : `<div class="neon-seans" data-git="mutabakat"><span class="ns-bar"></span><div class="ns-ic"><div class="ns-ad">Eşleşen ${esOk} · Uyumsuz ${esUyumsuz}</div><div class="ns-saat">${pf.length} tahsilat · ${bh.length} banka hareketi</div></div></div>`}
+      </div>
     </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
-  $('#neonUye').onclick = () => yeniUyelikBaslat();
-  $('#neonSeans').onclick = () => dersOlusturModal();
-  $('#neonOzet').onclick = () => { neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
+  $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
 }
 
 /* -------- DASHBOARD -------- */
@@ -3910,7 +3940,6 @@ SAYFALAR['ortaklar'] = function () {
 const TANIMLAR = [
   { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', sadeceAdmin: true },
   { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Eğitmenler ve pay oranları', sadeceAdmin: true },
-  { id: 'tanim-uyelik', ad: 'Üyelikler', ikon: 'uyelik', alt: 'Ders ve üyelik paketleri' },
   { id: 'tanim-gider', ad: 'Giderler', ikon: 'gider', alt: 'Gider kalemleri ve grupları' },
   { id: 'ayar-vergi', ad: 'Gelir Vergisi', ikon: 'belge', alt: 'Tahsilat vergi kesinti oranı (kâr dağıtımı)', sadeceAdmin: true },
   { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)', sadeceAdmin: true },
@@ -6306,8 +6335,8 @@ function ustCubukKur() {
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel' },
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
-  { tip: 'aksiyon', id: 'tahsilat', ad: 'Tahsilat', ikon: 'arti', merkez: true },
-  { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar' },
+  { tip: 'sayfa', id: 'ice-aktar', ad: 'İçe Aktar', ikon: 'indir', merkez: true },
+  { tip: 'sayfa', id: 'mutabakat', ad: 'Mutabakat', ikon: 'onay' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
@@ -6316,7 +6345,7 @@ function altMenuAktifId(sayfa) {
   if (ALT_MENU.some(m => m.tip === 'sayfa' && m.id === sayfa)) return sayfa;
   if (sayfa === 'dersler' || sayfa === 'ogrenciler' || sayfa === 'studyolar') return 'ders-takibi';   // Ders Takibi alt görünümleri
   if (TANIM_ALT.includes(sayfa)) return 'ayar-tanimlama';                 // Tanımlamalar alt sayfaları
-  if (sayfa === 'hesap-ortak') return 'ortaklar';                          // Ortaklar Hesabı → Ortaklar sekmesi
+  if (sayfa === 'hesap-ortak' || sayfa === 'ortaklar' || sayfa === 'karlilik') return 'dashboard';   // kârlılık/ortak sayfaları — alt menüde ayrı sekme yok
   // Hesaplar sekmesine ait diğer sayfalar (kart sayfaları, Potansiyel/Müşteriler, Plan4Me)
   if (sayfa === 'hesaplar' || sayfa === 'potansiyel' || sayfa === 'musteriler' || sayfa === 'plan4me' || sayfa.startsWith('hesap-')) return 'hesap-defter';
   for (const m of ALT_MENU) {
