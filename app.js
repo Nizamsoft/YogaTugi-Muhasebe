@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '173';
+const APP_SURUM = '174';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '19:20';
+const APP_SURUM_SAAT = '19:45';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -618,7 +618,7 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Gelir Vergisi', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi / KDV Oranı', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
 const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-gider', 'tanim-kategori', 'tanim-komisyon', 'ayar-vergi', 'ayar-giris-kul'];
 
@@ -851,7 +851,7 @@ function egitmenKarlilik(donem) {
   const odenen = {}; ortaklar.forEach(o => { odenen[o.id] = huzur.filter(h => isimGecer(h.aciklama, o.ad)).reduce((s, h) => s + Math.abs(h.tutar), 0); });
   const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;
   const hesapla = (e) => {
-    const vergi = Math.round(e.brut * vOran);       // ÖNİZLEME — kesin formül netleşince değişir
+    const vergi = Math.round((e.havale + e.kart) * vOran);   // vergi = bankaya giren (havale+kart) × oran (üstüne ekli)
     const gpay = e.ortakMi ? giderPayi : 0;
     const net = e.brut - e.komisyon - gpay - vergi;
     const od = e.egitmenId ? (odenen[e.egitmenId] || 0) : 0;
@@ -882,7 +882,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
       ${sat('Brüt Tahsilat', TL(e.brut))}
       ${sat('Kart Komisyonu', e.komisyon ? '−' + TL(e.komisyon) : TL(0))}
       ${sat('Genel Gider Payı', e.giderPayi ? '−' + TL(e.giderPayi) : TL(0))}
-      ${sat(`Vergi (önizleme %${Math.round(r.vOran * 100)})`, e.vergi ? '−' + TL(e.vergi) : TL(0), 'kar-vergi')}
+      ${sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, e.vergi ? '−' + TL(e.vergi) : TL(0), 'kar-vergi')}
       ${sat('Net', TL(e.net), 'kar-net-b ' + (e.net < 0 ? 'negatif' : 'pozitif'))}
       ${e.odenen ? sat('Ödenen (huzur hakkı/payı)', '−' + TL(e.odenen)) + sat('Kalan Verilecek', TL(e.kalan), e.kalan < 0 ? 'negatif' : 'pozitif') : ''}
     </div>`;
@@ -902,7 +902,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
         <div class="kg-kutu"><span>Genel Gider</span><b>−${TL(r.genelGider)}</b></div>
         <div class="kg-kutu vurgu"><span>Ortak Net (toplam)</span><b class="${gNet < 0 ? 'negatif' : 'pozitif'}">${TL(gNet)}</b></div>
       </div>
-      <div class="kar-bilgi">${ik('uyari')} Vergi satırı <b>önizleme</b>dir (kesin KDV/vergi formülü netleşince güncellenecek). Genel giderler ${r.ortaklar.length} ortağa eşit bölünür.</div>
+      <div class="kar-bilgi">${ik('uyari')} Vergi = bankaya giren (havale+kart) tahsilatın <b>%${Math.round(r.vOran * 100)}</b>’si (nakit hariç); oran Ayarlar › Vergi/KDV Oranı’ndan değişir. Genel giderler ${r.ortaklar.length} ortağa eşit bölünür.</div>
       <h4 class="kar-grup">Ortaklar</h4>
       ${r.ortaklar.map(ortakKart).join('')}
       ${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <span class="kar-grup-not">tahsilatları havuzda; dağıtım sonra netleşecek</span></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
@@ -1400,7 +1400,9 @@ function neonAnaEkran() {
   const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem);
   const komisyon = bh.filter(b => b.yon === 'komisyon').reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
   const gider = bh.filter(b => b.yon === 'gider').reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
-  const net = bru - komisyon - gider;
+  const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;
+  const vergi = Math.round((havale + kartT) * vOran);   // bankaya giren tahsilatın oranı
+  const net = bru - komisyon - gider - vergi;
   const es = State.eslesmeler || [];
   const esOk = es.filter(x => ['otomatik', 'onayli', 'manuel'].includes(x.durum)).length;
   const esUyumsuz = es.filter(x => x.durum === 'uyumsuz').length;
@@ -1417,6 +1419,7 @@ function neonAnaEkran() {
           ${ozetSat('Havale', TL(havale))}
           ${ozetSat('Kart', TL(kartT))}
           ${ozetSat('Kart Komisyonu', komisyon ? '−' + TL(komisyon) : TL(0))}
+          ${ozetSat(`Vergi (%${Math.round(vOran * 100)})`, vergi ? '−' + TL(vergi) : TL(0))}
           ${ozetSat('Gider', gider ? '−' + TL(gider) : TL(0))}
           ${ozetSat('Net', TL(net), net < 0 ? 'negatif' : 'pozitif')}
         </div>
@@ -4065,10 +4068,10 @@ SAYFALAR['ayar-vergi'] = function () {
   const oran = vergiOrani();
   ic().innerHTML = `
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="vgGeri">‹ Tanımlamalar</button></div>
-    <div class="bilgi-kutu" style="max-width:560px;margin:0 0 14px"><span class="ikon">${ik('belge')}</span><div>Ortaklar <b>havale</b> veya <b>kredi kartı</b> ile tahsilat aldığında, kâr dağıtımında bu oranda <b>gelir vergisi kesintisi</b> önizleme olarak düşülür. <b>Nakitte</b> uygulanmaz. Bu kesinti <b>bankaya/gidere yansımaz</b>; yalnızca ortağın “Verilecek Pay” hesabında görünür.</div></div>
+    <div class="bilgi-kutu" style="max-width:560px;margin:0 0 14px"><span class="ikon">${ik('belge')}</span><div><b>Havale</b> ve <b>kredi kartı</b> (bankaya giren) tahsilatların üzerine bu oranda vergi hesaplanır — <b>nakit hariç</b>. Kârlılık ekranında ayrı satır olarak net’ten düşülür; <b>bankaya/gidere yansımaz</b>. Örn. %20 ile 10.000 ₺ havale/kart → 2.000 ₺ vergi.</div></div>
     <div class="kart" style="max-width:560px">
-      <div class="kart-baslik"><h3>Gelir Vergisi Kesintisi</h3><span class="rozet-etk rz-gelir">Kâr dağıtımı önizlemesi</span></div>
-      <div class="gp-alan uy-birimli" style="max-width:220px"><label>Kesinti Oranı</label><input type="text" inputmode="decimal" class="gp-inp" id="vgOran" value="${kacar(String(oran))}" placeholder="20"><span class="uy-birim">%</span></div>
+      <div class="kart-baslik"><h3>Vergi / KDV Oranı</h3><span class="rozet-etk rz-banka">Havale + Kart</span></div>
+      <div class="gp-alan uy-birimli" style="max-width:220px"><label>Vergi Oranı</label><input type="text" inputmode="decimal" class="gp-inp" id="vgOran" value="${kacar(String(oran))}" placeholder="20"><span class="uy-birim">%</span></div>
       <div style="margin-top:14px"><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="vgKaydet">${ik('kaydet')} Kaydet</button></div>
     </div>`;
   $('#vgGeri').onclick = () => git('ayar-tanimlama');
@@ -4480,7 +4483,7 @@ const TANIMLAR = [
   { id: 'tanim-gider', ad: 'Giderler', ikon: 'gider', alt: 'Gider kalemleri ve grupları' },
   { id: 'tanim-kategori', ad: 'Banka Gider Kategorileri', ikon: 'tanimlar', alt: 'Açıklama → kategori kuralları' },
   { id: 'tanim-komisyon', ad: 'Kart Komisyon Oranları', ikon: 'kart', alt: 'Debit / Kredi / Yurt dışı' },
-  { id: 'ayar-vergi', ad: 'Gelir Vergisi', ikon: 'belge', alt: 'Tahsilat vergi kesinti oranı (kâr dağıtımı)', sadeceAdmin: true },
+  { id: 'ayar-vergi', ad: 'Vergi / KDV Oranı', ikon: 'belge', alt: 'Havale + kart tahsilatına uygulanan oran', sadeceAdmin: true },
   { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)', sadeceAdmin: true },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
