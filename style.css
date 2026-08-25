@@ -723,6 +723,14 @@ body.tema-koyu .drs .gun .g{color:#8fce9a}body.tema-koyu .drs .gun.yarin .g{colo
 .drs .orta .bd{font-weight:700;font-size:12px;line-height:1.25}
 .drs .orta .alt{font-size:10.5px;color:var(--metin-soluk);margin-top:1px}
 .drs .chv{color:#c9a94e;font-weight:800;flex:0 0 auto}
+/* Dashboard ders satırı: Onayla / Gerçekleşti */
+.drs-onay{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;border:none;border-radius:999px;padding:8px 13px;font-family:inherit;font-weight:800;font-size:12px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#7ec284,#4f8f58);box-shadow:0 7px 14px -8px rgba(79,116,82,.75);white-space:nowrap}
+.drs-onay .uik{width:15px;height:15px}
+.drs-onay:active{transform:translateY(1px)}
+.drs-done{flex:0 0 auto;display:inline-flex;color:#4f8f58}
+.drs-done .uik{width:21px;height:21px}
+.drs.drs-tamam{opacity:.72}
+.drs-grup{display:inline-block;font-size:9.5px;font-weight:800;color:#a8792f;background:#f6e6ad;border-radius:999px;padding:1px 7px;margin-left:5px;vertical-align:middle}
 .drs-gun-et{padding:6px 15px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#8a6a2a;background:rgba(198,154,76,.07);border-top:1px solid var(--kenar)}
 body.tema-koyu .drs-gun-et{color:var(--gold)}
 .drs-bos{padding:22px 16px;text-align:center;font-size:12.5px;color:var(--metin-soluk)}

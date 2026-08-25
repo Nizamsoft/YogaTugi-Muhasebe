@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '159';
+const APP_SURUM = '160';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -884,13 +884,22 @@ SAYFALAR.dashboard = function () {
   const dersHepsi = (State.dersler || [])
     .filter(d => (hepsiniGor() || d.egitmenId === benim) && d.durum !== 'iptal' && (d.tarih === bugun || d.tarih === yarin))
     .sort((a, b) => (a.tarih + (a.saat || '')).localeCompare(b.tarih + (b.saat || '')));
+  const simdiSaat = (() => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); })();
   const dersSatir = (d) => {
     const e = State.ortaklar.find(x => x.id === d.egitmenId);
     const ids = d.ogrenciIds || [];
-    const ogrAd = ids.length ? ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0])) + (ids.length > 1 ? ` +${ids.length - 1}` : '') : '';
+    const grup = ids.length > 1;
+    const ogrAd = ids.length ? ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0])) + (grup ? ` +${ids.length - 1}` : '') : '';
     const bd = [d.dersAd, ogrAd].filter(Boolean).join(' — ') || 'Ders';
     const yarinCls = d.tarih === yarin ? ' yarin' : '';
-    return `<div class="drs" data-git="dersler"><div class="gun${yarinCls}"><div class="g">${kacar(d.saat || '—')}</div><div class="a">${d.tarih === bugun ? 'Bugün' : 'Yarın'}</div></div><div class="orta"><div class="bd">${kacar(bd)}</div><div class="alt">${kacar(e ? egitmenKisaAd(e) : '—')}</div></div><span class="chv">›</span></div>`;
+    // Saati/günü geldi mi? (bekliyor + bugün ise saat geçti VEYA geçmiş gün)
+    const geldi = d.durum === 'bekliyor' && (d.tarih < bugun || (d.tarih === bugun && (d.saat || '00:00') <= simdiSaat));
+    const sag = d.durum === 'gerceklesti'
+      ? `<span class="drs-done" title="Gerçekleşti">${ik('onay')}</span>`
+      : geldi
+        ? `<button type="button" class="drs-onay" data-onayder="${d.id}">${ik('onay')}<span>Onayla</span></button>`
+        : `<span class="chv">›</span>`;
+    return `<div class="drs${d.durum === 'gerceklesti' ? ' drs-tamam' : ''}" data-git="dersler"><div class="gun${yarinCls}"><div class="g">${kacar(d.saat || '—')}</div><div class="a">${d.tarih === bugun ? 'Bugün' : 'Yarın'}</div></div><div class="orta"><div class="bd">${kacar(bd)}${grup ? ' <span class="drs-grup">Grup</span>' : ''}</div><div class="alt">${kacar(e ? egitmenKisaAd(e) : '—')}</div></div>${sag}</div>`;
   };
   const bugunD = dersHepsi.filter(d => d.tarih === bugun);
   const yarinD = dersHepsi.filter(d => d.tarih === yarin);
@@ -917,6 +926,7 @@ SAYFALAR.dashboard = function () {
     </div>`;
 
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
+  $$('[data-onayder]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.onayder); if (d) dersDurumDegistir(d, 'gerceklesti', () => SAYFALAR.dashboard()); });
   $$('[data-ay]').forEach(b => b.onclick = () => { dashDonem = donemKaydir(dashDonem, Number(b.dataset.ay)); SAYFALAR.dashboard(); });
   const ok = $('#dashOrtakKart'); if (ok) ok.onclick = () => { dashOrtakAcik = !dashOrtakAcik; SAYFALAR.dashboard(); };
 };
@@ -4714,7 +4724,8 @@ function dersSil(ders) {
   });
 }
 
-function dersDurumDegistir(ders, yeni) {
+function dersDurumDegistir(ders, yeni, sonra) {
+  const yenile = sonra || (() => SAYFALAR['dersler']());   // hangi sayfayı tazeleyeceğiz (dashboard'dan da çağrılır)
   if (ders.durum === yeni) return;
   if (ders.durum === 'gerceklesti' && yeni !== 'gerceklesti') dersDusumGeriAl(ders);
   // Grup dersi (birden çok öğrenci) gerçekleşiyorsa: önce kimler katıldı seçtir
@@ -4724,7 +4735,7 @@ function dersDurumDegistir(ders, yeni) {
       ders.durum = 'gerceklesti';
       DB.guncelle('dersler', ders.id, { durum: 'gerceklesti', dusumler: ders.dusumler || [] });
       bildir('Ders gerçekleşti — kalan dersler güncellendi.', 'basari');
-      SAYFALAR['dersler']();
+      yenile();
     });
     return;
   }
@@ -4732,7 +4743,7 @@ function dersDurumDegistir(ders, yeni) {
   ders.durum = yeni;
   DB.guncelle('dersler', ders.id, { durum: ders.durum, dusumler: ders.dusumler || [] });
   bildir(yeni === 'gerceklesti' ? 'Ders gerçekleşti — kalan dersler güncellendi.' : yeni === 'iptal' ? 'Ders iptal edildi.' : 'Ders tekrar bekliyor.', yeni === 'iptal' ? '' : 'basari');
-  SAYFALAR['dersler']();
+  yenile();
 }
 /* “Kimler katıldı?” — grup dersini gerçekleştirirken katılan öğrencileri seç */
 function katilimModal(ders, onOnay) {
