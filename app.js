@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '161';
+const APP_SURUM = '162';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -897,7 +897,7 @@ SAYFALAR.dashboard = function () {
     const sag = d.durum === 'gerceklesti'
       ? `<span class="drs-done" title="Gerçekleşti">${ik('onay')}</span>`
       : geldi
-        ? `<button type="button" class="drs-onay" data-onayder="${d.id}">${ik('onay')}<span>Onayla</span></button>`
+        ? `<button type="button" class="drs-onay" data-onayder="${d.id}" title="Dersi onayla" aria-label="Dersi onayla">${ik('onay')}</button>`
         : `<span class="chv">›</span>`;
     return `<div class="drs${d.durum === 'gerceklesti' ? ' drs-tamam' : ''}" data-git="dersler"><div class="gun${yarinCls}"><div class="g">${kacar(d.saat || '—')}</div><div class="a">${d.tarih === bugun ? 'Bugün' : 'Yarın'}</div></div><div class="orta"><div class="bd">${kacar(bd)}${grup ? ' <span class="drs-grup">Grup</span>' : ''}</div><div class="alt">${kacar(e ? egitmenKisaAd(e) : '—')}</div></div>${sag}</div>`;
   };
@@ -4607,7 +4607,14 @@ SAYFALAR['dersler'] = function () {
   const hepsi = dersFiltreUygula(hepsiHam);   // aktif filtreyi uygula (eğitmen/stüdyo/tarih/öğrenci)
   const say = { bekliyor: 0, gerceklesti: 0, iptal: 0 };
   hepsi.forEach(d => { if (say[d.durum] != null) say[d.durum]++; });
-  const liste = hepsi.filter(d => d.durum === dersAktifSekme).sort((a, b) => (a.tarih + a.saat).localeCompare(b.tarih + b.saat));
+  const bugun = bugunISO();
+  const simdiSaat = (() => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); })();
+  const geldiMi = (d) => d.durum === 'bekliyor' && (d.tarih < bugun || (d.tarih === bugun && (d.saat || '00:00') <= simdiSaat));
+  const liste = hepsi.filter(d => d.durum === dersAktifSekme).sort((a, b) => {
+    const ga = geldiMi(a) ? 0 : 1, gb = geldiMi(b) ? 0 : 1;
+    if (ga !== gb) return ga - gb;   // saati gelmiş (onaylanacak) dersler en üstte
+    return (a.tarih + a.saat).localeCompare(b.tarih + b.saat);
+  });
   const drzBilgi = { bekliyor: ['b', 'Planlı', 'sure'], gerceklesti: ['g', 'Yapıldı', 'onay'], iptal: ['i', 'İptal', ''] };
   const ogrHucre = (d) => {
     const ids = d.ogrenciIds || [];
@@ -4621,12 +4628,17 @@ SAYFALAR['dersler'] = function () {
   const satir = (d) => {
     const e = State.ortaklar.find(x => x.id === d.egitmenId);
     const [c, ad, dik] = drzBilgi[d.durum] || ['b', 'Planlı', 'sure'];
-    return `<tr>
+    const geldi = geldiMi(d);
+    const drzBtn = `<button type="button" class="drzk ${c}" data-drz="${d.id}" title="Durumu değiştir">${dik ? ik(dik) : ''}<span>${ad}</span></button>`;
+    const durumCell = geldi
+      ? `<div class="drz-cell"><button type="button" class="onay-mini" data-onayder="${d.id}" title="Dersi onayla" aria-label="Dersi onayla">${ik('onay')}</button>${drzBtn}</div>`
+      : drzBtn;
+    return `<tr class="${geldi ? 'ders-geldi' : ''}">
       <td data-l="Eğitmen"><span class="ogr-egit">${egitmenAv(e ? e.id : null, 'ogr-ea')}${kacar(e ? egitmenKisaAd(e) : '—')}</span></td>
       <td data-l="Öğrenci">${ogrHucre(d)}</td>
       <td data-l="Tarih">${fmtTarihUzun(d.tarih)}</td>
       <td data-l="Saat"><span class="ders-saat">${kacar(d.saat || '')}${d.bitis ? '–' + kacar(d.bitis) : ''}</span>${d.studyoId ? `<span class="ders-std">${ik('studyo')}${kacar(studyoAd(d.studyoId))}</span>` : ''}</td>
-      <td data-l="Durum"><button type="button" class="drzk ${c}" data-drz="${d.id}" title="Durumu değiştir">${dik ? ik(dik) : ''}<span>${ad}</span></button></td>
+      <td data-l="Durum">${durumCell}</td>
     </tr>`;
   };
   const bosMetin = dersAktifSekme === 'bekliyor' ? (dersFiltreAktif() ? 'Bu filtreye uyan planlanan ders yok.' : 'Planlanan ders yok. “＋ Ders Oluştur” ile başlayın.')
@@ -4651,7 +4663,7 @@ SAYFALAR['dersler'] = function () {
       ${filtreCipHTML}
       ${liste.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
-            <colgroup><col style="width:20%"><col style="width:30%"><col style="width:18%"><col style="width:11%"><col style="width:21%"></colgroup>
+            <colgroup><col style="width:18%"><col style="width:27%"><col style="width:16%"><col style="width:12%"><col style="width:27%"></colgroup>
             <thead><tr><th>Eğitmen</th><th>Öğrenci</th><th>Tarih</th><th>Saat</th><th>Durum</th></tr></thead>
             <tbody>${liste.map(satir).join('')}</tbody></table></div></div>`
         : `<div class="gp-bos">${bosMetin}</div>`}
@@ -4663,6 +4675,7 @@ SAYFALAR['dersler'] = function () {
   ortakGosterBtnBagla(() => SAYFALAR['dersler']());
   $$('[data-dsek]').forEach(b => b.onclick = () => { dersAktifSekme = b.dataset.dsek; SAYFALAR['dersler'](); });
   $$('[data-drz]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d, b); });
+  $$('[data-onayder]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.onayder); if (d) dersDurumDegistir(d, 'gerceklesti'); });
   $$('[data-grpders]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.grpders); if (d) grupDersiModal(d); });
 };
 
