@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '192';
+const APP_SURUM = '193';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1269,7 +1269,7 @@ let ttForm = null;
 /* mevcut: düzenlenecek kayıt (id'li) VEYA yeni kayıt için ön-dolgu (id'siz). sonrasi: kaydet/sil sonrası geri çağrı (önizleme tazeleme). */
 function tahsilatTanimModal(mevcut, sonrasi) {
   const duzenle = !!(mevcut && mevcut.id);
-  ttForm = { ogrenciAd: '', odemeTuru: 'nakit', kartTipi: 'yurtici', tutar: '', egitmenAd: '', dersPaketi: '', ...(mevcut || {}) };
+  ttForm = { ogrenciAd: '', tarih: bugunISO(), odemeTuru: 'nakit', kartTipi: 'yurtici', tutar: '', egitmenAd: '', dersPaketi: '', ...(mevcut || {}) };
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false);
   const trig = (icHTML) => `<span class="st-col">${icHTML}</span><span class="st-ok">›</span>`;
   const ogrTrigIc = () => trig(ttForm.ogrenciAd ? `<span class="st-nm">${kacar(ttForm.ogrenciAd)}</span>` : `<span class="st-ph">Öğrenci seçin / yazın</span>`);
@@ -1281,6 +1281,7 @@ function tahsilatTanimModal(mevcut, sonrasi) {
   const egTrigIc = () => trig(ttForm.egitmenAd ? `<span class="st-nm">${kacar(ttForm.egitmenAd)}</span>` : `<span class="st-ph">Eğitmen seçin</span>`);
   const govde = `
     <div class="gp-alan"><label>Öğrenci Adı</label><button type="button" class="sec-trig" id="ttOgrTrig">${ogrTrigIc()}</button></div>
+    <div class="gp-alan"><label>Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger tt-tarih-gos" id="hrTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="hrTarih" value="${(ttForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
     <div class="gp-alan"><label>Ödeme Türü</label><button type="button" class="sec-trig" id="ttTurTrig">${turTrigIc()}</button></div>
     <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="ttTutar" inputmode="decimal" placeholder="0 ₺" autocomplete="off"></div>
     <div class="gp-alan"><label>Eğitmen</label>${ortaklar.length ? `<button type="button" class="sec-trig" id="ttEgTrig">${egTrigIc()}</button>` : `<div class="tt-egyok">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}</div>
@@ -1288,6 +1289,7 @@ function tahsilatTanimModal(mevcut, sonrasi) {
   const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="ttSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="ttIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="ttKaydet">${ik('kaydet')} Kaydet</button>`;
   modalAc(duzenle ? 'Tahsilat Düzenle' : 'Yeni Tahsilat', govde, alt);
   tutarKutusuBagla($('#ttTutar'), ttForm.tutar || '');
+  tarihGostergeBagla();   // Tarih alanı: varsayılan bugün, değiştirilebilir (yerli tarih seçici)
   $('#ttOgrTrig').onclick = () => tahsilatOgrSecModal(ttForm.ogrenciAd, (ad) => {
     ttForm.ogrenciAd = ad;
     $('#ttOgrTrig').innerHTML = ogrTrigIc();
@@ -1325,7 +1327,7 @@ function tahsilatTanimModal(mevcut, sonrasi) {
       ogrenciAd, odemeTuru: ttForm.odemeTuru, kartTipi: ttForm.odemeTuru === 'kart' ? ttForm.kartTipi : null,
       tutar, komisyonOran: tahsilatKomisyonOran(ttForm.odemeTuru, ttForm.kartTipi),
       egitmenAd, egitmenId: egitmenEsle(egitmenAd), dersPaketi: ($('#ttPk').value || '').trim(),
-      tarih: (mevcut && mevcut.tarih) ? mevcut.tarih : bugunISO(),
+      tarih: ($('#hrTarih') && $('#hrTarih').value) || (mevcut && mevcut.tarih) || bugunISO(),
     };
     if (duzenle) await DB.guncelle('tahsilatTanimlari', mevcut.id, kayit); else await DB.ekle('tahsilatTanimlari', kayit);
     State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
