@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '164';
+const APP_SURUM = '165';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -826,10 +826,61 @@ SAYFALAR['ders-takibi'] = function () {
   SAYFALAR[dtSekme]();   // aktif alt görünümü #dtGovde içine çiz
 };
 
+/* -------- NEON ANA EKRAN (pilot) -------- */
+let neonOzetAcik = false;
+function neonAnaEkran() {
+  const veri = ortakAyHesap(buAy());
+  const hakEdis = veri.reduce((s, r) => s + (Number(r.verilecek) || 0), 0);
+  const sonBak = (h) => h.length ? h[h.length - 1].bakiye : 0;
+  const bankaBak = sonBak(hesapHareketleri('banka'));
+  const kasaBak = sonBak(hesapHareketleri('nakit'));
+  const kartB = kartBorcu();
+  const bugun = bugunISO();
+  const benim = benId();
+  const aktifOrt = State.ortaklar.filter(o => o.aktif !== false);
+  const panelOrt = benim || (aktifOrt[0] ? aktifOrt[0].id : null);
+  const seanslar = (State.dersler || []).filter(d => d.egitmenId === panelOrt && d.durum !== 'iptal' && d.tarih === bugun)
+    .sort((x, y) => (x.saat || '').localeCompare(y.saat || ''));
+  const seansSatir = (d) => {
+    const ids = d.ogrenciIds || [];
+    const ad = ids.length > 1 ? (d.dersAd || 'Grup Seansı') : (ids.length ? ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0])) : (d.dersAd || 'Seans'));
+    const yapildi = d.durum === 'gerceklesti';
+    return `<div class="neon-seans${yapildi ? ' yapildi' : ''}" data-git="dersler"><span class="ns-bar"></span><div class="ns-ic"><div class="ns-ad">${kacar(ad)}</div><div class="ns-saat">${kacar(d.saat || '')}${d.bitis ? ' - ' + kacar(d.bitis) : ''}</div></div></div>`;
+  };
+  const kart = (ikAd, et, sayfa) => `<button type="button" class="neon-kart" data-git="${sayfa}"><span class="nk-ik">${ik(ikAd)}</span><span class="nk-et">${kacar(et)}</span></button>`;
+  const ozetSat = (l, v) => `<div class="no-sat"><span>${l}</span><b>${v}</b></div>`;
+  ic().innerHTML = `
+    <div class="neon-home">
+      <div class="neon-ozet ${neonOzetAcik ? 'acik' : ''}" id="neonOzet">
+        <div class="no-head"><span class="no-bas">Özet</span><span class="no-ok">▾</span></div>
+        <div class="no-govde">${ozetSat('Hak Ediş', TL(hakEdis))}${ozetSat('Banka', TL(bankaBak))}${ozetSat('Kasa', TL(kasaBak))}${ozetSat('Kredi Kartı Borcu', TL(kartB))}</div>
+      </div>
+      <div class="neon-aksiyon">
+        <button type="button" class="neon-abtn lime" id="neonUye"><span class="na-ik">${ik('yeni')}</span><span>Üye Ekle</span></button>
+        <button type="button" class="neon-abtn amber" id="neonSeans"><span class="na-ik">${ik('dersler')}</span><span>Seans Ekle</span></button>
+      </div>
+      <div class="neon-grid">
+        ${kart('ogrenci', 'Üyeler', 'ogrenciler')}
+        ${kart('dersler', 'Seanslar', 'dersler')}
+        ${kart('muhasebe', 'Finans', 'hesap-defter')}
+        ${kart('ortaklar', 'Eğitmenler', 'ortaklar')}
+      </div>
+      <div class="neon-seans-bas"><span>Bugünkü Seanslarım</span><button type="button" class="neon-takvim" data-git="studyolar">Takvim ›</button></div>
+      <div class="neon-seanslar">${seanslar.length ? seanslar.map(seansSatir).join('') : '<div class="neon-bos">Bugün için seans yok.</div>'}</div>
+    </div>
+    <button type="button" class="neon-fab" id="neonFab" aria-label="Seans Ekle">＋</button>`;
+  $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
+  $('#neonUye').onclick = () => yeniUyelikBaslat();
+  $('#neonSeans').onclick = () => dersOlusturModal();
+  $('#neonFab').onclick = () => dersOlusturModal();
+  $('#neonOzet').onclick = () => { neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
+}
+
 /* -------- DASHBOARD -------- */
 let dashDonem = buAy();   // Gösterge Paneli'nde görüntülenen dönem
 let dashOrtakAcik = true; // sol ortak kartı açık/kapalı
 SAYFALAR.dashboard = function () {
+  if (document.body.classList.contains('tema-neon')) { neonAnaEkran(); return; }
   const eksi = (n) => n ? '−' + TL(n) : TL(0);
   const veri = ortakAyHesap(dashDonem);
   const benim = benId();
@@ -6194,13 +6245,21 @@ function cikisYap() {
   $('#girisEkrani').classList.remove('gizli');
   girisGovdeCiz();
 }
-function temaDegistir() {
-  document.body.classList.toggle('tema-koyu');
-  const koyu = document.body.classList.contains('tema-koyu');
-  const ikon = koyu ? '☀️' : '🌙';
-  if ($('#temaBtn')) $('#temaBtn').textContent = ikon;
-  localStorage.setItem('yt_tema', koyu ? 'koyu' : 'acik');
+const TEMALAR = ['acik', 'koyu', 'neon'];
+function aktifTema() { const t = localStorage.getItem('yt_tema'); return TEMALAR.includes(t) ? t : 'acik'; }
+function temaUygula(ad, yenile) {
+  if (!TEMALAR.includes(ad)) ad = 'acik';
+  document.body.classList.remove('tema-koyu', 'tema-neon');
+  if (ad === 'koyu') document.body.classList.add('tema-koyu');
+  else if (ad === 'neon') document.body.classList.add('tema-neon');
+  localStorage.setItem('yt_tema', ad);
+  // menüdeki çip seçimini güncelle
+  $$('#kmTemaSec [data-tema]').forEach(b => b.classList.toggle('sec', b.dataset.tema === ad));
+  // ana ekrandaysak düzen değişebilir → yeniden çiz
+  if (yenile && State.aktifSayfa === 'dashboard') SAYFALAR.dashboard();
 }
+/* Geriye dönük uyum */
+function temaDegistir() { temaUygula(aktifTema() === 'acik' ? 'koyu' : 'acik', true); }
 function kulMenuKapat() { $('#kulMenu').classList.add('gizli'); }
 
 /* Tepe paneli: kullanıcı görseli + ad soyad + rol (çip + menü başlığı) */
@@ -6222,7 +6281,7 @@ function kullaniciBilgiCiz() {
 }
 
 function ustCubukKur() {
-  if (localStorage.getItem('yt_tema') === 'koyu') { document.body.classList.add('tema-koyu'); if ($('#temaBtn')) $('#temaBtn').textContent = '☀️'; }
+  temaUygula(aktifTema());   // kayıtlı temayı uygula (açık / koyu / neon)
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
   // Üst panel: güncelle (uygulamayı yeniler) + destek (İstek ve Öneri)
   { const gb = $('#guncelleBtn'); if (gb) { gb.innerHTML = ik('guncel'); gb.onclick = () => { bildir('En son sürüm yükleniyor…', ''); setTimeout(() => window.location.replace(location.pathname + '?g=' + Date.now()), 350); }; } }
@@ -6234,7 +6293,7 @@ function ustCubukKur() {
   const km = $('#kulMenu');
   $('#kullaniciBlok').onclick = (e) => { e.stopPropagation(); km.classList.toggle('gizli'); };
   if ($('#kmYedek')) $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
-  $('#kmTema').onclick = () => { temaDegistir(); };
+  { const ts = $('#kmTemaSec'); if (ts) { $$('#kmTemaSec [data-tema]').forEach(b => b.classList.toggle('sec', b.dataset.tema === aktifTema())); ts.onclick = (e) => { const b = e.target.closest('[data-tema]'); if (!b) return; temaUygula(b.dataset.tema, true); }; } }
   $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
   document.addEventListener('click', (e) => {
     if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
