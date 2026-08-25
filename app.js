@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '199';
+const APP_SURUM = '200';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1201,9 +1201,24 @@ function ttSirali() {
   return (State.tahsilatTanimlari || []).slice()
     .sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '') || (b.olusturma || '').localeCompare(a.olusturma || ''));
 }
-/* Tek satır — mobil dostu, 2 kademeli: üst(tarih·öğrenci·tutar) / alt(ödeme türü·eğitmen·ders) */
+let ttGunFiltre = null;   // Tahsilat listesinde tek gün filtresi (uyuşmayana tıklayınca)
+/* Bir tahsilat tanımı gerçek parayla (Plan4me VEYA banka) uyuşuyor mu? */
+function tahsilatUyum(t) {
+  const pf = (State.planformiTahsilat || []).some(p => adNorm(p.uyeAd) === adNorm(t.ogrenciAd) && Math.abs((+p.tutar || 0) - (+t.tutar || 0)) < 1 && Math.round(gunFark(p.tarih, t.tarih)) === 0);
+  if (pf) return true;
+  const bh = State.bankaHareketleri || [];
+  if (t.odemeTuru === 'havale') {
+    return bh.some(k => k.yon === 'gelir' && !/batch\s*yatan/i.test(k.islem || '') && isimGecer(k.aciklama, t.ogrenciAd) && Math.abs((+k.tutar || 0) - (+t.tutar || 0)) < 1 && Math.round(gunFark(k.tarih, t.tarih)) === 0);
+  }
+  if (t.odemeTuru === 'kart') {   // ertesi gün (T+1) Batch Yatan'ı var ve o gün kart toplamı batch'e uyuyor
+    return bh.some(k => k.yon === 'gelir' && /batch\s*yatan/i.test(k.islem || '') && Math.round(gunFark(k.tarih, t.tarih)) === 1 && (() => { const es = bankaTahsilatEslesme(k); return es && es.durum === 'ok'; })());
+  }
+  return false;   // nakit → yalnız Plan4me'de görünür (yukarıda bakıldı)
+}
+/* Tek satır — mobil dostu, 2 kademeli: üst(tarih·öğrenci·tutar) / alt(ödeme türü·eğitmen·ders·durum) */
 function ttSatirHTML(t) {
-  return `<button type="button" class="ttl-sat" data-ttduz="${t.id}">
+  const u = tahsilatUyum(t);
+  return `<button type="button" class="ttl-sat" data-ttduz="${t.id}" data-gun="${kacar(t.tarih || '')}">
     <span class="ttl-us">
       <span class="ttl-tar">${kisaTarih(t.tarih)}</span>
       <span class="ttl-ogr">${kacar(t.ogrenciAd)}</span>
@@ -1213,21 +1228,30 @@ function ttSatirHTML(t) {
       ${odemeTuruRoz(t.odemeTuru)}
       ${t.egitmenAd ? `<span class="ttl-eg">${ik('kisi')}${kacar(t.egitmenAd)}</span>` : ''}
       ${t.dersPaketi ? `<span class="ttl-pk">${kacar(t.dersPaketi)}</span>` : ''}
+      ${u ? '<span class="ttl-uym ok">✓ Uyuştu</span>' : '<span class="ttl-uym yok">Uyuşmadı ›</span>'}
     </span>
   </button>`;
 }
 function ttListeBagla(kok) {
-  (kok || document).querySelectorAll('.ttl-sat[data-ttduz]').forEach(b => b.onclick = () =>
-    tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.ttduz)));
+  (kok || document).querySelectorAll('.ttl-sat[data-ttduz]').forEach(b => b.onclick = (e) => {
+    if (e.target.closest('.ttl-uym.yok')) {   // "Uyuşmadı" → sadece o günün tahsilatlarını göster
+      ttGunFiltre = b.dataset.gun || null;
+      if (State.aktifSayfa === 'mutabakat') SAYFALAR['mutabakat'](); else git('mutabakat');
+      return;
+    }
+    tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.ttduz));
+  });
 }
 
 SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
-  const liste = ttSirali();
+  const tumListe = ttSirali();
+  const liste = ttGunFiltre ? tumListe.filter(t => (t.tarih || '') === ttGunFiltre) : tumListe;
   const toplam = liste.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
   ic().innerHTML = `
     <div class="tt-sayfa">
       <div class="tt-ust"><h3 class="tt-baslik">Tahsilat Tanımla</h3><button type="button" class="btn btn-ana" id="ttYeni">${ik('yeni')} Yeni Tahsilat</button></div>
-      ${liste.length
+      ${ttGunFiltre ? `<div class="tt-gunf"><span>${kacar(kisaTarih(ttGunFiltre))} günü · <b>${liste.length}</b> tahsilat</span><button type="button" id="ttGunTemiz">Tümünü göster ›</button></div>` : ''}
+      ${tumListe.length
         ? `<div class="tt-ozetsat"><b>${liste.length}</b> tahsilat · ${TL(toplam)}</div>
            <div class="ttl-tablo">
              <div class="ttl-bas"><span>Tarih</span><span>Öğrenci</span><span>Tutar</span></div>
@@ -1236,6 +1260,7 @@ SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
         : `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Henüz tahsilat tanımı yok</h3><p>“Yeni Tahsilat” ile başlayın; Plan4me yüklenince eşleşecek.</p></div>`}
     </div>`;
   $('#ttYeni').onclick = () => tahsilatTanimModal();
+  { const b = $('#ttGunTemiz'); if (b) b.onclick = () => { ttGunFiltre = null; SAYFALAR['mutabakat'](); }; }
   ttListeBagla(ic());
 };
 
@@ -1878,7 +1903,7 @@ function neonAnaEkran() {
     </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   ttListeBagla(ic());
-  { const dt = $('#dashTt'); if (dt) dt.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // Tahsilat Tanımla → direkt form
+  { const dt = $('#dashTt'); if (dt) dt.onclick = () => tahsilatTanimModal(); }   // Tahsilat Tanımla → sayfaya gitmeden direkt form aç
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; akordeon($('#neonOzet'), $('#neonOzet .no-govde'), neonOzetAcik); };
 }
 
