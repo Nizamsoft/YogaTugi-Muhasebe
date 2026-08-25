@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '186';
+const APP_SURUM = '187';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1231,25 +1231,36 @@ function tahsilatOgrSecModal(mevcutAd, onSec) {
   m.q('[data-geri]').onclick = m.kapat;
 }
 
+/* Küçük tek-seçim picker (ödeme türü / kart tipi / eğitmen) — öğrenci seçimiyle aynı görünüm */
+function tahsilatSecModal(baslik, ikon, secenekler, mevcut, onSec) {
+  const item = (o) => `<div class="ds-osat ${String(o.deger) === String(mevcut) ? 'sec' : ''}" data-deger="${kacar(String(o.deger))}"><span class="ds-ochk">${String(o.deger) === String(mevcut) ? '✓' : ''}</span>${o.ik ? `<span class="oav-mini">${o.ik}</span>` : ''}<span class="ds-obil"><span class="ad">${kacar(o.ad)}</span>${o.alt ? `<span class="alt">${kacar(o.alt)}</span>` : ''}</span></div>`;
+  const govde = `<div class="ds-oliste sec-liste-kaydir">${secenekler.map(item).join('')}</div>`;
+  const m = ustKatModal(baslik, `<span class="hr-rz-ik">${ik(ikon)}</span>${kacar(baslik)}`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  m.qq('[data-deger]').forEach(el => el.onclick = () => { onSec(el.dataset.deger); m.kapat(); });
+  m.q('[data-geri]').onclick = m.kapat;
+}
+
 let ttForm = null;
 function tahsilatTanimModal(mevcut) {
   ttForm = mevcut ? { ...mevcut } : { ogrenciAd: '', odemeTuru: 'nakit', kartTipi: 'yurtici', tutar: '', egitmenAd: '', dersPaketi: '' };
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false);
-  const seg = (arr, sel, attr) => arr.map(x => `<button type="button" class="tc ${sel === x.id ? 'sec' : ''}" data-${attr}="${x.id}">${kacar(x.ad)}</button>`).join('');
-  const egSeg = ortaklar.map(o => `<button type="button" class="tc ${ttForm.egitmenAd && adNorm(ttForm.egitmenAd) === adNorm(o.ad) ? 'sec' : ''}" data-eg="${kacar(o.ad)}">${kacar(o.ad)}</button>`).join('');
-  const ogrTrigIc = () => `<span class="st-col">${ttForm.ogrenciAd ? `<span class="st-nm">${kacar(ttForm.ogrenciAd)}</span>` : `<span class="st-ph">Öğrenci seçin / yazın</span>`}</span><span class="st-ok">›</span>`;
+  const trig = (icHTML) => `<span class="st-col">${icHTML}</span><span class="st-ok">›</span>`;
+  const ogrTrigIc = () => trig(ttForm.ogrenciAd ? `<span class="st-nm">${kacar(ttForm.ogrenciAd)}</span>` : `<span class="st-ph">Öğrenci seçin / yazın</span>`);
+  const turTrigIc = () => {
+    const m = ODEME_TURLERI_TT.find(x => x.id === ttForm.odemeTuru);
+    const ek = ttForm.odemeTuru === 'kart' ? ` · ${kartTipiAd(ttForm.kartTipi)} %${String(tahsilatKomisyonOran('kart', ttForm.kartTipi)).replace('.', ',')}` : '';
+    return trig(`<span class="st-nm">${kacar((m ? m.ad : 'Seçin') + ek)}</span>`);
+  };
+  const egTrigIc = () => trig(ttForm.egitmenAd ? `<span class="st-nm">${kacar(ttForm.egitmenAd)}</span>` : `<span class="st-ph">Eğitmen seçin</span>`);
   const govde = `
     <div class="gp-alan"><label>Öğrenci Adı</label><button type="button" class="sec-trig" id="ttOgrTrig">${ogrTrigIc()}</button></div>
-    <div class="gp-alan"><label>Ödeme Türü</label><div class="turcip" id="ttTur">${seg(ODEME_TURLERI_TT, ttForm.odemeTuru, 'tur')}</div></div>
-    <div class="gp-alan ${ttForm.odemeTuru === 'kart' ? '' : 'gizli'}" id="ttKartWrap"><label>Kart Tipi</label><div class="turcip" id="ttKt">${seg(KART_TIPLERI_TT, ttForm.kartTipi, 'kt')}</div><div class="tt-komnot" id="ttKomNot"></div></div>
+    <div class="gp-alan"><label>Ödeme Türü</label><button type="button" class="sec-trig" id="ttTurTrig">${turTrigIc()}</button></div>
     <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="ttTutar" inputmode="decimal" placeholder="0 ₺" autocomplete="off"></div>
-    <div class="gp-alan"><label>Eğitmen</label>${egSeg ? `<div class="turcip" id="ttEg">${egSeg}</div>` : `<div class="tt-egyok">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}</div>
+    <div class="gp-alan"><label>Eğitmen</label>${ortaklar.length ? `<button type="button" class="sec-trig" id="ttEgTrig">${egTrigIc()}</button>` : `<div class="tt-egyok">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}</div>
     <div class="gp-alan" style="margin:0"><label>Ders Paketi</label><input type="text" class="gp-inp" id="ttPk" value="${kacar(ttForm.dersPaketi)}" placeholder="Örn. 8 Ders" autocomplete="off"></div>`;
   const alt = `${mevcut ? `<button type="button" class="btn btn-kirmizi" id="ttSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="ttIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="ttKaydet">${ik('kaydet')} Kaydet</button>`;
   modalAc(mevcut ? 'Tahsilat Düzenle' : 'Yeni Tahsilat', govde, alt);
   tutarKutusuBagla($('#ttTutar'), ttForm.tutar || '');
-  const komNot = () => { const el = $('#ttKomNot'); if (el) el.textContent = `Komisyon: %${String(tahsilatKomisyonOran('kart', ttForm.kartTipi)).replace('.', ',')}`; };
-  komNot();
   $('#ttOgrTrig').onclick = () => tahsilatOgrSecModal(ttForm.ogrenciAd, (ad) => {
     ttForm.ogrenciAd = ad;
     $('#ttOgrTrig').innerHTML = ogrTrigIc();
@@ -1257,12 +1268,21 @@ function tahsilatTanimModal(mevcut) {
     if (!ttForm.egitmenAd) {
       const p = (State.planformiTahsilat || []).find(x => adNorm(x.uyeAd) === adNorm(ad) && x.egitmenAd);
       const o = p && ortaklar.find(k => adNorm(k.ad) === adNorm(p.egitmenAd));
-      if (o) { ttForm.egitmenAd = o.ad; $$('#ttEg .tc').forEach(x => x.classList.toggle('sec', adNorm(x.dataset.eg) === adNorm(o.ad))); }
+      if (o) { ttForm.egitmenAd = o.ad; if ($('#ttEgTrig')) $('#ttEgTrig').innerHTML = egTrigIc(); }
     }
   });
-  $$('#ttTur .tc').forEach(b => b.onclick = () => { ttForm.odemeTuru = b.dataset.tur; $$('#ttTur .tc').forEach(x => x.classList.toggle('sec', x === b)); $('#ttKartWrap').classList.toggle('gizli', ttForm.odemeTuru !== 'kart'); });
-  $$('#ttKt .tc').forEach(b => b.onclick = () => { ttForm.kartTipi = b.dataset.kt; $$('#ttKt .tc').forEach(x => x.classList.toggle('sec', x === b)); komNot(); });
-  $$('#ttEg .tc').forEach(b => b.onclick = () => { ttForm.egitmenAd = b.dataset.eg; $$('#ttEg .tc').forEach(x => x.classList.toggle('sec', x === b)); });
+  // Ödeme türü → tıkla, listeden seç. "Kredi Kartı" seçilince kart tipi de sorulur.
+  $('#ttTurTrig').onclick = () => tahsilatSecModal('Ödeme Türü', 'para',
+    ODEME_TURLERI_TT.map(x => ({ deger: x.id, ad: x.ad })), ttForm.odemeTuru, (v) => {
+      ttForm.odemeTuru = v;
+      if (v === 'kart') {
+        tahsilatSecModal('Kart Tipi', 'kart',
+          KART_TIPLERI_TT.map(x => ({ deger: x.id, ad: x.ad, alt: 'Komisyon %' + String(tahsilatKomisyonOran('kart', x.id)).replace('.', ',') })),
+          ttForm.kartTipi, (kt) => { ttForm.kartTipi = kt; $('#ttTurTrig').innerHTML = turTrigIc(); });
+      } else { $('#ttTurTrig').innerHTML = turTrigIc(); }
+    });
+  if ($('#ttEgTrig')) $('#ttEgTrig').onclick = () => tahsilatSecModal('Eğitmen', 'ortaklar',
+    ortaklar.map(o => ({ deger: o.ad, ad: o.ad })), ttForm.egitmenAd, (v) => { ttForm.egitmenAd = v; $('#ttEgTrig').innerHTML = egTrigIc(); });
   if ($('#ttIptal')) $('#ttIptal').onclick = modalKapat;
   if ($('#ttSil')) $('#ttSil').onclick = () => onayModal('Sil', 'Bu tahsilat tanımı silinsin mi?', async () => {
     await DB.sil('tahsilatTanimlari', mevcut.id); State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
@@ -1626,15 +1646,17 @@ function neonAnaEkran() {
         ${kart('muhasebe', 'Hesaplar', 'hesap-defter')}
         ${kart('ortaklar', 'Ortaklar', 'karlilik')}
       </div>
-      ${(() => { const sonTt = ttSirali(); return sonTt.length
-        ? `<div class="ttl-dash">
-             <div class="ttl-dbas"><span>Son Tahsilatlar</span><button type="button" class="ttl-tumu" data-git="mutabakat">Tümü ›</button></div>
-             <div class="ttl-tablo">${sonTt.slice(0, 5).map(ttSatirHTML).join('')}</div>
-           </div>`
-        : `<div class="neon-bosslot" data-git="mutabakat"><span>${ik('arti')}</span> Tahsilat Tanımla ile buraya ekleyeceğiz</div>`; })()}
+      ${(() => {
+        const bugunku = ttSirali().filter(t => (t.tarih || '') === bugunISO());
+        const bas = `<div class="ttl-dbas"><span>Bugünkü Tahsilatlar</span><button type="button" class="ttl-tumu" data-git="mutabakat">Tümü ›</button></div>`;
+        return bugunku.length
+          ? `<div class="ttl-dash">${bas}<div class="ttl-tablo">${bugunku.map(ttSatirHTML).join('')}</div></div>`
+          : `<div class="ttl-dash">${bas}<div class="ttl-bosbugun"><span>Bugün tahsilat yapılmadı.</span><button type="button" class="ttl-ekle" id="dashTtEkle">${ik('arti')} Tahsilat Ekle</button></div></div>`;
+      })()}
     </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   ttListeBagla(ic());
+  { const de = $('#dashTtEkle'); if (de) de.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // boş durumdan direkt ekle
   { const dt = $('#dashTt'); if (dt) dt.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // Tahsilat Tanımla → direkt form
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
 }
@@ -7088,7 +7110,7 @@ function ustCubukKur() {
   if ($('#kmYedek')) $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
   { const ts = $('#kmTemaSec'); if (ts) { $$('#kmTemaSec [data-tema]').forEach(b => b.classList.toggle('sec', b.dataset.tema === aktifTema())); ts.onclick = (e) => { const b = e.target.closest('[data-tema]'); if (!b) return; temaUygula(b.dataset.tema, true); }; } }
   { const kt = $('#kmTalep'); if (kt) { kt.innerHTML = ik('destek') + '<span>İstek & Öneri</span>'; kt.onclick = () => { kulMenuKapat(); talepListeModal(); }; } }
-  // Güncelle — buluttan taze veri çek + aktif sayfayı yeniden çiz. Basınca kum saati döner.
+  // Güncelle — basınca sürüm sorgular: yeni sürüm varsa günceller, güncelse "Sürümünüz güncel" der.
   { const kg = $('#kmGuncelle'); if (kg) {
       const slot = kg.querySelector('.kmg-ik'); if (slot && !slot.innerHTML) slot.innerHTML = ik('guncel');
       kg.onclick = async () => {
@@ -7096,14 +7118,21 @@ function ustCubukKur() {
         kg.dataset.dolu = '1';
         if (slot) slot.innerHTML = '<span class="kum">⏳</span>';
         const t0 = Date.now();
+        const sonuc = await uzakSurumKontrol();
+        const bitir = (fn) => { const kalan = Math.max(0, 720 - (Date.now() - t0)); setTimeout(fn, kalan); };
+        if (sonuc.durum === 'eski') {
+          bitir(() => { bildir('Yeni sürüm bulundu, güncelleniyor…', 'basari'); setTimeout(() => location.replace(location.pathname + '?g=' + Date.now()), 700); });
+          return;   // sayfa yenilenecek, düğmeyi eski haline döndürmeye gerek yok
+        }
+        // güncel ya da kontrol edilemedi → veriyi yine de tazele
         try { await yumusakYenile(); } catch {}
-        const kalan = Math.max(0, 720 - (Date.now() - t0));   // kum saati bir tur dönsün (göz kırpması olmasın)
-        setTimeout(() => {
+        bitir(() => {
           delete kg.dataset.dolu;
           if (slot) slot.innerHTML = ik('guncel');
           kulMenuKapat();
-          bildir('Güncellendi', 'basari');
-        }, kalan);
+          if (sonuc.durum === 'guncel') bildir('Sürümünüz güncel.', 'basari');
+          else bildir('Güncellendi.', 'basari');
+        });
       };
   } }
   $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
@@ -7491,6 +7520,22 @@ async function yumusakYenile() {
   } catch (e) { console.warn('Yenile bulut hatası:', e.message); }
   try { await veriYukle(); } catch {}
   try { const r = SAYFALAR[State.aktifSayfa]; if (r) r(); } catch {}
+}
+
+/* Sunucudaki (GitHub Pages) index.html'i önbelleksiz çek → app.js?v=NNN sürümünü oku.
+   Uzak sürüm > yerel ise yeni sürüm var demektir. */
+async function uzakSurumKontrol() {
+  try {
+    const r = await fetch('./index.html?_=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return { durum: 'hata' };
+    const html = await r.text();
+    const m = html.match(/app\.js\?v=(\d+)/);
+    const uzak = m ? parseInt(m[1], 10) : null;
+    const yerel = parseInt(APP_SURUM, 10) || 0;
+    if (uzak && uzak > yerel) return { durum: 'eski', uzak };
+    if (uzak) return { durum: 'guncel', uzak };
+    return { durum: 'hata' };
+  } catch (e) { return { durum: 'hata', mesaj: e.message }; }
 }
 
 /* Tarayıcı kayıtlı-değer önerisini tüm giriş alanlarında kapat.
