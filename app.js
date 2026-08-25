@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '171';
+const APP_SURUM = '172';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '18:20';
+const APP_SURUM_SAAT = '19:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -618,9 +618,9 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Gelir Vergisi', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
+const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Gelir Vergisi', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
-const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-gider', 'ayar-vergi', 'ayar-giris-kul'];
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-gider', 'tanim-kategori', 'tanim-komisyon', 'ayar-vergi', 'ayar-giris-kul'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak'];
@@ -817,7 +817,152 @@ function fazPlaceholder(baslik, aciklama, ikonAd) {
       <p>${kacar(aciklama)}</p>
     </div>`;
 }
-SAYFALAR['karlilik'] = () => fazPlaceholder('Eğitmen / Ortak Kârlılığı', 'Her eğitmen/ortak için brüt tahsilat, komisyon, vergi, gider ve net kâr burada gösterilecek.', 'ortaklar');
+/* ==========================================================
+   KÂRLILIK — eğitmen/ortak bazlı P&L (Planformi + Banka + eşleşmeler)
+   ========================================================== */
+function egitmenKarlilik(donem) {
+  const pf = (State.planformiTahsilat || []).filter(p => donemStr(p.tarih) === donem);
+  const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem);
+  const es = State.eslesmeler || [];
+  const bhTum = State.bankaHareketleri || [];
+  const ortaklar = State.ortaklar.filter(o => o.aktif !== false);
+  const ortakIdSet = new Set(ortaklar.map(o => o.id));
+  const map = {};
+  const ekle = (ad, id) => {
+    const k = adNorm(ad || '—');
+    if (!map[k]) map[k] = { ad: baslikHarf(ad || '—'), egitmenId: id || null, ortakMi: !!(id && ortakIdSet.has(id)), brut: 0, nakit: 0, havale: 0, kart: 0, komisyon: 0 };
+    if (id && ortakIdSet.has(id)) { map[k].egitmenId = id; map[k].ortakMi = true; }
+    return map[k];
+  };
+  ortaklar.forEach(o => ekle(o.ad, o.id));          // ortaklar 0 tahsilatta bile görünür
+  for (const p of pf) {
+    const e = ekle(p.egitmenAd, p.egitmenId);
+    e.brut += p.tutar;
+    if (p.tur === 'nakit') e.nakit += p.tutar; else if (p.tur === 'havale') e.havale += p.tutar; else if (p.tur === 'kart') e.kart += p.tutar;
+  }
+  for (const e of es) {                              // onaylı eşleşmelerden komisyon
+    const bId = (e.bankaIds || [])[0]; const brec = bhTum.find(x => x.id === bId);
+    if (!brec || donemStr(brec.tarih) !== donem) continue;
+    (e.dagitim || []).forEach(d => { ekle(d.egitmenAd, d.egitmenId).komisyon += (d.komisyon || 0); });
+  }
+  const genelGider = bh.filter(b => b.yon === 'gider').reduce((s, b) => s + Math.abs(b.tutar), 0);
+  const giderPayi = ortaklar.length ? genelGider / ortaklar.length : 0;
+  const huzur = bh.filter(b => b.yon === 'ortakOdeme');
+  const odenen = {}; ortaklar.forEach(o => { odenen[o.id] = huzur.filter(h => isimGecer(h.aciklama, o.ad)).reduce((s, h) => s + Math.abs(h.tutar), 0); });
+  const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;
+  const hesapla = (e) => {
+    const vergi = Math.round(e.brut * vOran);       // ÖNİZLEME — kesin formül netleşince değişir
+    const gpay = e.ortakMi ? giderPayi : 0;
+    const net = e.brut - e.komisyon - gpay - vergi;
+    const od = e.egitmenId ? (odenen[e.egitmenId] || 0) : 0;
+    return { ...e, vergi, giderPayi: gpay, net, odenen: od, kalan: net - od };
+  };
+  const tumu = Object.values(map).map(hesapla);
+  return {
+    ortaklar: tumu.filter(e => e.ortakMi).sort((a, b) => b.brut - a.brut),
+    egitmenler: tumu.filter(e => !e.ortakMi).sort((a, b) => b.brut - a.brut),
+    genelGider, giderPayi, vOran,
+    huzurToplam: huzur.reduce((s, h) => s + Math.abs(h.tutar), 0),
+  };
+}
+let karDonem = null;
+SAYFALAR['karlilik'] = function karlilikSayfasi() {
+  const donem = karDonem || buAy();
+  const r = egitmenKarlilik(donem);
+  const bosVeri = !(State.planformiTahsilat || []).length && !(State.bankaHareketleri || []).length;
+  const gBrut = [...r.ortaklar, ...r.egitmenler].reduce((s, e) => s + e.brut, 0);
+  const gKom = [...r.ortaklar, ...r.egitmenler].reduce((s, e) => s + e.komisyon, 0);
+  const gNet = r.ortaklar.reduce((s, e) => s + e.net, 0);
+  const sat = (l, v, cls = '') => `<div class="kar-sat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
+  const kirilim = (e) => `<div class="kar-kir"><span>Nakit ${TL(e.nakit)}</span><span>Havale ${TL(e.havale)}</span><span>Kart ${TL(e.kart)}</span></div>`;
+  const ortakKart = (e) => `
+    <div class="kar-kart">
+      <div class="kar-bas"><span class="kar-ad">${kacar(e.ad)}</span><span class="kar-net ${e.net < 0 ? 'negatif' : 'pozitif'}">${TL(e.net)}</span></div>
+      ${kirilim(e)}
+      ${sat('Brüt Tahsilat', TL(e.brut))}
+      ${sat('Kart Komisyonu', e.komisyon ? '−' + TL(e.komisyon) : TL(0))}
+      ${sat('Genel Gider Payı', e.giderPayi ? '−' + TL(e.giderPayi) : TL(0))}
+      ${sat(`Vergi (önizleme %${Math.round(r.vOran * 100)})`, e.vergi ? '−' + TL(e.vergi) : TL(0), 'kar-vergi')}
+      ${sat('Net', TL(e.net), 'kar-net-b ' + (e.net < 0 ? 'negatif' : 'pozitif'))}
+      ${e.odenen ? sat('Ödenen (huzur hakkı/payı)', '−' + TL(e.odenen)) + sat('Kalan Verilecek', TL(e.kalan), e.kalan < 0 ? 'negatif' : 'pozitif') : ''}
+    </div>`;
+  const maasKart = (e) => `
+    <div class="kar-kart maasli">
+      <div class="kar-bas"><span class="kar-ad">${kacar(e.ad)}${e.egitmenId ? '' : ' <span class="kar-e0" title="Ortaklarla eşleşmedi">?</span>'}</span><span class="kar-net">${TL(e.brut)}</span></div>
+      ${kirilim(e)}
+      ${e.komisyon ? sat('Kart Komisyonu', '−' + TL(e.komisyon)) : ''}
+    </div>`;
+  ic().innerHTML = `
+    <div class="kar-sayfa">
+      <div class="kar-ust"><h3 class="kar-baslik">Kârlılık</h3>${ayNavHTML(donem)}</div>
+      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “İçe Aktar” ile Planformi ve banka dosyalarını yükleyin, ardından “Mutabakat”ta eşleştirin.</p></div>` : `
+      <div class="kar-genel">
+        <div class="kg-kutu"><span>Brüt Tahsilat</span><b>${TL(gBrut)}</b></div>
+        <div class="kg-kutu"><span>Komisyon</span><b>−${TL(gKom)}</b></div>
+        <div class="kg-kutu"><span>Genel Gider</span><b>−${TL(r.genelGider)}</b></div>
+        <div class="kg-kutu vurgu"><span>Ortak Net (toplam)</span><b class="${gNet < 0 ? 'negatif' : 'pozitif'}">${TL(gNet)}</b></div>
+      </div>
+      <div class="kar-bilgi">${ik('uyari')} Vergi satırı <b>önizleme</b>dir (kesin KDV/vergi formülü netleşince güncellenecek). Genel giderler ${r.ortaklar.length} ortağa eşit bölünür.</div>
+      <h4 class="kar-grup">Ortaklar</h4>
+      ${r.ortaklar.map(ortakKart).join('')}
+      ${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <span class="kar-grup-not">tahsilatları havuzda; dağıtım sonra netleşecek</span></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
+    </div>`;
+  $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
+};
+
+/* ---- Ayar: Banka gider kategorileri (kural editörü) ---- */
+SAYFALAR['tanim-kategori'] = function kategoriKurallariSayfasi() {
+  const kurallar = (State.kategoriKurallari || []).slice();
+  const satir = (k) => `
+    <div class="kk-satir">
+      <input class="gp-inp kk-anahtar" placeholder="Anahtar kelime (örn. kira)" value="${kacar(k.anahtar || '')}">
+      <span class="kk-ok">${ik('ok')}</span>
+      <input class="gp-inp kk-kategori" placeholder="Kategori (örn. Kira)" value="${kacar(k.kategori || '')}">
+      <button type="button" class="kk-sil" title="Sil">${ik('cop')}</button>
+    </div>`;
+  ic().innerHTML = `
+    <div class="kk-sayfa">
+      <div class="bilgi-kutu"><span class="ikon">${ik('belge')}</span><div>Banka ekstresi içe aktarılırken, işlem açıklamasında bu <b>anahtar kelimeler</b> geçen giderlere otomatik <b>kategori</b> önerilir.</div></div>
+      <div id="kkListe">${kurallar.map(satir).join('')}</div>
+      <div class="kk-arac">
+        <button type="button" class="btn" id="kkEkle">${ik('yeni')} Kural Ekle</button>
+        ${kurallar.length ? '' : `<button type="button" class="btn" id="kkVarsayilan">${ik('indir')} Varsayılanları Yükle</button>`}
+      </div>
+      <button type="button" class="btn btn-ana kk-kaydet" id="kkKaydet">${ik('kaydet')} Kaydet</button>
+    </div>`;
+  const liste = $('#kkListe');
+  const yeniSatir = (k = {}) => { const t = document.createElement('template'); t.innerHTML = satir(k).trim(); liste.appendChild(t.content.firstChild); bagla(); };
+  function bagla() { $$('.kk-sil', liste).forEach(b => b.onclick = () => b.closest('.kk-satir').remove()); }
+  bagla();
+  $('#kkEkle').onclick = () => yeniSatir();
+  const vb = $('#kkVarsayilan'); if (vb) vb.onclick = () => { VARSAYILAN_KATEGORI_KURAL.forEach(k => yeniSatir(k)); vb.remove(); };
+  $('#kkKaydet').onclick = async () => {
+    const yeni = [...liste.querySelectorAll('.kk-satir')].map(s => ({ anahtar: s.querySelector('.kk-anahtar').value.trim(), kategori: s.querySelector('.kk-kategori').value.trim() })).filter(k => k.anahtar && k.kategori);
+    for (const old of (State.kategoriKurallari || [])) await DB.sil('kategoriKurallari', old.id);
+    await DB.topluEkle('kategoriKurallari', yeni);
+    State.kategoriKurallari = DB._oku('kategoriKurallari');
+    bildir('Kategori kuralları kaydedildi.', 'basari');
+  };
+};
+
+/* ---- Ayar: Kart komisyon oranları (kart tipi bazlı — ileride kullanılacak altyapı) ---- */
+SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
+  const k = (State.ayarlar && State.ayarlar.komisyonOranlari) || { debit: 0, kredi: 3.8, yurtdisi: 4.8 };
+  const alan = (id, ad, v) => `<div class="form-alan"><label>${ad} (%)</label><input type="number" step="0.01" min="0" id="ko_${id}" value="${v}"></div>`;
+  ic().innerHTML = `
+    <div class="ko-sayfa" style="max-width:520px;margin:0 auto">
+      <div class="bilgi-kutu"><span class="ikon">${ik('kart')}</span><div>Kart tipine göre <b>beklenen</b> komisyon oranları. Not: şu an komisyon bankadaki gerçek “Batch Komisyonu”ndan alınıp dağıtılıyor; bu oranlar ileride beklenen komisyonu karşılaştırmak için kullanılacak.</div></div>
+      ${alan('debit', 'Debit Kart', k.debit)}
+      ${alan('kredi', 'Kredi Kartı', k.kredi)}
+      ${alan('yurtdisi', 'Yurt Dışı Kart', k.yurtdisi)}
+      <button type="button" class="btn btn-ana" id="koKaydet">${ik('kaydet')} Kaydet</button>
+    </div>`;
+  $('#koKaydet').onclick = () => {
+    const g = id => Math.max(0, parseFloat($('#ko_' + id).value) || 0);
+    DB.ayarYaz({ ...State.ayarlar, komisyonOranlari: { debit: g('debit'), kredi: g('kredi'), yurtdisi: g('yurtdisi') } });
+    bildir('Komisyon oranları kaydedildi.', 'basari');
+  };
+};
 
 /* ==========================================================
    MUTABAKAT — Planformi ↔ Banka eşleştirme motoru
@@ -4333,6 +4478,8 @@ const TANIMLAR = [
   { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', sadeceAdmin: true },
   { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Eğitmenler ve pay oranları', sadeceAdmin: true },
   { id: 'tanim-gider', ad: 'Giderler', ikon: 'gider', alt: 'Gider kalemleri ve grupları' },
+  { id: 'tanim-kategori', ad: 'Banka Gider Kategorileri', ikon: 'tanimlar', alt: 'Açıklama → kategori kuralları' },
+  { id: 'tanim-komisyon', ad: 'Kart Komisyon Oranları', ikon: 'kart', alt: 'Debit / Kredi / Yurt dışı' },
   { id: 'ayar-vergi', ad: 'Gelir Vergisi', ikon: 'belge', alt: 'Tahsilat vergi kesinti oranı (kâr dağıtımı)', sadeceAdmin: true },
   { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)', sadeceAdmin: true },
 ];
