@@ -847,8 +847,14 @@ body.tema-koyu .krs-tablo tbody td.num{color:#cdba86}
 .gp-ekle{border:none;border-radius:12px;padding:11px 16px;font-family:inherit;font-weight:800;font-size:13.5px;color:#40320f;cursor:pointer;
   background:linear-gradient(135deg,#f2d98a,#d3a84a 55%,#c69133);box-shadow:0 10px 18px -9px rgba(160,120,30,.6)}
 /* Ana sayfa aksiyon düğmeleri eşit genişlikte (sayfalar arası aynı ölçü) */
-.ogr-ust .gp-ekle{display:inline-flex;align-items:center;justify-content:center;min-width:176px}
+.ogr-ust .gp-ekle{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:176px}
 @media(max-width:640px){ .ogr-ust .gp-ekle{min-width:0;width:100%} }
+/* İkincil aksiyon (ör. Stüdyolar) — sade, altın hafif çerçeve */
+.gp-ekle.gp-ekle-alt{background:#fffdf6;color:#8a6a2c;box-shadow:none;border:1.5px solid rgba(198,154,76,.4)}
+.gp-ekle.gp-ekle-alt .uik{width:16px;height:16px}
+body.tema-koyu .gp-ekle.gp-ekle-alt{background:#26241b;color:var(--metin)}
+.ogr-ust .gp-ekle.gp-ekle-alt{min-width:130px}
+@media(max-width:640px){ .ogr-ust .gp-ekle.gp-ekle-alt{min-width:0} }
 .gp-ort-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;max-width:640px;margin:0}
 .gp-ort-kart{position:relative;border-radius:16px;padding:3px;background:linear-gradient(135deg,#d9b25a,#f6e6ad 30%,#c9992f 55%,#f7e9b4 78%,#b8860b);box-shadow:0 14px 26px -16px rgba(120,90,20,.5)}
 .gp-ort-ic{background:linear-gradient(180deg,#fffefb,#fdf6e7);border-radius:13px;padding:11px 11px 13px;text-align:center}
@@ -1240,6 +1246,27 @@ body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 .ders-ogr-ad{font-weight:800;font-size:14.5px}
 .ders-adet-satir{margin-top:4px}
 .ders-adet{display:inline-block;font-size:11px;font-weight:800;color:#a8792f;background:#f6e6ad;border-radius:999px;padding:2px 9px}
+.ders-saat{font-weight:800;white-space:nowrap}
+.ders-std{display:flex;align-items:center;gap:4px;margin-top:3px;font-size:11px;font-weight:700;color:var(--metin-soluk)}
+.ders-std .uik{width:13px;height:13px;color:var(--gold)}
+.dsl-bitis{font-weight:700;color:#a8792f;font-size:12px;margin-left:6px}
+/* Stüdyolar sayfası */
+.gun-nav .m{text-transform:none}
+.std-arac{margin:0 0 14px}
+.std-tablo th .std-bas{display:inline-flex;align-items:center;gap:5px;justify-content:center;font-weight:800}
+.std-tablo th .std-bas .uik{width:15px;height:15px;color:var(--gold)}
+.std-duz{border:none;background:transparent;cursor:pointer;padding:2px;color:var(--metin-soluk);display:inline-flex}
+.std-duz .uik{width:15px;height:15px}
+.std-tablo .std-saat{font-weight:800;font-size:12.5px;color:#7a6a3f;white-space:nowrap;background:rgba(198,154,76,.07)}
+.std-tablo td{vertical-align:top}
+.std-bos{background:rgba(120,150,120,.05)}
+.std-dolu{padding:4px !important}
+.std-blok{display:flex;flex-direction:column;gap:1px;background:linear-gradient(135deg,#eaf3ea,#dcecdc);border:1px solid #cfe1cf;border-radius:9px;padding:6px 7px;cursor:pointer;text-align:left}
+.std-blok+.std-blok{margin-top:4px}
+.std-blok .std-sa{font-weight:800;font-size:11.5px;color:#2f6b3f}
+.std-blok .std-ki{font-weight:700;font-size:12px;color:var(--metin)}
+.std-blok .std-eg{font-size:10.5px;color:var(--metin-soluk);font-weight:700}
+body.tema-koyu .std-blok{background:#243026;border-color:#33452f}
 /* durum baş-harf rozeti */
 .drz{width:32px;height:32px;border-radius:10px;display:inline-grid;place-items:center;font-weight:800;font-size:15px;cursor:pointer;border:1.5px solid transparent;font-family:inherit;line-height:1}
 .drz.b{background:#faedc6;color:#9c7413;border-color:#e6d59a}
@@ -1298,6 +1325,8 @@ body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 .ssz{width:252px;max-width:100%;background:var(--kart);border:1px solid var(--kenar);border-radius:20px;box-shadow:0 30px 60px -20px rgba(60,45,20,.5);padding:16px 18px}
 .ssz-head{font-family:Georgia,"Times New Roman",serif;font-size:16px}
 .ssz-sub{font-size:12px;color:var(--metin-soluk);margin:2px 0 12px}
+.ssz-dolu{display:flex;align-items:center;gap:7px;justify-content:center;flex-wrap:wrap;font-size:12px;font-weight:700;color:#b06a43;background:#fbeee1;border:1px solid #ecd3bf;border-radius:10px;padding:7px 10px;margin:0 0 12px}
+.ssz-dolu .uik{width:15px;height:15px;flex:none}
 .ssz-wheels{display:flex;gap:12px;align-items:center;justify-content:center}
 .ssz-kolon{font-size:24px;font-weight:800;color:#a8792f}
 .ssz-kk{display:flex;gap:12px;justify-content:center;margin-top:7px}
@@ -1340,6 +1369,15 @@ body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 .gs-ara-ik{color:var(--metin-soluk);font-size:14px}
 .gs-ara input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:14px;color:var(--metin);padding:10px 0}
 .gs-liste{display:flex;flex-direction:column;max-height:46vh;overflow:auto}
+.gs-yeni{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px dashed rgba(198,154,76,.55);background:rgba(246,230,173,.18);color:#8a6a2c;border-radius:12px;padding:11px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;margin-bottom:10px}
+.gs-yeni .uik{width:17px;height:17px}
+body.tema-koyu .gs-yeni{background:rgba(246,230,173,.06);color:var(--metin)}
+/* Ders programı üretimi */
+.dpr-bilgi{display:flex;align-items:center;gap:9px;background:#eef5ee;border:1px solid #d6e6d6;border-radius:12px;padding:11px 13px;margin-bottom:14px;font-size:13px;color:var(--metin)}
+.dpr-bilgi .uik{width:20px;height:20px;color:#3f7a4f;flex:none}
+.dpr-gunler{display:flex;gap:6px;flex-wrap:nowrap}
+.dpr-gunler .tc{flex:1 1 0;min-width:0;justify-content:center;padding-left:4px;padding-right:4px;font-size:12px}
+body.tema-koyu .dpr-bilgi{background:#243026;border-color:#33452f}
 .gs-grp{font-size:10.5px;font-weight:800;color:#a8792f;text-transform:uppercase;letter-spacing:.4px;padding:11px 6px 4px}
 .gs-oge{display:flex;align-items:center;gap:11px;padding:12px 12px;border-radius:11px;font-weight:700;font-size:14.5px;cursor:pointer}
 .gs-oge:hover{background:var(--gri-acik,#f2ead9)}

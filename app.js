@@ -24,7 +24,8 @@ const State = {
   giderKayitlari: [],// {id, tarih, giderId, giderAd, grupAd, aciklama, odemeSekli, tutar, ortakId, olusturma}  — Giderler sayfası (harcama kayıtları)
   uyelikler: [],     // {id, ad, fiyat, dersSayisi, gecerlilikGun, kapsam}  — Tanımlamalar > Üyelikler
   ogrenciler: [],    // {id, ad, soyad, telefon, olusturma, durum:'potansiyel'|'ogrenci', egitmenId, paketler:[{id,uyelikId,paketAd,dersToplam,kalanDers,fiyat,kalanOdeme,tarih}]}
-  dersler: [],       // {id, dersAd, egitmenId, ogrenciIds:[], tarih:'YYYY-MM-DD', saat:'HH:MM', durum:'bekliyor'|'gerceklesti'|'iptal', dusumler:[{ogrenciId,paketId}], olusturma}
+  dersler: [],       // {id, dersAd, egitmenId, ogrenciIds:[], tarih:'YYYY-MM-DD', saat:'HH:MM', bitis:'HH:MM', studyoId, durum:'bekliyor'|'gerceklesti'|'iptal', dusumler:[{ogrenciId,paketId}], olusturma}
+  studyolar: [],     // {id, ad, aktif, olusturma}  — Ders stüdyoları (salonlar)
   odemeler: [],      // {id, ogrenciId, tutar, tarih:'YYYY-MM-DD', tur:'nakit'|'kart'|'havale', dusumler:[{paketId,tutar}], olusturma}
   talepler: [],      // {id, kullaniciId, kullaniciAd, sayfa, baslik, aciklama, cevap, cevapAd, durum:'bekliyor'|'cevaplandi', olusturma, cevapTarih}  — İstek ve Öneri
   ayarlar: {},       // {firmaAd, ...}
@@ -185,6 +186,60 @@ function baslikHarf(s) {
   ).join(' ');
 }
 
+/* ---- Gün / saat / ders çakışma yardımcıları (ders programı) ---- */
+const HAFTA_GUN_KISA = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];   // Pazartesi-ilk
+const HAFTA_GUN_TAM = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+/* ISO tarihi n gün kaydır — yerel parçalarla (UTC kayması yok) */
+function gunKaydir(iso, n) {
+  const [y, m, g] = (iso || bugunISO()).split('-').map(Number);
+  const d = new Date(y, m - 1, g + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+/* Haftanın günü — Pazartesi=0 … Pazar=6 */
+function haftaGunu(iso) {
+  const [y, m, g] = (iso || bugunISO()).split('-').map(Number);
+  return (new Date(y, m - 1, g).getDay() + 6) % 7;
+}
+/* Uzun gün etiketi: "Çarşamba, 26 Ağustos 2026" */
+function gunUzun(iso) {
+  const [y, m, g] = (iso || bugunISO()).split('-').map(Number);
+  return `${HAFTA_GUN_TAM[haftaGunu(iso)]}, ${g} ${AY_TAM[m - 1]} ${y}`;
+}
+/* Başlangıç saatine dk ekle → 'HH:MM' (24s içinde sınırlı) */
+function saatEkleDk(hhmm, dk) {
+  const [s, d] = String(hhmm || '10:00').split(':').map(Number);
+  let t = Math.min(24 * 60, (s * 60 + d) + (Number(dk) || 0));
+  const sh = Math.floor(t / 60), sd = t % 60;
+  return String(Math.min(23, sh)).padStart(2, '0') + ':' + String(sd).padStart(2, '0');
+}
+/* İki saat aralığı çakışır mı? (HH:MM string karşılaştırması) */
+function araliklarCakisir(aBas, aBit, bBas, bBit) { return aBas < bBit && bBas < aBit; }
+/* Bir dersin bitiş saati (yoksa varsayılan +60 dk) */
+function dersBitis(d) { return (d && d.bitis) ? d.bitis : saatEkleDk(d ? d.saat : '10:00', 60); }
+/* Aynı tarihte eğitmen/stüdyo çakışması var mı? → {tip, ders} | null */
+function dersCakismaVar({ egitmenId, studyoId, tarih, saat, bitis, haricId }) {
+  const list = (State.dersler || []).filter(d => d.tarih === tarih && d.durum !== 'iptal' && d.id !== haricId);
+  for (const d of list) {
+    if (!araliklarCakisir(saat, bitis, d.saat, dersBitis(d))) continue;
+    if (egitmenId && d.egitmenId === egitmenId) return { tip: 'egitmen', ders: d };
+  }
+  for (const d of list) {
+    if (!araliklarCakisir(saat, bitis, d.saat, dersBitis(d))) continue;
+    if (studyoId && d.studyoId === studyoId) return { tip: 'studyo', ders: d };
+  }
+  return null;
+}
+/* O gün ilgili stüdyo/eğitmenin dolu aralıkları (saat seçici bilgisi) */
+function gunMesgulAraliklar(tarih, { studyoId, egitmenId }) {
+  return (State.dersler || [])
+    .filter(d => d.tarih === tarih && d.durum !== 'iptal' && ((studyoId && d.studyoId === studyoId) || (egitmenId && d.egitmenId === egitmenId)))
+    .map(d => ({ bas: d.saat, bit: dersBitis(d) }))
+    .sort((a, b) => a.bas.localeCompare(b.bas));
+}
+/* Aktif stüdyolar */
+function aktifStudyolar() { return (State.studyolar || []).filter(s => s.aktif !== false); }
+function studyoAd(id) { const s = (State.studyolar || []).find(x => x.id === id); return s ? s.ad : ''; }
+
 function bildir(mesaj, tip = '') {
   const b = document.createElement('div');
   b.className = 'bildirim ' + tip;
@@ -213,7 +268,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.r
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler'];   // + Ödemeler, İstek/Öneri
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar'];   // + Ödemeler, İstek/Öneri, Stüdyolar
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -403,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '153';
+const APP_SURUM = '154';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -439,6 +494,7 @@ async function veriYukle() {
   State.dersler = DB._oku('dersler');
   State.odemeler = DB._oku('odemeler');
   State.talepler = DB._oku('talepler');
+  State.studyolar = DB._oku('studyolar');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = [];
 }
@@ -541,6 +597,7 @@ const MENU = [
   { grup: 'Ders Takibi', ikon: 'hedef', ogeler: [
     { id: 'dersler', ad: 'Dersler', ikon: 'dersler', baslik: 'Dersler' },
     { id: 'ogrenciler', ad: 'Öğrenciler', ikon: 'ogrenci', baslik: 'Öğrenciler' },
+    { id: 'studyolar', ad: 'Stüdyolar', ikon: 'studyo', baslik: 'Stüdyolar' },
   ] },
   { grup: 'Muhasebe', ikon: 'muhasebe', ogeler: [
     { id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe', baslik: 'Hesaplar' },
@@ -622,6 +679,7 @@ const IK = {
   kalem: '<path d="M4 20h4l10.5-10.5a2 2 0 0 0-3-3L5 17v3Z" fill="currentColor" opacity=".18"/><path d="M4 20h4l10.5-10.5a2 2 0 0 0-3-3L5 17v3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.5 6.5l3.9 3.9" stroke="currentColor" stroke-width="1.6"/>',
   indir: '<rect x="5" y="2.5" width="14" height="19" rx="2.5" fill="currentColor" opacity=".16"/><rect x="5" y="2.5" width="14" height="19" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v6M9.2 10.8 12 13.6l2.8-2.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
   uyari: '<circle cx="12" cy="12" r="9" fill="currentColor" opacity=".16"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor"/>',
+  studyo: '<path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h8.8A1.6 1.6 0 0 1 17 5.6V20" fill="currentColor" opacity=".2"/><path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h8.8A1.6 1.6 0 0 1 17 5.6V20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="13.5" cy="12.5" r="1.1" fill="currentColor"/>',
 };
 /* İkon SVG'si üretir. cls: ekstra sınıf. */
 function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
@@ -4358,7 +4416,68 @@ function paketAtaModal(o) {
     };
     const guncel = { egitmenId, durum: 'ogrenci', paketler: [...(o.paketler || []), paket] };
     await DB.guncelle('ogrenciler', o.id, guncel); Object.assign(o, guncel);
-    modalKapat(); ogrenciAktifSekme = 'ogrenci'; bildir('Paket öğrenciye eklendi.', 'basari'); SAYFALAR['ogrenciler']();
+    ogrenciAktifSekme = 'ogrenci'; bildir('Paket öğrenciye eklendi.', 'basari');
+    // Stüdyo tanımlıysa tekrarlı ders programı üretimini öner; değilse mevcut davranış
+    if (aktifStudyolar().length) dersProgramModal(o, paket, egitmenId);
+    else { modalKapat(); SAYFALAR['ogrenciler'](); }
+  };
+}
+
+/* Pakete tekrarlı ders programı — "her Salı 18:00 Stüdyo A" gibi kuralla N ders üretir */
+function dersProgramModal(o, paket, egitmenId) {
+  const studyolar = aktifStudyolar();
+  const N = Number(paket.dersToplam) || 0;
+  const SURELER = [30, 45, 60, 90];
+  const gunSecili = new Set();          // 0=Pzt … 6=Paz
+  let saat = '10:00', sureDk = 60;
+  let studyoId = studyolar[0] ? studyolar[0].id : null;
+  let baslangic = bugunISO();
+  const govde = `
+    <div class="dpr-bilgi">${ik('dersler')}<span><b>${kacar(ogrenciTamAd(o))}</b> · ${kacar(paket.paketAd)} — <b>${N} ders</b> üretilecek</span></div>
+    <div class="gp-alan"><label>Hangi günler?</label>
+      <div class="turcip dpr-gunler" id="dprGun">${HAFTA_GUN_KISA.map((g, i) => `<button type="button" class="tc" data-g="${i}">${g}</button>`).join('')}</div></div>
+    <div class="uy-ikili">
+      <div class="gp-alan" style="margin:0"><label>Başlangıç Saati</label><button type="button" class="saat-trig" id="dprSaat">${ik('sure')}<span id="dprSaatAd">${saat}</span></button></div>
+      <div class="gp-alan" style="margin:0"><label>Başlangıç Tarihi</label><button type="button" class="pa-trig" id="dprTarih"><span id="dprTarihAd">${fmtTarihUzun(baslangic)}</span><span class="ok">${ik('dersler')}</span></button></div>
+    </div>
+    <div class="gp-alan"><label>Süre <span class="dsl-bitis" id="dprBitis">Bitiş ${saatEkleDk(saat, sureDk)}</span></label>
+      <div class="turcip" id="dprSure">${SURELER.map(dk => `<button type="button" class="tc ${sureDk === dk ? 'sec' : ''}" data-sure="${dk}">${dk} dk</button>`).join('')}</div></div>
+    <div class="gp-alan" style="margin:0"><label>Stüdyo</label>
+      <div class="turcip" id="dprStudyo">${studyolar.map(s => `<button type="button" class="tc ${studyoId === s.id ? 'sec' : ''}" data-std="${s.id}">${ik('studyo')}${kacar(s.ad)}</button>`).join('')}</div></div>`;
+  modalAc('Ders Programı Oluştur', govde,
+    `<button class="btn" id="dprAtla" style="margin-right:auto">Şimdilik atla</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dprUret">${ik('dersler')} ${N} Ders Üret</button>`,
+    rozetHTML('dersler', 'Program'));
+  const bitisGuncelle = () => { const el = $('#dprBitis'); if (el) el.textContent = 'Bitiş ' + saatEkleDk(saat, sureDk); };
+  $('#dprGun').onclick = (e) => { const b = e.target.closest('[data-g]'); if (!b) return; const g = Number(b.dataset.g); if (gunSecili.has(g)) gunSecili.delete(g); else gunSecili.add(g); b.classList.toggle('sec'); };
+  $('#dprSaat').onclick = () => saatSecici(saat, (s) => { saat = s; $('#dprSaatAd').textContent = s; bitisGuncelle(); });
+  $('#dprTarih').onclick = () => tarihSecici(baslangic, (iso) => { baslangic = iso; $('#dprTarihAd').textContent = fmtTarihUzun(baslangic); });
+  $('#dprSure').onclick = (e) => { const b = e.target.closest('[data-sure]'); if (!b) return; sureDk = Number(b.dataset.sure); $$('#dprSure .tc').forEach(x => x.classList.toggle('sec', x === b)); bitisGuncelle(); };
+  $('#dprStudyo').onclick = (e) => { const b = e.target.closest('[data-std]'); if (!b) return; studyoId = b.dataset.std; $$('#dprStudyo .tc').forEach(x => x.classList.toggle('sec', x === b)); };
+  $('#dprAtla').onclick = () => { modalKapat(); SAYFALAR['ogrenciler'](); };
+  $('#dprUret').onclick = async () => {
+    if (!gunSecili.size) return bildir('En az bir gün seçin.', 'hata');
+    if (!studyoId) return bildir('Stüdyo seçin.', 'hata');
+    const bitis = saatEkleDk(saat, sureDk);
+    const kayitlar = [], atlanan = [];
+    let gun = baslangic, uretilen = 0, guvenlik = 0;
+    while (uretilen < N && guvenlik < 400) {
+      guvenlik++;
+      if (gunSecili.has(haftaGunu(gun))) {
+        const cak = dersCakismaVar({ egitmenId, studyoId, tarih: gun, saat, bitis, haricId: null });
+        if (cak) { atlanan.push(gun); }
+        else { kayitlar.push({ dersAd: paket.paketAd, egitmenId, ogrenciIds: [o.id], tarih: gun, saat, bitis, studyoId, durum: 'bekliyor', dusumler: [] }); uretilen++; }
+      }
+      gun = gunKaydir(gun, 1);
+    }
+    if (kayitlar.length) { const yeni = await DB.topluEkle('dersler', kayitlar); yeni.forEach(y => State.dersler.push(y)); }
+    modalKapat();
+    if (atlanan.length) {
+      const ozet = atlanan.slice(0, 6).map(t => fmtTarih(t)).join(', ') + (atlanan.length > 6 ? ` +${atlanan.length - 6}` : '');
+      bildir(`${kayitlar.length} ders oluşturuldu. Çakıştığı için atlanan: ${ozet}`, kayitlar.length ? 'basari' : 'hata');
+    } else {
+      bildir(`${kayitlar.length} ders programa eklendi.`, 'basari');
+    }
+    dersAktifSekme = 'bekliyor'; SAYFALAR['ogrenciler']();
   };
 }
 
@@ -4439,7 +4558,7 @@ SAYFALAR['dersler'] = function () {
       <td data-l="Eğitmen"><span class="ogr-egit">${egitmenAv(e ? e.id : null, 'ogr-ea')}${kacar(e ? egitmenKisaAd(e) : '—')}</span></td>
       <td data-l="Öğrenci">${ogrHucre(d)}</td>
       <td data-l="Tarih">${fmtTarihUzun(d.tarih)}</td>
-      <td data-l="Saat">${kacar(d.saat || '')}</td>
+      <td data-l="Saat"><span class="ders-saat">${kacar(d.saat || '')}${d.bitis ? '–' + kacar(d.bitis) : ''}</span>${d.studyoId ? `<span class="ders-std">${ik('studyo')}${kacar(studyoAd(d.studyoId))}</span>` : ''}</td>
       <td data-l="Durum"><button type="button" class="drzk ${c}" data-drz="${d.id}" title="Durumu değiştir">${dik ? ik(dik) : ''}<span>${ad}</span></button></td>
     </tr>`;
   };
@@ -4453,7 +4572,7 @@ SAYFALAR['dersler'] = function () {
           <button type="button" class="seg-grc ${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
           <button type="button" class="seg-ipt ${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
         </div>
-        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
+        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle gp-ekle-alt" id="dersStudyoBtn">${ik('studyo')} Stüdyolar</button><button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
       </div>
       ${liste.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
@@ -4463,6 +4582,7 @@ SAYFALAR['dersler'] = function () {
         : `<div class="gp-bos">${bosMetin}</div>`}
     </div>`;
   $('#dersEkle').onclick = () => dersOlusturModal();
+  { const sb = $('#dersStudyoBtn'); if (sb) sb.onclick = () => git('studyolar'); }
   ortakGosterBtnBagla(() => SAYFALAR['dersler']());
   $$('[data-dsek]').forEach(b => b.onclick = () => { dersAktifSekme = b.dataset.dsek; SAYFALAR['dersler'](); });
   $$('[data-drz]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d, b); });
@@ -4717,18 +4837,108 @@ function paketSecModal(seciliPaketId, seciliSecIdx, onSec) {
   cizPaket();
 }
 
+/* ==========================================================
+   STÜDYOLAR — günlük doluluk ızgarası + stüdyo yönetimi
+   ========================================================== */
+let studyoGun = bugunISO();
+const STUDYO_SAAT_BAS = 8, STUDYO_SAAT_BIT = 22;   // 08:00–22:00 saatlik ızgara
+
+/* Gün gezinme çubuğu (ay navigasyonunun gün sürümü) */
+function gunNavHTML(iso) {
+  return `<div class="ay-nav gun-nav"><button type="button" data-gun="-1" aria-label="Önceki gün">‹</button><span class="ay"><span class="m">${HAFTA_GUN_TAM[haftaGunu(iso)]}</span><span class="y">${iso.slice(8, 10)} ${AY_TAM[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}</span></span><button type="button" data-gun="1" aria-label="Sonraki gün">›</button></div>`;
+}
+
+SAYFALAR['studyolar'] = function () {
+  const admin = adminMi();
+  const studyolar = aktifStudyolar();
+  const gunDersleri = (State.dersler || []).filter(d => d.tarih === studyoGun && d.durum !== 'iptal');
+  // Bir stüdyonun bir saat diliminde dersi
+  const hucre = (sid, h) => {
+    const bas = String(h).padStart(2, '0') + ':00', bit = String(h + 1).padStart(2, '0') + ':00';
+    const ders = gunDersleri.filter(d => d.studyoId === sid && araliklarCakisir(bas, bit, d.saat, dersBitis(d)));
+    if (!ders.length) return `<td class="std-bos"></td>`;
+    return `<td class="std-dolu">${ders.map(d => {
+      const e = State.ortaklar.find(x => x.id === d.egitmenId);
+      const ids = d.ogrenciIds || [];
+      const kim = ids.length > 1 ? `${ids.length} kişi` : (ids.length ? kacar(ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0]))) : (d.dersAd || 'Ders'));
+      return `<div class="std-blok" data-drz="${d.id}"><span class="std-sa">${kacar(d.saat)}–${kacar(dersBitis(d))}</span><span class="std-ki">${kim}</span><span class="std-eg">${kacar(e ? egitmenKisaAd(e) : '—')}</span></div>`;
+    }).join('')}</td>`;
+  };
+  const satirlar = [];
+  for (let h = STUDYO_SAAT_BAS; h < STUDYO_SAAT_BIT; h++) {
+    const bas = String(h).padStart(2, '0') + ':00', bit = String(h + 1).padStart(2, '0') + ':00';
+    satirlar.push(`<tr><td class="std-saat">${bas}–${bit}</td>${studyolar.map(s => hucre(s.id, h)).join('')}</tr>`);
+  }
+  const colW = studyolar.length ? Math.floor(76 / studyolar.length) : 76;
+  const izgara = studyolar.length
+    ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo std-tablo">
+        <colgroup><col style="width:24%">${studyolar.map(() => `<col style="width:${colW}%">`).join('')}</colgroup>
+        <thead><tr><th>Saat</th>${studyolar.map(s => `<th><span class="std-bas">${ik('studyo')}${kacar(s.ad)}${admin ? `<button type="button" class="std-duz" data-sduz="${s.id}" title="Düzenle">${ik('kalem')}</button>` : ''}</span></th>`).join('')}</tr></thead>
+        <tbody>${satirlar.join('')}</tbody></table></div></div>`
+    : `<div class="gp-bos">Henüz stüdyo yok.${admin ? ' “＋ Stüdyo Ekle” ile ekleyin.' : ''}</div>`;
+  ic().innerHTML = `
+    <div class="ortk-ust">
+      <span class="ortk-bas">Stüdyolar</span>
+      ${gunNavHTML(studyoGun)}
+    </div>
+    ${admin ? `<div class="std-arac"><button type="button" class="gp-ekle" id="stdEkle">＋ Stüdyo Ekle</button></div>` : ''}
+    ${izgara}`;
+  $$('[data-gun]').forEach(b => b.onclick = () => { studyoGun = gunKaydir(studyoGun, Number(b.dataset.gun)); SAYFALAR['studyolar'](); });
+  { const eb = $('#stdEkle'); if (eb) eb.onclick = () => studyoFormu(); }
+  $$('[data-sduz]').forEach(b => b.onclick = () => studyoFormu(State.studyolar.find(x => x.id === b.dataset.sduz)));
+  $$('#icerik .std-blok[data-drz]').forEach(b => b.onclick = () => { const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d); });
+  tabloSigdir();
+};
+
+/* Stüdyo ekle / düzenle / sil */
+function studyoFormu(mevcut) {
+  if (!adminMi()) return;
+  let aktif = mevcut ? mevcut.aktif !== false : true;
+  const govde = `
+    <div class="gp-alan"><label>Stüdyo Adı</label><input type="text" class="gp-inp" id="stdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Reformer Oda 1" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan" style="margin:0"><label>Durum</label><div class="turcip" id="stdDurum"><button type="button" class="tc ${aktif ? 'sec' : ''}" data-a="1">Aktif</button><button type="button" class="tc ${!aktif ? 'sec' : ''}" data-a="0">Pasif</button></div></div>`;
+  modalAc(mevcut ? 'Stüdyo Düzenle' : 'Yeni Stüdyo', govde,
+    `${mevcut ? `<button class="btn btn-kirmizi" id="stdSil" style="margin-right:auto">${ik('cop')} Sil</button>` : ''}<button class="btn" id="stdIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="stdKaydet">${ik('kaydet')} Kaydet</button>`,
+    rozetHTML('studyo', 'Stüdyo'));
+  $('#stdDurum').onclick = (e) => { const b = e.target.closest('[data-a]'); if (!b) return; aktif = b.dataset.a === '1'; $$('#stdDurum .tc').forEach(x => x.classList.toggle('sec', x === b)); };
+  $('#stdIptal').onclick = modalKapat;
+  if (mevcut) $('#stdSil').onclick = () => onayModal('Stüdyo silinsin mi?', 'Bu stüdyodaki mevcut ders kayıtları kalır.', async () => {
+    await DB.sil('studyolar', mevcut.id); State.studyolar = State.studyolar.filter(x => x.id !== mevcut.id);
+    modalKapat(); bildir('Stüdyo silindi.', 'basari'); SAYFALAR['studyolar']();
+  });
+  $('#stdKaydet').onclick = async () => {
+    const ad = $('#stdAd').value.trim();
+    if (!ad) return bildir('Stüdyo adı girin.', 'hata');
+    const veri = { ad, aktif };
+    if (mevcut) { await DB.guncelle('studyolar', mevcut.id, veri); Object.assign(mevcut, veri); }
+    else { const y = await DB.ekle('studyolar', veri); State.studyolar.push(y); }
+    modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['studyolar']();
+  };
+}
+
 /* Ders Oluştur formu */
 function dersOlusturModal(mevcut) {
   const egitmenler = State.ortaklar.filter(x => x.aktif !== false);
   const ogrenciler = State.ogrenciler.filter(x => x.durum === 'ogrenci').slice()
     .sort((a, b) => ogrenciTamAd(a).localeCompare(ogrenciTamAd(b), 'tr'));
   if (!egitmenler.length) return bildir('Önce eğitmen (ortak) ekleyin: Ayarlar › Ortak Bilgileri.', 'hata');
+  const studyolar = aktifStudyolar();
+  if (!studyolar.length) return bildir('Önce stüdyo ekleyin: Ders Takibi › Stüdyolar.', 'hata');
   if (!ogrenciler.length && !mevcut) return bildir('Önce paketli öğrenci ekleyin (Öğrenciler).', 'hata');
 
+  const SURELER = [30, 45, 60, 90];
   let egitmenId = mevcut ? (mevcut.egitmenId || '') : '';   // boş başla — öğrenci seçilince otomatik gelir
   const secili = new Set(mevcut ? (mevcut.ogrenciIds || []) : []);
   let tarih = mevcut ? mevcut.tarih : bugunISO();
   let saat = mevcut ? (mevcut.saat || '10:00') : '10:00';
+  // Süre: düzenlemede saat/bitiş farkından türet, yoksa 60
+  let sureDk = 60;
+  if (mevcut && mevcut.bitis && mevcut.saat) {
+    const [bh, bd] = mevcut.saat.split(':').map(Number), [eh, ed] = mevcut.bitis.split(':').map(Number);
+    const fark = (eh * 60 + ed) - (bh * 60 + bd);
+    sureDk = SURELER.includes(fark) ? fark : (fark > 0 ? fark : 60);
+  }
+  let studyoId = mevcut ? (mevcut.studyoId || (studyolar[0] && studyolar[0].id)) : (studyolar[0] && studyolar[0].id);
   let otoAd = '', otoEg = '';   // son otomatik doldurulan değerler (manuel düzenleme korunur)
   const chipler = () => Array.from(secili).map(id => { const o = State.ogrenciler.find(x => x.id === id); return o ? `<span class="ds-chip">${kacar(ogrenciTamAd(o))} <span class="x" data-cx="${id}">✕</span></span>` : ''; }).join('');
 
@@ -4741,8 +4951,12 @@ function dersOlusturModal(mevcut) {
       <button type="button" class="sec-trig" id="dsETrig">${egitmenTrigIc(egitmenId)}</button></div>
     <div class="uy-ikili">
       <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dsTarih"><span id="dsTarihAd">${fmtTarihUzun(tarih)}</span><span class="ok">${ik('dersler')}</span></button></div>
-      <div class="gp-alan" style="margin:0"><label>Saat</label><button type="button" class="saat-trig" id="dsSaat">${ik('sure')}<span id="dsSaatAd">${saat}</span></button></div>
-    </div>`;
+      <div class="gp-alan" style="margin:0"><label>Başlangıç Saati</label><button type="button" class="saat-trig" id="dsSaat">${ik('sure')}<span id="dsSaatAd">${saat}</span></button></div>
+    </div>
+    <div class="gp-alan"><label>Süre <span class="dsl-bitis" id="dsBitis">Bitiş ${saatEkleDk(saat, sureDk)}</span></label>
+      <div class="turcip" id="dsSure">${SURELER.map(dk => `<button type="button" class="tc ${sureDk === dk ? 'sec' : ''}" data-sure="${dk}">${dk} dk</button>`).join('')}</div></div>
+    <div class="gp-alan" style="margin:0"><label>Stüdyo</label>
+      <div class="turcip" id="dsStudyo">${studyolar.map(s => `<button type="button" class="tc ${studyoId === s.id ? 'sec' : ''}" data-std="${s.id}">${ik('studyo')}${kacar(s.ad)}</button>`).join('')}</div></div>`;
   modalAc(mevcut ? 'Ders Düzenle' : 'Ders Oluştur', govde,
     `${mevcut ? `<button class="btn btn-kirmizi" id="dsSil" style="margin-right:auto">${ik('cop')} Sil</button>` : ''}<button class="btn" id="dsIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dsKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> ${mevcut ? 'Kaydet' : 'Dersi Planla'}</button>`,
     `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="currentColor" opacity=".26"/><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5h17M8 3.2v3.4M16 3.2v3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M7.5 13h3M7.5 16.3h3M13.5 13h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Ders</span>`);
@@ -4762,21 +4976,33 @@ function dersOlusturModal(mevcut) {
   chipYenile();
   $('#dsOEkle').onclick = () => ogrenciSecModal(secili, (yeni) => { secili.clear(); yeni.forEach(id => secili.add(id)); chipYenile(); otoDoldur(); });
 
+  const bitisGuncelle = () => { const el = $('#dsBitis'); if (el) el.textContent = 'Bitiş ' + saatEkleDk(saat, sureDk); };
   $('#dsTarih').onclick = () => tarihSecici(tarih, (iso) => { tarih = iso; $('#dsTarihAd').textContent = fmtTarihUzun(tarih); });
-  $('#dsSaat').onclick = () => saatSecici(saat, (s) => { saat = s; $('#dsSaatAd').textContent = s; });
+  $('#dsSaat').onclick = () => saatSecici(saat, (s) => { saat = s; $('#dsSaatAd').textContent = s; bitisGuncelle(); },
+    gunMesgulAraliklar(tarih, { studyoId, egitmenId }));
+  $('#dsSure').onclick = (e) => { const b = e.target.closest('[data-sure]'); if (!b) return; sureDk = Number(b.dataset.sure); $$('#dsSure .tc').forEach(x => x.classList.toggle('sec', x === b)); bitisGuncelle(); };
+  $('#dsStudyo').onclick = (e) => { const b = e.target.closest('[data-std]'); if (!b) return; studyoId = b.dataset.std; $$('#dsStudyo .tc').forEach(x => x.classList.toggle('sec', x === b)); };
   $('#dsIptal').onclick = modalKapat;
   if (mevcut) $('#dsSil').onclick = () => dersSil(mevcut);
   $('#dsKaydet').onclick = async () => {
     const ad = $('#dsAd').value.trim();
     if (!ad) return bildir('Ders adı girin.', 'hata');
     if (!secili.size) return bildir('En az bir öğrenci seçin.', 'hata');
+    if (!egitmenId) return bildir('Eğitmen seçin.', 'hata');
+    if (!studyoId) return bildir('Stüdyo seçin.', 'hata');
     saat = saatNormal(saat);
+    const bitis = saatEkleDk(saat, sureDk);
+    const cak = dersCakismaVar({ egitmenId, studyoId, tarih, saat, bitis, haricId: mevcut ? mevcut.id : null });
+    if (cak) {
+      const cd = cak.ders; const kim = cak.tip === 'egitmen' ? 'Bu eğitmenin' : ('“' + studyoAd(studyoId) + '” stüdyosunun');
+      return bildir(`${kim} bu saatte dersi var (${cd.saat}–${dersBitis(cd)}). Başka saat/stüdyo seçin.`, 'hata');
+    }
     if (mevcut) {
-      const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat };   // durum & düşümler korunur
+      const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat, bitis, studyoId };   // durum & düşümler korunur
       await DB.guncelle('dersler', mevcut.id, veri); Object.assign(mevcut, veri);
       modalKapat(); bildir('Ders güncellendi.', 'basari'); SAYFALAR['dersler']();
     } else {
-      const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat, durum: 'bekliyor', dusumler: [] };
+      const veri = { dersAd: ad, egitmenId, ogrenciIds: Array.from(secili), tarih, saat, bitis, studyoId, durum: 'bekliyor', dusumler: [] };
       const y = await DB.ekle('dersler', veri); State.dersler.push(y);
       modalKapat(); dersAktifSekme = 'bekliyor'; bildir('Ders planlandı.', 'basari'); SAYFALAR['dersler']();
     }
@@ -4847,13 +5073,18 @@ function kurWheel(wrap, values, secili, degisti) {
   ogeler().forEach((e, i) => e.onclick = () => { idx = i; isaretle(); if (degisti) degisti(values[i]); merkezle(i, true); });
   return { get: () => values[idx] };
 }
-function saatSecici(mevcut, cb) {
+function saatSecici(mevcut, cb, dolu) {
   const [sh, sd] = (mevcut || '10:00').split(':');
   const saatler = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const dklar = ['00', '15', '30', '45'];
+  // Dolu aralık bilgisi (opsiyonel): [{bas,bit}] → başlıkta özet
+  const doluHTML = (Array.isArray(dolu) && dolu.length)
+    ? `<div class="ssz-dolu">${ik('uyari')}<span>Dolu: ${dolu.map(d => `${d.bas}–${d.bit}`).join(' · ')}</span></div>`
+    : '';
   const kap = pickerKatman(`
     <div class="ssz">
       <div class="ssz-head">Saat Seç</div><div class="ssz-sub">Kaydırarak saat ve dakikayı seç</div>
+      ${doluHTML}
       <div class="ssz-wheels"><div class="wsel-wrap" id="wSaat"></div><span class="ssz-kolon">:</span><div class="wsel-wrap" id="wDk"></div></div>
       <div class="ssz-kk"><span>Saat</span><span></span><span>Dakika</span></div>
       <div class="tsz-foot"><button type="button" class="picker-iptal" id="sszIptal">İptal</button><button type="button" class="picker-tamam" id="sszTamam">Tamam</button></div>
@@ -5198,9 +5429,11 @@ function giderSecAc(st) {
   $('#modalKap .modal-govde').innerHTML = `<div class="gd-flow gd-flow-sec gd-anim">
       <div class="gs-ara"><span class="gs-ara-ik">${ik('ara')}</span><input type="text" id="gsAra" placeholder="Gider ara…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
       ${kkodeHTML}
+      <button type="button" class="gs-yeni" id="gsYeni">${ik('yeni')} Yeni Gider Ekle</button>
       <div class="gs-liste" id="gsListe">${giderSecListe(st, '')}</div></div>`;
   $('#modalKap .modal-alt').innerHTML = `<button class="btn gs-geri-btn" id="gsGeri">‹ Gider Ekle</button>`;
   $('#gsGeri').onclick = () => giderFormAc(st);
+  $('#gsYeni').onclick = () => yeniGiderKalemiModal((it, grupAd) => { st.secId = it.id; st.secAd = it.ad; st.kkOde = false; st.secGrupAd = grupAd; giderFormAc(st); });
   { const kk = $('#gsKkode'); if (kk) kk.onclick = () => {
     st.secId = '__kkode'; st.secAd = 'Kredi Kartı Borç Ödemesi'; st.secGrupAd = ''; st.kkOde = true; st.sekli = 'banka'; st.ortak = null; st.tutar = binlik(borc);
     giderFormAc(st);
@@ -5235,13 +5468,47 @@ function giderGrupSecModal(onSec) {
     return html || '<div class="gp-bos" style="margin:8px 6px">Sonuç yok. “Tanımlamalar › Giderler”den ekleyebilirsin.</div>';
   };
   const govde = `<div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="ggAra" placeholder="Gider ara…" autocomplete="off"></div>
+    <button type="button" class="gs-yeni" id="ggYeni">${ik('yeni')} Yeni Gider Ekle</button>
     <div class="ds-oliste sec-liste-kaydir" id="ggListe">${liste('')}</div>`;
   const m = ustKatModal('Gider Seç', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
   const bind = () => m.qq('#ggListe [data-gk]').forEach(el => el.onclick = () => { const it = State.giderler.find(x => x.id === el.dataset.gk); if (!it) return; const gr = (State.giderGruplari || []).find(g => g.id === it.grupId); onSec(it, gr ? gr.ad : ''); m.kapat(); });
   bind();
   m.q('#ggAra').addEventListener('input', () => { m.q('#ggListe').innerHTML = liste(m.q('#ggAra').value); bind(); });
+  m.q('#ggYeni').onclick = () => yeniGiderKalemiModal((it, grupAd) => { onSec(it, grupAd); m.kapat(); });
   m.q('[data-geri]').onclick = m.kapat;
   setTimeout(() => { const a = m.q('#ggAra'); if (a) a.focus(); }, 60);
+}
+
+/* Satır-içi "＋ Yeni Gider Ekle" — kalem (+ gerekirse grup) oluşturur, oluşturulanı geri verir */
+function yeniGiderKalemiModal(onSec) {
+  let grupId = null, yeniGrupAcik = false;
+  const gruplar = () => State.giderGruplari || [];
+  const chip = (id, ad, sec) => `<button type="button" class="tc ${sec ? 'sec' : ''}" data-grp="${id == null ? '' : id}">${kacar(ad)}</button>`;
+  const grupSatir = () => `${chip(null, 'Grupsuz', grupId === null && !yeniGrupAcik)}${gruplar().map(g => chip(g.id, g.ad, grupId === g.id)).join('')}<button type="button" class="tc ${yeniGrupAcik ? 'sec' : ''}" data-yenigrup>＋ Yeni Grup</button>`;
+  const govde = `
+    <div class="gp-alan"><label>Gider Adı</label><input type="text" class="gp-inp" id="ygAd" placeholder="Örn. Temizlik" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="gp-alan" style="margin:0"><label>Grup</label><div class="turcip" id="ygGrup">${grupSatir()}</div>
+      <div class="gp-alan gizli" id="ygYeniSar" style="margin:10px 0 0"><input type="text" class="gp-inp" id="ygYeniAd" placeholder="Yeni grup adı" autocomplete="off"></div>
+    </div>`;
+  const m = ustKatModal('Yeni Gider Kalemi', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde,
+    `<button class="btn" type="button" data-iptal style="flex:1">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" type="button" data-kaydet style="flex:1">${ik('kaydet')} Ekle</button>`);
+  const bindGrup = () => {
+    m.qq('#ygGrup [data-grp]').forEach(b => b.onclick = () => { grupId = b.dataset.grp || null; yeniGrupAcik = false; m.q('#ygYeniSar').classList.add('gizli'); m.q('#ygGrup').innerHTML = grupSatir(); bindGrup(); });
+    const yb = m.q('#ygGrup [data-yenigrup]'); if (yb) yb.onclick = () => { yeniGrupAcik = true; grupId = null; m.q('#ygGrup').innerHTML = grupSatir(); bindGrup(); m.q('#ygYeniSar').classList.remove('gizli'); const i = m.q('#ygYeniAd'); if (i) i.focus(); };
+  };
+  bindGrup();
+  m.q('[data-iptal]').onclick = m.kapat;
+  m.q('[data-kaydet]').onclick = async () => {
+    const ad = (m.q('#ygAd').value || '').trim(); if (!ad) return bildir('Gider adı girin.', 'hata');
+    let gid = grupId, gad = '';
+    if (yeniGrupAcik) {
+      const gy = (m.q('#ygYeniAd').value || '').trim(); if (!gy) return bildir('Yeni grup adı girin.', 'hata');
+      const g = await DB.ekle('giderGruplari', { ad: gy }); State.giderGruplari.push(g); gid = g.id; gad = g.ad;
+    } else if (gid) { const g = gruplar().find(x => x.id === gid); gad = g ? g.ad : ''; }
+    const y = await DB.ekle('giderler', { ad, grupId: gid || null }); State.giderler.push(y);
+    m.kapat(); bildir('Gider kalemi eklendi.', 'basari'); onSec(y, gad);
+  };
+  setTimeout(() => { const a = m.q('#ygAd'); if (a) a.focus(); }, 60);
 }
 
 /* Birleşik "İşlem Yap" modalı — Gelir/Gider geçişli (Hesaplar). opts: {tip:'gelir'|'gider', mevcut} */
