@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '184';
+const APP_SURUM = '185';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -6729,10 +6729,12 @@ function onayModal(baslik, mesaj, onaylandi) {
    ========================================================== */
 const TALEP_SAYFALAR = [
   { id: 'dashboard', ad: 'Panel', ik: 'panel' },
-  { id: 'ogrenciler', ad: 'Öğrenciler', ik: 'ogrenci' },
-  { id: 'dersler', ad: 'Dersler', ik: 'dersler' },
+  { id: 'mutabakat', ad: 'Tahsilat', ik: 'onay' },
+  { id: 'gelirler', ad: 'Gelirler', ik: 'gelir' },
+  { id: 'giderler', ad: 'Giderler', ik: 'gider' },
   { id: 'hesap-defter', ad: 'Hesaplar', ik: 'muhasebe' },
-  { id: 'ortaklar', ad: 'Ortaklar', ik: 'ortaklar' },
+  { id: 'ice-aktar', ad: 'İçe Aktar', ik: 'indir' },
+  { id: 'karlilik', ad: 'Ortaklar', ik: 'ortaklar' },
   { id: 'ayar-tanimlama', ad: 'Tanımlar', ik: 'tanimlar' },
   { id: 'diger', ad: 'Diğer', ik: 'grup' },
 ];
@@ -6787,7 +6789,7 @@ function talepFormModal(mevcut) {
   const govde = `
     <div class="gp-alan"><label>Hangi sayfa ile ilgili?</label>
       <div class="syf-chipler" id="tlpSyf">${TALEP_SAYFALAR.map(chip).join('')}</div></div>
-    <div class="gp-alan"><label>Başlık</label><input type="text" class="gp-inp" id="tlpBaslik" value="${mevcut ? kacar(mevcut.baslik || '') : ''}" placeholder="Örn. Kalan ders barı sığmıyor" autocomplete="off"></div>
+    <div class="gp-alan"><label>Başlık</label><input type="text" class="gp-inp" id="tlpBaslik" value="${mevcut ? kacar(mevcut.baslik || '') : ''}" placeholder="Örn. Havale tahsilatı eşleşmedi" autocomplete="off"></div>
     <div class="gp-alan" style="margin:0"><label>Açıklama</label><textarea class="gp-inp tlp-aciklama" id="tlpAciklama" placeholder="Yaşadığınız aksaklığı ya da yeni isteğinizi ayrıntılı yazın…">${mevcut ? kacar(mevcut.aciklama || '') : ''}</textarea></div>`;
   modalAc('Yeni İstek', govde,
     `<button class="btn" id="tlpGeri" style="flex:1">‹ Geri</button><button class="btn btn-ana" id="tlpGonder" style="flex:1">${ik('kaydet')} Gönder</button>`,

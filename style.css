@@ -2971,6 +2971,22 @@ textarea.tlp-aciklama{min-height:120px;resize:vertical;line-height:1.5;font-fami
 .tlp-bekle .uik{width:16px;height:16px}
 body.tema-koyu .tlp-sat,body.tema-koyu .tlp-detay{background:linear-gradient(180deg,#2c2a20,#26241b)}
 body.tema-koyu .syf-chip{background:#2c2a20;color:var(--metin)}
+/* ===== Talepler (İstek & Öneri) — neon ===== */
+body.tema-neon .tlp-sat{background:var(--kart);border-color:var(--kenar);box-shadow:none;transition:border-color .2s,background .2s,transform .2s cubic-bezier(.34,1.3,.5,1)}
+body.tema-neon .tlp-sat:hover{border-color:var(--kenar);box-shadow:none;transform:none}
+body.tema-neon .tlp-sat:active{transform:scale(.99);background:var(--gri)}
+body.tema-neon .tlp-syf{background:var(--gri);color:var(--neon)}
+body.tema-neon .tlp-av{background:var(--gri);color:var(--neon)}
+body.tema-neon .dpill.c{background:rgba(92,201,138,.16);color:#7ee0a4}
+body.tema-neon .dpill.b{background:rgba(245,169,31,.16);color:var(--amber)}
+body.tema-neon .syf-chip{background:var(--gri);border-color:var(--kenar);color:var(--metin-soluk)}
+body.tema-neon .syf-chip.sec{background:rgba(180,232,58,.16);border-color:var(--neon);color:var(--neon)}
+body.tema-neon .tlp-detay{background:var(--gri);border-color:var(--kenar)}
+body.tema-neon .tlp-detay .det-txt{color:var(--metin)}
+body.tema-neon .tlp-cevap{background:rgba(92,201,138,.1);border-color:rgba(92,201,138,.32)}
+body.tema-neon .tlp-cevap .cv-bas{color:#7ee0a4}
+body.tema-neon .tlp-cevap .cv-txt{color:var(--metin)}
+body.tema-neon .tlp-bekle{background:rgba(245,169,31,.12);border-color:rgba(245,169,31,.32);color:var(--amber)}
 
 /* ===== Tek "Düzenle" butonu (tablo satırı) ===== */
 .duz-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(198,154,76,.45);background:linear-gradient(180deg,#fffdf7,#f5ead4);color:#6a5320;border-radius:10px;padding:8px 13px;font-weight:800;font-size:12.5px;font-family:inherit;cursor:pointer;white-space:nowrap;transition:.15s}
