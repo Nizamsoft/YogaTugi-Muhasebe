@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '189';
+const APP_SURUM = '190';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -752,6 +752,31 @@ function menuBul(id) {
   return null;
 }
 
+/* Ortak akordeon aç/kapa — ölçülü px-height animasyonu (iOS'ta pürüzsüz; grid-fr'den daha akıcı).
+   kartEl: .acik sınıfını taşıyan öğe; govde: daralıp genişleyen sarıcı. Açıkken 'auto'da dinlenir. */
+function akordeon(kartEl, govde, ac) {
+  if (!kartEl || !govde) return;
+  const acik = kartEl.classList.contains('acik');
+  if (acik === ac) return;                       // durum değişmiyorsa animasyon yok (git() her nav'da çağırır)
+  if (!govde.offsetParent) {                     // gizli/off-canvas → ölçülemez, animasyonsuz uygula
+    kartEl.classList.toggle('acik', ac); govde.style.height = ac ? 'auto' : ''; return;
+  }
+  const bas = govde.offsetHeight;                // mevcut yükseklik
+  govde.style.height = 'auto';
+  kartEl.classList.toggle('acik', ac);           // dinlenme durumunu (chevron/gölge/margin) CSS'e bildir
+  const son = ac ? govde.scrollHeight : 0;       // hedef yükseklik
+  govde.style.height = bas + 'px'; void govde.offsetHeight;   // başlangıç + reflow
+  govde.style.transition = 'height .4s cubic-bezier(.33,.05,.2,1)';
+  govde.style.height = son + 'px';
+  const bitti = (e) => {
+    if (e.target !== govde || e.propertyName !== 'height') return;
+    govde.style.transition = '';
+    govde.style.height = ac ? 'auto' : '';       // açık: auto (içerik değişirse akar); kapalı: CSS'e (0) bırak
+    govde.removeEventListener('transitionend', bitti);
+  };
+  govde.addEventListener('transitionend', bitti);
+}
+
 function git(sayfa) {
   // Dersler / Öğrenciler / Stüdyolar → tek "Ders Takibi" ekranında ilgili sekme
   if (sayfa === 'dersler' || sayfa === 'ogrenciler' || sayfa === 'studyolar') { dtSekme = sayfa; sayfa = 'ders-takibi'; }
@@ -766,7 +791,7 @@ function git(sayfa) {
   // Aktif alt sayfanın grubunu aç, diğerlerini kapat (akordeon)
   $$('.menu-grup').forEach(g => {
     const icerir = Array.from(g.querySelectorAll('.menu-oge')).some(b => b.dataset.sayfa === sayfa || b.dataset.sayfa === vurgulanan);
-    g.classList.toggle('acik', icerir);
+    akordeon(g, g.querySelector('.menu-alt'), icerir);
   });
   document.body.classList.remove('menu-acik');
   if (typeof altMenuGuncelle === 'function') altMenuGuncelle();
@@ -1657,7 +1682,7 @@ function neonAnaEkran() {
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   ttListeBagla(ic());
   { const dt = $('#dashTt'); if (dt) dt.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // Tahsilat Tanımla → direkt form
-  $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
+  $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; akordeon($('#neonOzet'), $('#neonOzet .no-govde'), neonOzetAcik); };
 }
 
 /* -------- DASHBOARD -------- */
@@ -3021,7 +3046,7 @@ function ekstreSayfasi(tip) {
       ? `<div class="kart">${bosBlok('Bu hesapta henüz hareket yok. “＋ Yeni” ile ekleyin.')}</div>`
       : `<div class="e-liste">${satirlar}</div>`}`;
 
-  if ($('#secTrigger')) $('#secTrigger').onclick = () => $('#eSec').classList.toggle('acik');
+  if ($('#secTrigger')) $('#secTrigger').onclick = () => akordeon($('#eSec'), $('#eSec .e-sec-liste'), !$('#eSec').classList.contains('acik'));
   if ($('#ekstreEkleChip')) $('#ekstreEkleChip').onclick = () => hesapEkleModal(tip);
   $$('[data-ekstre]').forEach(b => b.onclick = () => { _ekstreSecili[tip] = b.dataset.ekstre; ekstreSayfasi(tip); });
   const hareketFormu = kartMi ? kartHareketFormu : bankaHareketFormu;

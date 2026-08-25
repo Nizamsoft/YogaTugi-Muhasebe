@@ -226,9 +226,9 @@ h1,h2,h3,h4{line-height:1.25}
 .menu-oge .ikon{width:19px;text-align:center;font-size:15px;flex-shrink:0}
 
 /* Akordeon panel — animasyonlu yükseklik (grid-rows 0fr→1fr) */
-.menu-alt{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
-.menu-grup.acik .menu-alt{grid-template-rows:1fr}
-.menu-alt > .ic{overflow:hidden;min-height:0}
+.menu-alt{overflow:hidden;height:0}   /* px-height animasyonu JS'te (akordeon()) */
+.menu-grup.acik .menu-alt{height:auto}
+.menu-alt > .ic{min-height:0}
 
 /* ---- Ana ▸ Alt menü görsel iyileştirme ---- */
 .kenar-menu{padding:12px 12px 20px}
@@ -352,11 +352,12 @@ body.tema-neon .alt-oge.aktif{color:var(--neon)}
 .neon-ozet .no-bas{font-weight:800;font-size:17px;color:var(--metin)}
 .neon-ozet .no-ok{color:var(--metin-soluk);font-size:15px;transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 .neon-ozet.acik .no-ok{transform:rotate(180deg);color:var(--neon)}
-.neon-ozet .no-govde{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.33,.1,.2,1),margin-top .4s cubic-bezier(.33,.1,.2,1)}
-/* İçerik: bulanıktan nete + hafif kayarak belirir (gölgeli/bulanık akıcı açılış) */
-.neon-ozet .no-govde>.no-ic{overflow:hidden;min-height:0;opacity:0;transform:translateY(-8px);filter:blur(7px);transition:opacity .3s ease .03s,transform .36s cubic-bezier(.33,.1,.2,1) .02s,filter .36s ease .02s}
-.neon-ozet.acik .no-govde{grid-template-rows:1fr;margin-top:12px}
-.neon-ozet.acik .no-govde>.no-ic{opacity:1;transform:none;filter:blur(0)}
+/* Ölçülü px-height animasyonu JS'te (akordeon()); burada yalnız margin-top yumuşar */
+.neon-ozet .no-govde{overflow:hidden;height:0;transition:margin-top .4s cubic-bezier(.33,.05,.2,1)}
+/* İçerik hafif kayarak + solarak belirir (GPU-ucuz; blur yok) */
+.neon-ozet .no-govde>.no-ic{min-height:0;opacity:0;transform:translateY(-6px);transition:opacity .3s ease .04s,transform .34s cubic-bezier(.33,.05,.2,1) .03s}
+.neon-ozet.acik .no-govde{height:auto;margin-top:12px}
+.neon-ozet.acik .no-govde>.no-ic{opacity:1;transform:none}
 .neon-ozet .no-sat{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--kenar);font-size:13.5px;color:var(--metin-soluk)}
 .neon-ozet .no-sat:first-child{border-top:none}
 .neon-ozet .no-sat b{color:var(--metin);font-weight:800}
@@ -920,8 +921,8 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 .modal::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;z-index:5;
   background:linear-gradient(90deg,transparent,rgba(246,230,173,.95),rgba(198,154,76,.75),rgba(246,230,173,.95),transparent)}
 @keyframes perdeGir{from{opacity:0;backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0)}to{opacity:1}}
-/* Bulanıktan nete + hafif yükselerek açılış (gölge zaten güçlü) */
-@keyframes modalGir{0%{opacity:0;transform:translateY(18px) scale(.94);filter:blur(9px)}60%{transform:translateY(-2px) scale(1.006);filter:blur(0)}100%{opacity:1;transform:none;filter:blur(0)}}
+/* Yumuşak yükselerek açılış (blur yok; arka plan buğusu perde'de) */
+@keyframes modalGir{0%{opacity:0;transform:translateY(18px) scale(.94)}60%{transform:translateY(-2px) scale(1.006)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.modal-perde,.modal{animation:none}}
 .modal-ust-kat{z-index:210}   /* üst üste açılan ikinci modal (yeni kalem) */
 .modal-dar{max-width:400px}
@@ -2283,9 +2284,9 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
 .e-sec-trigger .ok{margin-left:auto;color:var(--metin-soluk);font-size:12px;transition:transform .25s ease;flex:0 0 auto}
 .e-sec.acik .e-sec-trigger{border-color:var(--yesil)}
 .e-sec.acik .e-sec-trigger .ok{transform:rotate(180deg)}
-.e-sec-liste{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
-.e-sec.acik .e-sec-liste{grid-template-rows:1fr}
-.e-sec-liste > .ic{overflow:hidden;min-height:0;display:flex;flex-wrap:wrap;gap:8px;padding-top:10px}
+.e-sec-liste{overflow:hidden;height:0}   /* px-height animasyonu JS'te (akordeon()) */
+.e-sec.acik .e-sec-liste{height:auto}
+.e-sec-liste > .ic{min-height:0;display:flex;flex-wrap:wrap;gap:8px;padding-top:10px}
 .e-ml{width:26px;height:26px;border-radius:8px;overflow:hidden;display:grid;place-items:center;color:#fff;font-weight:800;font-size:10px;flex:0 0 auto}
 .e-ml img{width:100%;height:100%;object-fit:cover}
 .e-chip{display:inline-flex;align-items:center;gap:7px;background:var(--kart);border:1px solid var(--kenar);border-radius:999px;
