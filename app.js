@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '162';
+const APP_SURUM = '163';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -881,8 +881,10 @@ SAYFALAR.dashboard = function () {
   const yd = new Date(); yd.setDate(yd.getDate() + 1);
   const yarin = yd.toISOString().slice(0, 10);
   const gunAy = (iso) => { try { return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', weekday: 'long' }); } catch { return iso; } };
+  // Dashboard takvimi: yalnızca giriş yapan kullanıcının (ortak) kendi dersleri; admin'de gösterilen ortağın dersleri
+  const panelOrt = benim || (aktifOrt[0] ? aktifOrt[0].id : null);
   const dersHepsi = (State.dersler || [])
-    .filter(d => (hepsiniGor() || d.egitmenId === benim) && d.durum !== 'iptal' && (d.tarih === bugun || d.tarih === yarin))
+    .filter(d => d.egitmenId === panelOrt && d.durum !== 'iptal' && (d.tarih === bugun || d.tarih === yarin))
     .sort((a, b) => (a.tarih + (a.saat || '')).localeCompare(b.tarih + (b.saat || '')));
   const simdiSaat = (() => { const t = new Date(); return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); })();
   const dersSatir = (d) => {
@@ -908,7 +910,7 @@ SAYFALAR.dashboard = function () {
        ${yarinD.length ? `<div class="drs-gun-et">Yarın · ${gunAy(yarin)}</div>${yarinD.map(dersSatir).join('')}` : ''}`
     : `<div class="drs-bos">Bugün ve yarın için ders yok.</div>`;
   const dersPanel = `<div class="panel">
-      <div class="panel-bas"><span class="t"><span class="ik">${ik('dersler')}</span>Bugün & Yarın</span><span class="link" data-git="dersler">Tüm dersler →</span></div>
+      <div class="panel-bas"><span class="t"><span class="ik">${ik('dersler')}</span>Bugün & Yarın</span><span class="link" data-git="studyolar">Tüm dersler →</span></div>
       ${derslerIc}
     </div>`;
 
