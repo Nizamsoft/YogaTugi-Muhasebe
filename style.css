@@ -487,6 +487,9 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kt-tipler .tc{flex:none;min-width:0;flex-direction:column;gap:1px;padding:8px 6px;font-size:12px;line-height:1.15;text-align:center}
 .kt-tipler .tc small{font-weight:700;opacity:.75;font-size:10px}
 .kt-ipuc{font-size:11.5px;color:var(--metin-soluk);margin-top:11px;line-height:1.4}
+.kt-dsat .kt-ust{margin-bottom:0}
+.kt-dpay{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px dashed var(--kenar);font-size:12.5px;color:var(--metin-soluk);font-weight:600}
+.kt-dpay b{color:var(--amber);font-size:14.5px;font-weight:800}
 .kt-bos{font-size:13.5px;color:var(--metin);line-height:1.5}
 .kt-bos .uik{width:18px;height:18px;color:var(--amber);vertical-align:-.2em}
 /* Banka hareket detayı — alan listesi */
