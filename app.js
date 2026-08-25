@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '195';
+const APP_SURUM = '196';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1569,18 +1569,27 @@ function ttEslesme(p) {
     Math.abs(gunFark(t.tarih, p.tarih)) <= 1);
 }
 function iaOnizleTazele() { if (iaSonKayitlar) iaOnizleCiz(iaSonKayitlar, iaSonDosya); }
-/* Banka gelir satırı ↔ tahsilatTanimlari eşleşmesi. Gelir değilse null.
-   Batch(kart): o günün ~1 gün öncesindeki kart tanımlarının toplamı = batch tutarı (T+1).
-   Havale: açıklamadaki ada göre (isimGecer) + tutar±1 + tarih±1. */
+/* Banka satırı ↔ tahsilatTanimlari eşleşmesi (kesin tarih kuralları):
+   Havale (gelir): açıklamada ad (isimGecer) + tutar(tam) + AYNI GÜN.
+   Batch Yatan (kart gelir): D-1 tarihli kart tanımlarının tutar TOPLAMI = batch tutarı.
+   Batch Komisyonu (komisyon): D-1 kart tanımlarının komisyon TOPLAMI = banka komisyonu.
+   Diğer (gider/ortakOdeme) → null (durum yok). */
 function bankaTahsilatEslesme(k) {
-  if (k.yon !== 'gelir') return null;
-  const batch = /batch\s*yatan/i.test(k.islem || '');
-  if (batch) {
-    const toplam = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && (() => { const gf = gunFark(k.tarih, t.tarih); return gf >= -0.5 && gf <= 1.5; })())
-      .reduce((s, t) => s + (Number(t.tutar) || 0), 0);
-    return { tip: 'batch', durum: (toplam > 0 && Math.abs(toplam - (Number(k.tutar) || 0)) < 1) ? 'ok' : 'yok', toplam };
+  const gunOncesi = t => Math.round(gunFark(k.tarih, t.tarih)) === 1;   // tanım = banka gününün 1 gün öncesi (T+1)
+  const ayniGun = t => Math.round(gunFark(t.tarih, k.tarih)) === 0;     // aynı gün
+  const komOran = t => Number(tahsilatKomisyonOran(t.odemeTuru, t.kartTipi)) || 0;
+  if (k.yon === 'komisyon') {
+    const komTop = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && gunOncesi(t))
+      .reduce((s, t) => s + (Number(t.tutar) || 0) * komOran(t) / 100, 0);
+    return { tip: 'komisyon', durum: (komTop > 0 && Math.abs(komTop - Math.abs(Number(k.tutar) || 0)) < 1) ? 'ok' : 'yok', toplam: komTop };
   }
-  const t = (State.tahsilatTanimlari || []).find(t => isimGecer(k.aciklama, t.ogrenciAd) && Math.abs((Number(t.tutar) || 0) - (Number(k.tutar) || 0)) < 1 && Math.abs(gunFark(t.tarih, k.tarih)) <= 1);
+  if (k.yon !== 'gelir') return null;
+  if (/batch\s*yatan/i.test(k.islem || '')) {
+    const top = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && gunOncesi(t))
+      .reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+    return { tip: 'batch', durum: (top > 0 && Math.abs(top - (Number(k.tutar) || 0)) < 1) ? 'ok' : 'yok', toplam: top };
+  }
+  const t = (State.tahsilatTanimlari || []).find(t => isimGecer(k.aciklama, t.ogrenciAd) && Math.abs((Number(t.tutar) || 0) - (Number(k.tutar) || 0)) < 1 && ayniGun(t));
   return { tip: 'havale', durum: t ? 'ok' : 'yok' };
 }
 function iaOnizleCiz(kayitlar, dosyaAd) {
@@ -1618,8 +1627,9 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     tbody = bkesit.map((k, i) => {
       const es = bankaTahsilatEslesme(k);
       const rcls = es ? ` ia-r-${es.durum}` : '';
+      const okEt = es && (es.tip === 'batch' ? 'Toplu' : es.tip === 'komisyon' ? 'Komisyon' : 'Eşleşti');
       const durum = !es ? '<span class="ia-durum-notr">—</span>'
-        : es.durum === 'ok' ? `<span class="ia-esles-ok">✓ ${es.tip === 'batch' ? 'Toplu' : 'Eşleşti'}</span>`
+        : es.durum === 'ok' ? `<span class="ia-esles-ok">✓ ${okEt}</span>`
         : `<button type="button" class="ia-esles-btn" data-besl="${i}">Eşleştir</button>`;
       return `<tr class="ia-bank${rcls}" data-brow="${i}"><td>${kacar(kisaTarih(k.tarih))}</td><td class="ia-islem">${kacar(k.islem)}</td><td>${yonRoz(k.yon)}</td><td class="sag mono ${k.tutar < 0 ? 'negatif' : 'pozitif'}">${TL(k.tutar)}</td><td>${durum}</td></tr>`;
     }).join('');
@@ -1676,8 +1686,8 @@ function bankaDetayModal(k) {
 function bankaEslestir(k) {
   if (!k) return;
   bildir('Bu tahsilata ait öğrenci/tanım bulunamadı, lütfen kontrol edin.', 'uyari');
-  const batch = /batch\s*yatan/i.test(k.islem || '');
-  if (batch) { git('mutabakat'); return; }   // batch = günün kart tanımları toplamı → tanımlar ekranını getir
+  const toplu = /batch\s*yatan/i.test(k.islem || '') || k.yon === 'komisyon';
+  if (toplu) { git('mutabakat'); return; }   // batch/komisyon = günün kart tanımları toplamı → tanımlar ekranını getir
   ttVarSecModal({ uyeAd: (k.aciklama || 'Banka tahsilatı').slice(0, 40), tutar: k.tutar, tarih: k.tarih });
 }
 /* Eşleşmeyen Plan4me kaydı: yeni tanım oluştur VEYA var olanla eşleştir */
