@@ -435,6 +435,23 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-tablo tr.ia-r-yok td{background:rgba(240,110,95,.09)}
 .ia-esles-ok{color:#7ee0a4;font-weight:800;font-size:12px;white-space:nowrap}
 .ia-durum-notr{color:var(--metin-soluk);opacity:.5}
+.ia-esles-btn.uyus{border-color:#f0a08f;background:rgba(240,110,95,.1);color:#f0a08f}
+/* Komisyon tutturma modalı */
+.kt-hedef{font-size:13.5px;color:var(--metin-soluk);background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.kt-hedef b{color:var(--metin)}
+.kt-hedef .kt-ok{color:#7ee0a4}
+.kt-hedef .kt-yok{color:#f0a08f}
+.kt-liste{display:flex;flex-direction:column;gap:10px}
+.kt-satir{background:var(--kart);border:1px solid var(--kenar);border-radius:13px;padding:11px 12px}
+.kt-ust{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.kt-ogr{font-weight:800;font-size:14px;color:var(--metin)}
+.kt-tut{font-weight:800;font-size:14px;color:var(--metin)}
+.kt-tipler{gap:6px}
+.kt-tipler .tc{flex:1;flex-direction:column;gap:1px;padding:8px 6px;font-size:12px;line-height:1.15;text-align:center}
+.kt-tipler .tc small{font-weight:700;opacity:.75;font-size:10px}
+.kt-ipuc{font-size:11.5px;color:var(--metin-soluk);margin-top:11px;line-height:1.4}
+.kt-bos{font-size:13.5px;color:var(--metin);line-height:1.5}
+.kt-bos .uik{width:18px;height:18px;color:var(--amber);vertical-align:-.2em}
 /* Banka hareket detayı — alan listesi */
 .bd-liste{border:1px solid var(--kenar);border-radius:13px;overflow:hidden;background:var(--gri)}
 .bd-liste .hr-satir{padding:11px 14px}
