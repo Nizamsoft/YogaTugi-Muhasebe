@@ -1412,6 +1412,22 @@ body.tema-koyu .gs-yeni{background:rgba(246,230,173,.06);color:var(--metin)}
 .dpr-gunler{display:flex;gap:6px;flex-wrap:nowrap}
 .dpr-gunler .tc{flex:1 1 0;min-width:0;justify-content:center;padding-left:4px;padding-right:4px;font-size:12px}
 body.tema-koyu .dpr-bilgi{background:#243026;border-color:#33452f}
+/* Program: stüdyo takvimi bağlantısı + çakışma nedenleri */
+.dpr-takvim-link{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:14px;border:1.5px dashed rgba(198,154,76,.5);background:rgba(246,230,173,.16);color:#8a6a2c;border-radius:12px;padding:11px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.dpr-takvim-link .uik{width:17px;height:17px}
+.dpr-cak{margin-top:14px;border:1.5px solid #ecc9c1;background:#fbeee9;border-radius:14px;padding:12px}
+.dpr-cak-bas{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13px;color:#b23f2f;margin-bottom:10px}
+.dpr-cak-bas .uik{width:18px;height:18px;flex:none}
+.dpr-cak-sat{padding:9px 0;border-top:1px solid #f0d6cf}
+.dpr-cak-sat:first-of-type{border-top:none}
+.dpr-cak-t{font-weight:800;font-size:13px;color:var(--metin)}
+.dpr-cak-n{display:flex;align-items:center;gap:5px;font-weight:700;font-size:12.5px;color:#b23f2f;margin-top:2px}
+.dpr-cak-n .uik{width:14px;height:14px}
+.dpr-cak-d{font-size:11.5px;color:var(--metin-soluk);font-weight:600;margin-top:1px}
+.dpr-takvim{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:12px;border:none;border-radius:11px;padding:11px;font-family:inherit;font-weight:800;font-size:13px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#c69a5a,#a8792f)}
+.dpr-takvim .uik{width:17px;height:17px}
+.stk-ust{justify-content:center;margin-bottom:12px}
+body.tema-koyu .dpr-cak{background:#33241f;border-color:#5a3a30}
 .gs-grp{font-size:10.5px;font-weight:800;color:#a8792f;text-transform:uppercase;letter-spacing:.4px;padding:11px 6px 4px}
 .gs-oge{display:flex;align-items:center;gap:11px;padding:12px 12px;border-radius:11px;font-weight:700;font-size:14.5px;cursor:pointer}
 .gs-oge:hover{background:var(--gri-acik,#f2ead9)}

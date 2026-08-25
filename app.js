@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '160';
+const APP_SURUM = '161';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -4485,7 +4485,9 @@ function dersProgramModal(o, paket, egitmenId) {
     <div class="gp-alan"><label>Süre <span class="dsl-bitis" id="dprBitis">Bitiş ${saatEkleDk(saat, sureDk)}</span></label>
       <div class="turcip" id="dprSure">${SURELER.map(dk => `<button type="button" class="tc ${sureDk === dk ? 'sec' : ''}" data-sure="${dk}">${dk} dk</button>`).join('')}</div></div>
     <div class="gp-alan" style="margin:0"><label>Stüdyo</label>
-      <div class="turcip" id="dprStudyo">${studyolar.map(s => `<button type="button" class="tc ${studyoId === s.id ? 'sec' : ''}" data-std="${s.id}">${ik('studyo')}${kacar(s.ad)}</button>`).join('')}</div></div>`;
+      <div class="turcip" id="dprStudyo">${studyolar.map(s => `<button type="button" class="tc ${studyoId === s.id ? 'sec' : ''}" data-std="${s.id}">${ik('studyo')}${kacar(s.ad)}</button>`).join('')}</div></div>
+    <button type="button" class="dpr-takvim-link" id="dprTakvimAc">${ik('studyo')} Stüdyo takvimi — boş saatleri gör</button>
+    <div id="dprCakisma"></div>`;
   modalAc('Ders Programı Oluştur', govde,
     `<button class="btn" id="dprAtla" style="margin-right:auto">Şimdilik atla</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dprUret">${ik('dersler')} ${N} Ders Üret</button>`,
     rozetHTML('dersler', 'Program'));
@@ -4494,7 +4496,8 @@ function dersProgramModal(o, paket, egitmenId) {
   $('#dprSaat').onclick = () => saatSecici(saat, (s) => { saat = s; $('#dprSaatAd').textContent = s; bitisGuncelle(); });
   $('#dprTarih').onclick = () => tarihSecici(baslangic, (iso) => { baslangic = iso; $('#dprTarihAd').textContent = fmtTarihUzun(baslangic); });
   $('#dprSure').onclick = (e) => { const b = e.target.closest('[data-sure]'); if (!b) return; sureDk = Number(b.dataset.sure); $$('#dprSure .tc').forEach(x => x.classList.toggle('sec', x === b)); bitisGuncelle(); };
-  $('#dprStudyo').onclick = (e) => { const b = e.target.closest('[data-std]'); if (!b) return; studyoId = b.dataset.std; $$('#dprStudyo .tc').forEach(x => x.classList.toggle('sec', x === b)); };
+  $('#dprStudyo').onclick = (e) => { const b = e.target.closest('[data-std]'); if (!b) return; studyoId = b.dataset.std; $$('#dprStudyo .tc').forEach(x => x.classList.toggle('sec', x === b)); const c = $('#dprCakisma'); if (c) c.innerHTML = ''; };
+  $('#dprTakvimAc').onclick = () => studyoTakvimModal(baslangic);
   $('#dprAtla').onclick = () => { modalKapat(); SAYFALAR['ogrenciler'](); };
   $('#dprUret').onclick = async () => {
     if (!gunSecili.size) return bildir('En az bir gün seçin.', 'hata');
@@ -4508,12 +4511,23 @@ function dersProgramModal(o, paket, egitmenId) {
       if (gunSecili.has(haftaGunu(gun))) adaylar.push(gun);
       gun = gunKaydir(gun, 1);
     }
-    // 2) Adayların HEPSİNİ çakışmaya karşı kontrol et
-    const cakisan = adaylar.filter(t => dersCakismaVar({ egitmenId, studyoId, tarih: t, saat, bitis, haricId: null }));
-    // 3) Çakışan varsa TAM BLOK — hiçbir ders oluşturma, modal açık kalsın
-    if (cakisan.length) {
-      const ozet = cakisan.slice(0, 6).map(t => fmtTarih(t)).join(', ') + (cakisan.length > 6 ? ` +${cakisan.length - 6}` : '');
-      return bildir(`Bu tarihler dolu (çakışma): ${ozet}. Gün/saat/stüdyoyu değiştirip tekrar deneyin.`, 'hata');
+    // 2) Her aday için çakışma + NEDEN (eğitmen dersi var / oda dolu) topla
+    const cak = adaylar.map(t => { const c = dersCakismaVar({ egitmenId, studyoId, tarih: t, saat, bitis, haricId: null }); return c ? { tarih: t, tip: c.tip, ders: c.ders } : null; }).filter(Boolean);
+    // 3) Çakışan varsa TAM BLOK — nedenleri satır satır göster, modal açık kalsın
+    if (cak.length) {
+      const satir = (c) => {
+        const d = c.ders, e = State.ortaklar.find(x => x.id === d.egitmenId);
+        const ids = d.ogrenciIds || [];
+        const kimders = ids.length > 1 ? `${ids.length} kişi` : (ids.length ? kacar(ogrenciTamAd(State.ogrenciler.find(x => x.id === ids[0]))) : (d.dersAd || 'Ders'));
+        const neden = c.tip === 'egitmen'
+          ? `${ik('kisi', 'uik-mini')} Eğitmenin bu saatte dersi var`
+          : `${ik('studyo', 'uik-mini')} “${kacar(studyoAd(studyoId))}” dolu`;
+        return `<div class="dpr-cak-sat"><div class="dpr-cak-t">${fmtTarih(c.tarih)}</div><div class="dpr-cak-n">${neden}</div><div class="dpr-cak-d">${kacar(d.saat)}–${kacar(dersBitis(d))} · ${kimders}${e ? ' · ' + kacar(egitmenKisaAd(e)) : ''}</div></div>`;
+      };
+      $('#dprCakisma').innerHTML = `<div class="dpr-cak"><div class="dpr-cak-bas">${ik('uyari')} ${cak.length} tarih dolu — düzeltip tekrar deneyin</div>${cak.map(satir).join('')}<button type="button" class="dpr-takvim" id="dprTakvim2">${ik('studyo')} Stüdyo takvimini aç (boş saatleri gör)</button></div>`;
+      $('#dprTakvim2').onclick = () => studyoTakvimModal(cak[0].tarih);
+      const c = $('#dprCakisma'); if (c && c.scrollIntoView) c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
     }
     // 4) Hiç çakışma yoksa hepsini oluştur
     const kayitlar = adaylar.map(t => ({ dersAd: paket.paketAd, egitmenId, ogrenciIds: [o.id], tarih: t, saat, bitis, studyoId, durum: 'bekliyor', dusumler: [] }));
@@ -4940,11 +4954,11 @@ function gunNavHTML(iso) {
   return `<div class="ay-nav gun-nav"><button type="button" data-gun="-1" aria-label="Önceki gün">‹</button><span class="ay"><span class="m">${HAFTA_GUN_TAM[haftaGunu(iso)]}</span><span class="y">${iso.slice(8, 10)} ${AY_TAM[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}</span></span><button type="button" data-gun="1" aria-label="Sonraki gün">›</button></div>`;
 }
 
-SAYFALAR['studyolar'] = function () {
-  const admin = true;   // stüdyo yönetimi tüm giriş yapan kullanıcılara (admin + ortak) açık
+/* Günlük stüdyo doluluk ızgarası (Stüdyolar sayfası + Stüdyo Takvimi modalı ortak kullanır) */
+function studyoIzgaraHTML(gun, duzenlenebilir) {
   const studyolar = aktifStudyolar();
-  const gunDersleri = (State.dersler || []).filter(d => d.tarih === studyoGun && d.durum !== 'iptal');
-  // Bir stüdyonun bir saat diliminde dersi
+  if (!studyolar.length) return '';
+  const gunDersleri = (State.dersler || []).filter(d => d.tarih === gun && d.durum !== 'iptal');
   const hucre = (sid, h) => {
     const bas = String(h).padStart(2, '0') + ':00', bit = String(h + 1).padStart(2, '0') + ':00';
     const ders = gunDersleri.filter(d => d.studyoId === sid && araliklarCakisir(bas, bit, d.saat, dersBitis(d)));
@@ -4958,15 +4972,34 @@ SAYFALAR['studyolar'] = function () {
   };
   const satirlar = [];
   for (let h = STUDYO_SAAT_BAS; h < STUDYO_SAAT_BIT; h++) {
-    const bas = String(h).padStart(2, '0') + ':00', bit = String(h + 1).padStart(2, '0') + ':00';
-    satirlar.push(`<tr><td class="std-saat">${bas}–${bit}</td>${studyolar.map(s => hucre(s.id, h)).join('')}</tr>`);
+    satirlar.push(`<tr><td class="std-saat">${String(h).padStart(2, '0')}:00–${String(h + 1).padStart(2, '0')}:00</td>${studyolar.map(s => hucre(s.id, h)).join('')}</tr>`);
   }
-  const colW = studyolar.length ? Math.floor(76 / studyolar.length) : 76;
+  const colW = Math.floor(76 / studyolar.length);
+  return `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo std-tablo">
+      <colgroup><col style="width:24%">${studyolar.map(() => `<col style="width:${colW}%">`).join('')}</colgroup>
+      <thead><tr><th>Saat</th>${studyolar.map(s => `<th><span class="std-bas">${ik('studyo')}${kacar(s.ad)}${duzenlenebilir ? `<button type="button" class="std-duz" data-sduz="${s.id}" title="Düzenle">${ik('kalem')}</button>` : ''}</span></th>`).join('')}</tr></thead>
+      <tbody>${satirlar.join('')}</tbody></table></div></div>`;
+}
+
+/* Stüdyo Takvimi — boş saatleri görmek için salt-okunur günlük ızgara (modal) */
+function studyoTakvimModal(baslangic) {
+  let gun = baslangic || bugunISO();
+  const m = ustKatModal('Stüdyo Takvimi', `<span class="hr-rz-ik">${ik('studyo')}</span>Boş saatler`, '<div id="stkGovde"></div>',
+    `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  const ciz = () => {
+    m.q('#stkGovde').innerHTML = `<div class="ortk-ust stk-ust">${gunNavHTML(gun)}</div>${aktifStudyolar().length ? studyoIzgaraHTML(gun, false) : '<div class="gp-bos">Henüz stüdyo yok.</div>'}`;
+    m.qq('[data-gun]').forEach(b => b.onclick = () => { gun = gunKaydir(gun, Number(b.dataset.gun)); ciz(); });
+    tabloSigdir();
+  };
+  ciz();
+  m.q('[data-geri]').onclick = m.kapat;
+}
+
+SAYFALAR['studyolar'] = function () {
+  const admin = true;   // stüdyo yönetimi tüm giriş yapan kullanıcılara (admin + ortak) açık
+  const studyolar = aktifStudyolar();
   const izgara = studyolar.length
-    ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo std-tablo">
-        <colgroup><col style="width:24%">${studyolar.map(() => `<col style="width:${colW}%">`).join('')}</colgroup>
-        <thead><tr><th>Saat</th>${studyolar.map(s => `<th><span class="std-bas">${ik('studyo')}${kacar(s.ad)}${admin ? `<button type="button" class="std-duz" data-sduz="${s.id}" title="Düzenle">${ik('kalem')}</button>` : ''}</span></th>`).join('')}</tr></thead>
-        <tbody>${satirlar.join('')}</tbody></table></div></div>`
+    ? studyoIzgaraHTML(studyoGun, admin)
     : (admin
         ? `<div class="std-bos-kart"><div class="std-bos-ik">${ik('studyo')}</div><div class="std-bos-bas">Henüz stüdyo yok</div><div class="std-bos-alt">Ders oluşturmak için önce en az bir stüdyo (salon/oda) ekleyin.</div><button type="button" class="gp-ekle" id="stdEkleBos">＋ İlk Stüdyoyu Ekle</button></div>`
         : `<div class="gp-bos">Henüz stüdyo yok.</div>`);
