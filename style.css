@@ -1267,6 +1267,12 @@ body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 .std-blok .std-ki{font-weight:700;font-size:12px;color:var(--metin)}
 .std-blok .std-eg{font-size:10.5px;color:var(--metin-soluk);font-weight:700}
 body.tema-koyu .std-blok{background:#243026;border-color:#33452f}
+.std-bos-kart{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;max-width:420px;margin:22px auto;padding:28px 22px;background:#fffefb;border:1.5px dashed rgba(198,154,76,.4);border-radius:18px}
+.std-bos-ik{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fbf1d4,#f0dca6);color:#a8792f}
+.std-bos-ik .uik{width:28px;height:28px}
+.std-bos-bas{font-weight:800;font-size:16px;color:var(--metin)}
+.std-bos-alt{font-size:13px;color:var(--metin-soluk);line-height:1.5;margin-bottom:6px}
+body.tema-koyu .std-bos-kart{background:#26241b}
 /* durum baş-harf rozeti */
 .drz{width:32px;height:32px;border-radius:10px;display:inline-grid;place-items:center;font-weight:800;font-size:15px;cursor:pointer;border:1.5px solid transparent;font-family:inherit;line-height:1}
 .drz.b{background:#faedc6;color:#9c7413;border-color:#e6d59a}

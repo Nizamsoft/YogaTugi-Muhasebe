@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '154';
+const APP_SURUM = '155';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -4875,7 +4875,9 @@ SAYFALAR['studyolar'] = function () {
         <colgroup><col style="width:24%">${studyolar.map(() => `<col style="width:${colW}%">`).join('')}</colgroup>
         <thead><tr><th>Saat</th>${studyolar.map(s => `<th><span class="std-bas">${ik('studyo')}${kacar(s.ad)}${admin ? `<button type="button" class="std-duz" data-sduz="${s.id}" title="Düzenle">${ik('kalem')}</button>` : ''}</span></th>`).join('')}</tr></thead>
         <tbody>${satirlar.join('')}</tbody></table></div></div>`
-    : `<div class="gp-bos">Henüz stüdyo yok.${admin ? ' “＋ Stüdyo Ekle” ile ekleyin.' : ''}</div>`;
+    : (admin
+        ? `<div class="std-bos-kart"><div class="std-bos-ik">${ik('studyo')}</div><div class="std-bos-bas">Henüz stüdyo yok</div><div class="std-bos-alt">Ders oluşturmak için önce en az bir stüdyo (salon/oda) ekleyin.</div><button type="button" class="gp-ekle" id="stdEkleBos">＋ İlk Stüdyoyu Ekle</button></div>`
+        : `<div class="gp-bos">Henüz stüdyo yok.</div>`);
   ic().innerHTML = `
     <div class="ortk-ust">
       <span class="ortk-bas">Stüdyolar</span>
@@ -4885,6 +4887,7 @@ SAYFALAR['studyolar'] = function () {
     ${izgara}`;
   $$('[data-gun]').forEach(b => b.onclick = () => { studyoGun = gunKaydir(studyoGun, Number(b.dataset.gun)); SAYFALAR['studyolar'](); });
   { const eb = $('#stdEkle'); if (eb) eb.onclick = () => studyoFormu(); }
+  { const eb = $('#stdEkleBos'); if (eb) eb.onclick = () => studyoFormu(); }
   $$('[data-sduz]').forEach(b => b.onclick = () => studyoFormu(State.studyolar.find(x => x.id === b.dataset.sduz)));
   $$('#icerik .std-blok[data-drz]').forEach(b => b.onclick = () => { const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d); });
   tabloSigdir();
@@ -6103,8 +6106,7 @@ function ustCubukKur() {
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel', merkez: true },
-  { tip: 'sayfa', id: 'ogrenciler', ad: 'Öğrenciler', ikon: 'ogrenci' },
-  { tip: 'sayfa', id: 'dersler', ad: 'Dersler', ikon: 'dersler' },
+  { tip: 'grup', grup: 'Ders Takibi', ad: 'Dersler', ikon: 'dersler' },   // Dersler / Öğrenciler / Stüdyolar
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
   { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
