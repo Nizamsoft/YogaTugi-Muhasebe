@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="GV Pilates">
 <!-- WhatsApp / sosyal önizleme (Open Graph) -->
 <meta property="og:type" content="website">
@@ -35,7 +35,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=175">
+<link rel="stylesheet" href="style.css?v=176">
 </head>
 <body>
 
@@ -79,6 +79,7 @@
         <div class="k-isim"><div class="ad" id="kullaniciAd">—</div><div class="rol" id="kullaniciRol">—</div></div>
         <span class="kok" id="kullaniciOk">▾</span>
       </div>
+      <button type="button" class="ust-arac notlar gizli" id="notBtn" title="Notlar" aria-label="Notlar"></button>
       <button type="button" class="ust-arac destek" id="destekBtn" title="İstek ve Öneri" aria-label="İstek ve Öneri"></button>
       <div class="kul-menu gizli" id="kulMenu">
         <div class="kul-basl"><div class="kav"><div class="ic" id="kmFoto">?</div></div><div class="kb-metin"><div class="ad" id="kmAd">—</div><div class="rol" id="kmRol">—</div></div></div>
@@ -86,6 +87,14 @@
         <button type="button" id="kmCikis" class="cik">⏻ <span>Çıkış Yap</span></button>
       </div>
     </header>
+    <div class="not-paneli gizli" id="notPaneli">
+      <div class="not-bas">
+        <span class="not-t">Notlar</span>
+        <button type="button" class="not-a" id="notKopyala">Kopyala</button>
+        <button type="button" class="not-a not-x" id="notKapat" aria-label="Kapat">✕</button>
+      </div>
+      <textarea id="notAlan" placeholder="Programı incelerken notlarını buraya yaz… (cihazda saklanır)"></textarea>
+    </div>
     <div class="icerik" id="icerik">
       <div class="yukleniyor"><div class="spinner"></div>Yükleniyor…</div>
     </div>
@@ -104,6 +113,6 @@
 <!-- Excel (.xlsx) okuma kütüphanesi -->
 <script src="xlsx.full.min.js"></script>
 
-<script src="app.js?v=175"></script>
+<script src="app.js?v=176"></script>
 </body>
 </html>

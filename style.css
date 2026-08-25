@@ -266,6 +266,20 @@ h1,h2,h3,h4{line-height:1.25}
 .ust-arac.destek{background:linear-gradient(135deg,#f7e6ad,#e6c574);color:#5a4212;border-color:transparent;box-shadow:0 6px 14px -8px rgba(160,120,20,.8)}
 .ust-arac.destek:hover{filter:brightness(1.05)}
 body.tema-koyu .ust-arac{background:#2c2a20;color:#e7d9a6}
+/* Not kalemi (üst panel — sadece admin) */
+.ust-arac.notlar{background:var(--gri);border-color:var(--kenar);color:var(--neon);order:8}
+.ust-arac.notlar:hover{border-color:var(--neon);filter:brightness(1.12)}
+.not-paneli{position:fixed;z-index:60;top:66px;left:12px;right:12px;max-width:560px;margin:0 auto;
+  background:var(--kart);border:1px solid var(--kenar);border-radius:16px;box-shadow:var(--golge-buyuk);overflow:hidden;animation:notIn .18s ease}
+@media(min-width:641px){.not-paneli{left:auto;right:22px;width:440px;margin:0}}
+.not-bas{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--kenar)}
+.not-t{flex:1;font-weight:800;font-size:14px;color:var(--metin)}
+.not-a{border:1px solid var(--kenar);background:var(--gri);color:var(--metin);border-radius:9px;padding:6px 13px;font-family:inherit;font-weight:800;font-size:12.5px;cursor:pointer}
+.not-a:hover{border-color:var(--neon);color:var(--neon)}
+.not-x{padding:6px 11px}
+#notAlan{display:block;width:100%;box-sizing:border-box;border:none;background:transparent;color:var(--metin);font-family:inherit;font-size:14px;line-height:1.55;padding:12px 13px;resize:vertical;min-height:130px;max-height:60vh;outline:none}
+#notAlan::placeholder{color:var(--metin-soluk)}
+@keyframes notIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 /* Kullanıcı çipi — gold çerçeveli görsel + ad soyad */
 .kchip{display:flex;align-items:center;gap:11px;padding:5px 12px 5px 6px;border-radius:999px;cursor:pointer;user-select:none;
   background:linear-gradient(135deg,rgba(198,154,76,.12),rgba(198,154,76,.04));
@@ -891,7 +905,7 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
 
   /* Alt menü çubuğu — premium (altın hairline + sıcak krem gradyan) */
   .alt-menu{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:2px;
-    padding:9px 8px calc(11px + env(safe-area-inset-bottom, 0px));
+    padding:9px 8px 11px;
     background:linear-gradient(180deg,#fffdf7,#f6ecd7);border-top:1px solid rgba(198,154,76,.32);
     box-shadow:0 -10px 26px -6px rgba(120,90,20,.16)}
   .alt-menu::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
@@ -913,6 +927,11 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   body.tema-koyu .alt-menu{background:linear-gradient(180deg,#2c2a20,#242219)}
   body.tema-koyu .alt-oge.merkez .ic{background:linear-gradient(180deg,#34301f,#2a2718)}
   .icerik{padding-bottom:calc(86px + env(safe-area-inset-bottom, 0px))}
+  /* Alt pay YALNIZ uygulama (standalone) kipinde — tarayıcıda Safari çubuğu
+     zaten pay bıraktığından çift pay olmasın diye. */
+  @media (display-mode: standalone){
+    .alt-menu{padding-bottom:calc(11px + env(safe-area-inset-bottom, 0px))}
+  }
 
   /* Grup sheet (alttan açılan alt sayfa listesi) */
   .sheet-perde{display:block;position:fixed;inset:0;background:rgba(22,26,20,.34);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:44;opacity:0;pointer-events:none;transition:opacity .22s}

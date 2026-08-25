@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '175';
+const APP_SURUM = '176';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '20:10';
+const APP_SURUM_SAAT = '20:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -6906,6 +6906,23 @@ function kullaniciBilgiCiz() {
   const setTxt = (id, v) => { const el = $('#' + id); if (el) el.textContent = v; };
   setHTML('kullaniciFoto', ic); setTxt('kullaniciAd', ad); setTxt('kullaniciRol', rol);
   setHTML('kmFoto', ic); setTxt('kmAd', ad); setTxt('kmRol', rol);
+  const nb = $('#notBtn'); if (nb) nb.classList.toggle('gizli', !admin);   // not kalemi sadece admin
+  if (!admin) { const np = $('#notPaneli'); if (np) np.classList.add('gizli'); }
+}
+/* Üst panel not kalemi (sadece admin) — cihazda saklanan serbest not alanı */
+function notlarKur() {
+  const btn = $('#notBtn'), pan = $('#notPaneli'), alan = $('#notAlan');
+  if (!btn || !pan || !alan) return;
+  btn.innerHTML = ik('kalem');
+  try { alan.value = localStorage.getItem('yt_notlar') || ''; } catch {}
+  btn.onclick = () => { pan.classList.toggle('gizli'); if (!pan.classList.contains('gizli')) alan.focus(); };
+  alan.oninput = () => { try { localStorage.setItem('yt_notlar', alan.value); } catch {} };
+  const kap = $('#notKapat'); if (kap) kap.onclick = () => pan.classList.add('gizli');
+  const kop = $('#notKopyala'); if (kop) kop.onclick = async () => {
+    try { await navigator.clipboard.writeText(alan.value); }
+    catch { alan.select(); try { document.execCommand('copy'); } catch {} }
+    bildir('Notlar kopyalandı.', 'basari');
+  };
 }
 
 function ustCubukKur() {
@@ -6913,6 +6930,7 @@ function ustCubukKur() {
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
   // Üst panel: destek (İstek ve Öneri) — en sağda. Yenileme artık aşağı çekme ile (pull-to-refresh).
   { const db = $('#destekBtn'); if (db) { db.innerHTML = ik('destek'); db.onclick = talepListeModal; } }
+  notlarKur();   // üst panel not kalemi (görünürlük admin'e göre kullaniciBilgiCiz'de ayarlanır)
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
   if ($('#yedekBtn')) $('#yedekBtn').onclick = yedekModal;
 
