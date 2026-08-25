@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '165';
+const APP_SURUM = '166';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -595,7 +595,7 @@ const Hesapla = {
    ========================================================== */
 const MENU = [
   { id: 'dashboard', ad: 'Gösterge Paneli', ikon: 'panel', baslik: 'Gösterge Paneli' },
-  { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi' },
+  { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },   // menüde gizli; ana ekran kartlarından açılır
   { grup: 'Muhasebe', ikon: 'muhasebe', ogeler: [
     { id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe', baslik: 'Hesaplar' },
     { id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar', baslik: 'Ortaklar' },
@@ -6246,7 +6246,7 @@ function cikisYap() {
   girisGovdeCiz();
 }
 const TEMALAR = ['acik', 'koyu', 'neon'];
-function aktifTema() { const t = localStorage.getItem('yt_tema'); return TEMALAR.includes(t) ? t : 'acik'; }
+function aktifTema() { return 'neon'; }   // Neon tek/varsayılan tema (diğerleri gizli)
 function temaUygula(ad, yenile) {
   if (!TEMALAR.includes(ad)) ad = 'acik';
   document.body.classList.remove('tema-koyu', 'tema-neon');
@@ -6307,7 +6307,6 @@ function ustCubukKur() {
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel', merkez: true },
-  { tip: 'sayfa', id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'dersler' },   // Dersler / Öğrenciler / Stüdyolar tek ekran
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
   { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
