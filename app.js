@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '201';
+const APP_SURUM = '202';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1609,23 +1609,34 @@ function ttEslesme(p) {
     Math.abs(gunFark(t.tarih, p.tarih)) <= 1);
 }
 function iaOnizleTazele() { if (iaSonKayitlar) iaOnizleCiz(iaSonKayitlar, iaSonDosya); }
-/* Banka açıklamasının ilgili/kısa kısmı — uzun referans kodları atılır */
+/* Banka açıklamasının ANLAMLI/kısa kısmı — teknik gürültü (referans, term id, pos, IBAN, uzun kod) atılır; anlamlı bir şey kalmazsa boş döner (satırda gizlenir) */
 function bankaAciklamaKisa(a) {
   let s = String(a || '').replace(/\s+/g, ' ').trim();
-  s = s.replace(/\b\d{6,}\b/g, '').replace(/\s{2,}/g, ' ').trim();   // uzun referans numaralarını at
-  return s.length > 46 ? s.slice(0, 44).trim() + '…' : s;
+  s = s.replace(/referans\s*:?/gi, ' ')
+    .replace(/term\s*id\s*:?[^,]*/gi, ' ')
+    .replace(/nolu\s+i[şs]yerinin[\s\S]*/i, ' ')     // "… nolu isyerinin \ 0301 nolu pos ve …" → tamamen at (batch açıklaması)
+    .replace(/sicil\s*no\s*:?/gi, ' ')
+    .replace(/ad\s*\/\s*[üu]nvan\s*:?/gi, ' ')
+    .replace(/\bTR\d{2}[\d*\s]+/gi, ' ')             // maskeli IBAN
+    .replace(/\bisl[\s\S]*/i, ' ')
+    .replace(/\bpos\b/gi, ' ')
+    .replace(/[\/\\|:]+/g, ' ')
+    .replace(/\b[0-9A-F]{5,}\b/gi, ' ')              // uzun kod/referans
+    .replace(/\b\d{4,}\b/g, ' ')                     // uzun sayı
+    .replace(/\s{2,}/g, ' ').trim();
+  if ((s.match(/[a-zçğıöşü]/gi) || []).length < 3) return '';   // anlamlı harf yoksa gizle
+  return s.length > 42 ? s.slice(0, 40).trim() + '…' : s;
 }
 /* Açıklamadan gider eşleştirme anahtarı (ilk anlamlı kelime) */
 function giderAnahtar(a) {
   const kel = trFold(a).replace(/[^\p{L} ]/gu, ' ').split(/\s+/).filter(w => w.length >= 3);
   return kel[0] || '';
 }
-/* Banka gider satırı ↔ gider kategorisi (kural VEYA önceki benzer açıklama) */
+/* Banka gider satırı ↔ uygulamadaki gider kalemi. ZORUNLU: yalnız State.giderler'de tanımlı
+   bir gider adına karşılık gelen kural eşleşmesi geçerli sayılır; yoksa '' (Gider Tanımla). */
 function bankaGiderEsle(k) {
   const kat = giderKategoriOner(k.islem, k.aciklama);
-  if (kat) return kat;
-  const an = giderAnahtar(k.aciklama);
-  if (an) { const onc = (State.bankaHareketleri || []).find(b => b.yon === 'gider' && b.giderKategori && giderAnahtar(b.aciklama) === an); if (onc) return onc.giderKategori; }
+  if (kat) { const gv = (State.giderler || []).find(g => adNorm(g.ad) === adNorm(kat)); if (gv) return gv.ad; }
   return '';
 }
 /* ISO tarihe gün ekle/çıkar (YYYY-MM-DD) */
@@ -1668,12 +1679,13 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   const mevcut = new Set((State[kol] || []).map(x => x.imza));
   const yeni = kayitlar.filter(k => !mevcut.has(k.imza));
   const tekrar = kayitlar.length - yeni.length;
-  let ozet, thead, tbody, pfRows = null, dahaVar = false, kalan = 0;
+  let ozet, thead, tbody, pfRows = null, dahaVar = false, kalan = 0, uyusmayan = 0;
   if (isPf) {
     // her kayıt için eşleşme durumu; eşleşmeyenler üstte
     pfRows = yeni.map(k => ({ k, es: ttEslesme(k) }));
     pfRows.sort((a, b) => (a.es ? 1 : 0) - (b.es ? 1 : 0));
     const esOk = pfRows.filter(r => r.es).length, esYok = pfRows.length - esOk;
+    uyusmayan = esYok;
     // Üstte yalnız iki filtre düğmesi (sayaçlı) — basınca o grup listelenir
     ozet = `<div class="ia-flt">
       <button type="button" class="ia-flt-b yok ${iaOnFiltre === 'yok' ? 'sec' : ''}" data-flt="yok">Eşleşmeyen <b>${esYok}</b></button>
@@ -1693,13 +1705,18 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     thead = '<tr><th>Tarih</th><th>İşlem</th><th>Yön</th><th class="sag">Tutar</th><th>Durum</th></tr>';
     const bkesit = yeni.slice(0, iaOnLimit);
     dahaVar = yeni.length > iaOnLimit; kalan = yeni.length - iaOnLimit;
+    uyusmayan = yeni.reduce((n, k) => {   // uyuşmayan tahsilat (gelir/komisyon) + tanımsız gider → içe aktarımı engeller
+      if (k.yon === 'gider') return n + (bankaGiderEsle(k) ? 0 : 1);
+      if (k.yon === 'gelir' || k.yon === 'komisyon') { const es = bankaTahsilatEslesme(k); return n + (es && es.durum === 'ok' ? 0 : 1); }
+      return n;   // ortakOdeme vb. engellemez
+    }, 0);
     tbody = bkesit.map((k, i) => {
       const acik = bankaAciklamaKisa(k.aciklama);
       let durum, rcls = '';
       if (k.yon === 'gider') {
         const gk = bankaGiderEsle(k);
         rcls = gk ? ' ia-r-ok' : ' ia-r-yok';
-        durum = gk ? `<span class="ia-esles-ok gid">${kacar(gk)}</span>` : `<button type="button" class="ia-esles-btn" data-gtan="${i}">Gider Tanımla</button>`;
+        durum = gk ? `<button type="button" class="ia-esles-ok gid" data-gtan="${i}">${kacar(gk)}</button>` : `<button type="button" class="ia-esles-btn" data-gtan="${i}">Gider Tanımla</button>`;
       } else {
         const es = bankaTahsilatEslesme(k);
         if (!es) durum = '<span class="ia-durum-notr">—</span>';
@@ -1714,7 +1731,8 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
       <div class="ia-ozet">${ozet}</div>
       <div class="tablo-sar"><table class="tablo ia-tablo"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="iaDaha">Daha fazla (+${Math.min(25, kalan)})</button>` : ''}
-      <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${yeni.length ? '' : 'disabled'}>${ik('kaydet')} ${yeni.length} kaydı içe aktar</button>
+      ${uyusmayan ? `<div class="ia-uyari">${ik('uyari')} ${uyusmayan} kayıt uyuşmuyor — içe aktarmadan önce eşleştirin${isPf ? '' : ' / gider tanımlayın'}.</div>` : ''}
+      <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${(yeni.length && !uyusmayan) ? '' : 'disabled'}>${ik('kaydet')} ${uyusmayan ? 'Önce uyuşmayanları çözün' : yeni.length + ' kaydı içe aktar'}</button>
     </div>`;
   $$('.ia-flt-b', on).forEach(b => b.onclick = () => { iaOnFiltre = b.dataset.flt; iaOnLimit = 12; iaOnizleCiz(iaSonKayitlar, iaSonDosya); });
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
@@ -1736,33 +1754,35 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   function turRoz(t) { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; }
   function yonRoz(y) { const m = { gelir: ['rz-gelir', 'Tahsilat'], komisyon: ['rz-kk', 'Komisyon'], gider: ['rz-gider', 'Gider'], ortakOdeme: ['rz-transfer', 'Ortak'] }; const v = m[y] || ['rz-notr', y]; return `<span class="rozet-etk ${v[0]}">${v[1]}</span>`; }
 }
-/* Gider Tanımla — banka gider satırı için kategori seç/yaz; benzer açıklamaya kural ekle */
+/* Gider Tanımla — banka gider satırı, uygulamadaki TANIMLI gider kalemleriyle (State.giderler)
+   eşleşmek ZORUNLU. Listede yoksa yeni gider kalemi olarak eklenir. Benzer açıklamaya kural yazılır. */
 function giderTanimlaModal(k) {
   if (!k) return;
   const an = giderAnahtar(k.aciklama);
-  const katlar = Array.from(new Set([...(State.kategoriKurallari || []).map(r => r.kategori), ...VARSAYILAN_KATEGORI_KURAL.map(r => r.kategori)].filter(Boolean)));
-  const item = (ad) => `<div class="ds-osat" data-kat="${kacar(ad)}"><span class="oav-mini">${kacar((ad[0] || '?').toLocaleUpperCase('tr'))}</span><span class="ds-obil"><span class="ad">${kacar(ad)}</span></span></div>`;
-  const sec = async (ad) => {
+  const giderler = () => (State.giderler || []).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
+  const item = (g) => `<div class="ds-osat" data-gid="${g.id}" data-ad="${kacar(g.ad)}"><span class="oav-mini">${kacar((g.ad[0] || '?').toLocaleUpperCase('tr'))}</span><span class="ds-obil"><span class="ad">${kacar(g.ad)}</span></span></div>`;
+  const sec = async (ad, gid) => {
     ad = String(ad).trim(); if (!ad) return;
-    if (an) await DB.ekle('kategoriKurallari', { anahtar: an, kategori: ad, yon: 'gider' });   // benzer açıklamalar bundan sonra otomatik eşleşsin
+    if (!gid) { const y = await DB.ekle('giderler', { ad, grupId: null }); State.giderler = DB._oku('giderler'); gid = y.id; }   // yeni gider kalemi ekle
+    if (an) await DB.ekle('kategoriKurallari', { anahtar: an, kategori: ad, giderId: gid, yon: 'gider' });   // benzer açıklamalar otomatik eşleşsin
     State.kategoriKurallari = DB._oku('kategoriKurallari');
-    m.kapat(); iaOnizleTazele(); bildir(`“${ad}” gideri tanımlandı.`, 'basari');
+    m.kapat(); iaOnizleTazele(); bildir(`“${ad}” gideriyle eşleştirildi.`, 'basari');
   };
   const govde = `
     <div class="tt-esl-bilg" style="margin-bottom:10px"><b>${kacar(bankaAciklamaKisa(k.aciklama) || k.islem)}</b> · ${TL(k.tutar)}</div>
-    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="gtAra" placeholder="Gider adı ara / yeni yaz…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="gtAra" placeholder="Gider kalemi ara / yeni ekle…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="to-ekle gizli" id="gtEkle"></div>
-    <div class="ds-oliste sec-liste-kaydir" id="gtListe">${katlar.map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Kayıtlı gider yok. Adı yazıp ekleyin.</div>'}</div>`;
-  const m = ustKatModal('Gider Tanımla', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
-  const bind = () => m.qq('#gtListe [data-kat]').forEach(el => el.onclick = () => sec(el.dataset.kat));
+    <div class="ds-oliste sec-liste-kaydir" id="gtListe">${giderler().map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Tanımlı gider yok. Adı yazıp ekleyin.</div>'}</div>`;
+  const m = ustKatModal('Gider Eşleştir', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  const bind = () => m.qq('#gtListe [data-gid]').forEach(el => el.onclick = () => sec(el.dataset.ad, el.dataset.gid));
   bind();
   m.q('#gtAra').addEventListener('input', () => {
     const ham = (m.q('#gtAra').value || '').trim(); const q = adNorm(ham);
-    const suz = katlar.filter(a => adNorm(a).includes(q));
+    const suz = giderler().filter(g => adNorm(g.ad).includes(q));
     m.q('#gtListe').innerHTML = suz.map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Eşleşen yok.</div>';
     bind();
-    const ek = m.q('#gtEkle'); const tam = katlar.some(a => adNorm(a) === q);
-    if (ham && !tam) { ek.classList.remove('gizli'); ek.innerHTML = `<button type="button" class="to-ekbtn">${ik('arti')} “<b>${kacar(ham)}</b>” gider olarak ekle</button>`; ek.querySelector('.to-ekbtn').onclick = () => sec(ham); }
+    const ek = m.q('#gtEkle'); const tam = (State.giderler || []).some(g => adNorm(g.ad) === q);
+    if (ham && !tam) { ek.classList.remove('gizli'); ek.innerHTML = `<button type="button" class="to-ekbtn">${ik('arti')} “<b>${kacar(ham)}</b>” yeni gider kalemi ekle</button>`; ek.querySelector('.to-ekbtn').onclick = () => sec(ham, null); }
     else ek.classList.add('gizli');
   });
   m.q('[data-geri]').onclick = m.kapat;

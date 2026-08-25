@@ -428,11 +428,12 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-uyari .uik{width:16px;height:16px;flex:0 0 auto}
 .ia-tablo{font-size:12.5px}
 .ia-tablo .ia-islem{max-width:200px}
-/* Banka satırları biraz büyük + işlem altında kısa açıklama */
-.ia-tablo tr.ia-bank td{padding-top:11px;padding-bottom:11px;vertical-align:top}
-.ia-islem-ad{display:block;font-weight:700;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ia-islem-ac{display:block;font-size:10.5px;color:var(--metin-soluk);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.ia-esles-ok.gid{color:var(--metin);background:var(--gri);border-radius:999px;padding:2px 9px;font-size:11px}
+/* Banka satırları büyük (ekranda ~7-8 satır) + işlem altında kısa açıklama */
+.ia-tablo tr.ia-bank td{padding-top:16px;padding-bottom:16px;vertical-align:top;font-size:13px}
+.ia-islem-ad{display:block;font-weight:800;font-size:13.5px;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ia-islem-ac{display:block;font-size:11px;color:var(--metin-soluk);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.ia-esles-ok.gid{color:var(--metin);background:var(--gri);border:1px solid var(--kenar);border-radius:999px;padding:3px 11px;font-size:11.5px;font-family:inherit;font-weight:800;cursor:pointer;white-space:nowrap}
+.ia-esles-ok.gid:active{transform:scale(.95)}
 .ia-e0{color:var(--amber);font-weight:800}
 .ia-chip.kirmizi{background:rgba(240,110,95,.16);color:#f0a08f}
 /* Eşleştirme önizlemesi: eşleşen yeşil / eşleşmeyen kırmızı satır */
