@@ -2231,6 +2231,15 @@ body.kl-acik .kl-fab{opacity:0;pointer-events:none}
 body.tema-koyu .ay-nav{background:linear-gradient(180deg,#2c2a20,#26241b)}
 body.tema-koyu .ay-nav button{background:linear-gradient(180deg,#34301f,#2a2718);color:var(--gold)}
 body.tema-koyu .ay-nav .ay .m{color:var(--metin)}
+/* Kompakt gün gezinme (Stüdyolar başlığı sağ üstte) */
+.gun-nav-mini{padding:3px;border-radius:12px}
+.gun-nav-mini button{width:28px;height:28px;font-size:14px;border-radius:9px}
+.gun-nav-mini .gk{padding:0 8px;font-weight:800;font-size:12.5px;color:#4a3a1c;white-space:nowrap;letter-spacing:.2px}
+body.tema-koyu .gun-nav-mini .gk{color:var(--metin)}
+.std-ust{flex-wrap:nowrap;gap:8px}
+.std-ust .std-ust-sol{min-width:0;flex-wrap:wrap}
+.std-ust .gun-nav-mini{flex:0 0 auto}
+@media(max-width:360px){ .std-ust{flex-wrap:wrap} }
 .ok-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;align-items:start}
 .ok-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:18px;overflow:hidden;box-shadow:0 12px 26px -14px rgba(74,58,28,.28);cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s}
 .ok-kart:hover{box-shadow:0 16px 32px -14px rgba(74,58,28,.36);transform:translateY(-2px)}

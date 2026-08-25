@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '163';
+const APP_SURUM = '164';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -4965,7 +4965,11 @@ let studyoGun = bugunISO();
 const STUDYO_SAAT_BAS = 8, STUDYO_SAAT_BIT = 22;   // 08:00–22:00 saatlik ızgara
 
 /* Gün gezinme çubuğu (ay navigasyonunun gün sürümü) */
-function gunNavHTML(iso) {
+function gunNavHTML(iso, kompakt) {
+  if (kompakt) {
+    const et = `${iso.slice(8, 10)} ${AY_TAM[Number(iso.slice(5, 7)) - 1].slice(0, 3)} · ${HAFTA_GUN_KISA[haftaGunu(iso)]}`;
+    return `<div class="ay-nav gun-nav gun-nav-mini"><button type="button" data-gun="-1" aria-label="Önceki gün">‹</button><span class="gk">${et}</span><button type="button" data-gun="1" aria-label="Sonraki gün">›</button></div>`;
+  }
   return `<div class="ay-nav gun-nav"><button type="button" data-gun="-1" aria-label="Önceki gün">‹</button><span class="ay"><span class="m">${HAFTA_GUN_TAM[haftaGunu(iso)]}</span><span class="y">${iso.slice(8, 10)} ${AY_TAM[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}</span></span><button type="button" data-gun="1" aria-label="Sonraki gün">›</button></div>`;
 }
 
@@ -5019,9 +5023,9 @@ SAYFALAR['studyolar'] = function () {
         ? `<div class="std-bos-kart"><div class="std-bos-ik">${ik('studyo')}</div><div class="std-bos-bas">Henüz stüdyo yok</div><div class="std-bos-alt">Ders oluşturmak için önce en az bir stüdyo (salon/oda) ekleyin.</div><button type="button" class="gp-ekle" id="stdEkleBos">＋ İlk Stüdyoyu Ekle</button></div>`
         : `<div class="gp-bos">Henüz stüdyo yok.</div>`);
   dtHedef().innerHTML = `
-    <div class="ortk-ust">
+    <div class="ortk-ust std-ust">
       <div class="std-ust-sol"><span class="ortk-bas">Stüdyolar</span>${admin ? `<button type="button" class="std-ekle-mini" id="stdEkle">＋ Stüdyo</button>` : ''}</div>
-      ${gunNavHTML(studyoGun)}
+      ${gunNavHTML(studyoGun, true)}
     </div>
     ${izgara}`;
   $$('[data-gun]').forEach(b => b.onclick = () => { studyoGun = gunKaydir(studyoGun, Number(b.dataset.gun)); SAYFALAR['studyolar'](); });
