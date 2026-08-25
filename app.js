@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '170';
+const APP_SURUM = '171';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '17:40';
+const APP_SURUM_SAAT = '18:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -817,8 +817,157 @@ function fazPlaceholder(baslik, aciklama, ikonAd) {
       <p>${kacar(aciklama)}</p>
     </div>`;
 }
-SAYFALAR['mutabakat'] = () => fazPlaceholder('Banka Mutabakatı', 'Planformi tahsilatları ile banka hareketleri burada eşleştirilecek.', 'onay');
 SAYFALAR['karlilik'] = () => fazPlaceholder('Eğitmen / Ortak Kârlılığı', 'Her eğitmen/ortak için brüt tahsilat, komisyon, vergi, gider ve net kâr burada gösterilecek.', 'ortaklar');
+
+/* ==========================================================
+   MUTABAKAT — Planformi ↔ Banka eşleştirme motoru
+   ========================================================== */
+function gunFark(a, b) { const d = (new Date(a) - new Date(b)) / 86400000; return isNaN(d) ? 999 : d; }
+function isimGecer(aciklama, ad) {
+  const a = String(aciklama || '').toLocaleLowerCase('tr');
+  const kelimeler = adNorm(ad).split(' ').filter(w => w.length >= 3);
+  return kelimeler.length ? kelimeler.every(w => a.includes(w)) : false;
+}
+// Kayıtlı eşleşmeleri uygula + kalanları otomatik eşleştir → mutabakat raporu
+function mutabakatAnaliz() {
+  const pf = State.planformiTahsilat || [];
+  const bh = State.bankaHareketleri || [];
+  const es = State.eslesmeler || [];
+  const esliPf = new Set(), esliBh = new Set();
+  es.forEach(e => { (e.planformiIds || []).forEach(i => esliPf.add(i)); (e.bankaIds || []).forEach(i => esliBh.add(i)); });
+
+  const batchlar = bh.filter(b => /batch yatan/i.test(b.islem) && !esliBh.has(b.id));
+  const komisyonlar = bh.filter(b => b.yon === 'komisyon' && !esliBh.has(b.id)).map(k => ({ ...k, _used: false }));
+  const havaleGelen = bh.filter(b => b.yon === 'gelir' && !/batch yatan/i.test(b.islem) && !esliBh.has(b.id));
+  const pfKart = pf.filter(p => p.tur === 'kart' && !esliPf.has(p.id));
+  const pfHavale = pf.filter(p => p.tur === 'havale' && !esliPf.has(p.id));
+
+  const sonuc = { oneri: [], onayli: es, bankaYalniz: [], planformiYalniz: [] };
+  const kullanilanPf = new Set();
+
+  // --- KART / BATCH ---
+  for (const batch of batchlar) {
+    const adaylar = pfKart.filter(p => !kullanilanPf.has(p.id) && gunFark(batch.tarih, p.tarih) >= 0 && gunFark(batch.tarih, p.tarih) <= 1);
+    const gunler = {};
+    adaylar.forEach(p => { (gunler[p.tarih] = gunler[p.tarih] || []).push(p); });
+    let secilen = null;
+    for (const g in gunler) { if (Math.abs(gunler[g].reduce((s, p) => s + p.tutar, 0) - batch.tutar) < 1) { secilen = gunler[g]; break; } }
+    if (!secilen && adaylar.length && Math.abs(adaylar.reduce((s, p) => s + p.tutar, 0) - batch.tutar) < 1) secilen = adaylar;
+    if (secilen) {
+      secilen.forEach(p => kullanilanPf.add(p.id));
+      const kom = komisyonlar.find(k => !k._used && Math.abs(gunFark(k.tarih, batch.tarih)) <= 1); if (kom) kom._used = true;
+      const komTut = kom ? Math.abs(kom.tutar) : 0;
+      const top = secilen.reduce((s, p) => s + p.tutar, 0);
+      const dagitim = secilen.map(p => ({ planformiId: p.id, egitmenId: p.egitmenId, egitmenAd: p.egitmenAd, uyeAd: p.uyeAd, tutar: p.tutar, komisyon: top ? Math.round(komTut * p.tutar / top * 100) / 100 : 0 }));
+      sonuc.oneri.push({ id: 'b_' + batch.id, tip: 'batch', banka: batch, komisyonHareket: kom || null, planformiler: secilen, dagitim, beklenen: batch.tutar, gerceklesen: top, komisyon: komTut, fark: top - batch.tutar });
+    } else {
+      sonuc.bankaYalniz.push({ banka: batch, tip: 'kart', neden: adaylar.length ? 'tutar' : 'yok', adaySum: adaylar.reduce((s, p) => s + p.tutar, 0), adaySay: adaylar.length });
+    }
+  }
+  // --- HAVALE ---
+  const kullanilanH = new Set();
+  for (const h of havaleGelen) {
+    const adaylar = pfHavale.filter(p => !kullanilanH.has(p.id) && Math.abs(p.tutar - h.tutar) < 1 && Math.abs(gunFark(h.tarih, p.tarih)) <= 2);
+    const isimli = adaylar.filter(p => isimGecer(h.aciklama, p.uyeAd));
+    const sec = isimli.length ? isimli : adaylar;
+    if (sec.length === 1) {
+      kullanilanH.add(sec[0].id);
+      sonuc.oneri.push({ id: 'h_' + h.id, tip: 'havale', banka: h, planformiler: [sec[0]], dagitim: [{ planformiId: sec[0].id, egitmenId: sec[0].egitmenId, egitmenAd: sec[0].egitmenAd, uyeAd: sec[0].uyeAd, tutar: sec[0].tutar, komisyon: 0 }], beklenen: h.tutar, gerceklesen: sec[0].tutar, komisyon: 0, fark: 0, isimli: isimli.length > 0 });
+    } else if (sec.length > 1) {
+      sonuc.bankaYalniz.push({ banka: h, tip: 'havale', neden: 'coklu', adaySay: sec.length });
+    } else {
+      sonuc.bankaYalniz.push({ banka: h, tip: 'havale', neden: 'yok' });
+    }
+  }
+  pfKart.filter(p => !kullanilanPf.has(p.id)).forEach(p => sonuc.planformiYalniz.push({ p, tip: 'kart' }));
+  pfHavale.filter(p => !kullanilanH.has(p.id)).forEach(p => sonuc.planformiYalniz.push({ p, tip: 'havale' }));
+  return sonuc;
+}
+async function mutabakatOnayla(oneri) {
+  const e = await DB.ekle('eslesmeler', {
+    tip: oneri.tip, bankaIds: [oneri.banka.id, oneri.komisyonHareket && oneri.komisyonHareket.id].filter(Boolean),
+    planformiIds: oneri.planformiler.map(p => p.id), durum: 'onayli',
+    beklenen: oneri.beklenen, gerceklesen: oneri.gerceklesen, komisyon: oneri.komisyon, fark: oneri.fark, dagitim: oneri.dagitim,
+  });
+  for (const id of e.bankaIds) await DB.guncelle('bankaHareketleri', id, { eslesmeId: e.id });
+  for (const id of e.planformiIds) await DB.guncelle('planformiTahsilat', id, { eslesmeId: e.id });
+  State.eslesmeler = DB._oku('eslesmeler'); State.bankaHareketleri = DB._oku('bankaHareketleri'); State.planformiTahsilat = DB._oku('planformiTahsilat');
+}
+async function mutabakatBoz(eslesmeId) {
+  const e = (State.eslesmeler || []).find(x => x.id === eslesmeId); if (!e) return;
+  for (const id of (e.bankaIds || [])) await DB.guncelle('bankaHareketleri', id, { eslesmeId: null });
+  for (const id of (e.planformiIds || [])) await DB.guncelle('planformiTahsilat', id, { eslesmeId: null });
+  await DB.sil('eslesmeler', eslesmeId);
+  State.eslesmeler = DB._oku('eslesmeler'); State.bankaHareketleri = DB._oku('bankaHareketleri'); State.planformiTahsilat = DB._oku('planformiTahsilat');
+}
+SAYFALAR['mutabakat'] = function mutabakatSayfasi() {
+  const r = mutabakatAnaliz();
+  const bosVeri = !(State.planformiTahsilat || []).length && !(State.bankaHareketleri || []).length;
+  const tarihG = t => kisaTarih(t);
+  const oneriKart = (o) => {
+    const sag = o.tip === 'batch'
+      ? `${o.planformiler.length} kart tahsilatı${o.komisyon ? ` · komisyon ${TL(o.komisyon)}` : ''}`
+      : `${kacar(o.planformiler[0].uyeAd)}${o.isimli ? '' : ' <span class="mt-soru">?</span>'} · ${kacar(o.planformiler[0].egitmenAd)}`;
+    const farkli = Math.abs(o.fark) >= 1;
+    return `<div class="mt-oneri">
+      <div class="mt-satir">
+        <div class="mt-yan banka"><span class="mt-et">BANKA</span><span class="mt-ad">${kacar(o.banka.islem)}</span><span class="mt-tar">${tarihG(o.banka.tarih)}</span></div>
+        <div class="mt-orta">${ik('link')}</div>
+        <div class="mt-yan pf"><span class="mt-et">PLANFORMİ</span><span class="mt-ad">${sag}</span></div>
+        <div class="mt-tutar">${TL(o.gerceklesen)}${farkli ? `<span class="mt-fark">Δ ${TL(o.fark)}</span>` : ''}</div>
+      </div>
+      <div class="mt-alt">
+        <span class="mt-durum ${o.tip}">${o.tip === 'batch' ? 'Kart / Batch' : 'Havale'}${farkli ? ' · tutar farkı' : ''}</span>
+        <button type="button" class="btn btn-kucuk mt-onay" data-onay="${o.id}">${ik('onay')} Onayla</button>
+      </div>
+    </div>`;
+  };
+  const yalnizKart = (y, taraf) => {
+    const b = y.banka || y.p;
+    const ad = taraf === 'banka' ? b.islem : `${kacar(b.uyeAd)} · ${kacar(b.egitmenAd)}`;
+    const neden = taraf === 'banka'
+      ? ({ yok: 'Planformi’de karşılığı yok', tutar: `Planformi kart toplamı uymuyor (${TL(y.adaySum)})`, coklu: `${y.adaySay} olası eşleşme` }[y.neden] || '')
+      : 'Bankada karşılığı yok';
+    return `<div class="mt-yalniz ${taraf}">
+      <span class="mt-y-et">${taraf === 'banka' ? 'BANKA' : 'PLANFORMİ'}</span>
+      <span class="mt-y-ad">${kacar(ad)}</span>
+      <span class="mt-y-tar">${tarihG(b.tarih)}</span>
+      <span class="mt-y-tut ${(b.tutar||b.tutar)<0?'negatif':''}">${TL(taraf === 'banka' ? b.tutar : b.tutar)}</span>
+      <span class="mt-y-neden">${ik('uyari')} ${neden}</span>
+    </div>`;
+  };
+  const onayliKart = (e) => {
+    const ad = e.tip === 'batch' ? `Kart / Batch · ${(e.planformiIds || []).length} tahsilat` : 'Havale';
+    return `<div class="mt-onayli">
+      <span class="mt-o-ik">${ik('onay')}</span>
+      <span class="mt-o-ad">${ad}${e.komisyon ? ` · komisyon ${TL(e.komisyon)}` : ''}</span>
+      <span class="mt-o-tut">${TL(e.gerceklesen)}</span>
+      <button type="button" class="mt-boz" data-boz="${e.id}" title="Eşleşmeyi boz">${ik('geri')}</button>
+    </div>`;
+  };
+  ic().innerHTML = `
+    <div class="mt-sayfa">
+      <div class="mt-ozet">
+        ${mtChip(r.oneri.length, 'Öneri', 'lime')}
+        ${mtChip(r.onayli.length, 'Onaylı', 'yesil')}
+        ${mtChip(r.bankaYalniz.length + r.planformiYalniz.length, 'Uyumsuz', 'amber')}
+        ${r.oneri.length ? `<button type="button" class="btn btn-ana mt-tumu" id="mtTumu">${ik('onay')} Tümünü Onayla (${r.oneri.length})</button>` : ''}
+      </div>
+      ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Mutabakat için veri yok</h3><p>Önce “İçe Aktar” ile Planformi ve banka dosyalarını yükleyin.</p></div>` : ''}
+      ${r.oneri.length ? `<div class="mt-blok"><h4>${ik('link')} Eşleşme Önerileri</h4>${r.oneri.map(oneriKart).join('')}</div>` : ''}
+      ${(r.bankaYalniz.length || r.planformiYalniz.length) ? `<div class="mt-blok"><h4>${ik('uyari')} Eşleşmeyenler</h4>
+        ${r.bankaYalniz.map(y => yalnizKart(y, 'banka')).join('')}
+        ${r.planformiYalniz.map(y => yalnizKart(y, 'pf')).join('')}</div>` : ''}
+      ${r.onayli.length ? `<div class="mt-blok"><h4>${ik('onay')} Onaylananlar (${r.onayli.length})</h4>${r.onayli.map(onayliKart).join('')}</div>` : ''}
+      ${!bosVeri && !r.oneri.length && !r.bankaYalniz.length && !r.planformiYalniz.length && !r.onayli.length
+        ? `<div class="mt-tamam">${ik('onay')} Eşleştirilecek kart/havale tahsilatı yok. (Nakit tahsilatlar bankaya düşmez.)</div>` : ''}
+    </div>`;
+  const oneriMap = {}; r.oneri.forEach(o => oneriMap[o.id] = o);
+  $$('.mt-onay').forEach(b => b.onclick = async () => { await mutabakatOnayla(oneriMap[b.dataset.onay]); SAYFALAR['mutabakat'](); bildir('Eşleşme onaylandı.', 'basari'); });
+  const t = $('#mtTumu'); if (t) t.onclick = async () => { for (const o of r.oneri) await mutabakatOnayla(o); SAYFALAR['mutabakat'](); bildir(`${r.oneri.length} eşleşme onaylandı.`, 'basari'); };
+  $$('.mt-boz').forEach(b => b.onclick = async () => { await mutabakatBoz(b.dataset.boz); SAYFALAR['mutabakat'](); bildir('Eşleşme bozuldu.', ''); });
+  function mtChip(n, l, c) { return `<span class="mt-ozk ${c}"><b>${n}</b> ${l}</span>`; }
+};
 
 /* ==========================================================
    İÇE AKTAR — Planformi (Alınan Ödemeler) + Banka (VakıfBank) importer
