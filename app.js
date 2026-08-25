@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '158';
+const APP_SURUM = '159';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -677,6 +677,7 @@ const IK = {
   indir: '<rect x="5" y="2.5" width="14" height="19" rx="2.5" fill="currentColor" opacity=".16"/><rect x="5" y="2.5" width="14" height="19" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v6M9.2 10.8 12 13.6l2.8-2.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 5h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
   uyari: '<circle cx="12" cy="12" r="9" fill="currentColor" opacity=".16"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor"/>',
   studyo: '<path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h8.8A1.6 1.6 0 0 1 17 5.6V20" fill="currentColor" opacity=".2"/><path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h8.8A1.6 1.6 0 0 1 17 5.6V20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="13.5" cy="12.5" r="1.1" fill="currentColor"/>',
+  filtre: '<path d="M4 5.5h16l-6.2 7.4v5.1l-3.6 1.8v-6.9L4 5.5Z" fill="currentColor" opacity=".2"/><path d="M4 5.5h16l-6.2 7.4v5.1l-3.6 1.8v-6.9L4 5.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
 };
 /* İkon SVG'si üretir. cls: ekstra sınıf. */
 function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
@@ -4566,10 +4567,20 @@ function ogrenciDuzenle(o) {
    ========================================================== */
 const AY_TAM = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 let dersAktifSekme = 'bekliyor';   // 'bekliyor' | 'gerceklesti' | 'iptal'
+let dersFiltre = { egitmenId: null, studyoId: null, tarih: null, ogrenciId: null };   // Dersler filtresi
+function dersFiltreAktif() { return !!(dersFiltre.egitmenId || dersFiltre.studyoId || dersFiltre.tarih || dersFiltre.ogrenciId); }
+function dersFiltreUygula(list) {
+  return list.filter(d =>
+    (!dersFiltre.egitmenId || d.egitmenId === dersFiltre.egitmenId) &&
+    (!dersFiltre.studyoId || d.studyoId === dersFiltre.studyoId) &&
+    (!dersFiltre.tarih || d.tarih === dersFiltre.tarih) &&
+    (!dersFiltre.ogrenciId || (d.ogrenciIds || []).includes(dersFiltre.ogrenciId)));
+}
 function ogrenciTamAd(o) { return o ? `${o.ad} ${o.soyad || ''}`.trim() : '—'; }
 
 SAYFALAR['dersler'] = function () {
-  const hepsi = (State.dersler || []).filter(d => hepsiniGor() || d.egitmenId === benId());   // ortak: yalnızca kendi dersleri
+  const hepsiHam = (State.dersler || []).filter(d => hepsiniGor() || d.egitmenId === benId());   // ortak: yalnızca kendi dersleri
+  const hepsi = dersFiltreUygula(hepsiHam);   // aktif filtreyi uygula (eğitmen/stüdyo/tarih/öğrenci)
   const say = { bekliyor: 0, gerceklesti: 0, iptal: 0 };
   hepsi.forEach(d => { if (say[d.durum] != null) say[d.durum]++; });
   const liste = hepsi.filter(d => d.durum === dersAktifSekme).sort((a, b) => (a.tarih + a.saat).localeCompare(b.tarih + b.saat));
@@ -4594,8 +4605,15 @@ SAYFALAR['dersler'] = function () {
       <td data-l="Durum"><button type="button" class="drzk ${c}" data-drz="${d.id}" title="Durumu değiştir">${dik ? ik(dik) : ''}<span>${ad}</span></button></td>
     </tr>`;
   };
-  const bosMetin = dersAktifSekme === 'bekliyor' ? 'Planlanan ders yok. “＋ Ders Oluştur” ile başlayın.'
-    : dersAktifSekme === 'gerceklesti' ? 'Gerçekleşen ders yok.' : 'İptal edilmiş ders yok.';
+  const bosMetin = dersAktifSekme === 'bekliyor' ? (dersFiltreAktif() ? 'Bu filtreye uyan planlanan ders yok.' : 'Planlanan ders yok. “＋ Ders Oluştur” ile başlayın.')
+    : dersAktifSekme === 'gerceklesti' ? 'Bu görünümde gerçekleşen ders yok.' : 'Bu görünümde iptal edilmiş ders yok.';
+  // Aktif filtre çipleri
+  const fcip = [];
+  if (dersFiltre.egitmenId) fcip.push(`<span class="dfc" data-dfx="egitmenId">${ik('kisi', 'uik-mini')}${kacar(egitmenAdiById(dersFiltre.egitmenId))}<span class="x">✕</span></span>`);
+  if (dersFiltre.studyoId) fcip.push(`<span class="dfc" data-dfx="studyoId">${ik('studyo', 'uik-mini')}${kacar(studyoAd(dersFiltre.studyoId))}<span class="x">✕</span></span>`);
+  if (dersFiltre.tarih) fcip.push(`<span class="dfc" data-dfx="tarih">${ik('dersler', 'uik-mini')}${fmtTarih(dersFiltre.tarih)}<span class="x">✕</span></span>`);
+  if (dersFiltre.ogrenciId) { const o = State.ogrenciler.find(x => x.id === dersFiltre.ogrenciId); fcip.push(`<span class="dfc" data-dfx="ogrenciId">${ik('ogrenci', 'uik-mini')}${kacar(o ? ogrenciTamAd(o) : '—')}<span class="x">✕</span></span>`); }
+  const filtreCipHTML = fcip.length ? `<div class="ders-filtre-cip">${fcip.join('')}<button type="button" class="dfc-temizle" id="dfTemizle">Tümünü temizle</button></div>` : '';
   dtHedef().innerHTML = `
     <div class="ders-sayfa">
       <div class="ogr-ust">
@@ -4604,8 +4622,9 @@ SAYFALAR['dersler'] = function () {
           <button type="button" class="seg-grc ${dersAktifSekme === 'gerceklesti' ? 'sec' : ''}" data-dsek="gerceklesti">Gerçekleşen <span class="rk">${say.gerceklesti}</span></button>
           <button type="button" class="seg-ipt ${dersAktifSekme === 'iptal' ? 'sec' : ''}" data-dsek="iptal">İptal <span class="rk">${say.iptal}</span></button>
         </div>
-        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
+        <div class="ogr-ust-sag">${ortakGosterBtnHTML()}<button type="button" class="ders-filtre-btn ${dersFiltreAktif() ? 'aktif' : ''}" id="dersFiltreBtn" title="Filtrele" aria-label="Filtrele">${ik('filtre')}</button><button type="button" class="gp-ekle" id="dersEkle">＋ Ders Oluştur</button></div>
       </div>
+      ${filtreCipHTML}
       ${liste.length
         ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
             <colgroup><col style="width:20%"><col style="width:30%"><col style="width:18%"><col style="width:11%"><col style="width:21%"></colgroup>
@@ -4614,11 +4633,42 @@ SAYFALAR['dersler'] = function () {
         : `<div class="gp-bos">${bosMetin}</div>`}
     </div>`;
   $('#dersEkle').onclick = () => dersOlusturModal();
+  $('#dersFiltreBtn').onclick = () => dersFiltreModal();
+  { const t = $('#dfTemizle'); if (t) t.onclick = () => { dersFiltre = { egitmenId: null, studyoId: null, tarih: null, ogrenciId: null }; SAYFALAR['dersler'](); }; }
+  $$('.ders-filtre-cip [data-dfx]').forEach(c => c.onclick = () => { dersFiltre[c.dataset.dfx] = null; SAYFALAR['dersler'](); });
   ortakGosterBtnBagla(() => SAYFALAR['dersler']());
   $$('[data-dsek]').forEach(b => b.onclick = () => { dersAktifSekme = b.dataset.dsek; SAYFALAR['dersler'](); });
   $$('[data-drz]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.drz); if (d) durumPopup(d, b); });
   $$('[data-grpders]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const d = State.dersler.find(x => x.id === b.dataset.grpders); if (d) grupDersiModal(d); });
 };
+
+/* Dersler filtre modalı — eğitmen / stüdyo / tarih / öğrenci */
+function dersFiltreModal() {
+  const f = { ...dersFiltre };   // yerel kopya; Uygula ile işlenir
+  const egitmenler = State.ortaklar.filter(x => x.aktif !== false);
+  const studyolar = aktifStudyolar();
+  const egitmenChips = () => `<button type="button" class="tc ${!f.egitmenId ? 'sec' : ''}" data-eg="">Hepsi</button>` + egitmenler.map(e => `<button type="button" class="tc ${f.egitmenId === e.id ? 'sec' : ''}" data-eg="${e.id}">${kacar(egitmenKisaAd(e))}</button>`).join('');
+  const studyoChips = () => `<button type="button" class="tc ${!f.studyoId ? 'sec' : ''}" data-st="">Hepsi</button>` + studyolar.map(s => `<button type="button" class="tc ${f.studyoId === s.id ? 'sec' : ''}" data-st="${s.id}">${kacar(s.ad)}</button>`).join('');
+  const tarihIc = () => f.tarih ? fmtTarihUzun(f.tarih) : 'Tüm tarihler';
+  const ogrIc = () => { if (!f.ogrenciId) return 'Tüm öğrenciler'; const o = State.ogrenciler.find(x => x.id === f.ogrenciId); return o ? ogrenciTamAd(o) : 'Tüm öğrenciler'; };
+  const govde = `
+    <div class="gp-alan"><label>Eğitmen</label><div class="turcip dff-cip" id="dfEg">${egitmenChips()}</div></div>
+    ${studyolar.length ? `<div class="gp-alan"><label>Stüdyo</label><div class="turcip dff-cip" id="dfSt">${studyoChips()}</div></div>` : ''}
+    <div class="uy-ikili">
+      <div class="gp-alan" style="margin:0"><label>Tarih</label><button type="button" class="pa-trig" id="dfTarih"><span id="dfTarihAd">${tarihIc()}</span><span class="ok">${ik('dersler')}</span></button></div>
+      <div class="gp-alan" style="margin:0"><label>Öğrenci</label><button type="button" class="sec-trig" id="dfOgr"><span class="st-col"><span class="st-nm" id="dfOgrAd">${kacar(ogrIc())}</span></span><span class="st-ok">›</span></button></div>
+    </div>`;
+  modalAc('Dersleri Filtrele', govde,
+    `<button class="btn" id="dfSifirla" style="margin-right:auto">Temizle</button><button class="btn" id="dfIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="dfUygula">${ik('filtre')} Uygula</button>`,
+    rozetHTML('filtre', 'Filtre'));
+  $('#dfEg').onclick = (e) => { const b = e.target.closest('[data-eg]'); if (!b) return; f.egitmenId = b.dataset.eg || null; $$('#dfEg .tc').forEach(x => x.classList.toggle('sec', x === b)); };
+  { const st = $('#dfSt'); if (st) st.onclick = (e) => { const b = e.target.closest('[data-st]'); if (!b) return; f.studyoId = b.dataset.st || null; $$('#dfSt .tc').forEach(x => x.classList.toggle('sec', x === b)); }; }
+  $('#dfTarih').onclick = () => tarihSecici(f.tarih || bugunISO(), (iso) => { f.tarih = iso; $('#dfTarihAd').textContent = fmtTarihUzun(iso); });
+  $('#dfOgr').onclick = () => ogrenciTekSecModal(f.ogrenciId, (id) => { f.ogrenciId = id; const o = State.ogrenciler.find(x => x.id === id); $('#dfOgrAd').textContent = o ? ogrenciTamAd(o) : 'Tüm öğrenciler'; });
+  $('#dfSifirla').onclick = () => { dersFiltre = { egitmenId: null, studyoId: null, tarih: null, ogrenciId: null }; modalKapat(); SAYFALAR['dersler'](); };
+  $('#dfIptal').onclick = modalKapat;
+  $('#dfUygula').onclick = () => { dersFiltre = { ...f }; modalKapat(); SAYFALAR['dersler'](); };
+}
 /* Grup dersindeki öğrencileri listele (satıra basınca) */
 function grupDersiModal(d) {
   const ids = d.ogrenciIds || [];
@@ -4911,10 +4961,9 @@ SAYFALAR['studyolar'] = function () {
         : `<div class="gp-bos">Henüz stüdyo yok.</div>`);
   dtHedef().innerHTML = `
     <div class="ortk-ust">
-      <span class="ortk-bas">Stüdyolar</span>
+      <div class="std-ust-sol"><span class="ortk-bas">Stüdyolar</span>${admin ? `<button type="button" class="std-ekle-mini" id="stdEkle">＋ Stüdyo</button>` : ''}</div>
       ${gunNavHTML(studyoGun)}
     </div>
-    ${admin ? `<div class="std-arac"><button type="button" class="gp-ekle" id="stdEkle">＋ Stüdyo Ekle</button></div>` : ''}
     ${izgara}`;
   $$('[data-gun]').forEach(b => b.onclick = () => { studyoGun = gunKaydir(studyoGun, Number(b.dataset.gun)); SAYFALAR['studyolar'](); });
   { const eb = $('#stdEkle'); if (eb) eb.onclick = () => studyoFormu(); }

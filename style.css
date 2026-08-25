@@ -1253,6 +1253,26 @@ body.tema-koyu .ogr-tablo tbody tr:nth-child(even){background:#26241a}
 /* Stüdyolar sayfası */
 .gun-nav .m{text-transform:none}
 .std-arac{margin:0 0 14px}
+.std-ust-sol{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.std-ekle-mini{border:none;border-radius:999px;padding:8px 14px;font-family:inherit;font-weight:800;font-size:13px;color:#40320f;cursor:pointer;background:linear-gradient(135deg,#f2d98a,#d3a84a 55%,#c69133);box-shadow:0 7px 14px -8px rgba(160,120,30,.6);white-space:nowrap}
+.std-ekle-mini:active{transform:translateY(1px)}
+/* Dersler filtresi */
+.ders-filtre-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;flex:none;border:1.5px solid rgba(198,154,76,.4);background:#fffdf6;color:#8a6a2c;border-radius:12px;cursor:pointer;position:relative}
+.ders-filtre-btn .uik{width:19px;height:19px}
+.ders-filtre-btn.aktif{border-color:var(--gold);background:linear-gradient(135deg,#fbf1d4,#f6e6ad);color:#a8792f}
+.ders-filtre-btn.aktif::after{content:"";position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#4f8f58;border:2px solid #fff}
+body.tema-koyu .ders-filtre-btn{background:#26241b;color:var(--metin)}
+.ders-filtre-cip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 2px 12px}
+.dfc{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--kenar);border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:700;color:var(--metin);cursor:pointer}
+.dfc .uik{width:14px;height:14px;color:var(--gold)}
+.dfc .x{color:var(--metin-soluk);font-weight:800;margin-left:1px}
+.dfc-temizle{border:none;background:transparent;color:#c0483f;font-family:inherit;font-weight:800;font-size:12.5px;cursor:pointer;padding:6px 4px}
+.dff-cip{max-height:none}
+@media(max-width:640px){
+  .ders-filtre-btn{width:40px}
+  .ogr-ust-sag:has(.ders-filtre-btn){flex-direction:row;align-items:center;gap:7px}
+  .ogr-ust-sag:has(.ders-filtre-btn) .gp-ekle{flex:1 1 0;width:auto}
+}
 .std-tablo th .std-bas{display:inline-flex;align-items:center;gap:5px;justify-content:center;font-weight:800}
 .std-tablo th .std-bas .uik{width:15px;height:15px;color:var(--gold)}
 .std-duz{border:none;background:transparent;cursor:pointer;padding:2px;color:var(--metin-soluk);display:inline-flex}
