@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '155';
+const APP_SURUM = '156';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -466,8 +466,9 @@ const APP_SURUM_SAAT = '12:40';
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
 /* Giriş yapan kullanıcı bir ortaksa onun id'si; admin/eşleşmeyen için null */
 function aktifOrtakId() { return (State.kullanici && State.kullanici.ortakId) || null; }
-/* Ortak girişinde: diğer ortakların verilerini de göster? (varsayılan kapalı) */
-let ortakGoster = false;
+/* Ortak girişinde: diğer ortakların verilerini de göster? (varsayılan AÇIK — ortaklar tüm veriyi görür;
+   👥 düğmesiyle geçici olarak yalnız kendi verisine daraltabilir) */
+let ortakGoster = true;
 function hepsiniGor() { return adminMi() || ortakGoster; }   // true → tüm ortakların verisi
 function benId() { return aktifOrtakId(); }                    // giriş yapan ortağın id'si
 /* Sayfa üst barındaki "Ortakları göster" düğmesi (yalnızca ortak girişinde) */
@@ -606,7 +607,7 @@ const MENU = [
   { grup: 'Raporlar', ikon: 'raporlar', ogeler: [
     { id: 'rapor-giderler', ad: 'Giderler Raporu', ikon: 'gider', baslik: 'Giderler Raporu' },
   ] },
-  { grup: 'Ayarlar', ikon: 'ayarlar', sadeceAdmin: true, ogeler: [
+  { grup: 'Ayarlar', ikon: 'ayarlar', ogeler: [
     { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: 'tanimlar', baslik: 'Tanımlamalar' },
   ] },
 ];
@@ -690,11 +691,11 @@ const HESAP_TIP_IK = { banka: 'banka', kasa: 'kasa', krediKarti: 'kart', ortak: 
 
 function menuCiz() {
   const nav = $('#anaMenu');
-  const sadeceOrtak = !adminMi();   // ortak girişi: Tanımlamalar gizli, veriler kendine kısıtlı
+  const sadeceOrtak = !adminMi();   // ortak: Tanımlamalar hub'ı açık ama içinde yalnız Üyelikler + Giderler görünür
   let html = '';
   for (const m of MENU) {
     if (m.gizli) continue;
-    if (sadeceOrtak && (m.id === 'ayar-tanimlama' || m.sadeceAdmin)) continue;   // Tanımlamalar/Giderler yalnızca admin
+    if (sadeceOrtak && m.sadeceAdmin) continue;   // sadeceAdmin gruplar ortağa kapalı
     if (m.grup) {
       const ogeler = m.ogeler.filter(o => !o.gizli && (!o.sadeceAdmin || adminMi()));
       if (!ogeler.length) continue;
@@ -3668,6 +3669,7 @@ async function enGuncelSurumuGetir() {
 
 /* -------- AYARLAR: Firma Bilgileri & Logo -------- */
 SAYFALAR['ayar-firma'] = function () {
+  if (!adminMi()) { git('dashboard'); return; }
   const a = State.ayarlar || {};
   const logoVar = !!a.logoData;
   ic().innerHTML = `
@@ -3710,6 +3712,7 @@ SAYFALAR['ayar-firma'] = function () {
 
 /* -------- AYARLAR: Ortak Bilgileri (ad + logo) -------- */
 SAYFALAR['ayar-ortak'] = function () {
+  if (!adminMi()) { git('dashboard'); return; }
   const list = State.ortaklar;
   const bas = (ad) => (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr');
   const renk = ['f1', 'f2', 'f3', 'f4'];
@@ -3815,18 +3818,19 @@ SAYFALAR['ortaklar'] = function () {
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
-  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan' },
-  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Eğitmenler ve pay oranları' },
+  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', sadeceAdmin: true },
+  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Eğitmenler ve pay oranları', sadeceAdmin: true },
   { id: 'tanim-uyelik', ad: 'Üyelikler', ikon: 'uyelik', alt: 'Ders ve üyelik paketleri' },
   { id: 'tanim-gider', ad: 'Giderler', ikon: 'gider', alt: 'Gider kalemleri ve grupları' },
-  { id: 'ayar-vergi', ad: 'Gelir Vergisi', ikon: 'belge', alt: 'Tahsilat vergi kesinti oranı (kâr dağıtımı)' },
-  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)' },
+  { id: 'ayar-vergi', ad: 'Gelir Vergisi', ikon: 'belge', alt: 'Tahsilat vergi kesinti oranı (kâr dağıtımı)', sadeceAdmin: true },
+  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)', sadeceAdmin: true },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
+  const gorunur = TANIMLAR.filter(t => !t.sadeceAdmin || adminMi());   // ortak: yalnız Üyelikler + Giderler
   ic().innerHTML = `
     <div class="tnm-hub">
       <div class="tnm-menu">
-        ${TANIMLAR.map(t => `<button type="button" class="tnm-row2" data-tanim="${t.id}">
+        ${gorunur.map(t => `<button type="button" class="tnm-row2" data-tanim="${t.id}">
           <span class="tnm-ik">${ik(t.ikon)}</span>
           <span class="tnm-metin"><span class="tnm-ad">${kacar(t.ad)}</span><span class="tnm-alt">${kacar(t.alt || '')}</span></span>
           <span class="tnm-ok">›</span>
@@ -4849,7 +4853,7 @@ function gunNavHTML(iso) {
 }
 
 SAYFALAR['studyolar'] = function () {
-  const admin = adminMi();
+  const admin = true;   // stüdyo yönetimi tüm giriş yapan kullanıcılara (admin + ortak) açık
   const studyolar = aktifStudyolar();
   const gunDersleri = (State.dersler || []).filter(d => d.tarih === studyoGun && d.durum !== 'iptal');
   // Bir stüdyonun bir saat diliminde dersi
@@ -4893,9 +4897,8 @@ SAYFALAR['studyolar'] = function () {
   tabloSigdir();
 };
 
-/* Stüdyo ekle / düzenle / sil */
+/* Stüdyo ekle / düzenle / sil — tüm giriş yapan kullanıcılara açık */
 function studyoFormu(mevcut) {
-  if (!adminMi()) return;
   let aktif = mevcut ? mevcut.aktif !== false : true;
   const govde = `
     <div class="gp-alan"><label>Stüdyo Adı</label><input type="text" class="gp-inp" id="stdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Reformer Oda 1" autocomplete="off" autocorrect="off" spellcheck="false"></div>
@@ -5898,7 +5901,7 @@ async function uygulamayiBaslat() {
   if (gy) gy.classList.remove('gizli');
   const simdi = () => (window.performance && performance.now) ? performance.now() : 0;
   const t0 = simdi();
-  ortakGoster = false;   // her girişte varsayılan: ortak yalnızca kendini görür (admin zaten hepsini)
+  ortakGoster = true;   // her girişte varsayılan: ortak da tüm ortakların verisini görür (👥 ile daraltılabilir)
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   menuCiz();
@@ -6128,9 +6131,8 @@ function altMenuAktifId(sayfa) {
 }
 function altMenuCiz() {
   const nav = $('#altMenu');
-  const sadeceOrtak = !adminMi();   // ortak: Tanımlar hariç tüm sekmeler (PC menüsüyle aynı)
+  // Tanımlar sekmesi ortağa da açık (hub içinde yalnız Üyelikler + Giderler görünür)
   nav.innerHTML = ALT_MENU
-    .filter(m => !sadeceOrtak || m.id !== 'ayar-tanimlama')
     .map(m => {
     const anahtar = m.tip === 'grup' ? m.grup : m.id;
     return `<button type="button" class="alt-oge${m.merkez ? ' merkez' : ''}" data-alt="${kacar(anahtar)}">
