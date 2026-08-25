@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '157';
+const APP_SURUM = '158';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -4489,25 +4489,26 @@ function dersProgramModal(o, paket, egitmenId) {
     if (!gunSecili.size) return bildir('En az bir gün seçin.', 'hata');
     if (!studyoId) return bildir('Stüdyo seçin.', 'hata');
     const bitis = saatEkleDk(saat, sureDk);
-    const kayitlar = [], atlanan = [];
-    let gun = baslangic, uretilen = 0, guvenlik = 0;
-    while (uretilen < N && guvenlik < 400) {
+    // 1) Plandaki ilk N tarih (seçili hafta günleri) — kaydırma/telafi YOK
+    const adaylar = [];
+    let gun = baslangic, guvenlik = 0;
+    while (adaylar.length < N && guvenlik < 400) {
       guvenlik++;
-      if (gunSecili.has(haftaGunu(gun))) {
-        const cak = dersCakismaVar({ egitmenId, studyoId, tarih: gun, saat, bitis, haricId: null });
-        if (cak) { atlanan.push(gun); }
-        else { kayitlar.push({ dersAd: paket.paketAd, egitmenId, ogrenciIds: [o.id], tarih: gun, saat, bitis, studyoId, durum: 'bekliyor', dusumler: [] }); uretilen++; }
-      }
+      if (gunSecili.has(haftaGunu(gun))) adaylar.push(gun);
       gun = gunKaydir(gun, 1);
     }
-    if (kayitlar.length) { const yeni = await DB.topluEkle('dersler', kayitlar); yeni.forEach(y => State.dersler.push(y)); }
-    modalKapat();
-    if (atlanan.length) {
-      const ozet = atlanan.slice(0, 6).map(t => fmtTarih(t)).join(', ') + (atlanan.length > 6 ? ` +${atlanan.length - 6}` : '');
-      bildir(`${kayitlar.length} ders oluşturuldu. Çakıştığı için atlanan: ${ozet}`, kayitlar.length ? 'basari' : 'hata');
-    } else {
-      bildir(`${kayitlar.length} ders programa eklendi.`, 'basari');
+    // 2) Adayların HEPSİNİ çakışmaya karşı kontrol et
+    const cakisan = adaylar.filter(t => dersCakismaVar({ egitmenId, studyoId, tarih: t, saat, bitis, haricId: null }));
+    // 3) Çakışan varsa TAM BLOK — hiçbir ders oluşturma, modal açık kalsın
+    if (cakisan.length) {
+      const ozet = cakisan.slice(0, 6).map(t => fmtTarih(t)).join(', ') + (cakisan.length > 6 ? ` +${cakisan.length - 6}` : '');
+      return bildir(`Bu tarihler dolu (çakışma): ${ozet}. Gün/saat/stüdyoyu değiştirip tekrar deneyin.`, 'hata');
     }
+    // 4) Hiç çakışma yoksa hepsini oluştur
+    const kayitlar = adaylar.map(t => ({ dersAd: paket.paketAd, egitmenId, ogrenciIds: [o.id], tarih: t, saat, bitis, studyoId, durum: 'bekliyor', dusumler: [] }));
+    const yeni = await DB.topluEkle('dersler', kayitlar); yeni.forEach(y => State.dersler.push(y));
+    modalKapat();
+    bildir(`${kayitlar.length} ders programa eklendi.`, 'basari');
     dersAktifSekme = 'bekliyor'; SAYFALAR['ogrenciler']();
   };
 }
