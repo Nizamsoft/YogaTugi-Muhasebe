@@ -1093,8 +1093,8 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   /* Alt menü çubuğu — akışta, kolon dibinde */
   /* Yüzen buzlu-cam (ice glass) oval çubuk — akıştan çıkar, ekranın dibinde havada durur */
   .alt-menu{display:flex;position:fixed;left:50%;transform:translateX(-50%);
-    bottom:calc(10px + env(safe-area-inset-bottom, 0px));
-    width:min(500px, calc(100% - 24px));z-index:41;gap:2px;overflow:visible;
+    bottom:calc(env(safe-area-inset-bottom, 0px) + 2px);
+    width:min(430px, calc(100% - 48px));z-index:41;gap:2px;overflow:visible;
     padding:8px 12px;border-radius:32px;
     background:rgba(255,253,247,.72);border:1px solid rgba(255,255,255,.16);
     backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35);

@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '191';
+const APP_SURUM = '192';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
