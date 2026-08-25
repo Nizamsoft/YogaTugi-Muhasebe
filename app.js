@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '187';
+const APP_SURUM = '188';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -1648,15 +1648,14 @@ function neonAnaEkran() {
       </div>
       ${(() => {
         const bugunku = ttSirali().filter(t => (t.tarih || '') === bugunISO());
-        const bas = `<div class="ttl-dbas"><span>Bugünkü Tahsilatlar</span><button type="button" class="ttl-tumu" data-git="mutabakat">Tümü ›</button></div>`;
-        return bugunku.length
-          ? `<div class="ttl-dash">${bas}<div class="ttl-tablo">${bugunku.map(ttSatirHTML).join('')}</div></div>`
-          : `<div class="ttl-dash">${bas}<div class="ttl-bosbugun"><span>Bugün tahsilat yapılmadı.</span><button type="button" class="ttl-ekle" id="dashTtEkle">${ik('arti')} Tahsilat Ekle</button></div></div>`;
+        const baslik = `<div class="ttl-dbaslik"><span>Bugünkü Tahsilatlar</span><button type="button" class="ttl-tumu" data-git="mutabakat">Tümü ›</button></div>`;
+        return baslik + `<div class="ttl-dash">${bugunku.length
+          ? `<div class="ttl-tablo">${bugunku.map(ttSatirHTML).join('')}</div>`
+          : `<div class="ttl-bosbugun"><span>Bugün tahsilat yapılmadı.</span></div>`}</div>`;
       })()}
     </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   ttListeBagla(ic());
-  { const de = $('#dashTtEkle'); if (de) de.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // boş durumdan direkt ekle
   { const dt = $('#dashTt'); if (dt) dt.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // Tahsilat Tanımla → direkt form
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
 }
