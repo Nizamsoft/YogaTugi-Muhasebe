@@ -348,8 +348,16 @@ body.tema-neon .alt-oge.aktif{color:var(--neon)}
 .neon-seans .ns-ad{font-weight:800;font-size:16px;color:var(--metin)}
 .neon-seans .ns-saat{font-size:14px;color:var(--metin-soluk);margin-top:3px}
 .neon-bos{background:var(--kart);border:1px solid var(--kenar);border-radius:14px;padding:22px;text-align:center;color:var(--metin-soluk);font-weight:600}
-.neon-fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:62px;height:62px;border-radius:50%;border:4px solid var(--krem);background:linear-gradient(135deg,#c7f24a,#a4d92f);color:var(--neon-metin);font-size:32px;font-weight:400;line-height:1;display:grid;place-items:center;cursor:pointer;box-shadow:0 12px 28px -8px rgba(164,217,47,.6);z-index:45}
-.neon-fab:active{transform:translateX(-50%) translateY(1px)}
+/* Neon alt menü: aktif tile + ortadaki + (Tahsilat) dairesi */
+body.tema-neon .alt-oge .ic{color:var(--metin-soluk)}
+body.tema-neon .alt-oge .tx{color:var(--metin-soluk)}
+body.tema-neon .alt-oge.aktif .ic{background:linear-gradient(135deg,#c7f24a,#a4d92f);color:var(--neon-metin);box-shadow:0 10px 20px -7px rgba(164,217,47,.5),0 0 0 2px rgba(180,232,58,.25)}
+body.tema-neon .alt-oge.aktif .tx{color:var(--neon)}
+body.tema-neon .alt-oge.merkez .ic{background:linear-gradient(135deg,#c7f24a,#a4d92f);border:none;color:var(--neon-metin);
+  box-shadow:0 12px 24px -8px rgba(164,217,47,.6),0 0 0 4px var(--krem)}
+body.tema-neon .alt-oge.merkez.aktif .ic{background:linear-gradient(135deg,#c7f24a,#a4d92f);color:var(--neon-metin)}
+body.tema-neon .alt-oge.merkez .ic .uik{width:26px;height:26px}
+body.tema-neon .alt-oge.merkez .tx{color:var(--neon)}
 
 /* Mobil alt menü + grup sheet — varsayılan gizli, mobilde açılır */
 .alt-menu{display:none}
@@ -569,6 +577,15 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   border-radius:50%;animation:don .8s linear infinite;margin-right:12px;
 }
 @keyframes don{to{transform:rotate(360deg)}}
+/* Aşağı çek → yenile göstergesi */
+#ptr{position:fixed;top:0;left:50%;z-index:60;margin-top:calc(env(safe-area-inset-top,0px) + 6px);
+  width:42px;height:42px;border-radius:50%;background:var(--kart);border:1px solid var(--kenar);
+  box-shadow:0 8px 20px -6px rgba(0,0,0,.4);display:grid;place-items:center;opacity:0;pointer-events:none;
+  transform:translateX(-50%);transition:opacity .15s}
+#ptr.gorunur{opacity:1}
+#ptr .ptr-ring{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--kenar-koyu);border-top-color:var(--neon,#a4d92f);transition:transform .12s}
+#ptr.hazir .ptr-ring{transform:rotate(180deg)}
+#ptr.yukleniyor .ptr-ring{animation:don .8s linear infinite}
 
 /* --------- Duyarlı (mobil) --------- */
 @media(max-width:860px){
@@ -590,14 +607,15 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
   .ust-firma .lg{width:40px;height:40px;border-radius:13px;
     box-shadow:0 8px 15px -4px rgba(79,116,82,.55), inset 0 1px 0 rgba(255,255,255,.4)}
   .ust-firma .ad{display:none}   /* yer açmak için firma yazısı gizli; GV tile kalır */
-  /* Çip: gold çerçeveli foto + ad soyad (menü ▾ gizli), sola yaslı, kalanı doldurur */
-  .ust-cubuk .kchip{gap:8px;padding:0;background:none;border:none;box-shadow:none;flex:1 1 auto;min-width:0;justify-content:flex-start}
+  /* Çip: kullanıcı adı + görseli SAĞDA (menü ▾ gizli). Ad solda, görsel sağda. */
+  .ust-cubuk .kchip{gap:8px;padding:0;background:none;border:none;box-shadow:none;flex:0 1 auto;min-width:0;margin-left:auto;justify-content:flex-end;flex-direction:row-reverse}
   .ust-cubuk .kchip:hover{box-shadow:none}
   .ust-cubuk .kchip .kok{display:none}
-  .ust-cubuk .kchip .k-isim{display:block;min-width:0}
+  .ust-cubuk .kchip .k-isim{display:block;min-width:0;text-align:right}
   .ust-cubuk .kchip .k-isim .ad{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
   .ust-cubuk .kchip .kav{width:36px;height:36px}
   .ust-arac{width:38px;height:38px}
+  .ust-cubuk .destek{order:9;flex:0 0 auto}   /* destek en sağda */
 
   /* Alt menü çubuğu — premium (altın hairline + sıcak krem gradyan) */
   .alt-menu{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;gap:2px;

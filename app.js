@@ -458,7 +458,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '166';
+const APP_SURUM = '167';
 const APP_SURUM_TARIH = '19 Ağu 2026';
 const APP_SURUM_SAAT = '12:40';
 
@@ -678,6 +678,7 @@ const IK = {
   uyari: '<circle cx="12" cy="12" r="9" fill="currentColor" opacity=".16"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5v5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor"/>',
   studyo: '<path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h8.8A1.6 1.6 0 0 1 17 5.6V20" fill="currentColor" opacity=".2"/><path d="M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M5 20V5.6A1.6 1.6 0 0 1 6.6 4h8.8A1.6 1.6 0 0 1 17 5.6V20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="13.5" cy="12.5" r="1.1" fill="currentColor"/>',
   filtre: '<path d="M4 5.5h16l-6.2 7.4v5.1l-3.6 1.8v-6.9L4 5.5Z" fill="currentColor" opacity=".2"/><path d="M4 5.5h16l-6.2 7.4v5.1l-3.6 1.8v-6.9L4 5.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  arti: '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
 };
 /* İkon SVG'si üretir. cls: ekstra sınıf. */
 function ik(ad, cls) { return `<svg class="uik${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${IK[ad] || ''}</svg>`; }
@@ -867,12 +868,10 @@ function neonAnaEkran() {
       </div>
       <div class="neon-seans-bas"><span>Bugünkü Seanslarım</span><button type="button" class="neon-takvim" data-git="studyolar">Takvim ›</button></div>
       <div class="neon-seanslar">${seanslar.length ? seanslar.map(seansSatir).join('') : '<div class="neon-bos">Bugün için seans yok.</div>'}</div>
-    </div>
-    <button type="button" class="neon-fab" id="neonFab" aria-label="Seans Ekle">＋</button>`;
+    </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   $('#neonUye').onclick = () => yeniUyelikBaslat();
   $('#neonSeans').onclick = () => dersOlusturModal();
-  $('#neonFab').onclick = () => dersOlusturModal();
   $('#neonOzet').onclick = () => { neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
 }
 
@@ -6283,8 +6282,7 @@ function kullaniciBilgiCiz() {
 function ustCubukKur() {
   temaUygula(aktifTema());   // kayıtlı temayı uygula (açık / koyu / neon)
   $('#menuAcBtn').onclick = () => document.body.classList.toggle('menu-acik');
-  // Üst panel: güncelle (uygulamayı yeniler) + destek (İstek ve Öneri)
-  { const gb = $('#guncelleBtn'); if (gb) { gb.innerHTML = ik('guncel'); gb.onclick = () => { bildir('En son sürüm yükleniyor…', ''); setTimeout(() => window.location.replace(location.pathname + '?g=' + Date.now()), 350); }; } }
+  // Üst panel: destek (İstek ve Öneri) — en sağda. Yenileme artık aşağı çekme ile (pull-to-refresh).
   { const db = $('#destekBtn'); if (db) { db.innerHTML = ik('destek'); db.onclick = talepListeModal; } }
   $('#menuPerde').onclick = () => document.body.classList.remove('menu-acik');
   if ($('#yedekBtn')) $('#yedekBtn').onclick = yedekModal;
@@ -6306,8 +6304,9 @@ function ustCubukKur() {
 
 /* ---- Mobil alt menü (logolu sekme çubuğu) ---- */
 const ALT_MENU = [
-  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel', merkez: true },
+  { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel' },
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
+  { tip: 'aksiyon', id: 'tahsilat', ad: 'Tahsilat', ikon: 'arti', merkez: true },
   { tip: 'sayfa', id: 'ortaklar', ad: 'Ortaklar', ikon: 'ortaklar' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
@@ -6339,7 +6338,9 @@ function altMenuCiz() {
   $$('.alt-oge', nav).forEach(b => b.onclick = () => {
     const anahtar = b.dataset.alt;
     const m = ALT_MENU.find(x => (x.tip === 'grup' ? x.grup : x.id) === anahtar);
-    if (m.tip === 'sayfa') { sheetKapat(); git(m.id); }
+    if (!m) return;
+    if (m.tip === 'aksiyon') { sheetKapat(); if (m.id === 'tahsilat') odemeAlModal(); }
+    else if (m.tip === 'sayfa') { sheetKapat(); git(m.id); }
     else grupSheet(m.grup);
   });
   altMenuGuncelle();
@@ -6636,8 +6637,45 @@ document.addEventListener('DOMContentLoaded', () => {
   girisKur();
   yakinlastirmaKapat();
   autofillKapatKur();
+  pullToRefreshKur();
   surumKontrol();
 });
+
+/* Aşağı çekince yenile (YouTube gibi) — sayfa en üstteyken aşağı çekiş eşiği aşınca hard reload */
+function pullToRefreshKur() {
+  let ind = document.getElementById('ptr');
+  if (!ind) { ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<div class="ptr-ring"></div>'; document.body.appendChild(ind); }
+  const ESIK = 72, MAKS = 110;
+  let baslaY = 0, cekiyor = false, mesafe = 0;
+  const scroller = () => document.scrollingElement || document.documentElement;
+  const uygulama = () => document.getElementById('uygulama');
+  document.addEventListener('touchstart', (e) => {
+    const app = uygulama();
+    // Uygulama görünür + en üstte + modal yok
+    if (!app || app.classList.contains('gizli') || scroller().scrollTop > 0 || document.querySelector('.modal-perde, .picker-perde')) { cekiyor = false; return; }
+    baslaY = e.touches[0].clientY; cekiyor = true; mesafe = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!cekiyor) return;
+    const dy = e.touches[0].clientY - baslaY;
+    if (dy <= 0 || scroller().scrollTop > 0) { cekiyor = false; ind.style.transform = ''; ind.classList.remove('gorunur', 'hazir'); return; }
+    mesafe = Math.min(MAKS, dy * 0.5);
+    ind.classList.add('gorunur');
+    ind.classList.toggle('hazir', mesafe >= ESIK);
+    ind.style.transform = `translateX(-50%) translateY(${mesafe}px)`;
+  }, { passive: true });
+  const bitir = () => {
+    if (!cekiyor) return; cekiyor = false;
+    if (mesafe >= ESIK) {
+      ind.classList.add('yukleniyor'); ind.style.transform = `translateX(-50%) translateY(${ESIK}px)`;
+      setTimeout(() => window.location.replace(location.pathname + '?g=' + Date.now()), 300);
+    } else {
+      ind.style.transform = ''; ind.classList.remove('gorunur', 'hazir');
+    }
+  };
+  document.addEventListener('touchend', bitir, { passive: true });
+  document.addEventListener('touchcancel', bitir, { passive: true });
+}
 
 /* Tarayıcı kayıtlı-değer önerisini tüm giriş alanlarında kapat.
    Chrome önerisi alan ADINA göre eşleşir; her alana benzersiz ad verilince
