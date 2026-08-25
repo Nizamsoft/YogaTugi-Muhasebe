@@ -952,17 +952,11 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
 }
 @keyframes don{to{transform:rotate(360deg)}}
 /* Aşağı çek → yenile göstergesi */
-#ptr{position:fixed;top:0;left:50%;z-index:60;margin-top:calc(env(safe-area-inset-top,0px) + 6px);
-  width:42px;height:42px;border-radius:50%;background:var(--kart);border:1px solid var(--kenar);
-  box-shadow:0 8px 20px -6px rgba(0,0,0,.4);display:grid;place-items:center;opacity:0;pointer-events:none;
-  transform:translateX(-50%) translateY(-10px);
-  transition:opacity .2s ease,transform .4s cubic-bezier(.22,.92,.3,1.04)}
-#ptr.tut{transition:opacity .2s ease}   /* parmak sürerken transform anlık takip etsin (geri yay sadece bırakınca) */
-#ptr.gorunur{opacity:1}
-#ptr.hazir{border-color:var(--neon,#a4d92f);box-shadow:0 8px 22px -6px rgba(0,0,0,.45),0 0 0 3px rgba(180,232,58,.16)}
-#ptr .ptr-ring{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--kenar-koyu);border-top-color:var(--neon,#a4d92f);transition:transform .3s cubic-bezier(.34,1.4,.5,1)}
-#ptr.hazir .ptr-ring{transform:rotate(180deg) scale(1.08)}
-#ptr.yukleniyor .ptr-ring{transform:none;animation:don .7s linear infinite}
+/* Kullanıcı menüsü "Güncelle" — ikon yuvası + basınca dönen kum saati */
+.kul-menu #kmGuncelle .kmg-ik{width:22px;height:22px;display:inline-grid;place-items:center;flex:0 0 auto;color:var(--metin-soluk)}
+.kul-menu #kmGuncelle .kmg-ik .uik{width:20px;height:20px}
+.kul-menu #kmGuncelle .kmg-ik .kum{font-size:16px;line-height:1;display:inline-block;animation:kumDon .9s linear infinite}
+@keyframes kumDon{to{transform:rotate(360deg)}}
 
 /* --------- Duyarlı (mobil) --------- */
 @media(max-width:860px){

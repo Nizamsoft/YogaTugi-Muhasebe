@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '182';
+const APP_SURUM = '183';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -7018,6 +7018,24 @@ function ustCubukKur() {
   if ($('#kmYedek')) $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
   { const ts = $('#kmTemaSec'); if (ts) { $$('#kmTemaSec [data-tema]').forEach(b => b.classList.toggle('sec', b.dataset.tema === aktifTema())); ts.onclick = (e) => { const b = e.target.closest('[data-tema]'); if (!b) return; temaUygula(b.dataset.tema, true); }; } }
   { const kt = $('#kmTalep'); if (kt) { kt.innerHTML = ik('destek') + '<span>İstek & Öneri</span>'; kt.onclick = () => { kulMenuKapat(); talepListeModal(); }; } }
+  // Güncelle — buluttan taze veri çek + aktif sayfayı yeniden çiz. Basınca kum saati döner.
+  { const kg = $('#kmGuncelle'); if (kg) {
+      const slot = kg.querySelector('.kmg-ik'); if (slot && !slot.innerHTML) slot.innerHTML = ik('guncel');
+      kg.onclick = async () => {
+        if (kg.dataset.dolu) return;
+        kg.dataset.dolu = '1';
+        if (slot) slot.innerHTML = '<span class="kum">⏳</span>';
+        const t0 = Date.now();
+        try { await yumusakYenile(); } catch {}
+        const kalan = Math.max(0, 720 - (Date.now() - t0));   // kum saati bir tur dönsün (göz kırpması olmasın)
+        setTimeout(() => {
+          delete kg.dataset.dolu;
+          if (slot) slot.innerHTML = ik('guncel');
+          kulMenuKapat();
+          bildir('Güncellendi', 'basari');
+        }, kalan);
+      };
+  } }
   $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
   document.addEventListener('click', (e) => {
     if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
@@ -7364,7 +7382,7 @@ document.addEventListener('DOMContentLoaded', () => {
   yakinlastirmaKapat();
   autofillKapatKur();
   acilisBicimi();
-  pullToRefreshKur();
+  // Aşağı çekerek yenileme kaldırıldı — güncelleme artık kullanıcı menüsündeki "Güncelle" ile.
   olcumGoster();
   surumKontrol();
 });
@@ -7392,9 +7410,7 @@ sürüm             ${APP_SURUM}`;
   document.body.insertAdjacentHTML('beforeend', `<pre id="olcumKutu" style="position:fixed;left:8px;top:8px;z-index:99999;margin:0;padding:8px;background:#000;color:#0f0;font:11px monospace;border-radius:6px;white-space:pre">${html}</pre>`);
 }
 
-/* Aşağı çekince yenile — .ana kaydırıcısında, en üstteyken aşağı çekiş eşiği aşınca hard reload.
-   Pürüzsüz çekiş için çekiş sırasında preventDefault; asla takılmasın diye güvenlik zamanlayıcısı. */
-/* Aşağı çek → yenile. Sert sayfa yeniden yükleme (beyaz parlama) YOK:
+/* Güncelle (kullanıcı menüsü) — sert sayfa yeniden yükleme (beyaz parlama) YOK:
    varsa buluttan taze veri çek, State'i yükle, aktif sayfayı yeniden çiz. Akıcı, native-hissi. */
 async function yumusakYenile() {
   try {
@@ -7405,51 +7421,6 @@ async function yumusakYenile() {
   } catch (e) { console.warn('Yenile bulut hatası:', e.message); }
   try { await veriYukle(); } catch {}
   try { const r = SAYFALAR[State.aktifSayfa]; if (r) r(); } catch {}
-}
-
-function pullToRefreshKur() {
-  let ind = document.getElementById('ptr');
-  if (!ind) { ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<div class="ptr-ring"></div>'; document.body.appendChild(ind); }
-  const ESIK = 68, MAKS = 92;
-  let baslaY = 0, aktif = false, mesafe = 0, yukleniyor = false;
-  const kaydirici = () => (window.innerWidth <= 640 ? (document.querySelector('.ana') || document.scrollingElement || document.documentElement) : (document.scrollingElement || document.documentElement));
-  const engelli = () => { const app = document.getElementById('uygulama'); const bk = document.getElementById('bakimEkrani'); return !app || app.classList.contains('gizli') || document.querySelector('.modal-perde, .picker-perde') || (bk && !bk.classList.contains('gizli')); };
-  // Bırakınca: inline transform'u temizle → CSS varsayılanına (yukarı gizli) yumuşak yay ile döner.
-  const iptal = () => { aktif = false; ind.classList.remove('tut'); ind.style.transform = ''; ind.classList.remove('gorunur', 'hazir'); };
-  const hedef = document.querySelector('.ana') || document;
-  hedef.addEventListener('touchstart', (e) => {
-    if (yukleniyor || engelli() || kaydirici().scrollTop > 0) { aktif = false; return; }
-    baslaY = e.touches[0].clientY; aktif = true; mesafe = 0;
-  }, { passive: true });
-  hedef.addEventListener('touchmove', (e) => {
-    if (!aktif) return;
-    const dy = e.touches[0].clientY - baslaY;
-    if (kaydirici().scrollTop > 0 || dy <= 0) { iptal(); return; }
-    // Kademeli direnç (rubber-band): başta rahat takip, eşiğe yaklaşınca yavaşlar → doğal his.
-    mesafe = Math.min(MAKS, dy <= 120 ? dy * 0.56 : 67 + (dy - 120) * 0.2);
-    if (e.cancelable) e.preventDefault();   // native overscroll'u durdur → pürüzsüz çekiş
-    ind.classList.add('gorunur', 'tut');    // .tut: parmağı anlık takip et (yay yok)
-    ind.classList.toggle('hazir', mesafe >= ESIK);
-    ind.style.transform = `translateX(-50%) translateY(${mesafe}px)`;
-  }, { passive: false });
-  const bitir = () => {
-    if (!aktif) return; aktif = false;
-    ind.classList.remove('tut');   // artık geri/aşağı yay animasyonu devrede
-    if (mesafe >= ESIK) {
-      yukleniyor = true;
-      ind.classList.add('gorunur', 'yukleniyor'); ind.classList.remove('hazir');
-      ind.style.transform = `translateX(-50%) translateY(${ESIK}px)`;   // spinner konumuna otur
-      const bit = () => { yukleniyor = false; ind.classList.remove('yukleniyor'); iptal(); };
-      const t0 = Date.now();
-      yumusakYenile().catch(() => {}).finally(() => {
-        const gecen = Date.now() - t0;
-        setTimeout(bit, Math.max(0, 480 - gecen));   // spinner en az ~480ms görünür kalsın (göz kırpması olmasın)
-      });
-      setTimeout(() => { if (yukleniyor) bit(); }, 6000);   // güvenlik: takılırsa temizle
-    } else { iptal(); }
-  };
-  hedef.addEventListener('touchend', bitir, { passive: true });
-  hedef.addEventListener('touchcancel', iptal, { passive: true });
 }
 
 /* Tarayıcı kayıtlı-değer önerisini tüm giriş alanlarında kapat.
