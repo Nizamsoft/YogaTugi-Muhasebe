@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '177';
+const APP_SURUM = '178';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '21:00';
+const APP_SURUM_SAAT = '21:40';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -606,7 +606,7 @@ const MENU = [
   { id: 'dashboard', ad: 'Panel', ikon: 'panel', baslik: 'Finans Paneli' },
   { grup: 'Muhasebe', ikon: 'muhasebe', ogeler: [
     { id: 'ice-aktar', ad: 'İçe Aktar', ikon: 'indir', baslik: 'İçe Aktar' },
-    { id: 'mutabakat', ad: 'Mutabakat', ikon: 'onay', baslik: 'Banka Mutabakatı' },
+    { id: 'mutabakat', ad: 'Tahsilat Tanımla', ikon: 'onay', baslik: 'Tahsilat Tanımla' },
     { id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe', baslik: 'Hesaplar' },
     { id: 'karlilik', ad: 'Kârlılık', ikon: 'ortaklar', baslik: 'Eğitmen / Ortak Kârlılığı' },
     { id: 'giderler', ad: 'Giderler', ikon: 'gider', baslik: 'Giderler' },
@@ -618,7 +618,7 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'tanim-gider': 'Giderler', 'tanim-egitmen': 'Eğitmen → Ortak Eşleme', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi / KDV Oranı', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
+const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Giderler', 'tanim-egitmen': 'Eğitmen → Ortak Eşleme', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi / KDV Oranı', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'odemeler': 'Tahsilatlar', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
 const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-egitmen', 'tanim-gider', 'tanim-kategori', 'tanim-komisyon', 'ayar-vergi', 'ayar-giris-kul'];
 
@@ -917,6 +917,32 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
   const eb = $('#karEsle'), eb2 = $('#karEsle2'); if (eb) eb.onclick = () => git('tanim-egitmen'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
+};
+
+/* ---- Gelirler — Plan4me tahsilatları (dönem listesi) ---- */
+let gelirDonem = null;
+SAYFALAR['gelirler'] = function gelirlerSayfasi() {
+  const donem = gelirDonem || buAy();
+  const kayitlar = (State.planformiTahsilat || []).filter(p => donemStr(p.tarih) === donem)
+    .sort((a, b) => ((b.tarih || '') + (b.saat || '')).localeCompare((a.tarih || '') + (a.saat || '')));
+  const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
+  const bru = topla(kayitlar), nak = topla(kayitlar.filter(p => p.tur === 'nakit')), hav = topla(kayitlar.filter(p => p.tur === 'havale')), krt = topla(kayitlar.filter(p => p.tur === 'kart'));
+  const turRoz = (t) => { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; };
+  ic().innerHTML = `
+    <div class="kar-sayfa">
+      <div class="kar-ust"><h3 class="kar-baslik">Gelirler</h3>${ayNavHTML(donem)}</div>
+      <div class="kar-genel">
+        <div class="kg-kutu vurgu"><span>Brüt Tahsilat</span><b>${TL(bru)}</b></div>
+        <div class="kg-kutu"><span>Nakit</span><b>${TL(nak)}</b></div>
+        <div class="kg-kutu"><span>Havale</span><b>${TL(hav)}</b></div>
+        <div class="kg-kutu"><span>Kart</span><b>${TL(krt)}</b></div>
+      </div>
+      ${kayitlar.length ? `<div class="tablo-sar"><table class="tablo ogr-tablo"><thead><tr><th>Tarih</th><th>Eğitmen</th><th>Üye</th><th>Tür</th><th class="sag">Tutar</th></tr></thead><tbody>
+        ${kayitlar.map(p => `<tr><td>${kacar(kisaTarih(p.tarih))}</td><td>${kacar(p.egitmenAd)}</td><td>${kacar(p.uyeAd)}</td><td>${turRoz(p.tur)}</td><td class="sag mono">${TL(p.tutar)}</td></tr>`).join('')}
+      </tbody></table></div>`
+      : `<div class="faz-bos"><div class="faz-ik">${ik('gelir')}</div><h3>Bu dönemde gelir yok</h3><p>“İçe Aktar” ile Plan4me tahsilatlarını yükleyin.</p></div>`}
+    </div>`;
+  $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { gelirDonem = donemKaydir(donem, Number(b.dataset.ay)); gelirlerSayfasi(); });
 };
 
 /* ---- Ayar: Banka gider kategorileri (kural editörü) ---- */
@@ -1445,7 +1471,7 @@ SAYFALAR['ders-takibi'] = function () {
 };
 
 /* -------- FİNANS ANA EKRAN (Plan4me + Banka mutabakat) -------- */
-let neonOzetAcik = true;
+let neonOzetAcik = false;
 function neonAnaEkran() {
   const donem = buAy();
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
@@ -1470,7 +1496,7 @@ function neonAnaEkran() {
     <div class="neon-home">
       <div class="neon-ozet ${neonOzetAcik ? 'acik' : ''}" id="neonOzet">
         <div class="no-head"><span class="no-bas">${donemAdi(donem)} · Özet</span><span class="no-ok">▾</span></div>
-        <div class="no-govde">
+        <div class="no-govde"><div class="no-ic">
           ${ozetSat('Brüt Tahsilat', TL(bru))}
           ${ozetSat('Nakit', TL(nakit))}
           ${ozetSat('Havale', TL(havale))}
@@ -1479,24 +1505,19 @@ function neonAnaEkran() {
           ${ozetSat(`Vergi (%${Math.round(vOran * 100)})`, vergi ? '−' + TL(vergi) : TL(0))}
           ${ozetSat('Gider', gider ? '−' + TL(gider) : TL(0))}
           ${ozetSat('Net', TL(net), net < 0 ? 'negatif' : 'pozitif')}
-        </div>
+        </div></div>
       </div>
       <div class="neon-aksiyon">
         <button type="button" class="neon-abtn lime" data-git="ice-aktar"><span class="na-ik">${ik('indir')}</span><span>İçe Aktar</span></button>
-        <button type="button" class="neon-abtn amber" data-git="mutabakat"><span class="na-ik">${ik('onay')}</span><span>Mutabakat</span></button>
+        <button type="button" class="neon-abtn amber" data-git="mutabakat"><span class="na-ik">${ik('onay')}</span><span>Tahsilat Tanımla</span></button>
       </div>
       <div class="neon-grid">
-        ${kart('muhasebe', 'Hesaplar', 'hesap-defter')}
-        ${kart('ortaklar', 'Kârlılık', 'karlilik')}
+        ${kart('gelir', 'Gelirler', 'gelirler')}
         ${kart('gider', 'Giderler', 'giderler')}
-        ${kart('tanimlar', 'Ayarlar', 'ayar-tanimlama')}
+        ${kart('muhasebe', 'Hesaplar', 'hesap-defter')}
+        ${kart('ortaklar', 'Ortaklar', 'karlilik')}
       </div>
-      <div class="neon-seans-bas"><span>Mutabakat</span><button type="button" class="neon-takvim" data-git="mutabakat">Aç ›</button></div>
-      <div class="neon-seanslar">
-        ${bosVeri
-          ? '<div class="neon-bos">Henüz veri yok. “İçe Aktar” ile Plan4me ve banka dosyalarını yükleyin.</div>'
-          : `<div class="neon-seans" data-git="mutabakat"><span class="ns-bar"></span><div class="ns-ic"><div class="ns-ad">Eşleşen ${esOk} · Uyumsuz ${esUyumsuz}</div><div class="ns-saat">${pf.length} tahsilat · ${bh.length} banka hareketi</div></div></div>`}
-      </div>
+      <div class="neon-bosslot" data-git="mutabakat"><span>${ik('arti')}</span> Tahsilat Tanımla ile buraya ekleyeceğiz</div>
     </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
@@ -6966,7 +6987,7 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel' },
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
   { tip: 'sayfa', id: 'ice-aktar', ad: 'İçe Aktar', ikon: 'indir', merkez: true },
-  { tip: 'sayfa', id: 'mutabakat', ad: 'Mutabakat', ikon: 'onay' },
+  { tip: 'sayfa', id: 'mutabakat', ad: 'Tahsilat', ikon: 'onay' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
@@ -7306,7 +7327,8 @@ function pullToRefreshKur() {
   if (!ind) { ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<div class="ptr-ring"></div>'; document.body.appendChild(ind); }
   const ESIK = 72, MAKS = 110;
   let baslaY = 0, cekiyor = false, mesafe = 0;
-  const scroller = () => document.scrollingElement || document.documentElement;
+  // Mobilde kaydırıcı .ana (flex-column düzen); masaüstünde belge
+  const scroller = () => (window.innerWidth <= 640 ? (document.querySelector('.ana') || document.scrollingElement || document.documentElement) : (document.scrollingElement || document.documentElement));
   const uygulama = () => document.getElementById('uygulama');
   document.addEventListener('touchstart', (e) => {
     const app = uygulama();
