@@ -464,7 +464,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '181';
+const APP_SURUM = '182';
 const APP_SURUM_TARIH = '25 Ağu 2026';
 const APP_SURUM_SAAT = '23:50';
 
@@ -912,7 +912,6 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
         <div class="kg-kutu"><span>Genel Gider</span><b>−${TL(r.genelGider)}</b></div>
         <div class="kg-kutu vurgu"><span>Ortak Net (toplam)</span><b class="${gNet < 0 ? 'negatif' : 'pozitif'}">${TL(gNet)}</b></div>
       </div>
-      <div class="kar-bilgi">${ik('uyari')} Vergi = bankaya giren (havale+kart) tahsilatın <b>%${Math.round(r.vOran * 100)}</b>’si (nakit hariç); oran Ayarlar › Vergi/KDV Oranı’ndan değişir. Genel giderler ${r.ortaklar.length} ortağa eşit bölünür.</div>
       <h4 class="kar-grup">Ortaklar</h4>
       ${r.ortaklar.map(ortakKart).join('')}
       ${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
@@ -959,7 +958,6 @@ SAYFALAR['tanim-kategori'] = function kategoriKurallariSayfasi() {
     </div>`;
   ic().innerHTML = `
     <div class="kk-sayfa">
-      <div class="bilgi-kutu"><span class="ikon">${ik('belge')}</span><div>Banka ekstresi içe aktarılırken, işlem açıklamasında bu <b>anahtar kelimeler</b> geçen giderlere otomatik <b>kategori</b> önerilir.</div></div>
       <div id="kkListe">${kurallar.map(satir).join('')}</div>
       <div class="kk-arac">
         <button type="button" class="btn" id="kkEkle">${ik('yeni')} Kural Ekle</button>
@@ -1000,7 +998,6 @@ SAYFALAR['tanim-komisyon'] = function komisyonOranlariSayfasi() {
   ic().innerHTML = `
     <div class="ko-sayfa" style="max-width:520px;margin:0 auto">
       <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="koGeri">‹ Geri</button></div>
-      <div class="bilgi-kutu"><span class="ikon">${ik('kart')}</span><div>Kredi kartı / Multinet tahsilatlarında uygulanan komisyon oranları. <b>Tahsilat Tanımla</b>'da kart tipi seçilince oran buradan gelir.</div></div>
       ${alan('yurtici', 'Yurt İçi Kredi Kartı', k.yurtici)}
       ${alan('yurtdisi', 'Yurt Dışı Kredi Kartı', k.yurtdisi)}
       ${alan('debit', 'Bankamatik (Debit) Kartı', k.debit)}
@@ -1039,7 +1036,6 @@ SAYFALAR['tanim-egitmen'] = function egitmenEslemeSayfasi() {
   ic().innerHTML = `
     <div class="ee-sayfa">
       <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="eeGeri">‹ Geri</button></div>
-      <div class="bilgi-kutu"><span class="ikon">${ik('kisi')}</span><div>Plan4me’deki her <b>eğitmen adını</b> uygulamadaki bir ortağa bağlayın (ad birebir aynı olmasa da). Ortak olmayan eğitmenler <b>maaşlı</b> seçilir; tahsilatları 4 ortağa eşit (havuz) ya da belirli bir ortağa yazılır.</div></div>
       ${egitmenler.length ? `<div class="ee-liste">${egitmenler.map(e => `
         <div class="ee-satir" data-k="${kacar(e.k)}">
           <span class="ee-ad">${kacar(e.ad)}</span>
@@ -1182,7 +1178,6 @@ SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
   ic().innerHTML = `
     <div class="tt-sayfa">
       <div class="tt-ust"><h3 class="tt-baslik">Tahsilat Tanımla</h3><button type="button" class="btn btn-ana" id="ttYeni">${ik('yeni')} Yeni Tahsilat</button></div>
-      <div class="bilgi-kutu"><span class="ikon">${ik('belge')}</span><div>Öğrenci tahsilatlarını tanımlayın (ödeme türü, kart tipi/komisyon, tutar, eğitmen, paket). <b>Plan4me</b> dosyası yüklenince bu tanımlarla eşleşir; ödeme yöntemi de burada belirlenmiş olur.</div></div>
       ${liste.length ? `<div class="tt-ozetsat"><b>${liste.length}</b> tanım · ${TL(toplam)}</div><div class="tt-liste">${liste.map(kart).join('')}</div>`
       : `<div class="faz-bos"><div class="faz-ik">${ik('onay')}</div><h3>Henüz tahsilat tanımı yok</h3><p>“Yeni Tahsilat” ile başlayın; Plan4me yüklenince eşleşecek.</p></div>`}
     </div>`;
@@ -1560,7 +1555,7 @@ function neonAnaEkran() {
       </div>
       <div class="neon-aksiyon">
         <button type="button" class="neon-abtn lime" data-git="ice-aktar"><span class="na-ik">${ik('indir')}</span><span>İçe Aktar</span></button>
-        <button type="button" class="neon-abtn amber" data-git="mutabakat"><span class="na-ik">${ik('onay')}</span><span>Tahsilat Tanımla</span></button>
+        <button type="button" class="neon-abtn amber" id="dashTt"><span class="na-ik">${ik('onay')}</span><span>Tahsilat Tanımla</span></button>
       </div>
       <div class="neon-grid">
         ${kart('gelir', 'Gelirler', 'gelirler')}
@@ -1571,6 +1566,7 @@ function neonAnaEkran() {
       <div class="neon-bosslot" data-git="mutabakat"><span>${ik('arti')}</span> Tahsilat Tanımla ile buraya ekleyeceğiz</div>
     </div>`;
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
+  { const dt = $('#dashTt'); if (dt) dt.onclick = () => { git('mutabakat'); tahsilatTanimModal(); }; }   // Tahsilat Tanımla → direkt form
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; $('#neonOzet').classList.toggle('acik', neonOzetAcik); };
 }
 
@@ -6164,9 +6160,8 @@ SAYFALAR['hesap-defter'] = function () {
     <div class="odeme-sayfa">
       <div class="ogr-ust hesap-ust">
         <div class="ogr-seg hesap-seg">
-          ${['banka', 'nakit', 'kart'].map(k => `<button type="button" class="${HESAP_TANIM[k].cls} ${k === hesapAktif ? 'sec' : ''}" data-hs="${k}">${HESAP_TANIM[k].ik} ${HESAP_TANIM[k].ad} <span class="rk">${binlik(bakiye(k))} ₺</span></button>`).join('')}
+          ${['banka', 'nakit', 'kart'].map(k => `<button type="button" class="hs-oge ${k === hesapAktif ? 'sec' : ''}" data-hs="${k}"><span class="hs-ik">${HESAP_TANIM[k].ik}</span><span class="hs-ad">${HESAP_TANIM[k].ad}</span><span class="rk">${binlik(bakiye(k))} ₺</span></button>`).join('')}
         </div>
-        <div class="ogr-ust-sag"><button type="button" class="gp-ekle" id="hsIslem">${ik('para')} İşlem Yap</button></div>
       </div>
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span class="ara-ik">${ik('ara')}</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
@@ -6174,7 +6169,7 @@ SAYFALAR['hesap-defter'] = function () {
           <colgroup><col style="width:12%"><col style="width:11%"><col style="width:22%"><col style="width:17%"><col style="width:12%"><col style="width:15%"><col style="width:11%"></colgroup>
           <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>İlgili Ortak</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th><th></th></tr></thead>
           <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`
-      : `<div class="gp-bos">Bu hesapta hareket yok. “＋ Gelir Ekle” veya “＋ Gider Ekle” ile başlayın.</div>`}
+      : `<div class="gp-bos">Bu hesapta hareket yok.</div>`}
     </div>`;
   const rowBagla = () => {
     $$('[data-hduz]').forEach(b => b.onclick = () => {
@@ -6193,7 +6188,6 @@ SAYFALAR['hesap-defter'] = function () {
     });
   };
   $$('[data-hs]').forEach(b => b.onclick = () => { hesapAktif = b.dataset.hs; hesapArama = ''; hesapSayfayiYenile(); });
-  $('#hsIslem').onclick = () => islemYapModal();
   const ara = $('#hsAra');
   if (ara) ara.addEventListener('input', () => { hesapArama = ara.value; const tb = $('#hsTbody'); if (tb) { tb.innerHTML = govdeCiz(); rowBagla(); } });
   rowBagla();
@@ -7038,7 +7032,7 @@ function ustCubukKur() {
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel' },
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
-  { tip: 'sayfa', id: 'ice-aktar', ad: 'İçe Aktar', ikon: 'indir', merkez: true },
+  { tip: 'aksiyon', id: 'tahsilat-yeni', ad: 'Tanımla', ikon: 'arti', merkez: true },
   { tip: 'sayfa', id: 'mutabakat', ad: 'Tahsilat', ikon: 'onay' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
@@ -7071,7 +7065,7 @@ function altMenuCiz() {
     const anahtar = b.dataset.alt;
     const m = ALT_MENU.find(x => (x.tip === 'grup' ? x.grup : x.id) === anahtar);
     if (!m) return;
-    if (m.tip === 'aksiyon') { sheetKapat(); if (m.id === 'tahsilat') odemeAlModal(); }
+    if (m.tip === 'aksiyon') { sheetKapat(); if (m.id === 'tahsilat-yeni') { git('mutabakat'); tahsilatTanimModal(); } }
     else if (m.tip === 'sayfa') { sheetKapat(); git(m.id); }
     else grupSheet(m.grup);
   });
@@ -7400,6 +7394,19 @@ sürüm             ${APP_SURUM}`;
 
 /* Aşağı çekince yenile — .ana kaydırıcısında, en üstteyken aşağı çekiş eşiği aşınca hard reload.
    Pürüzsüz çekiş için çekiş sırasında preventDefault; asla takılmasın diye güvenlik zamanlayıcısı. */
+/* Aşağı çek → yenile. Sert sayfa yeniden yükleme (beyaz parlama) YOK:
+   varsa buluttan taze veri çek, State'i yükle, aktif sayfayı yeniden çiz. Akıcı, native-hissi. */
+async function yumusakYenile() {
+  try {
+    if (window._Bulut && window._Bulut.aktif && window._Bulut.client) {
+      const row = await window._Bulut.cek();
+      if (row && row.data) { window._Bulut._uzaktan = true; window._Bulut.uygula(row.data); window._Bulut.sonImza = row.guncelleme; window._Bulut._sonNonce = row.data._nonce || null; window._Bulut._uzaktan = false; }
+    }
+  } catch (e) { console.warn('Yenile bulut hatası:', e.message); }
+  try { await veriYukle(); } catch {}
+  try { const r = SAYFALAR[State.aktifSayfa]; if (r) r(); } catch {}
+}
+
 function pullToRefreshKur() {
   let ind = document.getElementById('ptr');
   if (!ind) { ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<div class="ptr-ring"></div>'; document.body.appendChild(ind); }
@@ -7407,7 +7414,8 @@ function pullToRefreshKur() {
   let baslaY = 0, aktif = false, mesafe = 0, yukleniyor = false;
   const kaydirici = () => (window.innerWidth <= 640 ? (document.querySelector('.ana') || document.scrollingElement || document.documentElement) : (document.scrollingElement || document.documentElement));
   const engelli = () => { const app = document.getElementById('uygulama'); const bk = document.getElementById('bakimEkrani'); return !app || app.classList.contains('gizli') || document.querySelector('.modal-perde, .picker-perde') || (bk && !bk.classList.contains('gizli')); };
-  const iptal = () => { aktif = false; ind.style.transform = 'translateX(-50%)'; ind.classList.remove('gorunur', 'hazir'); };
+  // Bırakınca: inline transform'u temizle → CSS varsayılanına (yukarı gizli) yumuşak yay ile döner.
+  const iptal = () => { aktif = false; ind.classList.remove('tut'); ind.style.transform = ''; ind.classList.remove('gorunur', 'hazir'); };
   const hedef = document.querySelector('.ana') || document;
   hedef.addEventListener('touchstart', (e) => {
     if (yukleniyor || engelli() || kaydirici().scrollTop > 0) { aktif = false; return; }
@@ -7417,19 +7425,27 @@ function pullToRefreshKur() {
     if (!aktif) return;
     const dy = e.touches[0].clientY - baslaY;
     if (kaydirici().scrollTop > 0 || dy <= 0) { iptal(); return; }
-    mesafe = Math.min(MAKS, dy * 0.42);
+    // Kademeli direnç (rubber-band): başta rahat takip, eşiğe yaklaşınca yavaşlar → doğal his.
+    mesafe = Math.min(MAKS, dy <= 120 ? dy * 0.56 : 67 + (dy - 120) * 0.2);
     if (e.cancelable) e.preventDefault();   // native overscroll'u durdur → pürüzsüz çekiş
-    ind.classList.add('gorunur');
+    ind.classList.add('gorunur', 'tut');    // .tut: parmağı anlık takip et (yay yok)
     ind.classList.toggle('hazir', mesafe >= ESIK);
     ind.style.transform = `translateX(-50%) translateY(${mesafe}px)`;
   }, { passive: false });
   const bitir = () => {
     if (!aktif) return; aktif = false;
+    ind.classList.remove('tut');   // artık geri/aşağı yay animasyonu devrede
     if (mesafe >= ESIK) {
       yukleniyor = true;
-      ind.classList.add('gorunur', 'yukleniyor'); ind.style.transform = `translateX(-50%) translateY(${ESIK}px)`;
-      setTimeout(() => location.replace(location.pathname + '?g=' + Date.now()), 240);
-      setTimeout(() => { yukleniyor = false; ind.classList.remove('yukleniyor'); iptal(); }, 5000);   // güvenlik: takılırsa temizle
+      ind.classList.add('gorunur', 'yukleniyor'); ind.classList.remove('hazir');
+      ind.style.transform = `translateX(-50%) translateY(${ESIK}px)`;   // spinner konumuna otur
+      const bit = () => { yukleniyor = false; ind.classList.remove('yukleniyor'); iptal(); };
+      const t0 = Date.now();
+      yumusakYenile().catch(() => {}).finally(() => {
+        const gecen = Date.now() - t0;
+        setTimeout(bit, Math.max(0, 480 - gecen));   // spinner en az ~480ms görünür kalsın (göz kırpması olmasın)
+      });
+      setTimeout(() => { if (yukleniyor) bit(); }, 6000);   // güvenlik: takılırsa temizle
     } else { iptal(); }
   };
   hedef.addEventListener('touchend', bitir, { passive: true });
