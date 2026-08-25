@@ -463,9 +463,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '178';
+const APP_SURUM = '179';
 const APP_SURUM_TARIH = '25 Ağu 2026';
-const APP_SURUM_SAAT = '21:40';
+const APP_SURUM_SAAT = '22:20';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -1355,29 +1355,32 @@ function bankaAyristir(data) {
 }
 
 let iaSekme = 'planformi';
+let iaArsivAcik = false;
 SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   const pfN = (State.planformiTahsilat || []).length, bhN = (State.bankaHareketleri || []).length;
   ic().innerHTML = `
     <div class="ia-sayfa">
-      <div class="ia-seg">
-        <button type="button" class="ia-oge ${iaSekme === 'planformi' ? 'sec' : ''}" data-ia="planformi">Plan4me${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
-        <button type="button" class="ia-oge ${iaSekme === 'banka' ? 'sec' : ''}" data-ia="banka">Banka${bhN ? ` <span class="ia-rk">${bhN}</span>` : ''}</button>
+      <div class="ia-ust">
+        <div class="ia-seg">
+          <button type="button" class="ia-oge ${iaSekme === 'planformi' ? 'sec' : ''}" data-ia="planformi">Plan4me${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
+          <button type="button" class="ia-oge ${iaSekme === 'banka' ? 'sec' : ''}" data-ia="banka">Banka${bhN ? ` <span class="ia-rk">${bhN}</span>` : ''}</button>
+        </div>
+        <button type="button" class="ia-arsiv-btn ${iaArsivAcik ? 'sec' : ''}" id="iaArsivBtn" title="Arşiv (içe aktarılanlar)">${ik('belge')}</button>
       </div>
       <div id="iaGovde"></div>
     </div>`;
   $$('.ia-oge').forEach(b => b.onclick = () => { iaSekme = b.dataset.ia; SAYFALAR['ice-aktar'](); });
+  $('#iaArsivBtn').onclick = () => { iaArsivAcik = !iaArsivAcik; SAYFALAR['ice-aktar'](); };
   iaTabCiz();
 };
 function iaTabCiz() {
   const g = $('#iaGovde'); const isPf = iaSekme === 'planformi';
+  if (iaArsivAcik) { iaArsivCiz(g, isPf); return; }
   g.innerHTML = `
-    <div class="ia-aciklama">${isPf
-      ? 'Plan4me “Aylık Rapor” Excel’ini yükleyin. Yalnızca <b>Alınan Ödemeler</b> tablosu (Tarih · Eğitmen · Üye · Ödeme Tipi · Tutar) okunur; diğer sayfa/tablolar atlanır.'
-      : 'Banka ekstresini (.xlsx / .csv) yükleyin. Hareketler otomatik sınıflandırılır: <b>tahsilat · komisyon · gider · ortak ödemesi</b>.'}</div>
     <label class="ia-drop" id="iaDrop">
       <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
       <span class="ia-ik">${ik('indir')}</span>
-      <span class="ia-dt">Dosya seç veya sürükle</span>
+      <span class="ia-dt">${isPf ? 'Plan4me “Aylık Rapor”' : 'Banka ekstresi'} — dosya seç veya sürükle</span>
       <span class="ia-ds">.xlsx · .csv</span>
     </label>
     <div id="iaOnizle"></div>`;
@@ -1386,6 +1389,23 @@ function iaTabCiz() {
   drop.addEventListener('dragleave', () => drop.classList.remove('uzeri'));
   drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('uzeri'); if (e.dataTransfer.files[0]) iaIsle(e.dataTransfer.files[0]); });
   inp.onchange = () => { if (inp.files[0]) iaIsle(inp.files[0]); };
+}
+function iaArsivCiz(g, isPf) {
+  const kol = isPf ? 'planformiTahsilat' : 'bankaHareketleri';
+  const kayitlar = (State[kol] || []).slice().reverse();   // son eklenen üstte
+  const satir = isPf
+    ? (r) => `<div class="ia-arow"><span class="ia-ar-t">${kacar(kisaTarih(r.tarih))}</span><span class="ia-ar-a">${kacar(r.egitmenAd || '')} · ${kacar(r.uyeAd || '')}</span><span class="ia-ar-x mono">${TL(r.tutar)}</span><button type="button" class="ia-ar-sil" data-sil="${r.id}" title="Sil">${ik('cop')}</button></div>`
+    : (r) => `<div class="ia-arow"><span class="ia-ar-t">${kacar(kisaTarih(r.tarih))}</span><span class="ia-ar-a">${kacar(r.islem || '')}</span><span class="ia-ar-x mono ${(Number(r.tutar) || 0) < 0 ? 'negatif' : ''}">${TL(r.tutar)}</span><button type="button" class="ia-ar-sil" data-sil="${r.id}" title="Sil">${ik('cop')}</button></div>`;
+  g.innerHTML = `
+    <div class="ia-arsiv">
+      <div class="ia-ars-bas"><span>${isPf ? 'Plan4me' : 'Banka'} arşivi · <b>${kayitlar.length}</b> kayıt</span>${kayitlar.length ? `<button type="button" class="btn btn-kirmizi btn-kucuk" id="iaTumSil">${ik('cop')} Tümünü Sil</button>` : ''}</div>
+      ${kayitlar.length ? `<div class="ia-arliste">${kayitlar.map(satir).join('')}</div>` : `<div class="neon-bos">Bu kaynakta içe aktarılmış kayıt yok.</div>`}
+    </div>`;
+  $$('.ia-ar-sil').forEach(b => b.onclick = async () => { await DB.sil(kol, b.dataset.sil); State[kol] = DB._oku(kol); iaTabCiz(); });
+  const ts = $('#iaTumSil'); if (ts) ts.onclick = () => onayModal('Tümünü Sil', `${isPf ? 'Plan4me' : 'Banka'} arşivindeki ${kayitlar.length} kayıt silinecek. Emin misiniz?`, async () => {
+    for (const r of (State[kol] || []).slice()) await DB.sil(kol, r.id);
+    State[kol] = DB._oku(kol); iaTabCiz(); bildir('İçe aktarılan kayıtlar silindi.', 'basari');
+  });
 }
 function iaIsle(file) {
   const on = $('#iaOnizle'); on.innerHTML = '<div class="ia-yukleniyor">Okunuyor…</div>';
@@ -6836,7 +6856,7 @@ function girisGovdeCiz() {
   if (localStorage.getItem('yt_girisYapildi')) { girisYap(SABIT_ADMIN.kullanici); return; }   // eski oturum → admin
   govde.innerHTML = `
     <div class="giris-alan ilk"><span class="giris-ik">👤</span><input type="text" id="gKul" placeholder="Kullanıcı Adı :" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-    <div class="giris-alan"><span class="giris-ik">🔒</span><input type="password" id="gSif" placeholder="Şifre :" autocomplete="new-password"></div>
+    <div class="giris-alan"><span class="giris-ik">🔒</span><input type="password" id="gSif" placeholder="Şifre :" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other"></div>
     <div class="giris-hata" id="girisHata"></div>
     <button type="button" class="btn-giris" id="girisBtn">Giriş Yap</button>
     <div class="giris-guv">🔒 Güvenli giriş</div>
@@ -6972,6 +6992,7 @@ function ustCubukKur() {
   $('#kullaniciBlok').onclick = (e) => { e.stopPropagation(); km.classList.toggle('gizli'); };
   if ($('#kmYedek')) $('#kmYedek').onclick = () => { kulMenuKapat(); yedekModal(); };
   { const ts = $('#kmTemaSec'); if (ts) { $$('#kmTemaSec [data-tema]').forEach(b => b.classList.toggle('sec', b.dataset.tema === aktifTema())); ts.onclick = (e) => { const b = e.target.closest('[data-tema]'); if (!b) return; temaUygula(b.dataset.tema, true); }; } }
+  { const kt = $('#kmTalep'); if (kt) { kt.innerHTML = ik('destek') + '<span>İstek & Öneri</span>'; kt.onclick = () => { kulMenuKapat(); talepListeModal(); }; } }
   $('#kmCikis').onclick = () => { kulMenuKapat(); cikisYap(); };
   document.addEventListener('click', (e) => {
     if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
@@ -7321,41 +7342,42 @@ document.addEventListener('DOMContentLoaded', () => {
   surumKontrol();
 });
 
-/* Aşağı çekince yenile (YouTube gibi) — sayfa en üstteyken aşağı çekiş eşiği aşınca hard reload */
+/* Aşağı çekince yenile — .ana kaydırıcısında, en üstteyken aşağı çekiş eşiği aşınca hard reload.
+   Pürüzsüz çekiş için çekiş sırasında preventDefault; asla takılmasın diye güvenlik zamanlayıcısı. */
 function pullToRefreshKur() {
   let ind = document.getElementById('ptr');
   if (!ind) { ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<div class="ptr-ring"></div>'; document.body.appendChild(ind); }
-  const ESIK = 72, MAKS = 110;
-  let baslaY = 0, cekiyor = false, mesafe = 0;
-  // Mobilde kaydırıcı .ana (flex-column düzen); masaüstünde belge
-  const scroller = () => (window.innerWidth <= 640 ? (document.querySelector('.ana') || document.scrollingElement || document.documentElement) : (document.scrollingElement || document.documentElement));
-  const uygulama = () => document.getElementById('uygulama');
-  document.addEventListener('touchstart', (e) => {
-    const app = uygulama();
-    // Uygulama görünür + en üstte + modal yok
-    if (!app || app.classList.contains('gizli') || scroller().scrollTop > 0 || document.querySelector('.modal-perde, .picker-perde')) { cekiyor = false; return; }
-    baslaY = e.touches[0].clientY; cekiyor = true; mesafe = 0;
+  const ESIK = 68, MAKS = 92;
+  let baslaY = 0, aktif = false, mesafe = 0, yukleniyor = false;
+  const kaydirici = () => (window.innerWidth <= 640 ? (document.querySelector('.ana') || document.scrollingElement || document.documentElement) : (document.scrollingElement || document.documentElement));
+  const engelli = () => { const app = document.getElementById('uygulama'); const bk = document.getElementById('bakimEkrani'); return !app || app.classList.contains('gizli') || document.querySelector('.modal-perde, .picker-perde') || (bk && !bk.classList.contains('gizli')); };
+  const iptal = () => { aktif = false; ind.style.transform = 'translateX(-50%)'; ind.classList.remove('gorunur', 'hazir'); };
+  const hedef = document.querySelector('.ana') || document;
+  hedef.addEventListener('touchstart', (e) => {
+    if (yukleniyor || engelli() || kaydirici().scrollTop > 0) { aktif = false; return; }
+    baslaY = e.touches[0].clientY; aktif = true; mesafe = 0;
   }, { passive: true });
-  document.addEventListener('touchmove', (e) => {
-    if (!cekiyor) return;
+  hedef.addEventListener('touchmove', (e) => {
+    if (!aktif) return;
     const dy = e.touches[0].clientY - baslaY;
-    if (dy <= 0 || scroller().scrollTop > 0) { cekiyor = false; ind.style.transform = ''; ind.classList.remove('gorunur', 'hazir'); return; }
-    mesafe = Math.min(MAKS, dy * 0.5);
+    if (kaydirici().scrollTop > 0 || dy <= 0) { iptal(); return; }
+    mesafe = Math.min(MAKS, dy * 0.42);
+    if (e.cancelable) e.preventDefault();   // native overscroll'u durdur → pürüzsüz çekiş
     ind.classList.add('gorunur');
     ind.classList.toggle('hazir', mesafe >= ESIK);
     ind.style.transform = `translateX(-50%) translateY(${mesafe}px)`;
-  }, { passive: true });
+  }, { passive: false });
   const bitir = () => {
-    if (!cekiyor) return; cekiyor = false;
+    if (!aktif) return; aktif = false;
     if (mesafe >= ESIK) {
-      ind.classList.add('yukleniyor'); ind.style.transform = `translateX(-50%) translateY(${ESIK}px)`;
-      setTimeout(() => window.location.replace(location.pathname + '?g=' + Date.now()), 300);
-    } else {
-      ind.style.transform = ''; ind.classList.remove('gorunur', 'hazir');
-    }
+      yukleniyor = true;
+      ind.classList.add('gorunur', 'yukleniyor'); ind.style.transform = `translateX(-50%) translateY(${ESIK}px)`;
+      setTimeout(() => location.replace(location.pathname + '?g=' + Date.now()), 240);
+      setTimeout(() => { yukleniyor = false; ind.classList.remove('yukleniyor'); iptal(); }, 5000);   // güvenlik: takılırsa temizle
+    } else { iptal(); }
   };
-  document.addEventListener('touchend', bitir, { passive: true });
-  document.addEventListener('touchcancel', bitir, { passive: true });
+  hedef.addEventListener('touchend', bitir, { passive: true });
+  hedef.addEventListener('touchcancel', iptal, { passive: true });
 }
 
 /* Tarayıcı kayıtlı-değer önerisini tüm giriş alanlarında kapat.
