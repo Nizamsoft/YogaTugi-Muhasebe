@@ -253,6 +253,10 @@ h1,h2,h3,h4{line-height:1.25}
   background:var(--kart);border-bottom:1px solid var(--kenar);position:sticky;top:0;z-index:20;
 }
 .ust-cubuk .menu-ac{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--metin)}
+.ust-geri{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:none;border-radius:12px;background:var(--kart);border:1px solid var(--kenar);color:var(--metin);cursor:pointer;padding:0;transition:border-color .15s,background .15s}
+.ust-geri svg{width:20px;height:20px}
+.ust-geri:hover{border-color:var(--neon,#b4e83a);color:var(--neon,#b4e83a)}
+.ust-geri.gizli{display:none}
 .ust-cubuk h2{font-size:18px;flex:1}
 .ust-cubuk .arac-btn{
   background:none;border:1px solid var(--kenar);border-radius:8px;padding:7px 10px;
@@ -1576,6 +1580,13 @@ body.tema-koyu .gr-karsi{background:linear-gradient(180deg,#2c2a20,#26241b);colo
 .gr-grp{border-top:1px solid var(--kenar)}.gr-grp:first-child{border-top:none}
 .gr-grpbas{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:linear-gradient(180deg,#fbf4e4,#f4e9d1);cursor:pointer}
 body.tema-koyu .gr-grpbas{background:linear-gradient(180deg,#2c2a20,#26241b)}
+body.tema-neon .gr-kutu{background:var(--kart);border-color:var(--kenar)}
+body.tema-neon .gr-grpbas{background:var(--gri)}
+body.tema-neon .gr-grpbas .ad{color:var(--metin)}
+body.tema-neon .gr-grpbas .ad .ik{background:rgba(180,232,58,.14)}
+body.tema-neon .gr-grpbas .ad .ik .uik{width:15px;height:15px;color:var(--neon)}
+body.tema-neon .gr-chev{color:var(--metin-soluk)}
+body.tema-neon .gr-dip{background:linear-gradient(135deg,#1f2620,#181d18)}
 /* Grup ve kalem satırları AYNI sütun düzeni → tutarlar hizalı */
 .gr-grpbas,.gr-sat{display:flex;align-items:center;gap:10px}
 .gr-grpbas .ad,.gr-sat .ad{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:9px}
@@ -1588,6 +1599,9 @@ body.tema-koyu .gr-grpbas .ad{color:var(--metin)}
 .gr-sat .ad .nk{width:6px;height:6px;border-radius:50%;background:#c9a94e;flex:0 0 auto}
 .gr-cnt{flex:0 0 auto;width:58px;text-align:right;font-size:11px;color:var(--metin-soluk);font-weight:700}
 .gr-tut{flex:0 0 auto;width:110px;text-align:right;font-family:Georgia,serif;font-weight:800;color:#c0483f;font-variant-numeric:tabular-nums;font-size:13.5px}
+.gr-tut.art{color:#3f9c63} body.tema-koyu .gr-tut.art,body.tema-neon .gr-tut.art{color:#8fe07a}
+.gr-seg{margin:12px 0}
+.gr-arac{display:flex;justify-content:flex-end;margin:0 0 12px}
 .gr-grpbas .gr-tut{font-size:15px}
 .gr-chev{flex:0 0 14px;text-align:center;color:#c9a94e;font-size:15px;opacity:.6}
 .gr-dip{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#2f3b30,#26302a);color:#f3ecd8}
