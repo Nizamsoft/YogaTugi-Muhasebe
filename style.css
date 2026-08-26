@@ -1622,6 +1622,26 @@ body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 .buyuk-ozet .bo-d b{font-size:14.5px;font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
 /* Tablo başlığı (Tahsilat Defteri / Masraf Defteri) */
 .defter-bas{font-size:14.5px;font-weight:800;color:var(--metin);margin:2px 2px 10px;letter-spacing:.2px}
+/* Birleşik üst kart (başlık + ay + Rapor/Tablo + özet tek kartta — kompakt) */
+.gg-ust{background:var(--kart);border:1px solid var(--kenar);border-radius:15px;overflow:hidden;margin-bottom:12px}
+.gg-bol{padding:11px 13px}
+.gg-ince{border-top:1px solid var(--kenar)}
+.gg-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gg-bas{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:17px;color:var(--metin);letter-spacing:.3px}
+.gg-ust .gr-seg{margin:0;width:100%}
+.gg-ozet-satir{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.gg-ozet .lbl{font-size:10.5px;font-weight:800;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.5px}
+.gg-ozet .val{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-size:21px;font-weight:700;line-height:1;color:var(--metin)}
+.gg-dag{display:flex;gap:7px;margin-top:10px}
+.gg-dag .d{flex:1;min-width:0;background:var(--gri);border:1px solid var(--kenar);border-radius:9px;padding:7px 9px;display:flex;flex-direction:column;gap:1px}
+.gg-dag .d span{font-size:9.5px;color:var(--metin-soluk)}
+.gg-dag .d b{font-size:12.5px;font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
+/* kompakt ay seçici (kart içi) */
+.gg-ust .ay-nav{padding:2px;border-radius:12px}
+.gg-ust .ay-nav button{width:28px;height:28px;font-size:14px;border-radius:9px}
+.gg-ust .ay-nav .ay{padding:0 5px}
+.gg-ust .ay-nav .ay .m{font-size:13px}
+.gg-ust .ay-nav .ay .y{font-size:9px}
 /* Sade tablo: az yuvarlak + basınca yeşil olmaz */
 .ogr-tkart.sade{border-radius:8px;box-shadow:none}
 .ogr-tablo.sade tbody tr:hover td{background:transparent}

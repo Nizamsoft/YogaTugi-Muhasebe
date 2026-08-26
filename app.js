@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '226';
+const APP_SURUM = '227';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1162,10 +1162,11 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
   const bru = topla(kayitlar), nak = topla(kayitlar.filter(p => p.odemeTuru === 'nakit')), hav = topla(kayitlar.filter(p => p.odemeTuru === 'havale')), krt = topla(kayitlar.filter(p => p.odemeTuru === 'kart' || p.odemeTuru === 'multinet'));
   const turAd = (t) => GELIR_TUR[t] || t || '—';
+  const ozetHTML = `<div class="gg-ozet-satir"><span class="lbl">Brüt Satış</span><span class="val">${TL(bru)}</span></div>
+    <div class="gg-dag"><div class="d"><span>Nakit</span><b>${binlik(nak)} ₺</b></div><div class="d"><span>Havale</span><b>${binlik(hav)} ₺</b></div><div class="d"><span>Kart</span><b>${binlik(krt)} ₺</b></div></div>`;
   // RAPOR: eğitmen (hoca) grubu — altında Banka Havale / Kart / Nakit toplamları (tıklanamaz)
   const raporCiz = () => {
-    const buyukKart = `<div class="buyuk-ozet"><div class="bo-ust"><span class="bo-lbl">Brüt Satış</span><span class="bo-val">${TL(bru)}</span></div><div class="bo-dagilim"><div class="bo-d"><span>Nakit</span><b>${binlik(nak)} ₺</b></div><div class="bo-d"><span>Havale</span><b>${binlik(hav)} ₺</b></div><div class="bo-d"><span>Kart</span><b>${binlik(krt)} ₺</b></div></div></div>`;
-    if (!kayitlar.length) return buyukKart + `<div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
+    if (!kayitlar.length) return `<div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
     const gr = {};
     kayitlar.forEach(p => { const ad = (p.egitmenAd || '').trim() || 'Atanmamış'; const g = gr[ad] || (gr[ad] = { ad, toplam: 0, adet: 0, havale: 0, kart: 0, nakit: 0 }); g.toplam += Number(p.tutar) || 0; g.adet++; const t = Number(p.tutar) || 0; if (p.odemeTuru === 'havale') g.havale += t; else if (p.odemeTuru === 'kart' || p.odemeTuru === 'multinet') g.kart += t; else g.nakit += t; });
     const gruplar = Object.values(gr).sort((a, b) => b.toplam - a.toplam);
@@ -1175,7 +1176,7 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
       const satirlar = acik ? (bolum('Banka Havale', g.havale) + bolum('Kart', g.kart) + bolum('Nakit', g.nakit)) : '';
       return `<div class="gr-grp"><div class="gr-grpbas" data-gkapa="${kacar(g.ad)}"><span class="ad"><span class="ik">${ik('kisi')}</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.adet} tahsilat</span><span class="gr-tut top art">+${binlik(g.toplam)} ₺</span><span class="gr-chev">${acik ? '⌃' : '⌄'}</span></div>${satirlar}</div>`;
     }).join('');
-    return buyukKart + `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Toplam — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div></div>`;
+    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Toplam — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div></div>`;
   };
   // TABLO: sade düz kayıt tablosu + "daha fazla yükle"
   const tabloCiz = () => {
@@ -1190,8 +1191,11 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
   };
   ic().innerHTML = `
     <div class="kar-sayfa">
-      <div class="kar-ust"><h3 class="kar-baslik">Gelirler</h3>${ayNavHTML(donem)}</div>
-      <div class="ia-seg gr-seg"><button type="button" class="ia-oge ${gelirGorunum === 'rapor' ? 'sec' : ''}" data-glr="rapor">Rapor</button><button type="button" class="ia-oge ${gelirGorunum === 'tablo' ? 'sec' : ''}" data-glr="tablo">Tablo</button></div>
+      <div class="gg-ust">
+        <div class="gg-bol gg-row"><span class="gg-bas">Gelirler</span>${ayNavHTML(donem)}</div>
+        <div class="gg-bol gg-ince"><div class="ia-seg gr-seg"><button type="button" class="ia-oge ${gelirGorunum === 'rapor' ? 'sec' : ''}" data-glr="rapor">Rapor</button><button type="button" class="ia-oge ${gelirGorunum === 'tablo' ? 'sec' : ''}" data-glr="tablo">Tablo</button></div></div>
+        ${gelirGorunum === 'rapor' ? `<div class="gg-bol gg-ince gg-ozet">${ozetHTML}</div>` : ''}
+      </div>
       <div id="glGovde">${gelirGorunum === 'rapor' ? raporCiz() : tabloCiz()}</div>
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { gelirDonem = donemKaydir(donem, Number(b.dataset.ay)); gelirLimit = 25; gelirlerSayfasi(); });
@@ -7072,9 +7076,10 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
   const egAd = (id) => id ? egitmenAdiById(id) : 'Genel';
   const yenile = () => giderlerSayfasi();
   const acKayit = (k) => k.kaynak === 'nakit' ? nakitGiderModal(k.ref, yenile) : bankaDetayModal(k.ref);
+  const ozetHTML = `<div class="gg-ozet-satir"><span class="lbl">Genel Gider</span><span class="val">${TL(toplam)}</span></div>
+    <div class="gg-dag"><div class="d"><span>Nakit</span><b>${binlik(nakitTop)} ₺</b></div><div class="d"><span>Banka</span><b>${binlik(bankaTop)} ₺</b></div></div>`;
   // RAPOR: Gider Grubu başlıkları (Genel Gider, Vergi…) altında tanımlı giderler (0 dahil) + tutar
   const raporCiz = () => {
-    const buyukKart = `<div class="buyuk-ozet"><div class="bo-ust"><span class="bo-lbl">Genel Gider</span><span class="bo-val">${TL(toplam)}</span></div><div class="bo-dagilim"><div class="bo-d"><span>Nakit</span><b>${binlik(nakitTop)} ₺</b></div><div class="bo-d"><span>Banka</span><b>${binlik(bankaTop)} ₺</b></div></div></div>`;
     const totMap = {}; kalemler.forEach(k => { totMap[k.ad] = (totMap[k.ad] || 0) + k.tutar; });
     // Gruba göre böl: tanımlı giderler kendi grubunda; grupsuz → "Genel Gider"; tanımsız harcama → "Diğer"
     const bucket = {}; const seen = new Set();
@@ -7082,7 +7087,7 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
     (State.giderler || []).forEach(g => { const ad = (g.ad || '').trim(); if (!ad) return; seen.add(adNorm(ad)); ekle(giderGrupAd(g.grupId) || 'Genel Gider', ad, totMap[ad] || 0); });
     Object.keys(totMap).forEach(ad => { if (!seen.has(adNorm(ad))) ekle('Diğer', ad, totMap[ad]); });
     const gruplar = Object.values(bucket);
-    if (!gruplar.length) return buyukKart + `<div class="gp-bos">Önce Tanımlamalar › Giderler'den gider ekleyin.</div>`;
+    if (!gruplar.length) return `<div class="gp-bos">Önce Tanımlamalar › Giderler'den gider ekleyin.</div>`;
     gruplar.sort((a, b) => (a.ad === 'Genel Gider' ? -1 : b.ad === 'Genel Gider' ? 1 : b.toplam - a.toplam));
     const grpHTML = gruplar.map(g => {
       const acik = !giderGrupKapali.has(g.ad);
@@ -7090,7 +7095,7 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
       const satirlar = acik ? kalemler2.map(k => `<div class="gr-sat norow"><span class="ad"><span class="nk"></span>${kacar(k.ad)}</span><span class="gr-tut">${k.tutar > 0 ? '−' : ''}${binlik(k.tutar)} ₺</span></div>`).join('') : '';
       return `<div class="gr-grp"><div class="gr-grpbas" data-gkapa="${kacar(g.ad)}"><span class="ad"><span class="ik">📁</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.kalemler.length} kalem</span><span class="gr-tut top">−${binlik(g.toplam)} ₺</span><span class="gr-chev">${acik ? '⌃' : '⌄'}</span></div>${satirlar}</div>`;
     }).join('');
-    return buyukKart + `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Genel Gider — ${donemAdi(donem)}</span><span class="v">−${binlik(toplam)} ₺</span></div></div>`;
+    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Genel Gider — ${donemAdi(donem)}</span><span class="v">−${binlik(toplam)} ₺</span></div></div>`;
   };
   // TABLO: sade düz kayıt tablosu + "daha fazla yükle"
   const tabloCiz = () => {
@@ -7105,8 +7110,11 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
   };
   ic().innerHTML = `
     <div class="kar-sayfa">
-      <div class="kar-ust"><h3 class="kar-baslik">Giderler</h3>${ayNavHTML(donem)}</div>
-      <div class="ia-seg gr-seg"><button type="button" class="ia-oge ${giderGorunum === 'rapor' ? 'sec' : ''}" data-gdg="rapor">Rapor</button><button type="button" class="ia-oge ${giderGorunum === 'tablo' ? 'sec' : ''}" data-gdg="tablo">Tablo</button></div>
+      <div class="gg-ust">
+        <div class="gg-bol gg-row"><span class="gg-bas">Giderler</span>${ayNavHTML(donem)}</div>
+        <div class="gg-bol gg-ince"><div class="ia-seg gr-seg"><button type="button" class="ia-oge ${giderGorunum === 'rapor' ? 'sec' : ''}" data-gdg="rapor">Rapor</button><button type="button" class="ia-oge ${giderGorunum === 'tablo' ? 'sec' : ''}" data-gdg="tablo">Tablo</button></div></div>
+        ${giderGorunum === 'rapor' ? `<div class="gg-bol gg-ince gg-ozet">${ozetHTML}</div>` : ''}
+      </div>
       <div id="gdGovde">${giderGorunum === 'rapor' ? raporCiz() : tabloCiz()}</div>
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { giderDonem = donemKaydir(donem, Number(b.dataset.ay)); giderLimit = 25; giderlerSayfasi(); });
