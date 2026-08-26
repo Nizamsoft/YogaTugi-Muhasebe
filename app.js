@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '229';
+const APP_SURUM = '230';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2044,27 +2044,29 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
       return n;   // ortakOdeme vb. engellemez
     }, 0);
     tbody = bkesit.map((k, i) => {
-      const acik = bankaAciklamaKisa(k.aciklama);
-      let durum;
+      const dnm = k.yon === 'gider' ? giderAitDonem(k) : donemStr(k.tarih);
+      const dp = String(dnm || '').split('-'); const dnmKisa = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + String(dp[0] || '').slice(2);
+      let neyeAit, esles;
       if (k.yon === 'gider') {
         const gk = bankaGiderEsle(k);
-        durum = gk ? `<button type="button" class="ia-sd-durum gider" data-gtan="${i}">${kacar(gk)}</button>` : `<button type="button" class="ia-sd-durum tanimla" data-gtan="${i}">Gider Tanımla</button>`;
+        neyeAit = gk ? `<span class="ia-ait g">${kacar(gk)}</span>` : `<button type="button" class="ia-ait-sec" data-gtan="${i}">Gider Seç ›</button>`;
+        esles = gk ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">—</span>';
       } else {
+        const ilg = bankaIlgiliTahsilatlar(k);
+        neyeAit = ilg.length ? `<span class="ia-ait">${kacar(ilg[0].ogrenciAd || '—')}${ilg.length > 1 ? ` +${ilg.length - 1}` : ''}</span>` : `<span class="ogr-soluk">${kacar(bankaAciklamaKisa(k.aciklama) || '—')}</span>`;
         const es = bankaTahsilatEslesme(k);
-        if (!es) durum = '<span class="ia-sd-durum notr">—</span>';
-        else durum = es.durum === 'ok' ? '<span class="ia-sd-durum ok">✓ Uyuştu</span>' : `<button type="button" class="ia-sd-durum yok" data-uyum="${i}">Uyuşmadı</button>`;
+        esles = (es && es.durum === 'ok') ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">—</span>';
       }
       return `<tr data-brow="${i}">
-          <td data-l="Tarih">${kacar(kisaTarih(k.tarih))}</td>
-          <td data-l="İşlem">${kacar(k.islem)}</td>
-          <td data-l="Açıklama">${acik ? kacar(acik) : '<span class="ogr-soluk">—</span>'}</td>
-          <td data-l="Yön">${kacar(yonAdi(k.yon))}</td>
-          <td data-l="Tutar" class="sag mono">${TL(k.tutar)}</td>
-          <td data-l="Durum">${durum}</td>
+          <td data-l="Tarih" class="ia-tar-hcr"><span class="ia-tar-us">${kacar(kisaTarih(k.tarih))}</span><span class="ia-tar-dn">${kacar(dnmKisa)}</span></td>
+          <td data-l="Neye Ait">${neyeAit}</td>
+          <td data-l="Tutar" class="sag mono ${k.tutar < 0 ? 'ia-kir' : 'ia-yes'}">${TL(k.tutar)}</td>
+          <td data-l="Eşleşme" class="ort">${esles}</td>
         </tr>`;
     }).join('');
-    liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade">
-        <thead><tr><th>Tarih</th><th>İşlem</th><th>Açıklama</th><th>Yön</th><th class="sag">Tutar</th><th>Durum</th></tr></thead>
+    liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade ia-onizle-tablo">
+        <colgroup><col style="width:16%"><col style="width:44%"><col style="width:24%"><col style="width:16%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Neye Ait</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
         <tbody>${tbody}</tbody></table></div></div>`;
     // Devir (açılış) + aktarım sonrası (kapanış) bakiyesi — banka dosyasındaki Bakiye sütunundan
     // ve dosyanın kendi bakiyesiyle tutarlılık kontrolü (tüm hareketlerin toplamı = kapanış − devir)
@@ -2195,7 +2197,7 @@ function bankaDetayModal(k) {
   modalAc('Hareket Detayı', govde, '<button type="button" class="btn btn-ana" id="bdKapat" style="flex:1">Kapat</button>');
   $('#bdKapat').onclick = modalKapat;
   { const g = $('#bdGun'); if (g) g.onclick = () => { modalKapat(); bankaGunGoster(k); }; }
-  { const ds = $('#bdDonem'); if (ds && k.id) ds.onchange = async () => { const v = ds.value; await DB.guncelle('bankaHareketleri', k.id, { donem: v }); k.donem = v; State.bankaHareketleri = DB._oku('bankaHareketleri'); bildir('Gider dönemi güncellendi.', 'basari'); }; }
+  { const ds = $('#bdDonem'); if (ds) ds.onchange = async () => { const v = ds.value; k.donem = v; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { donem: v }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } bildir('Gider dönemi güncellendi.', 'basari'); }; }
 }
 /* Eşleşmeyen banka tahsilatı: uyarı + var olan tanımla eşleştir (batch → tanımlar ekranı) */
 function bankaEslestir(k) {
