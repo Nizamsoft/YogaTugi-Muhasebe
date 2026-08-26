@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '208';
+const APP_SURUM = '209';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '02:30';
+const APP_SURUM_SAAT = '09:30';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -6646,11 +6646,18 @@ SAYFALAR['hesap-defter'] = function () {
       : `<button type="button" class="duz-btn" data-hduz="${h.ref.id}" data-htip="${rtip}">${ik('kalem')} Düzenle</button>`}</td>
     </tr>`;
   };
+  // Banka: içe aktar önizlemesindeki sade satır düzeni (tarih → işlem → açıklama · sağ: yön → tutar → bakiye)
+  const bankaKart = (h) => `<div class="ia-satir" data-hdetay="${h.ref.id}">
+      <div class="ia-sd-sol"><span class="ia-eyb">${kacar(fmtTarihUzun(h.tarih))}</span><span class="ia-sd-ad">${kacar(h.aciklama || '—')}</span>${h.altYazi ? `<span class="ia-sd-ac">${kacar(h.altYazi)}</span>` : ''}</div>
+      <div class="ia-sd-sag"><span class="ia-eyb">${kacar(h.ilgiliAd || '')}</span><span class="ia-sd-tut ${h.tutar >= 0 ? 'pozitif' : 'negatif'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span><span class="ia-sd-bak">Bakiye ${binlik(h.bakiye)} ₺</span></div>
+    </div>`;
   const eslesir = (h, q) => { if (!q) return true; return [fmtTarihUzun(h.tarih), HS_PILL_AD[h.tip], h.aciklama, h.altYazi, h.ilgiliAd, binlik(Math.abs(h.tutar)), binlik(h.bakiye)].join(' ').toLocaleLowerCase('tr').includes(q); };
+  const bankaMi = hesapAktif === 'banka';
   const govdeCiz = () => {
     const q = (hesapArama || '').trim().toLocaleLowerCase('tr');
     const list = tumList.filter(h => eslesir(h, q));
-    return list.length ? list.map(satir).join('') : `<tr><td colspan="7"><div class="gp-bos" style="margin:6px 4px">Eşleşen hareket yok.</div></td></tr>`;
+    if (!list.length) return bankaMi ? `<div class="gp-bos" style="margin:10px 4px">Eşleşen hareket yok.</div>` : `<tr><td colspan="7"><div class="gp-bos" style="margin:6px 4px">Eşleşen hareket yok.</div></td></tr>`;
+    return list.map(bankaMi ? bankaKart : satir).join('');
   };
   ic().innerHTML = `
     <div class="odeme-sayfa">
@@ -6661,10 +6668,12 @@ SAYFALAR['hesap-defter'] = function () {
       </div>
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span class="ara-ik">${ik('ara')}</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
-      ? `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis hs-ledger">
+      ? (bankaMi
+        ? `<div class="hs-liste" id="hsListe">${govdeCiz()}</div>`
+        : `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis hs-ledger">
           <colgroup><col style="width:12%"><col style="width:11%"><col style="width:22%"><col style="width:17%"><col style="width:12%"><col style="width:15%"><col style="width:11%"></colgroup>
           <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>İlgili Ortak</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th><th></th></tr></thead>
-          <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`
+          <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`)
       : `<div class="gp-bos">Bu hesapta hareket yok.</div>`}
     </div>`;
   const rowBagla = () => {
@@ -6686,7 +6695,7 @@ SAYFALAR['hesap-defter'] = function () {
   };
   $$('[data-hs]').forEach(b => b.onclick = () => { hesapAktif = b.dataset.hs; hesapArama = ''; hesapSayfayiYenile(); });
   const ara = $('#hsAra');
-  if (ara) ara.addEventListener('input', () => { hesapArama = ara.value; const tb = $('#hsTbody'); if (tb) { tb.innerHTML = govdeCiz(); rowBagla(); } });
+  if (ara) ara.addEventListener('input', () => { hesapArama = ara.value; const tb = $('#hsTbody') || $('#hsListe'); if (tb) { tb.innerHTML = govdeCiz(); rowBagla(); } });
   rowBagla();
 };
 

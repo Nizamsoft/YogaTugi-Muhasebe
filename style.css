@@ -445,6 +445,9 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-sd-durum.yok,.ia-sd-durum.tanimla{color:var(--amber)}
 .ia-sd-durum.gider{color:var(--metin)}
 .ia-sd-durum.notr{color:var(--metin-soluk);opacity:.5;font-weight:700;cursor:default}
+/* Hesaplar > Banka: içe aktar önizlemesiyle aynı sade satır düzeni + güncel bakiye */
+.hs-liste{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:2px 14px;margin-top:2px}
+.ia-sd-bak{font-size:11px;color:var(--metin-soluk);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:1px}
 .ia-esles-ok.gid{color:var(--metin);background:var(--gri);border:1px solid var(--kenar);border-radius:999px;padding:5px 13px;font-size:11.5px;font-family:inherit;font-weight:800;cursor:pointer;white-space:nowrap}
 /* Devir / aktarım sonrası bakiye bantları (banka dosyasındaki Bakiye ile kontrol) */
 .ia-bakiye{border-radius:12px;padding:12px 14px}
