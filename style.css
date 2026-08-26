@@ -1642,11 +1642,31 @@ body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 .gg-ust .ay-nav .ay{padding:0 5px}
 .gg-ust .ay-nav .ay .m{font-size:13px}
 .gg-ust .ay-nav .ay .y{font-size:9px}
-/* Sade tablo: az yuvarlak + basınca yeşil olmaz */
-.ogr-tkart.sade{border-radius:8px;box-shadow:none}
+/* Tek satır üst şerit: başlık + ay + Tablo/Rapor (özet kaldırıldı) */
+.gg-tekbar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--kart);border:1px solid var(--kenar);border-radius:14px;padding:8px 11px;margin-bottom:12px}
+.gg-tekbar .gg-bas{flex:none;font-size:16px}
+.gg-tekbar-sag{display:flex;align-items:center;gap:7px;min-width:0}
+.gg-tekbar .ay-nav{padding:2px;border-radius:11px}
+.gg-tekbar .ay-nav button{width:26px;height:26px;font-size:13px;border-radius:8px}
+.gg-tekbar .ay-nav .ay{padding:0 4px}
+.gg-tekbar .ay-nav .ay .m{font-size:12px}
+.gg-tekbar .ay-nav .ay .y{font-size:8px;letter-spacing:1px}
+.gr-mini{margin:0;padding:3px;gap:3px;border-radius:9px;flex:none}
+.gr-mini .ia-oge{flex:none;padding:6px 10px;font-size:11.5px}
+/* Rapor iç kırılım seviyeleri (eğitmen → tür → tahsilat / grup → gider → kayıt) */
+.gr-sat.lv2{padding-left:30px}
+.gr-sat.lv3{padding:8px 18px 8px 46px;background:rgba(255,255,255,.015)}
+body.tema-neon .gr-sat.lv3{background:rgba(255,255,255,.02)}
+.gr-sat.lv3 .ad{font-size:12px;color:var(--metin-soluk);font-weight:600}
+.gr-sat.lv3 .gr-tut{font-size:12px}
+/* Sade tablo: az yuvarlak + basınca yeşil olmaz + ESKİ GOLD çizgiler yok */
+.ogr-tkart.sade{border-radius:10px;box-shadow:none;border:1px solid var(--kenar)}
+.ogr-tkart.sade::before{display:none}
+.ogr-tablo.sade tbody tr+tr td{border-top-color:var(--kenar)}
 .ogr-tablo.sade tbody tr:hover td{background:transparent}
 body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ogr-tablo.sade tbody tr{cursor:pointer}
+.ogr-tablo tr.hs-tikla{cursor:pointer}
 .gr-grpbas .gr-tut{font-size:15px}
 .gr-chev{flex:0 0 14px;text-align:center;color:#c9a94e;font-size:15px;opacity:.6}
 .gr-dip{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#2f3b30,#26302a);color:#f3ecd8}
