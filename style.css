@@ -615,14 +615,21 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kar-grup-not{font-size:11px;font-weight:600;color:var(--metin-soluk)}
 .kar-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:14px 16px;margin-bottom:11px}
 .kar-kart.maasli{border-style:dashed}
-/* Ortak kartı: 3 kolon — sol tam boy foto | başlık | tutar */
-.ok-kart{display:flex;align-items:stretch;gap:0;padding:0;overflow:hidden}
-.ok-foto{flex:0 0 92px;display:grid;place-items:center;background:var(--gri);overflow:hidden}
-.ok-foto img{width:100%;height:100%;object-fit:cover;display:block}
-.ok-foto.bos{font-family:Georgia,serif;font-size:30px;font-weight:800;color:var(--neon);background:rgba(180,232,58,.1)}
-.ok-sag{flex:1;min-width:0;padding:13px 15px;display:flex;flex-direction:column}
-.ok-ad{font-size:16px;font-weight:800;color:var(--metin);margin-bottom:6px;padding-bottom:9px;border-bottom:1px solid var(--kenar)}
-.ok-kart .kar-sat{padding:5px 0}
+/* Ortak kartı: avatar + isim başlık, altında gruplar (Gelir/Kesintiler/Sonuç, alt toplamlı) */
+.kk-kart{padding:16px 17px}
+.kk-bas{display:flex;align-items:center;gap:13px;padding-bottom:14px;border-bottom:1px solid var(--kenar);margin-bottom:6px}
+.kk-av{width:52px;height:52px;border-radius:50%;flex:0 0 auto;overflow:hidden;display:grid;place-items:center;font-family:Georgia,serif;font-weight:800;font-size:20px;color:var(--neon);background:rgba(180,232,58,.12);border:2px solid rgba(180,232,58,.4)}
+.kk-av img{width:100%;height:100%;object-fit:cover;display:block}
+.kk-ort{flex:1;min-width:0}
+.kk-ad{font-size:17px;font-weight:800;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kk-rol{font-size:11.5px;color:var(--metin-soluk);margin-top:2px}
+.kk-net{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kk-grup{margin-top:4px}
+.kk-grup-bas{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 2px 6px;border-bottom:1px solid var(--kenar);margin-bottom:4px}
+.kk-grup-bas .l{font-size:11px;font-weight:800;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.5px}
+.kk-grup-bas .t{font-size:14px;font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
+.kk-grup-bas .t.negatif{color:var(--kirmizi)}
+.kk-kart .kar-sat{padding:5px 0;font-size:13px}
 .kar-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .kar-ad{font-size:16px;font-weight:800;color:var(--metin)}
 .kar-e0{color:var(--amber);font-weight:800}

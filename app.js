@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '211';
+const APP_SURUM = '212';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '10:10';
+const APP_SURUM_SAAT = '11:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -906,44 +906,34 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const gKom = [...r.ortaklar, ...r.egitmenler].reduce((s, e) => s + e.komisyon, 0);
   const gNet = r.ortaklar.reduce((s, e) => s + e.net, 0);
   const sat = (l, v, cls = '') => `<div class="kar-sat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
-  const imzali = (n) => n ? '−' + TL(n) : TL(0);   // gider satırları: boşsa 0
+  const imzali = (n) => n ? '−' + TL(n) : TL(0);                                    // gider satırı: boşsa 0
+  const isaretli = (n) => Math.abs(n) < 0.5 ? TL(0) : (n < 0 ? '−' : '+') + TL(Math.abs(n));   // ±/0
   const ortAdBul = id => { const o = State.ortaklar.find(x => x.id === id); return o ? o.ad : '—'; };
-  const ortFoto = (id, ad) => { const o = State.ortaklar.find(x => x.id === id); return (o && o.foto) ? `<span class="ok-foto"><img src="${o.foto}" alt=""></span>` : `<span class="ok-foto bos">${basHarf(ad)}</span>`; };
-  // Ortak kartı: sol tam boy foto + sabit sıralı başlıklar (boşsa 0) + tutar
-  const ortakKart = (e) => `
-    <div class="kar-kart ok-kart">
-      ${ortFoto(e.id, e.ad)}
-      <div class="ok-sag">
-        <div class="ok-ad">${kacar(e.ad)}</div>
-        ${sat('Brüt Tahsilat', TL(e.brut))}
-        ${sat('Nakit', TL(e.nakit))}
-        ${sat('Havale', TL(e.havale))}
-        ${sat('Kart', TL(e.kart))}
-        ${sat('Kart Komisyonu', imzali(e.komisyon))}
-        ${sat('Genel Gider Payı', imzali(e.giderPayi))}
-        ${sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, imzali(e.vergi), 'kar-vergi')}
-        ${sat('Havuz Payı (maaşlı)', Math.abs(e.havuzPayi) > 0.5 ? (e.havuzPayi < 0 ? '−' : '+') + TL(Math.abs(e.havuzPayi)) : TL(0))}
-        ${sat('Net', TL(e.net), 'kar-net-b ' + (e.net < 0 ? 'negatif' : 'pozitif'))}
-        ${sat('Ödenen (huzur hakkı/payı)', imzali(e.odenen))}
-        ${sat('Kalan Verilecek', TL(e.kalan), e.kalan < 0 ? 'negatif' : 'pozitif')}
-      </div>
+  const ortAv = (id, ad) => { const o = State.ortaklar.find(x => x.id === id); return (o && o.foto) ? `<span class="kk-av"><img src="${o.foto}" alt=""></span>` : `<span class="kk-av bos">${basHarf(ad)}</span>`; };
+  const kkBas = (av, ad, net, rol) => `<div class="kk-bas">${av}<div class="kk-ort"><div class="kk-ad">${kacar(ad)}</div><div class="kk-rol">${rol}</div></div><span class="kk-net ${net < 0 ? 'negatif' : 'pozitif'}">${TL(net)}</span></div>`;
+  const grup = (etk, topStr, topCls, ic) => `<div class="kk-grup"><div class="kk-grup-bas"><span class="l">${etk}</span>${topStr ? `<span class="t ${topCls}">${topStr}</span>` : ''}</div>${ic}</div>`;
+  const vergiEt = `Vergi (havale+kart · %${Math.round(r.vOran * 100)})`;
+  // Ortak kartı: avatar + isim, altında Gelir / Kesintiler / Sonuç grupları (alt toplamlı)
+  const ortakKart = (e) => {
+    const kesTop = -(e.komisyon || 0) - (e.giderPayi || 0) - (e.vergi || 0) + (e.havuzPayi || 0);
+    return `<div class="kar-kart kk-kart">
+      ${kkBas(ortAv(e.id, e.ad), e.ad, e.net, 'Ortak')}
+      ${grup('Gelir', TL(e.brut), '', sat('Brüt Tahsilat', TL(e.brut)) + sat('Nakit', TL(e.nakit)) + sat('Havale', TL(e.havale)) + sat('Kart', TL(e.kart)))}
+      ${grup('Kesintiler', isaretli(kesTop), kesTop < 0 ? 'negatif' : '', sat('Kart Komisyonu', imzali(e.komisyon)) + sat('Genel Gider Payı', imzali(e.giderPayi)) + sat(vergiEt, imzali(e.vergi), 'kar-vergi') + sat('Havuz Payı (maaşlı)', isaretli(e.havuzPayi)))}
+      ${grup('Sonuç', '', '', sat('Net', TL(e.net), 'kar-net-b ' + (e.net < 0 ? 'negatif' : 'pozitif')) + sat('Ödenen (huzur hakkı/payı)', imzali(e.odenen)) + sat('Kalan Verilecek', TL(e.kalan), e.kalan < 0 ? 'negatif' : 'pozitif'))}
     </div>`;
+  };
   const dagitimEt = (m) => m.dagitim === 'havuz' ? '4 ortağa eşit' : m.dagitim === 'ortak' ? kacar(ortAdBul(m.hedefOrtakId)) : 'atanmadı';
-  const maasKart = (e) => `
-    <div class="kar-kart ok-kart maasli">
-      <span class="ok-foto bos">${basHarf(e.ad)}</span>
-      <div class="ok-sag">
-        <div class="ok-ad">${kacar(e.ad)}</div>
-        ${sat('Brüt Tahsilat', TL(e.brut))}
-        ${sat('Nakit', TL(e.nakit))}
-        ${sat('Havale', TL(e.havale))}
-        ${sat('Kart', TL(e.kart))}
-        ${sat('Kart Komisyonu', imzali(e.komisyon))}
-        ${sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, imzali(e.vergi), 'kar-vergi')}
-        ${sat('Net', TL(e.net), 'kar-net-b')}
-        <div class="kar-dagitim ${e.dagitim === 'bekliyor' ? 'bekliyor' : ''}">${ik('link')} Dağıtım: <b>${dagitimEt(e)}</b></div>
-      </div>
+  const maasKart = (e) => {
+    const kesTop = -(e.komisyon || 0) - (e.vergi || 0);
+    return `<div class="kar-kart kk-kart maasli">
+      ${kkBas(`<span class="kk-av bos">${basHarf(e.ad)}</span>`, e.ad, e.net, 'Maaşlı eğitmen')}
+      ${grup('Gelir', TL(e.brut), '', sat('Brüt Tahsilat', TL(e.brut)) + sat('Nakit', TL(e.nakit)) + sat('Havale', TL(e.havale)) + sat('Kart', TL(e.kart)))}
+      ${grup('Kesintiler', isaretli(kesTop), kesTop < 0 ? 'negatif' : '', sat('Kart Komisyonu', imzali(e.komisyon)) + sat(vergiEt, imzali(e.vergi), 'kar-vergi'))}
+      ${grup('Sonuç', '', '', sat('Net', TL(e.net), 'kar-net-b'))}
+      <div class="kar-dagitim ${e.dagitim === 'bekliyor' ? 'bekliyor' : ''}">${ik('link')} Dağıtım: <b>${dagitimEt(e)}</b></div>
     </div>`;
+  };
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="kar-ust"><h3 class="kar-baslik">Kârlılık</h3><div class="kar-ust-sag"><button type="button" class="btn btn-kucuk" id="karEsle">${ik('kisi')} Eğitmen Eşleme</button>${ayNavHTML(donem)}</div></div>
