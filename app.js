@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '207';
+const APP_SURUM = '208';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '02:00';
+const APP_SURUM_SAAT = '02:30';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -6570,6 +6570,24 @@ function kartBorcu() {
 }
 /* Bir hesabın hareketleri (kronolojik artan + işleyen bakiye) */
 function hesapHareketleri(hesap) {
+  // Banka: içe aktarılan banka ekstresi (bankaHareketleri) — bakiye ekstredeki gerçek bakiyeden
+  if (hesap === 'banka') {
+    const YON_AD = { gelir: 'Tahsilat', komisyon: 'Komisyon', gider: 'Gider', ortakOdeme: 'Ortak' };
+    const bh = (State.bankaHareketleri || []).slice()
+      .sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || (a.olusturma || '').localeCompare(b.olusturma || ''));
+    let bak = null;
+    return bh.map(k => {
+      const tutar = Number(k.tutar) || 0;
+      if (k.bakiye != null && !isNaN(Number(k.bakiye))) bak = Number(k.bakiye);   // ekstredeki gerçek bakiye
+      else bak = (bak == null ? 0 : bak) + tutar;                                 // yoksa devral
+      return {
+        tip: tutar >= 0 ? 'tahsilat' : 'gider', tarih: k.tarih, ilgiliId: null,
+        ilgiliAd: (k.yon === 'gider' ? (k.giderKategori || '') : '') || YON_AD[k.yon] || '—',
+        aciklama: k.islem, altYazi: bankaAciklamaKisa(k.aciklama), altTip: 'gr',
+        tutar, bakiye: bak, banka: true, ref: k,
+      };
+    });
+  }
   const t = HESAP_TANIM[hesap];
   const har = [];
   // Gelir → Açıklama = ödeme türü (Havale/Kredi Kartı/Nakit), alt satır = paket - öğrenci; İlgili Ortak = eğitmen
@@ -6623,7 +6641,9 @@ SAYFALAR['hesap-defter'] = function () {
       <td data-l="İlgili Ortak">${ortHucre}</td>
       <td data-l="Tutar" class="sag"><span class="hs-art ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span></td>
       <td data-l="Güncel Bakiye" class="sag"><span class="hs-bak">${binlik(h.bakiye)} ₺</span></td>
-      <td class="sag"><button type="button" class="duz-btn" data-hduz="${h.ref.id}" data-htip="${rtip}">${ik('kalem')} Düzenle</button></td>
+      <td class="sag">${h.banka
+      ? `<button type="button" class="duz-btn" data-hdetay="${h.ref.id}">${ik('belge')} Detay</button>`
+      : `<button type="button" class="duz-btn" data-hduz="${h.ref.id}" data-htip="${rtip}">${ik('kalem')} Düzenle</button>`}</td>
     </tr>`;
   };
   const eslesir = (h, q) => { if (!q) return true; return [fmtTarihUzun(h.tarih), HS_PILL_AD[h.tip], h.aciklama, h.altYazi, h.ilgiliAd, binlik(Math.abs(h.tutar)), binlik(h.bakiye)].join(' ').toLocaleLowerCase('tr').includes(q); };
@@ -6648,6 +6668,7 @@ SAYFALAR['hesap-defter'] = function () {
       : `<div class="gp-bos">Bu hesapta hareket yok.</div>`}
     </div>`;
   const rowBagla = () => {
+    $$('[data-hdetay]').forEach(b => b.onclick = () => { const k = (State.bankaHareketleri || []).find(x => x.id === b.dataset.hdetay); if (k) bankaDetayModal(k); });
     $$('[data-hduz]').forEach(b => b.onclick = () => {
       if (b.dataset.htip === 'tahsilat') { const od = State.odemeler.find(x => x.id === b.dataset.hduz); if (od) islemYapModal({ tip: 'gelir', mevcut: od }); }
       else { const g = State.giderKayitlari.find(x => x.id === b.dataset.hduz); if (g) { if (g.otoKomisyon || g.kkOdeme) giderKayitFormu(g); else islemYapModal({ tip: 'gider', mevcut: g }); } }
