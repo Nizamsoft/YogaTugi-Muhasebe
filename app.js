@@ -540,7 +540,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '247';
+const APP_SURUM = '248';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -8116,7 +8116,7 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel' },
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
   { tip: 'aksiyon', id: 'tahsilat-yeni', ad: 'Tahsilat Ekle', ikon: 'arti', merkez: true },
-  { tip: 'sayfa', id: 'gelirler', ad: 'Gelirler', ikon: 'gelir' },
+  { tip: 'sayfa', id: 'karlilik', ad: 'Ortaklar', ikon: 'ortaklar' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
