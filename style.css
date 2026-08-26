@@ -1695,6 +1695,14 @@ body.tema-koyu .krs-tablo tbody td.num{color:#cdba86}
 .gp-alan label{display:block;font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--metin-soluk);margin:0 0 7px 2px}
 .gp-alan label.gp-lbl-ik{display:flex;align-items:center;gap:6px}
 .gp-alan label.gp-lbl-ik .uik{width:13px;height:13px;flex:none;color:var(--neon);opacity:.92}
+/* Stilli <select> (Ait Olduğu Dönem vb.) */
+.gp-sel-sar{position:relative}
+.gp-sel-sar .st-ok{position:absolute;right:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--metin-soluk);font-size:12px}
+.gp-sel{width:100%;border:1px solid var(--kenar);background:#fff;border-radius:13px;padding:13px 36px 13px 14px;font-size:15px;color:var(--metin);font-family:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
+.gp-sel:focus{outline:none;border-color:var(--gold)}
+body.tema-neon .gp-sel{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
+body.tema-neon .gp-sel:focus{border-color:var(--neon)}
+.bd-donem-not{font-size:11.5px;color:var(--metin-soluk);margin-top:7px;line-height:1.4}
 .gp-inp{width:100%;border:1px solid var(--kenar);background:#fff;border-radius:13px;padding:13px 14px;font-size:15px;color:var(--metin);font-family:inherit}
 .gp-inp:focus{outline:none;border-color:var(--gold)}
 .gp-kaydet{width:100%;border:none;border-radius:13px;padding:14px;font-weight:800;font-size:15px;color:#40320f;cursor:pointer;font-family:inherit;
