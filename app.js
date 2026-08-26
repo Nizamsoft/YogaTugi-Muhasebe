@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '236';
+const APP_SURUM = '237';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1192,7 +1192,7 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
     const kesit = kayitlar.slice(0, gelirLimit); const dahaVar = kayitlar.length > gelirLimit;
     return `<div class="defter-bas">Tahsilat Defteri</div>
       <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir">
-        <colgroup><col style="width:18%"><col style="width:30%"><col style="width:16%"><col style="width:20%"><col style="width:16%"></colgroup>
+        <colgroup><col style="width:14%"><col style="width:29%"><col style="width:15%"><col style="width:16%"><col style="width:26%"></colgroup>
         <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Tür</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
         <tbody>${kesit.map(p => {
           const dn = donemStr(p.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
@@ -2089,8 +2089,8 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
           <td data-l="Eşleşme" class="ort">${esles}</td>
         </tr>`;
     }).join('');
-    liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade ia-onizle-tablo">
-        <colgroup><col style="width:22%"><col style="width:46%"><col style="width:20%"><col style="width:12%"></colgroup>
+    liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade ia-onizle-tablo iki-satir">
+        <colgroup><col style="width:18%"><col style="width:32%"><col style="width:32%"><col style="width:18%"></colgroup>
         <thead><tr><th>Tarih</th><th>Gider / Eğitmen</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
         <tbody>${tbody}</tbody></table></div></div>`;
     // Devir (açılış) + aktarım sonrası (kapanış) bakiyesi — banka dosyasındaki Bakiye sütunundan
@@ -7160,7 +7160,7 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
     const kesit = kalemler.slice(0, giderLimit); const dahaVar = kalemler.length > giderLimit;
     return `<div class="defter-bas">Masraf Defteri</div>
       <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir">
-        <colgroup><col style="width:20%"><col style="width:42%"><col style="width:22%"><col style="width:16%"></colgroup>
+        <colgroup><col style="width:18%"><col style="width:36%"><col style="width:20%"><col style="width:26%"></colgroup>
         <thead><tr><th>Tarih</th><th>Gider Adı</th><th>Eğitmen</th><th class="sag">Tutar</th></tr></thead>
         <tbody>${kesit.map((k, i) => {
           const dn = k.donem || donemStr(k.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
