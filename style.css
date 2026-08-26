@@ -1725,6 +1725,10 @@ body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ogr-tablo.sade.iki-satir thead th{white-space:nowrap}
 .ogr-tablo.sade.iki-satir .rozet-etk{font-size:8.5px}
 .ogr-tablo.sade.iki-satir td.c-roz{overflow:visible;text-overflow:clip}
+/* Gelir: Tutar hücresi 2 satır — üstte tutar, altta tür rozeti (sağa yaslı) */
+.ogr-tablo.sade.iki-satir td.tut2{text-align:right;white-space:nowrap;overflow:visible;text-overflow:clip}
+.tut2-us{display:block;font-weight:800;font-size:12px;font-variant-numeric:tabular-nums}
+.tut2-dn{display:inline-block;margin-top:4px;font-size:8.5px}
 .ia-isl-ad{display:block;font-weight:700;font-size:13.5px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
 .ia-isl-ac{display:block;font-size:11.5px;color:var(--metin-soluk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;margin-top:2px}
 .ia-ait{font-weight:600} .ia-ait.g{color:var(--metin)}

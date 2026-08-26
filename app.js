@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '238';
+const APP_SURUM = '239';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1192,12 +1192,12 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
     const kesit = kayitlar.slice(0, gelirLimit); const dahaVar = kayitlar.length > gelirLimit;
     return `<div class="defter-bas">Tahsilat Defteri</div>
       <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir">
-        <colgroup><col style="width:14%"><col style="width:29%"><col style="width:15%"><col style="width:16%"><col style="width:26%"></colgroup>
-        <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Tür</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
+        <colgroup><col style="width:16%"><col style="width:32%"><col style="width:22%"><col style="width:30%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
         <tbody>${kesit.map(p => {
           const dn = donemStr(p.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
           const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
-          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Tür" class="c-roz"><span class="rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td></tr>`;
+          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(p.tutar)}</span><span class="tut2-dn rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td></tr>`;
         }).join('')}</tbody>
       </table></div></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="glDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kayitlar.length - gelirLimit)})</button>` : ''}`;
