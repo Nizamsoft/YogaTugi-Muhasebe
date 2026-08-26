@@ -1667,16 +1667,21 @@ body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 .gg-tekbar .gg-bas{flex:0 1 auto;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gg-tekbar-sag{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
 /* kompakt ay seçici — küçük, gold halka yok, min-width küçültüldü */
-.gg-tekbar .ay-nav{padding:2px;border-radius:10px;flex:none;background:var(--gri);border-color:var(--kenar);box-shadow:none}
+/* Ay seçici — C: ay büyük, yıl neon, oklar düz */
+.gg-tekbar .ay-nav{padding:2px 4px;border-radius:11px;flex:none;background:var(--gri);border-color:var(--kenar);box-shadow:none}
 .gg-tekbar .ay-nav::before{display:none}
-.gg-tekbar .ay-nav button{background:var(--kart);color:var(--metin-soluk);box-shadow:none}
-.gg-tekbar .ay-nav .ay .m{color:var(--metin)} .gg-tekbar .ay-nav .ay .y{color:var(--metin-soluk)}
-.gg-tekbar .ay-nav button{width:22px;height:22px;font-size:12px;border-radius:7px}
-.gg-tekbar .ay-nav .ay{min-width:56px;padding:0 2px}
-.gg-tekbar .ay-nav .ay .m{font-size:11.5px}
-.gg-tekbar .ay-nav .ay .y{font-size:7.5px;letter-spacing:.5px}
-.gr-mini{margin:0;padding:3px;gap:2px;border-radius:9px;flex:none}
-.gr-mini .ia-oge{flex:none;padding:6px 9px;font-size:11px}
+.gg-tekbar .ay-nav button{background:transparent;color:var(--metin-soluk);box-shadow:none;width:19px;height:22px;font-size:13px;border-radius:6px}
+.gg-tekbar .ay-nav button:hover{color:var(--neon)}
+.gg-tekbar .ay-nav .ay{min-width:50px;padding:0 2px}
+.gg-tekbar .ay-nav .ay .m{color:var(--metin);font-size:12.5px;font-weight:700}
+.gg-tekbar .ay-nav .ay .y{color:var(--neon);opacity:.85;font-size:8px;letter-spacing:.5px;font-weight:800}
+/* Tablo/Rapor · Ben/Ortaklar — B: ikonlu segment, yumuşak aktif */
+.gr-mini{margin:0;padding:2px;gap:2px;border-radius:9px;flex:none;background:var(--gri);border-color:var(--kenar)}
+.gr-mini .ia-oge{flex:none;display:inline-flex;align-items:center;gap:4px;padding:6px 8px;font-size:10.5px;color:var(--metin-soluk);background:transparent;box-shadow:none}
+body.tema-neon .gr-mini .ia-oge.sec{background:var(--kart);color:var(--metin);box-shadow:0 1px 2px rgba(0,0,0,.28)}
+.gr-mini .ia-oge .seg-ik{display:inline-flex;color:currentColor;opacity:.8}
+.gr-mini .ia-oge.sec .seg-ik{color:var(--neon);opacity:1}
+.gr-mini .seg-svg{width:12px;height:12px;flex:none}
 .kar-arac-row{display:flex;justify-content:flex-end;gap:8px;margin:0 0 12px;flex-wrap:wrap}
 /* Rapor iç kırılım seviyeleri (eğitmen → tür → tahsilat / grup → gider → kayıt) */
 .gr-sat.lv2{padding-left:30px}

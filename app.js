@@ -177,6 +177,16 @@ function ayNavHTML(donem) {
   const [y, m] = donem.split('-');
   return `<div class="ay-nav"><button type="button" data-ay="-1" aria-label="Önceki ay">‹</button><span class="ay"><span class="m">${aylar[parseInt(m, 10) - 1]}</span><span class="y">${y}</span></span><button type="button" data-ay="1" aria-label="Sonraki ay">›</button></div>`;
 }
+/* Tablo/Rapor · Ben/Ortaklar segment ikonu (küçük satır içi svg) */
+function segIk(n) {
+  const p = {
+    tablo: '<path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    rapor: '<path d="M5 20V11M12 20V5M19 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    ben: '<circle cx="12" cy="8" r="3.1" stroke="currentColor" stroke-width="1.9"/><path d="M5.5 20c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    ortaklar: '<circle cx="9" cy="8" r="2.5" stroke="currentColor" stroke-width="1.8"/><circle cx="16.4" cy="9" r="2.1" stroke="currentColor" stroke-width="1.8"/><path d="M3.6 19c0-2.9 2.4-5 5.4-5s5.4 2.1 5.4 5M15 14.2c2.3.2 4.4 2 4.4 4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  };
+  return `<svg class="seg-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">${p[n] || ''}</svg>`;
+}
 function kacar(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 /* Dönemi (YYYY-MM) n ay kaydır */
 function donemKaydir(donem, n) {
@@ -540,7 +550,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '248';
+const APP_SURUM = '249';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1131,7 +1141,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     <div class="kar-sayfa">
       <div class="gg-tekbar">
         <span class="gg-bas">Ortaklar</span>
-        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${karGorunum === 'ben' ? 'sec' : ''}" data-kg="ben">Ben</button><button type="button" class="ia-oge ${karGorunum === 'ortaklar' ? 'sec' : ''}" data-kg="ortaklar">Ortaklar</button></div></div>
+        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${karGorunum === 'ben' ? 'sec' : ''}" data-kg="ben"><span class="seg-ik">${segIk('ben')}</span>Ben</button><button type="button" class="ia-oge ${karGorunum === 'ortaklar' ? 'sec' : ''}" data-kg="ortaklar"><span class="seg-ik">${segIk('ortaklar')}</span>Ortaklar</button></div></div>
       </div>
       ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “Tahsilat Tanımla” ile tahsilatları girin, ardından “İçe Aktar” ile banka dosyasını yükleyip eşleştirin.</p></div>` : `
       ${gosterilecek.map(ortakKart).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}
@@ -1279,7 +1289,7 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
     <div class="kar-sayfa">
       <div class="gg-tekbar">
         <span class="gg-bas">Gelirler</span>
-        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${gelirGorunum === 'tablo' ? 'sec' : ''}" data-glr="tablo">Tablo</button><button type="button" class="ia-oge ${gelirGorunum === 'rapor' ? 'sec' : ''}" data-glr="rapor">Rapor</button></div></div>
+        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${gelirGorunum === 'tablo' ? 'sec' : ''}" data-glr="tablo"><span class="seg-ik">${segIk('tablo')}</span>Tablo</button><button type="button" class="ia-oge ${gelirGorunum === 'rapor' ? 'sec' : ''}" data-glr="rapor"><span class="seg-ik">${segIk('rapor')}</span>Rapor</button></div></div>
       </div>
       <div id="glGovde">${gelirGorunum === 'rapor' ? raporCiz() : tabloCiz()}</div>
     </div>`;
@@ -7277,7 +7287,7 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
     <div class="kar-sayfa">
       <div class="gg-tekbar">
         <span class="gg-bas">Giderler</span>
-        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${giderGorunum === 'tablo' ? 'sec' : ''}" data-gdg="tablo">Tablo</button><button type="button" class="ia-oge ${giderGorunum === 'rapor' ? 'sec' : ''}" data-gdg="rapor">Rapor</button></div></div>
+        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${giderGorunum === 'tablo' ? 'sec' : ''}" data-gdg="tablo"><span class="seg-ik">${segIk('tablo')}</span>Tablo</button><button type="button" class="ia-oge ${giderGorunum === 'rapor' ? 'sec' : ''}" data-gdg="rapor"><span class="seg-ik">${segIk('rapor')}</span>Rapor</button></div></div>
       </div>
       <div id="gdGovde">${giderGorunum === 'rapor' ? raporCiz() : tabloCiz()}</div>
     </div>`;
