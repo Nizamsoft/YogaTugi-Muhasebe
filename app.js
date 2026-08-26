@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '221';
+const APP_SURUM = '222';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1145,7 +1145,12 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
     .sort((a, b) => (b.tarih || '').localeCompare(a.tarih || ''));
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
   const bru = topla(kayitlar), nak = topla(kayitlar.filter(p => p.odemeTuru === 'nakit')), hav = topla(kayitlar.filter(p => p.odemeTuru === 'havale')), krt = topla(kayitlar.filter(p => p.odemeTuru === 'kart' || p.odemeTuru === 'multinet'));
-  const turRoz = (t) => { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t || '—'}</span>`; };
+  const turAd = { nakit: 'Nakit', havale: 'Havale', kart: 'Kart', multinet: 'Multinet' };
+  // Banka hareketleri gibi sade kart: sol (tarih · öğrenci · tür/paket) — sağ (eğitmen · +tutar)
+  const gelirKart = (p) => `<div class="ia-satir" data-gelir="${p.id}">
+      <div class="ia-sd-sol"><span class="ia-eyb">${kacar(fmtTarihUzun(p.tarih))}</span><span class="ia-sd-ad">${kacar(p.ogrenciAd || '—')}</span><span class="ia-sd-ac">${kacar(turAd[p.odemeTuru] || p.odemeTuru || '—')}${p.dersPaketi ? ' · ' + kacar(p.dersPaketi) : ''}</span></div>
+      <div class="ia-sd-sag"><span class="ia-eyb">${kacar(p.egitmenAd || '—')}</span><span class="ia-sd-tut pozitif">+${binlik(p.tutar)} ₺</span></div>
+    </div>`;
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="kar-ust"><h3 class="kar-baslik">Gelirler</h3>${ayNavHTML(donem)}</div>
@@ -1155,12 +1160,12 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
         <div class="kg-kutu"><span>Havale</span><b>${TL(hav)}</b></div>
         <div class="kg-kutu"><span>Kart</span><b>${TL(krt)}</b></div>
       </div>
-      ${kayitlar.length ? `<div class="tablo-sar"><table class="tablo ogr-tablo"><thead><tr><th>Tarih</th><th>Eğitmen</th><th>Öğrenci</th><th>Tür</th><th class="sag">Tutar</th></tr></thead><tbody>
-        ${kayitlar.map(p => `<tr><td>${kacar(kisaTarih(p.tarih))}</td><td>${kacar(p.egitmenAd || '—')}</td><td>${kacar(p.ogrenciAd || '—')}</td><td>${turRoz(p.odemeTuru)}</td><td class="sag mono">${TL(p.tutar)}</td></tr>`).join('')}
-      </tbody></table></div>`
-      : `<div class="faz-bos"><div class="faz-ik">${ik('gelir')}</div><h3>Bu dönemde gelir yok</h3><p>“Tahsilat Tanımla” ile tahsilat girin.</p></div>`}
+      ${kayitlar.length
+        ? `<div class="hs-liste" style="margin-top:12px">${kayitlar.map(gelirKart).join('')}</div>`
+        : `<div class="faz-bos"><div class="faz-ik">${ik('gelir')}</div><h3>Bu dönemde gelir yok</h3><p>“Tahsilat Ekle” ile tahsilat girin.</p></div>`}
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { gelirDonem = donemKaydir(donem, Number(b.dataset.ay)); gelirlerSayfasi(); });
+  $$('[data-gelir]').forEach(b => b.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.gelir), () => gelirlerSayfasi()));
 };
 
 /* ---- Ayar: Banka gider kategorileri (kural editörü) ---- */
@@ -1561,9 +1566,10 @@ function tahsilatTanimModal(mevcut, sonrasi) {
   $('#ttKaydet').onclick = async () => {
     const ogrenciAd = (ttForm.ogrenciAd || '').trim();
     const tutar = tutarSayi($('#ttTutar').value);
+    const egitmenAd = (ttForm.egitmenAd || '').trim();
     if (!ogrenciAd) { bildir('Öğrenci adı gerekli.', 'uyari'); return; }
     if (!tutar) { bildir('Tutar gerekli.', 'uyari'); return; }
-    const egitmenAd = (ttForm.egitmenAd || '').trim();
+    if (!egitmenAd) { bildir('İlgili kişi (eğitmen) seçmelisiniz.', 'uyari'); return; }
     const kayit = {
       ogrenciAd, odemeTuru: ttForm.odemeTuru, kartTipi: ttForm.odemeTuru === 'kart' ? ttForm.kartTipi : null,
       tutar, komisyonOran: tahsilatKomisyonOran(ttForm.odemeTuru, ttForm.kartTipi),
