@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '233';
+const APP_SURUM = '234';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -969,6 +969,7 @@ function egitmenKarlilik(donem) {
 }
 let karDonem = null;
 let karAcikSet = new Set();   // açık (genişlemiş) ortak/maaşlı kartları
+let karGorunum = 'ortaklar';  // 'ben' (kendi kartı) | 'ortaklar' (hepsi)
 SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const donem = karDonem || buAy();
   const r = egitmenKarlilik(donem);
@@ -1050,15 +1051,22 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   };
   const ortakKart = (e) => kartCiz(e, 'Ortak');
   const maasKart = (e) => kartCiz(e, 'Maaşlı eğitmen');
+  const benim = benId();
+  const gosterilecek = (karGorunum === 'ben' && benim) ? r.ortaklar.filter(o => o.id === benim) : r.ortaklar;
+  const benMod = karGorunum === 'ben';
   ic().innerHTML = `
     <div class="kar-sayfa">
-      <div class="kar-ust"><h3 class="kar-baslik">Kârlılık</h3><div class="kar-ust-sag"><button type="button" class="btn btn-kucuk ${r.tah && (r.tah.kdv !== '' || r.tah.gv !== '') ? 'sec' : ''}" id="karTahakkuk">${ik('kaydet')} Tahakkuk</button><button type="button" class="btn btn-kucuk" id="karEsle">${ik('kisi')} Eğitmen Eşleme</button>${ayNavHTML(donem)}</div></div>
+      <div class="gg-tekbar">
+        <span class="gg-bas">Ortaklar</span>
+        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${karGorunum === 'ben' ? 'sec' : ''}" data-kg="ben">Ben</button><button type="button" class="ia-oge ${karGorunum === 'ortaklar' ? 'sec' : ''}" data-kg="ortaklar">Ortaklar</button></div></div>
+      </div>
+      <div class="kar-arac-row"><button type="button" class="btn btn-kucuk ${r.tah && (r.tah.kdv !== '' || r.tah.gv !== '') ? 'sec' : ''}" id="karTahakkuk">${ik('kaydet')} Tahakkuk</button><button type="button" class="btn btn-kucuk" id="karEsle">${ik('kisi')} Eğitmen Eşleme</button></div>
       ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “Tahsilat Tanımla” ile tahsilatları girin, ardından “İçe Aktar” ile banka dosyasını yükleyip eşleştirin.</p></div>` : `
-      <h4 class="kar-grup">Ortaklar</h4>
-      ${r.ortaklar.map(ortakKart).join('')}
-      ${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
+      ${gosterilecek.map(ortakKart).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}
+      ${!benMod && r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
+  $$('[data-kg]').forEach(b => b.onclick = () => { karGorunum = b.dataset.kg; karlilikSayfasi(); });
   const eb = $('#karEsle'), eb2 = $('#karEsle2'); if (eb) eb.onclick = () => git('tanim-egitmen'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
   $$('.kk-bas2[data-tog]').forEach(b => b.onclick = () => { const id = b.dataset.tog; if (karAcikSet.has(id)) karAcikSet.delete(id); else karAcikSet.add(id); karlilikSayfasi(); });
   $$('[data-mahsup]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); mahsupDetayModal(donem, b.dataset.mahsup); });
@@ -1804,6 +1812,12 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
 function iaTabCiz() {
   const g = $('#iaGovde'); const isPf = iaSekme === 'planformi';
   if (iaArsivAcik) { iaArsivCiz(g, isPf); return; }
+  // Dosya yüklüyse yükleme kutusu gizlenir, tam ekran önizleme gösterilir
+  if (iaSonKayitlar && iaSonSekme === iaSekme) {
+    g.innerHTML = `<div id="iaOnizle"></div>`;
+    iaOnizleCiz(iaSonKayitlar, iaSonDosya);
+    return;
+  }
   g.innerHTML = `
     <label class="ia-drop" id="iaDrop">
       <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
@@ -1817,8 +1831,6 @@ function iaTabCiz() {
   drop.addEventListener('dragleave', () => drop.classList.remove('uzeri'));
   drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('uzeri'); if (e.dataTransfer.files[0]) iaIsle(e.dataTransfer.files[0]); });
   inp.onchange = () => { if (inp.files[0]) iaIsle(inp.files[0]); };
-  // Tutulan önizlemeyi geri yükle (başka sayfaya gidip dönünce olduğu yerde kalsın)
-  if (iaSonKayitlar && iaSonSekme === iaSekme) iaOnizleCiz(iaSonKayitlar, iaSonDosya);
 }
 /* Nakit sekmesi kaldırıldı — nakit tahsilat: Tahsilat Defteri girişi, nakit harcama: Veri Gir >
    Nakit Harcama; ikisi de Kasa (Hesaplar > Nakit) defterinde görünür. */
@@ -2091,7 +2103,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   }
   on.innerHTML = `
     <div class="ia-onizle">
-      <div class="ia-dosad">${ik('belge')} ${kacar(dosyaAd)}</div>
+      <div class="ia-dosad"><span class="ia-dosad-ad">${ik('belge')} ${kacar(dosyaAd)}</span><button type="button" class="ia-yeni-dosya" id="iaYeniDosya">${ik('indir')} Yeni dosya</button></div>
       <div class="ia-ozet">${ozet}</div>
       ${bakiyeUst}
       ${liste}
@@ -2102,6 +2114,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     </div>`;
   $$('.ia-flt-b', on).forEach(b => b.onclick = () => { iaOnFiltre = b.dataset.flt; iaOnLimit = 12; iaOnizleCiz(iaSonKayitlar, iaSonDosya); });
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
+  { const yd = $('#iaYeniDosya'); if (yd) yd.onclick = () => { iaSonKayitlar = null; iaSonSekme = ''; iaOnFiltre = 'yok'; iaOnLimit = 12; iaTabCiz(); }; }
   if (pfRows) $$('.ia-esles-btn', on).forEach(b => b.onclick = () => { const r = pfRows[+b.dataset.esl]; if (r) ttEslestirSec(r.k); });
   if (!isPf) {
     $$('tr[data-brow]', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
