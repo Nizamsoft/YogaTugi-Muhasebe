@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '235';
+const APP_SURUM = '236';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1191,9 +1191,14 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
     if (!kayitlar.length) return `<div class="defter-bas">Tahsilat Defteri</div><div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
     const kesit = kayitlar.slice(0, gelirLimit); const dahaVar = kayitlar.length > gelirLimit;
     return `<div class="defter-bas">Tahsilat Defteri</div>
-      <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade">
-        <thead><tr><th>Tarih</th><th>Üye Adı</th><th>Ödeme Türü</th><th class="sag">Tutar</th><th>Eğitmen</th><th>Ders Adı</th></tr></thead>
-        <tbody>${kesit.map(p => `<tr data-gelir="${p.id}"><td data-l="Tarih">${kacar(kisaTarih(p.tarih))}</td><td data-l="Üye Adı">${kacar(p.ogrenciAd || '—')}</td><td data-l="Ödeme Türü">${kacar(turAd(p.odemeTuru))}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td><td data-l="Eğitmen">${kacar(p.egitmenAd || '—')}</td><td data-l="Ders Adı">${kacar(p.dersPaketi || '—')}</td></tr>`).join('')}</tbody>
+      <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir">
+        <colgroup><col style="width:18%"><col style="width:30%"><col style="width:16%"><col style="width:20%"><col style="width:16%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Tür</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
+        <tbody>${kesit.map(p => {
+          const dn = donemStr(p.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+          const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
+          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Tür"><span class="rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td></tr>`;
+        }).join('')}</tbody>
       </table></div></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="glDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kayitlar.length - gelirLimit)})</button>` : ''}`;
   };
@@ -2061,29 +2066,32 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     tbody = bkesit.map((k, i) => {
       const dnm = k.yon === 'gider' ? giderAitDonem(k) : donemStr(k.tarih);
       const dp = String(dnm || '').split('-'); const dnmKisa = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + String(dp[0] || '').slice(2);
-      let neyeAit, esles;
+      const ackKisa = bankaAciklamaKisa(k.aciklama);
+      let ust, alt, esles;
       if (k.yon === 'gider') {
         const gk = bankaGiderEsle(k);
-        neyeAit = gk ? `<span class="ia-ait g">${kacar(gk)}</span>` : `<button type="button" class="ia-ait-sec" data-gtan="${i}">Gider Seç ›</button>`;
+        ust = gk ? `<span class="a2-us">${kacar(gk)}</span>` : `<button type="button" class="ia-ait-sec" data-gtan="${i}">Gider Seç ›</button>`;
+        alt = kacar(k.islem || ackKisa || '');   // 2. satır: ekstredeki işlem/açıklama
         esles = gk ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">—</span>';
       } else {
         const ilg = bankaIlgiliTahsilatlar(k);
-        neyeAit = ilg.length ? `<span class="ia-ait">${kacar(ilg[0].ogrenciAd || '—')}${ilg.length > 1 ? ` +${ilg.length - 1}` : ''}</span>` : `<span class="ogr-soluk">${kacar(bankaAciklamaKisa(k.aciklama) || '—')}</span>`;
+        const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
+        const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
+        ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
+        alt = ogr.length ? kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : '')) : kacar(k.islem || '');
         const es = bankaTahsilatEslesme(k);
         esles = (es && es.durum === 'ok') ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">—</span>';
       }
-      const ackKisa = bankaAciklamaKisa(k.aciklama);
       return `<tr data-brow="${i}">
           <td data-l="Tarih" class="ia-tar-hcr"><span class="ia-tar-us">${kacar(kisaTarih(k.tarih))}</span><span class="ia-tar-dn">${kacar(dnmKisa)}</span></td>
-          <td data-l="İşlem"><span class="ia-isl-ad">${kacar(k.islem || '—')}</span>${ackKisa ? `<span class="ia-isl-ac">${kacar(ackKisa)}</span>` : ''}</td>
-          <td data-l="Neye Ait">${neyeAit}</td>
+          <td data-l="Gider / Eğitmen" class="a2-hcr">${ust}${alt ? `<span class="a2-dn">${alt}</span>` : ''}</td>
           <td data-l="Tutar" class="sag mono ${k.tutar < 0 ? 'ia-kir' : 'ia-yes'}">${TL(k.tutar)}</td>
           <td data-l="Eşleşme" class="ort">${esles}</td>
         </tr>`;
     }).join('');
     liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade ia-onizle-tablo">
-        <colgroup><col style="width:15%"><col style="width:30%"><col style="width:24%"><col style="width:19%"><col style="width:12%"></colgroup>
-        <thead><tr><th>Tarih</th><th>İşlem</th><th>Neye Ait</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
+        <colgroup><col style="width:22%"><col style="width:46%"><col style="width:20%"><col style="width:12%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Gider / Eğitmen</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
         <tbody>${tbody}</tbody></table></div></div>`;
     // Devir (açılış) + aktarım sonrası (kapanış) bakiyesi — banka dosyasındaki Bakiye sütunundan
     // ve dosyanın kendi bakiyesiyle tutarlılık kontrolü (tüm hareketlerin toplamı = kapanış − devir)
@@ -6918,12 +6926,13 @@ function kartBorcu() {
 function nakitDefteri() {
   const rows = [];
   (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'nakit').forEach(t => {
-    rows.push({ kind: 'tahsilat', tarih: t.tarih, aciklama: t.ogrenciAd || 'Nakit Tahsilat', altYazi: t.dersPaketi || '', ilgiliAd: t.egitmenAd || 'Tahsilat', tutar: Number(t.tutar) || 0, ref: t, nakit: true });
+    // Tahsilat → üst: eğitmen adı, 2. satır: öğrenci adı
+    rows.push({ kind: 'tahsilat', tarih: t.tarih, donem: donemStr(t.tarih), aciklama: t.egitmenAd || 'Tahsilat', altYazi: t.ogrenciAd || '', tutar: Number(t.tutar) || 0, ref: t, nakit: true });
   });
   (State.nakitGiderleri || []).forEach(g => {
-    const ad = g.giderAd || g.kategori || g.aciklama || 'Nakit Gider';   // ana satır: gider adı
+    const ad = g.giderAd || g.kategori || g.aciklama || 'Nakit Gider';   // üst satır: gider adı
     const not = (g.aciklama && adNorm(g.aciklama) !== adNorm(ad)) ? g.aciklama : '';   // 2. satır: açıklama notu (addan farklıysa)
-    rows.push({ kind: 'gider', tarih: g.tarih, aciklama: ad, altYazi: not, ilgiliId: g.egitmenId || null, ilgiliAd: g.egitmenId ? egitmenAdiById(g.egitmenId) : 'Genel', tutar: -(Number(g.tutar) || 0), ref: g, nakit: true });
+    rows.push({ kind: 'gider', tarih: g.tarih, donem: giderAitDonem(g), aciklama: ad, altYazi: not, ilgiliId: g.egitmenId || null, tutar: -(Number(g.tutar) || 0), ref: g, nakit: true });
   });
   rows.sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || ((a.ref.olusturma || '').localeCompare(b.ref.olusturma || '')));
   let bak = 0; rows.forEach(r => { bak += r.tutar; r.bakiye = bak; r.tip = r.tutar >= 0 ? 'tahsilat' : 'gider'; });
@@ -6953,15 +6962,23 @@ function hesapHareketleri(hesap) {
       const tutar = Number(k.tutar) || 0;
       if (k.bakiye != null && !isNaN(Number(k.bakiye))) bak = Number(k.bakiye);   // ekstredeki gerçek bakiye
       else bak = (bak == null ? 0 : bak) + tutar;                                 // yoksa devral
-      let ilgiliAd;
-      if (k.yon === 'gider') ilgiliAd = k.giderKategori || YON_AD.gider;
-      else if (k.yon === 'gelir' || k.yon === 'komisyon') {   // tahsilat/komisyon → ilgili hoca(lar)
-        const hoc = [...new Set(bankaIlgiliTahsilatlar(k).map(x => x.egitmenAd).filter(Boolean))];
-        ilgiliAd = hoc.length === 1 ? hoc[0] : (hoc.length > 1 ? hoc.length + ' hoca' : YON_AD[k.yon]);
-      } else ilgiliAd = YON_AD[k.yon] || '—';
+      // üst satır: gider adı / eğitmen adı — 2. satır: işlem/açıklama / öğrenci adı
+      let ust, alt, dnm;
+      if (k.yon === 'gider') {
+        ust = k.giderKategori || YON_AD.gider;
+        alt = k.islem || bankaAciklamaKisa(k.aciklama) || '';
+        dnm = giderAitDonem(k);
+      } else if (k.yon === 'gelir' || k.yon === 'komisyon') {   // tahsilat/komisyon → ilgili hoca + öğrenci
+        const ilg = bankaIlgiliTahsilatlar(k);
+        const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
+        const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
+        ust = hoc.length === 1 ? hoc[0] : (hoc.length > 1 ? hoc.length + ' hoca' : YON_AD[k.yon]);
+        alt = ogr.length === 1 ? ogr[0] : (ogr.length > 1 ? ogr[0] + ' +' + (ogr.length - 1) : (bankaAciklamaKisa(k.aciklama) || k.islem || ''));
+        dnm = donemStr(k.tarih);
+      } else { ust = YON_AD[k.yon] || '—'; alt = bankaAciklamaKisa(k.aciklama) || k.islem || ''; dnm = donemStr(k.tarih); }
       return {
-        tip: tutar >= 0 ? 'tahsilat' : 'gider', tarih: k.tarih, ilgiliId: null, ilgiliAd,
-        aciklama: k.islem, altYazi: bankaAciklamaKisa(k.aciklama), altTip: 'gr',
+        tip: tutar >= 0 ? 'tahsilat' : 'gider', tarih: k.tarih, donem: dnm, ilgiliId: null,
+        aciklama: ust, altYazi: alt, altTip: 'gr',
         tutar, bakiye: bak, banka: true, ref: k,
       };
     });
@@ -7011,13 +7028,11 @@ SAYFALAR['hesap-defter'] = function () {
   const satir = (h) => {
     const rtip = h.tip === 'tahsilat' ? 'tahsilat' : 'gider';   // düzenle/sil yönlendirmesi
     const ana = h.aciklama ? kacar(h.aciklama) : '—';
-    const parts = [];
-    if (h.altYazi) parts.push(kacar(h.altYazi));   // açıklama notu / paket
-    if (h.ilgiliAd && !['Genel', 'Tahsilat', 'Gider', '—'].includes(h.ilgiliAd)) parts.push(kacar(h.ilgiliAd));   // ilgili eğitmen
-    const sub = parts.join(' · ');
+    const sub = h.altYazi ? kacar(h.altYazi) : '';   // 2. satır: açıklama / öğrenci
+    const dp = String(h.donem || '').split('-'); const dnm = h.donem ? ((AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + String(dp[0] || '').slice(2)) : '';
     const rowAttr = h.banka ? `data-hdetay="${h.ref.id}"` : h.nakit ? `data-nrow="${h.kind}:${h.ref.id}"` : `data-hduz="${h.ref.id}" data-htip="${rtip}"`;
     return `<div class="hs-row hs-tikla" ${rowAttr}>
-      <span class="hs-c hs-c-tar">${kacar(kisaTarih(h.tarih))}</span>
+      <span class="hs-c hs-c-tar"><span class="hs-tar-us">${kacar(kisaTarih(h.tarih))}</span>${dnm ? `<span class="hs-tar-dn">${dnm}</span>` : ''}</span>
       <span class="hs-c hs-c-ack"><span class="hs-acik-ad">${ana}</span>${sub ? `<span class="hs-acik-alt">${sub}</span>` : ''}</span>
       <span class="hs-c hs-c-tut ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span>
       <span class="hs-c hs-c-bak">${binlik(h.bakiye)} ₺</span>
@@ -7047,7 +7062,7 @@ SAYFALAR['hesap-defter'] = function () {
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span class="ara-ik">${ik('ara')}</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
         ? `<div class="hs-defter">
-            <div class="hs-row hs-head"><span class="hs-c hs-c-tar">Tarih</span><span class="hs-c hs-c-ack">Açıklama</span><span class="hs-c hs-c-tut">Tutar</span><span class="hs-c hs-c-bak">Bakiye</span></div>
+            <div class="hs-row hs-head"><span class="hs-c hs-c-tar">Tarih</span><span class="hs-c hs-c-ack">Gider / Eğitmen</span><span class="hs-c hs-c-tut">Tutar</span><span class="hs-c hs-c-bak">Bakiye</span></div>
             <div id="hsTbody">${govdeCiz()}</div>
           </div>`
         : `<div class="gp-bos">Bu hesapta hareket yok.</div>`}
@@ -7144,9 +7159,13 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
     if (!kalemler.length) return `<div class="defter-bas">Masraf Defteri</div><div class="gp-bos">${donemAdi(donem)} için gider yok.</div>`;
     const kesit = kalemler.slice(0, giderLimit); const dahaVar = kalemler.length > giderLimit;
     return `<div class="defter-bas">Masraf Defteri</div>
-      <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade">
-        <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Ödeme Türü</th><th class="sag">Tutar</th><th>İlgili Eğitmen</th><th>İlgili Dönem</th></tr></thead>
-        <tbody>${kesit.map((k, i) => `<tr data-gk="${i}"><td data-l="Tarih">${kacar(kisaTarih(k.tarih))}</td><td data-l="İşlem Adı">${kacar(k.ad)}</td><td data-l="Ödeme Türü">${kaynakAd(k.kaynak)}</td><td data-l="Tutar" class="sag mono">${binlik(k.tutar)} ₺</td><td data-l="İlgili Eğitmen">${kacar(egAd(k.egitmenId))}</td><td data-l="İlgili Dönem">${kacar(donemAdi(k.donem || donemStr(k.tarih)))}</td></tr>`).join('')}</tbody>
+      <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir">
+        <colgroup><col style="width:20%"><col style="width:42%"><col style="width:22%"><col style="width:16%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Gider Adı</th><th>Eğitmen</th><th class="sag">Tutar</th></tr></thead>
+        <tbody>${kesit.map((k, i) => {
+          const dn = k.donem || donemStr(k.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+          return `<tr data-gk="${i}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(k.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Gider Adı" class="a2-hcr"><span class="a2-us">${kacar(k.ad)}</span>${k.aciklama ? `<span class="a2-dn">${kacar(k.aciklama)}</span>` : ''}</td><td data-l="Eğitmen">${kacar(egAd(k.egitmenId))}</td><td data-l="Tutar" class="sag mono">${binlik(k.tutar)} ₺</td></tr>`;
+        }).join('')}</tbody>
       </table></div></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="gdDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kalemler.length - giderLimit)})</button>` : ''}`;
   };
