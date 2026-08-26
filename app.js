@@ -527,7 +527,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '244';
+const APP_SURUM = '245';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1894,7 +1894,7 @@ function iaTabCiz() {
   if (bas) bas.textContent = isPf ? 'Plan4me Aktarımı' : 'Banka Aktarımı';
   if (alt) alt.textContent = 'Dosya yüklemek için dokunun · .xlsx · .csv';
   if (kart) kart.classList.remove('yuklu');
-  g.innerHTML = '';
+  g.innerHTML = `<div id="iaOnizle"></div>`;   // iaIsle önizlemeyi buraya çizer
 }
 /* Nakit sekmesi kaldırıldı — nakit tahsilat: Tahsilat Defteri girişi, nakit harcama: Veri Gir >
    Nakit Harcama; ikisi de Kasa (Hesaplar > Nakit) defterinde görünür. */
@@ -2098,6 +2098,11 @@ function bankaTahsilatEslesme(k) {
 function iaOnizleCiz(kayitlar, dosyaAd) {
   iaSonKayitlar = kayitlar; iaSonDosya = dosyaAd; iaSonSekme = iaSekme;
   const on = $('#iaOnizle'); const isPf = iaSekme === 'planformi';
+  // Üst kart: dosya yüklendi → başlık dosya adı, alt yazı "değiştirmek için dokunun"
+  { const bas = $('#iaKartBas'), alt = $('#iaKartAlt'), kart = $('#iaKart');
+    if (bas) bas.textContent = dosyaAd || ((isPf ? 'Plan4me' : 'Banka') + ' dosyası');
+    if (alt) alt.textContent = 'Dosyayı değiştirmek için dokunun';
+    if (kart) kart.classList.add('yuklu'); }
   const kol = isPf ? 'planformiTahsilat' : 'bankaHareketleri';
   const mevcut = new Set((State[kol] || []).map(x => x.imza));
   const yeni = kayitlar.filter(k => !mevcut.has(k.imza));
