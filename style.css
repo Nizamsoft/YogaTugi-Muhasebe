@@ -1643,16 +1643,18 @@ body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 .gg-ust .ay-nav .ay .m{font-size:13px}
 .gg-ust .ay-nav .ay .y{font-size:9px}
 /* Tek satır üst şerit: başlık + ay + Tablo/Rapor (özet kaldırıldı) */
-.gg-tekbar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--kart);border:1px solid var(--kenar);border-radius:14px;padding:8px 11px;margin-bottom:12px}
-.gg-tekbar .gg-bas{flex:none;font-size:16px}
-.gg-tekbar-sag{display:flex;align-items:center;gap:7px;min-width:0}
-.gg-tekbar .ay-nav{padding:2px;border-radius:11px}
-.gg-tekbar .ay-nav button{width:26px;height:26px;font-size:13px;border-radius:8px}
-.gg-tekbar .ay-nav .ay{padding:0 4px}
-.gg-tekbar .ay-nav .ay .m{font-size:12px}
-.gg-tekbar .ay-nav .ay .y{font-size:8px;letter-spacing:1px}
-.gr-mini{margin:0;padding:3px;gap:3px;border-radius:9px;flex:none}
-.gr-mini .ia-oge{flex:none;padding:6px 10px;font-size:11.5px}
+.gg-tekbar{display:flex;align-items:center;gap:6px;background:var(--kart);border:1px solid var(--kenar);border-radius:14px;padding:7px 10px;margin-bottom:12px;overflow:hidden}
+.gg-tekbar .gg-bas{flex:0 1 auto;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gg-tekbar-sag{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
+/* kompakt ay seçici — küçük, gold halka yok, min-width küçültüldü */
+.gg-tekbar .ay-nav{padding:2px;border-radius:10px;flex:none}
+.gg-tekbar .ay-nav::before{display:none}
+.gg-tekbar .ay-nav button{width:22px;height:22px;font-size:12px;border-radius:7px}
+.gg-tekbar .ay-nav .ay{min-width:56px;padding:0 2px}
+.gg-tekbar .ay-nav .ay .m{font-size:11.5px}
+.gg-tekbar .ay-nav .ay .y{font-size:7.5px;letter-spacing:.5px}
+.gr-mini{margin:0;padding:3px;gap:2px;border-radius:9px;flex:none}
+.gr-mini .ia-oge{flex:none;padding:6px 9px;font-size:11px}
 /* Rapor iç kırılım seviyeleri (eğitmen → tür → tahsilat / grup → gider → kayıt) */
 .gr-sat.lv2{padding-left:30px}
 .gr-sat.lv3{padding:8px 18px 8px 46px;background:rgba(255,255,255,.015)}
