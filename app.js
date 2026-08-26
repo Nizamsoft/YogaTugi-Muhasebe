@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '222';
+const APP_SURUM = '223';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1786,27 +1786,61 @@ function iaTabCiz() {
 }
 /* Nakit sekmesi kaldırıldı — nakit tahsilat: Tahsilat Defteri girişi, nakit harcama: Veri Gir >
    Nakit Harcama; ikisi de Kasa (Hesaplar > Nakit) defterinde görünür. */
-/* Nakit gider (elle masraf) ekle/düzenle — genel gidere yazılır */
+/* Gider adı seç — tanımlı giderlerden ara; listede yoksa yazıp yeni ekle (gider = kategori) */
+function giderSecModal(mevcutAd, onSec) {
+  const giderler = () => (State.giderler || []).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
+  const item = (g) => `<div class="ds-osat ${adNorm(g.ad) === adNorm(mevcutAd) ? 'sec' : ''}" data-ad="${kacar(g.ad)}"><span class="ds-ochk">${adNorm(g.ad) === adNorm(mevcutAd) ? '✓' : ''}</span><span class="oav-mini">${kacar((g.ad[0] || '?').toLocaleUpperCase('tr'))}</span><span class="ds-obil"><span class="ad">${kacar(g.ad)}</span></span></div>`;
+  const govde = `
+    <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="gsAra" placeholder="Gider ara veya yeni ad yaz…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+    <div class="to-ekle gizli" id="gsEkle"></div>
+    <div class="ds-oliste sec-liste-kaydir" id="gsListe">${giderler().map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Henüz gider tanımı yok. Adı yazıp ekleyin.</div>'}</div>`;
+  const m = ustKatModal('Gider Seç', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
+  const sec = async (ad) => {
+    ad = String(ad).trim(); if (!ad) return;
+    let g = (State.giderler || []).find(x => adNorm(x.ad) === adNorm(ad));
+    if (!g) { g = await DB.ekle('giderler', { ad, grupId: null }); State.giderler.push(g); }   // yeni gider = kategori
+    onSec(g.ad, g.id); m.kapat();
+  };
+  const bindListe = () => m.qq('#gsListe [data-ad]').forEach(el => el.onclick = () => sec(el.dataset.ad));
+  const yenile = () => {
+    const ham = (m.q('#gsAra').value || '').trim(); const q = adNorm(ham);
+    const suz = giderler().filter(g => adNorm(g.ad).includes(q));
+    m.q('#gsListe').innerHTML = suz.map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Eşleşen yok.</div>';
+    bindListe();
+    const tam = suz.some(g => adNorm(g.ad) === q);
+    const ek = m.q('#gsEkle');
+    if (ham && !tam) { ek.classList.remove('gizli'); ek.innerHTML = `<button type="button" class="to-ekbtn">${ik('arti')} “<b>${kacar(ham)}</b>” ekle</button>`; ek.querySelector('.to-ekbtn').onclick = () => sec(ham); }
+    else ek.classList.add('gizli');
+  };
+  bindListe();
+  m.q('#gsAra').addEventListener('input', yenile);
+  m.q('[data-geri]').onclick = m.kapat;
+}
+/* Nakit gider (elle masraf) ekle/düzenle — bir "Gider"e (kategori) atanır, genel gidere yazılır */
 let nkGiderForm = null;
 function nakitGiderModal(mevcut, sonrasi) {
   const duzenle = !!(mevcut && mevcut.id);
-  nkGiderForm = { tarih: bugunISO(), aciklama: '', tutar: '', kategori: '', ...(mevcut || {}) };
+  nkGiderForm = { tarih: bugunISO(), giderAd: '', giderId: null, tutar: '', aciklama: '', ...(mevcut || {}) };
+  if (!nkGiderForm.giderAd) nkGiderForm.giderAd = (mevcut && (mevcut.kategori || mevcut.aciklama)) || '';   // eski kayıt uyumu
+  const trig = (ic) => `<span class="st-col">${ic}</span><span class="st-ok">›</span>`;
+  const gdTrigIc = () => trig(nkGiderForm.giderAd ? `<span class="st-nm">${kacar(nkGiderForm.giderAd)}</span>` : `<span class="st-ph">Gider seçin / yazın</span>`);
   const govde = `
     <div class="gp-alan"><label class="gp-lbl-ik">${ik('sure')} Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger" id="nkgTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="nkgTarih" value="${(nkGiderForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kalem')} Açıklama</label><input type="text" class="gp-inp" id="nkgAcik" value="${kacar(nkGiderForm.aciklama)}" placeholder="Örn. Temizlik malzemesi" autocomplete="off"></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('gider')} Gider</label><button type="button" class="sec-trig" id="nkgGiderTrig">${gdTrigIc()}</button></div>
     <div class="gp-alan"><label class="gp-lbl-ik">${ik('para')} Tutar</label><input type="text" class="gp-inp" id="nkgTutar" inputmode="decimal" value="${nkGiderForm.tutar ? binlik(nkGiderForm.tutar) : ''}" placeholder="0 ₺" autocomplete="off"></div>
-    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('tanimlar')} Kategori (opsiyonel)</label><input type="text" class="gp-inp" id="nkgKat" value="${kacar(nkGiderForm.kategori || '')}" placeholder="Örn. Malzeme" autocomplete="off"></div>`;
+    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('kalem')} Açıklama (opsiyonel)</label><input type="text" class="gp-inp" id="nkgAcik" value="${kacar(nkGiderForm.aciklama || '')}" placeholder="Ek not…" autocomplete="off"></div>`;
   const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="nkgSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="nkgIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="nkgKaydet">${ik('kaydet')} Kaydet</button>`;
   modalAc(duzenle ? 'Nakit Gider' : 'Nakit Gider Ekle', govde, alt);
   tarihGostergeBagla('#nkgTarih', '#nkgTarihGos');   // yerli/uyumlu tarih göstergesi (native date input gizlenir)
+  $('#nkgGiderTrig').onclick = () => giderSecModal(nkGiderForm.giderAd, (ad, id) => { nkGiderForm.giderAd = ad; nkGiderForm.giderId = id; $('#nkgGiderTrig').innerHTML = gdTrigIc(); });
   const kapat = () => modalKapat();
   { const b = $('#nkgIptal'); if (b) b.onclick = kapat; }
   { const b = $('#nkgSil'); if (b) b.onclick = () => onayModal('Nakit gider silinsin mi?', 'Bu kayıt kaldırılacak.', async () => { await DB.sil('nakitGiderleri', mevcut.id); State.nakitGiderleri = DB._oku('nakitGiderleri'); modalKapat(); bildir('Nakit gider silindi.', 'basari'); if (sonrasi) sonrasi(); }); }
   $('#nkgKaydet').onclick = async () => {
     const tutar = tutarCoz($('#nkgTutar').value);
-    const aciklama = $('#nkgAcik').value.trim();
     if (!tutar || tutar <= 0) { bildir('Geçerli bir tutar girin.', 'uyari'); return; }
-    const kayit = { tarih: ($('#nkgTarih').value || bugunISO()).slice(0, 10), aciklama: aciklama || 'Nakit Gider', tutar: Math.abs(tutar), kategori: $('#nkgKat').value.trim() };
+    if (!nkGiderForm.giderAd) { bildir('Gider seçmelisiniz.', 'uyari'); return; }
+    const kayit = { tarih: ($('#nkgTarih').value || bugunISO()).slice(0, 10), giderAd: nkGiderForm.giderAd, giderId: nkGiderForm.giderId || null, tutar: Math.abs(tutar), aciklama: $('#nkgAcik').value.trim() };
     if (duzenle) await DB.guncelle('nakitGiderleri', mevcut.id, kayit); else await DB.ekle('nakitGiderleri', kayit);
     State.nakitGiderleri = DB._oku('nakitGiderleri');
     modalKapat(); bildir('Nakit gider kaydedildi.', 'basari'); if (sonrasi) sonrasi();
@@ -5469,21 +5503,13 @@ function girisKulFormu(o) {
   };
 }
 
-/* -------- Tanımlamalar: Giderler (gruplu) -------- */
+/* -------- Tanımlamalar: Giderler (düz liste — gider = kategori) -------- */
 SAYFALAR['tanim-gider'] = function () {
-  const gruplar = State.giderGruplari;
-  const giderler = State.giderler;
+  const giderler = (State.giderler || []).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
   const kalemHTML = (g) => `<div class="tnm-row">
       <span class="tnm-nokta"></span><span class="tnm-row-ad">${kacar(g.ad)}</span>
       <span class="tnm-row-arac"><button type="button" data-gd="${g.id}" title="Düzenle">✎</button><button type="button" data-gs="${g.id}" title="Sil">🗑️</button></span>
     </div>`;
-  const bolumHTML = (ad, items) => !items.length ? '' : `<div class="tnm-grup">
-      <div class="tnm-grup-bas"><span class="rk">📁</span><span class="ad">${kacar(ad)}</span><span class="say">${items.length}</span><span class="cizgi"></span></div>
-      <div class="tnm-grup-liste">${items.map(kalemHTML).join('')}</div></div>`;
-  const bolumler = gruplar.map(gr => bolumHTML(gr.ad, giderler.filter(x => x.grupId === gr.id))).join('');
-  const grupsuz = giderler.filter(x => !x.grupId || !gruplar.some(g => g.id === x.grupId));
-  const bolumlerTam = bolumler + bolumHTML('Diğer', grupsuz);
-
   ic().innerHTML = `
     <div class="tnm-kol">
       <div class="tnm-scr-ust">
@@ -5491,8 +5517,8 @@ SAYFALAR['tanim-gider'] = function () {
         <button type="button" class="gp-ekle" id="gdEkle">＋ Gider Ekle</button>
       </div>
       ${giderler.length === 0
-        ? `<div class="gp-bos">Liste boş</div>`
-        : `<div class="tnm-kagit">${bolumlerTam}</div>`}
+        ? `<div class="gp-bos">Liste boş — “＋ Gider Ekle” ile başlayın.</div>`
+        : `<div class="tnm-kagit"><div class="tnm-grup-liste">${giderler.map(kalemHTML).join('')}</div></div>`}
     </div>`;
   $('#tnmGeri').onclick = () => git('ayar-tanimlama');
   $('#gdEkle').onclick = () => giderFormu();
@@ -5504,61 +5530,18 @@ SAYFALAR['tanim-gider'] = function () {
 };
 
 function giderFormu(mevcut) {
-  let seciliGrup = mevcut ? (mevcut.grupId || null) : (State.giderGruplari[0] ? State.giderGruplari[0].id : null);
-  const grupAdi = (id) => { const g = State.giderGruplari.find(x => x.id === id); return g ? g.ad : 'Grup seç'; };
-  const ogelerHTML = () => State.giderGruplari.map(g =>
-    `<div class="gd-oge ${seciliGrup === g.id ? 'sec' : ''}" data-grup="${g.id}"><span class="gd-nokta"></span>${kacar(g.ad)}${seciliGrup === g.id ? '<span class="tik">✓</span>' : ''}</div>`).join('');
-
   const govde = `
-    <div class="gp-alan"><label>Gider Adı</label>
-      <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira" autocomplete="off" autocorrect="off" spellcheck="false"></div>
-    <div class="gp-alan" style="margin:0"><label>Grup</label>
-      <div class="gd-dd" id="gdDD">
-        <button type="button" class="gd-trig" id="gdTrig"><span id="gdSeciliAd">${kacar(grupAdi(seciliGrup))}</span><span class="ok">▾</span></button>
-        <div class="gd-panel" id="gdPanel" hidden><div class="gd-ic">
-          <div id="gdOgeler">${ogelerHTML()}</div>
-          ${State.giderGruplari.length ? '<div class="gd-ay"></div>' : ''}
-          <div class="gd-oge gd-yeni" id="gdYeni"><span class="art">＋</span>Yeni Grup</div>
-          <div class="gd-yenigrup" id="gdYeniGrup" hidden>
-            <input type="text" class="gp-inp" id="gdYeniAd" placeholder="Yeni grup adı…" autocomplete="off" autocorrect="off" spellcheck="false">
-            <button type="button" class="gd-ekle" id="gdYeniEkle">Ekle</button>
-          </div>
-        </div></div>
-      </div>
-    </div>`;
+    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('gider')} Gider Adı</label>
+      <input type="text" class="gp-inp" id="gdAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Kira" autocomplete="off" autocorrect="off" spellcheck="false"></div>`;
   modalAc(mevcut ? 'Gider Düzenle' : 'Yeni Gider', govde,
-    `<button class="btn" id="gdIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="gdKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
-    `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="8" width="17" height="12" rx="2.5" fill="currentColor" opacity=".22"/><rect x="3.5" y="8" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17" stroke="currentColor" stroke-width="1.6"/><path d="M7 5.5h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14.5v3M10.5 16h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Gider</span>`);
-
+    `<button class="btn" id="gdIptal">İptal</button><button class="btn btn-ana" id="gdKaydet">${ik('kaydet')} Kaydet</button>`);
   const inp = $('#gdAd'); setTimeout(() => inp.focus(), 50);
-  const panel = $('#gdPanel'), trig = $('#gdTrig');
-  const panelKapat = () => { panel.hidden = true; trig.classList.remove('acik'); $('#gdYeniGrup').hidden = true; };
-  const panelAc = () => { panel.hidden = false; trig.classList.add('acik'); };
-  trig.onclick = () => panel.hidden ? panelAc() : panelKapat();
-  const ogeleriBagla = () => $$('#gdOgeler .gd-oge').forEach(o => o.onclick = () => {
-    seciliGrup = o.dataset.grup; $('#gdSeciliAd').textContent = grupAdi(seciliGrup);
-    $('#gdOgeler').innerHTML = ogelerHTML(); ogeleriBagla(); panelKapat();
-  });
-  ogeleriBagla();
-  $('#gdYeni').onclick = () => { const yg = $('#gdYeniGrup'); yg.hidden = !yg.hidden; if (!yg.hidden) setTimeout(() => $('#gdYeniAd').focus(), 30); };
-  const grupEkle = async () => {
-    const ad = $('#gdYeniAd').value.trim();
-    if (!ad) return bildir('Grup adı girin.', 'hata');
-    const y = await DB.ekle('giderGruplari', { ad }); State.giderGruplari.push(y);
-    seciliGrup = y.id; $('#gdSeciliAd').textContent = ad;
-    $('#gdOgeler').innerHTML = ogelerHTML(); ogeleriBagla();
-    $('#gdYeniAd').value = ''; panelKapat();
-    bildir('Grup eklendi.', 'basari');
-  };
-  $('#gdYeniEkle').onclick = grupEkle;
-  $('#gdYeniAd').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); grupEkle(); } });
-
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') $('#gdKaydet').click(); });
   $('#gdIptal').onclick = modalKapat;
   $('#gdKaydet').onclick = async () => {
     const ad = inp.value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const veri = { ad, grupId: seciliGrup || null };
+    const veri = { ad, grupId: mevcut ? (mevcut.grupId || null) : null };
     if (mevcut) { await DB.guncelle('giderler', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('giderler', veri); State.giderler.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari'); SAYFALAR['tanim-gider']();
@@ -6821,7 +6804,9 @@ function nakitDefteri() {
     rows.push({ kind: 'tahsilat', tarih: t.tarih, aciklama: t.ogrenciAd || 'Nakit Tahsilat', altYazi: t.dersPaketi || '', ilgiliAd: t.egitmenAd || 'Tahsilat', tutar: Number(t.tutar) || 0, ref: t, nakit: true });
   });
   (State.nakitGiderleri || []).forEach(g => {
-    rows.push({ kind: 'gider', tarih: g.tarih, aciklama: g.aciklama || 'Nakit Gider', altYazi: g.kategori || '', ilgiliAd: 'Gider', tutar: -(Number(g.tutar) || 0), ref: g, nakit: true });
+    const ad = g.giderAd || g.kategori || g.aciklama || 'Nakit Gider';   // yeni: gider adı; eski kayıt uyumu
+    const not = (g.giderAd && g.aciklama) ? g.aciklama : '';
+    rows.push({ kind: 'gider', tarih: g.tarih, aciklama: ad, altYazi: not, ilgiliAd: 'Gider', tutar: -(Number(g.tutar) || 0), ref: g, nakit: true });
   });
   rows.sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || ((a.ref.olusturma || '').localeCompare(b.ref.olusturma || '')));
   let bak = 0; rows.forEach(r => { bak += r.tutar; r.bakiye = bak; r.tip = r.tutar >= 0 ? 'tahsilat' : 'gider'; });
