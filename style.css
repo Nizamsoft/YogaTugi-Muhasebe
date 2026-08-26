@@ -624,12 +624,16 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kk-ad{font-size:17px;font-weight:800;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kk-rol{font-size:11.5px;color:var(--metin-soluk);margin-top:2px}
 .kk-net{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.kk-grup{margin-top:4px}
-.kk-grup-bas{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 2px 6px;border-bottom:1px solid var(--kenar);margin-bottom:4px}
-.kk-grup-bas .l{font-size:11px;font-weight:800;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.5px}
-.kk-grup-bas .t{font-size:14px;font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
-.kk-grup-bas .t.negatif{color:var(--kirmizi)}
+.kk-grup{margin-top:6px}
+/* Grup başlığı: farklı font (Quicksand) + neon vurgu, daha belirgin */
+.kk-gbas{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-size:13.5px;font-weight:700;color:var(--metin);text-transform:uppercase;letter-spacing:1.6px;display:flex;align-items:center;gap:9px;padding:14px 2px 9px;margin-bottom:4px;border-bottom:1px solid var(--kenar)}
+.kk-gbas::before{content:"";width:15px;height:3px;border-radius:2px;background:var(--neon);flex:0 0 auto}
 .kk-kart .kar-sat{padding:5px 0;font-size:13px}
+/* Grubun altındaki toplam satırı */
+.kk-toplam{border-top:1px solid var(--kenar);margin-top:5px;padding-top:9px!important}
+.kk-toplam span{color:var(--metin);font-weight:800;font-size:13.5px}
+.kk-toplam b{font-size:14.5px}
+.kk-toplam b.negatif{color:var(--kirmizi)}
 .kar-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .kar-ad{font-size:16px;font-weight:800;color:var(--metin)}
 .kar-e0{color:var(--amber);font-weight:800}
