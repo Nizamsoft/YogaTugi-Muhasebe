@@ -1670,11 +1670,12 @@ body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 /* Ay seçici — C: ay büyük, yıl neon, oklar düz */
 .gg-tekbar .ay-nav{padding:2px 4px;border-radius:11px;flex:none;background:var(--gri);border-color:var(--kenar);box-shadow:none}
 .gg-tekbar .ay-nav::before{display:none}
-.gg-tekbar .ay-nav button{background:transparent;color:var(--metin-soluk);box-shadow:none;width:19px;height:22px;font-size:13px;border-radius:6px}
-.gg-tekbar .ay-nav button:hover{color:var(--neon)}
-.gg-tekbar .ay-nav .ay{min-width:50px;padding:0 2px}
-.gg-tekbar .ay-nav .ay .m{color:var(--metin);font-size:12.5px;font-weight:700}
-.gg-tekbar .ay-nav .ay .y{color:var(--neon);opacity:.85;font-size:8px;letter-spacing:.5px;font-weight:800}
+body.tema-neon .gg-tekbar .ay-nav button,.gg-tekbar .ay-nav button{background:transparent;color:var(--neon);box-shadow:none;width:20px;height:24px;font-size:15px;border-radius:6px;padding:0}
+body.tema-neon .gg-tekbar .ay-nav button:hover,.gg-tekbar .ay-nav button:hover{background:transparent;color:var(--metin);box-shadow:none}
+/* Genişlik "Ağustos"a göre sabit — ay değişince daralıp genişlemez */
+.gg-tekbar .ay-nav .ay{width:60px;min-width:60px;padding:0;text-align:center}
+.gg-tekbar .ay-nav .ay .m{color:var(--metin);font-size:13px;font-weight:700;line-height:1.05}
+.gg-tekbar .ay-nav .ay .y{color:var(--neon);opacity:.9;font-size:8.5px;letter-spacing:.6px;font-weight:800}
 /* Tablo/Rapor · Ben/Ortaklar — B: ikonlu segment, yumuşak aktif */
 .gr-mini{margin:0;padding:2px;gap:2px;border-radius:9px;flex:none;background:var(--gri);border-color:var(--kenar)}
 .gr-mini .ia-oge{flex:none;display:inline-flex;align-items:center;gap:4px;padding:6px 8px;font-size:10.5px;color:var(--metin-soluk);background:transparent;box-shadow:none}
