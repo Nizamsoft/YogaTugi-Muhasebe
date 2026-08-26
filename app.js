@@ -36,6 +36,7 @@ const State = {
   tahsilatTanimlari: [], // {id, ogrenciAd, odemeTuru:'nakit'|'kart'|'havale'|'multinet', kartTipi?:'kampanyali'|'kampanyasiz'|'debit', tutar, komisyonOran, egitmenAd, egitmenId?, dersPaketi, tarih, eslesmeId?, olusturma}
   nakitGiderleri: [],    // {id, tarih:'YYYY-MM-DD', aciklama, tutar(+), kategori?, olusturma}  — elle girilen nakit masraf (genel gider)
   vergiTahakkuk: [],     // {id, donem:'YYYY-MM', kdv, gv, olusturma}  — müşavirden gelen gerçek KDV / gelir vergisi tahakkuku
+  hakedisOdemeleri: [],  // {id, ortakId, donem:'YYYY-MM', tutar(+), tarih, aciklama?, olusturma}  — ortağa verilen hakediş (Verilmiş Hakediş)
   ayarlar: {},       // {firmaAd, ...}
   aktifSayfa: 'dashboard',
 };
@@ -276,7 +277,7 @@ function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.r
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
-const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar', 'planformiTahsilat', 'bankaHareketleri', 'eslesmeler', 'kategoriKurallari', 'tahsilatTanimlari', 'nakitGiderleri', 'vergiTahakkuk'];   // + yeni muhasebe/mutabakat koleksiyonları
+const KOLEKSIYONLAR = ['ortaklar', 'giderler', 'giderGruplari', 'giderKayitlari', 'uyelikler', 'ogrenciler', 'dersler', 'odemeler', 'talepler', 'studyolar', 'planformiTahsilat', 'bankaHareketleri', 'eslesmeler', 'kategoriKurallari', 'tahsilatTanimlari', 'nakitGiderleri', 'vergiTahakkuk', 'hakedisOdemeleri'];   // + yeni muhasebe/mutabakat koleksiyonları
 const ESKI_KOLEKSIYONLAR = ['hesaplar', 'islemler', 'komisyonlar', 'karPayi', 'kullanicilar', 'potansiyel', 'musteriler'];
 
 /* Veri katmanı — Yerel depolama (localStorage). Sunucu/Firebase yok. */
@@ -466,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '217';
+const APP_SURUM = '218';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -511,6 +512,7 @@ async function veriYukle() {
   State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
   State.nakitGiderleri = DB._oku('nakitGiderleri');
   State.vergiTahakkuk = DB._oku('vergiTahakkuk');
+  State.hakedisOdemeleri = DB._oku('hakedisOdemeleri');
   State.hesaplar = []; State.islemler = []; State.komisyonlar = []; State.karPayi = [];
   State.kullanicilar = []; State.potansiyel = []; State.musteriler = [];
 }
@@ -866,6 +868,28 @@ function planformiEgitmenler() {
   (State.planformiTahsilat || []).forEach(p => { const k = adNorm(p.egitmenAd); if (!s.has(k)) s.set(k, baslikHarf(p.egitmenAd || '—')); });
   return [...s.entries()].map(([k, ad]) => ({ k, ad })).sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
 }
+// Veri bulunan tüm dönemler (sıralı) — devir hesabı için
+function hakedisAylar() {
+  const s = new Set();
+  (State.tahsilatTanimlari || []).forEach(t => s.add(donemStr(t.tarih)));
+  (State.bankaHareketleri || []).forEach(b => s.add(donemStr(b.tarih)));
+  (State.nakitGiderleri || []).forEach(g => s.add(donemStr(g.tarih)));
+  (State.vergiTahakkuk || []).forEach(t => s.add(t.donem));
+  (State.hakedisOdemeleri || []).forEach(o => s.add(o.donem));
+  return [...s].filter(Boolean).sort();
+}
+// donem'den ÖNCEKİ aylardan devreden (ödenmemiş) hakediş — {ortakId: tutar}
+function ortakDevir(donem) {
+  const dev = {};
+  for (const m of hakedisAylar()) {
+    if (m >= donem) break;
+    egitmenKarlilik(m).ortaklar.forEach(e => {
+      const hg = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
+      dev[e.id] = (dev[e.id] || 0) + hg - (e.odenen || 0);
+    });
+  }
+  return dev;
+}
 function egitmenKarlilik(donem) {
   const tt = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem);   // gelir kaynağı: Tahsilat Tanımla
   const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem);
@@ -888,8 +912,9 @@ function egitmenKarlilik(donem) {
   const nakitGiderTop = (State.nakitGiderleri || []).filter(g => donemStr(g.tarih) === donem).reduce((s, g) => s + Math.abs(Number(g.tutar) || 0), 0);
   const genelGider = bh.filter(b => b.yon === 'gider').reduce((s, b) => s + Math.abs(b.tutar), 0) + nakitGiderTop;   // banka + nakit giderler ortaklara bölünür
   const giderPayi = ortaklar.length ? genelGider / ortaklar.length : 0;
-  const huzur = bh.filter(b => b.yon === 'ortakOdeme');
-  const odenen = {}; ortaklar.forEach(o => { odenen[o.id] = huzur.filter(h => isimGecer(h.aciklama, o.ad)).reduce((s, h) => s + Math.abs(h.tutar), 0); });
+  // Verilmiş hakediş: bu döneme işlenmiş ortak ödemeleri (Hakediş Ver kaydı)
+  const odemeD = (State.hakedisOdemeleri || []).filter(o => o.donem === donem);
+  const odenen = {}; ortaklar.forEach(o => { odenen[o.id] = odemeD.filter(x => x.ortakId === o.id).reduce((s, x) => s + Math.abs(Number(x.tutar) || 0), 0); });
   // Maaşlı eğitmen netleri + dağıtım
   const maasliList = Object.values(mMap).map(m => {
     const kdvOngoru = kdvOn(m.brut), kdvHaric = m.brut - kdvOngoru;
@@ -926,13 +951,20 @@ function egitmenKarlilik(donem) {
     e.kalan = e.hakedisGuncel - (e.odenen || 0);
   });
   ortakList.sort((x, y) => y.hakedisGuncel - x.hakedisGuncel);
-  return { ortaklar: ortakList, egitmenler: maasliList.sort((a, b) => b.brut - a.brut), genelGider, giderPayi, vOran, kdvOran, tah, huzurToplam: huzur.reduce((s, h) => s + Math.abs(h.tutar), 0) };
+  return { ortaklar: ortakList, egitmenler: maasliList.sort((a, b) => b.brut - a.brut), genelGider, giderPayi, vOran, kdvOran, tah, huzurToplam: Object.values(odenen).reduce((s, n) => s + n, 0) };
 }
 let karDonem = null;
 let karAcikSet = new Set();   // açık (genişlemiş) ortak/maaşlı kartları
 SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const donem = karDonem || buAy();
   const r = egitmenKarlilik(donem);
+  const devirMap = ortakDevir(donem);
+  r.ortaklar.forEach(e => {
+    e.devir = devirMap[e.id] || 0;
+    const hg = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
+    e.hakToplam = e.devir + hg;                 // devir dahil, bu ay ödemesi hariç toplam borç
+    e.kalanTop = e.hakToplam - (e.odenen || 0); // bu ay verilenden sonra kalan (birikmiş)
+  });
   const bosVeri = !(State.tahsilatTanimlari || []).length && !(State.bankaHareketleri || []).length;
   const gBrut = [...r.ortaklar, ...r.egitmenler].reduce((s, e) => s + e.brut, 0);
   const gKom = [...r.ortaklar, ...r.egitmenler].reduce((s, e) => s + e.komisyon, 0);
@@ -951,6 +983,11 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const mahsup = e.mahsup || 0;
     const hakGuncel = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
     const hakCls = hakGuncel < 0 ? 'negatif' : '';
+    const devir = e.devir || 0;
+    const verilen = e.odenen || 0;
+    const hakTop = (e.hakToplam != null ? e.hakToplam : hakGuncel);
+    const kalanTop = (e.kalanTop != null ? e.kalanTop : hakGuncel - verilen);
+    const ledger = devir !== 0 || verilen !== 0;   // devir veya ödeme varsa defter görünümü
     const mahsupSat = () => mahsup ? `<div class="kar-sat kk-mahsup" data-mahsup="${kacar(id)}"><span>Vergi mahsuplaştırması <span class="kk-mtik">detay ›</span></span><b class="${mahsup < 0 ? 'negatif' : 'poz'}">${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}</b></div>` : '';
     const tahSat = (girildi, pay, bekl) => girildi
       ? `<div class="kk-vsat t"><span>Tahakkuk <span class="kk-mini t">geldi</span></span><b>${imzali(pay)}</b></div>`
@@ -977,10 +1014,16 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
         <div class="kk-vsat o"><span>Öngörü</span><b>${imzali(e.gvOngoru)}</b></div>
         ${tahSat(e.gvTahakkukVar, e.gvTahakkukPay, '3 ayda bir')}</div>
       <div class="kk-g"><div class="kk-gb">Hakediş</div>
+        ${devir !== 0 ? `<div class="kar-sat kk-devir"><span>Önceki aylardan devir</span><b class="${devir < 0 ? 'negatif' : ''}">${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}</b></div>` : ''}
         <div class="kar-sat"><span>Bu ayın hakedişi (öngörüyle)</span><b>${TL(e.hakedis)}</b></div>
         ${mahsupSat()}
-        <div class="kar-sat kk-hak"><span>Hakediş</span><b class="${hakCls}">${TL(hakGuncel)}</b></div>
-        ${e.odenen ? sat('Verilmiş Hakediş', '−' + TL(e.odenen)) + `<div class="kar-sat kk-kalan"><span>Kalan Verilecek</span><b class="${e.kalan < 0 ? 'negatif' : ''}">${TL(e.kalan)}</b></div>` : ''}
+        ${devir !== 0
+          ? `<div class="kar-sat"><span>Bu ay hakediş</span><b>${TL(hakGuncel)}</b></div>
+             <div class="kar-sat kk-hak"><span>Toplam hakediş</span><b class="${hakTop < 0 ? 'negatif' : ''}">${TL(hakTop)}</b></div>`
+          : `<div class="kar-sat kk-hak"><span>Hakediş</span><b class="${hakCls}">${TL(hakGuncel)}</b></div>`}
+        ${verilen ? sat('Verilmiş Hakediş' + (devir !== 0 ? ' <span class="kk-mini">bu ay</span>' : ''), '−' + TL(verilen)) : ''}
+        ${ledger ? `<div class="kar-sat kk-kalan"><span>Kalan Verilecek</span><b class="${kalanTop < 0 ? 'negatif' : ''}">${TL(kalanTop)}</b></div>` : ''}
+        ${e.maasliMi ? '' : `<button type="button" class="kk-ode" data-ode="${kacar(id)}">${ik('kaydet')} Hakediş Ver</button>`}
         ${e.maasliMi ? `<div class="kar-dagitim ${e.dagitim === 'bekliyor' ? 'bekliyor' : ''}">${ik('link')} Dağıtım: <b>${dagitimEt(e)}</b></div>` : ''}</div>`;
     return `<div class="kar-kart kk-kart2 ${e.maasliMi ? 'maasli' : ''} ${acik ? 'acik' : ''}">
       <button type="button" class="kk-bas2" data-tog="${kacar(id)}">
@@ -1011,6 +1054,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const eb = $('#karEsle'), eb2 = $('#karEsle2'); if (eb) eb.onclick = () => git('tanim-egitmen'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
   $$('.kk-bas2[data-tog]').forEach(b => b.onclick = () => { const id = b.dataset.tog; if (karAcikSet.has(id)) karAcikSet.delete(id); else karAcikSet.add(id); karlilikSayfasi(); });
   $$('[data-mahsup]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); mahsupDetayModal(donem, b.dataset.mahsup); });
+  $$('[data-ode]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); hakedisOdemeModal(donem, b.dataset.ode, () => karlilikSayfasi()); });
   { const tb = $('#karTahakkuk'); if (tb) tb.onclick = () => vergiTahakkukModal(donem, () => karlilikSayfasi()); }
 };
 /* Müşavirden gelen gerçek KDV / gelir vergisi tahakkukunu gir (öngörüyle mutabakat) */
@@ -1048,6 +1092,49 @@ function mahsupDetayModal(donem, ortakId) {
     <div class="md-top"><span>Toplam Mahsuplaştırma</span><b class="${(e.mahsup || 0) < 0 ? 'negatif' : 'poz'}">${(e.mahsup || 0) >= 0 ? '+' : '−'}${TL(Math.abs(e.mahsup || 0))}</b></div>`;
   modalAc('Vergi Mahsuplaştırması', govde, '<button type="button" class="btn btn-ana" id="mdKapat" style="flex:1">Kapat</button>');
   $('#mdKapat').onclick = modalKapat;
+}
+/* Ortağa hakediş ödemesi gir / geçmiş ödemeleri yönet (Verilmiş Hakediş) */
+function hakedisOdemeModal(donem, ortakId, sonrasi) {
+  const r = egitmenKarlilik(donem);
+  const e = (r.ortaklar || []).find(x => x.id === ortakId); if (!e) return;
+  const dev = (ortakDevir(donem))[ortakId] || 0;
+  const hakTop = dev + (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
+  const verilen = e.odenen || 0, kalan = hakTop - verilen;
+  const kayitlar = (State.hakedisOdemeleri || []).filter(x => x.ortakId === ortakId && x.donem === donem)
+    .sort((a, b) => (a.tarih || '').localeCompare(b.tarih || ''));
+  const liste = kayitlar.length
+    ? kayitlar.map(k => `<div class="ho-sat"><span class="ho-t">${fmtTarihUzun(k.tarih)}</span><span class="ho-a">${k.aciklama ? kacar(k.aciklama) : 'Hakediş ödemesi'}</span><b class="ho-tut">−${TL(k.tutar)}</b><button type="button" class="ho-sil" data-hosil="${k.id}" aria-label="Sil">✕</button></div>`).join('')
+    : `<div class="ho-bos">Bu dönem için ödeme girilmemiş.</div>`;
+  const govde = `
+    <div class="ho-kisi">${kacar(e.ad)} · ${donemAdi(donem)}</div>
+    <div class="ho-ozet">
+      <div class="hoz"><span>Toplam hakediş${dev !== 0 ? ' <small>(devir dahil)</small>' : ''}</span><b>${TL(hakTop)}</b></div>
+      <div class="hoz"><span>Verilmiş</span><b>−${TL(verilen)}</b></div>
+      <div class="hoz vurgu"><span>Kalan verilecek</span><b class="${kalan < 0 ? 'negatif' : ''}">${TL(kalan)}</b></div>
+    </div>
+    <div class="ho-liste">${liste}</div>
+    <div class="ho-bl">Yeni ödeme</div>
+    <div class="ho-form">
+      <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="hoTutar" inputmode="decimal" placeholder="Verilen tutar" autocomplete="off"></div>
+      <div class="gp-alan"><label>Tarih</label><input type="date" class="gp-inp" id="hoTarih" value="${bugunISO()}"></div>
+      <div class="gp-alan" style="margin:0"><label>Açıklama (opsiyonel)</label><input type="text" class="gp-inp" id="hoAcik" placeholder="Örn. Banka havalesi" autocomplete="off"></div>
+    </div>`;
+  modalAc('Hakediş Ver', govde, `<button type="button" class="btn" id="hoKapat">Kapat</button><button type="button" class="btn btn-ana" id="hoEkle">${ik('kaydet')} Ekle</button>`);
+  $('#hoKapat').onclick = () => { modalKapat(); if (sonrasi) sonrasi(); };
+  $('#hoEkle').onclick = async () => {
+    const t = tutarCoz($('#hoTutar').value);
+    if (!t || t <= 0) return bildir('Geçerli bir tutar girin.', 'hata');
+    await DB.ekle('hakedisOdemeleri', { ortakId, donem, tutar: Math.abs(t), tarih: ($('#hoTarih').value || bugunISO()).slice(0, 10), aciklama: $('#hoAcik').value.trim() });
+    State.hakedisOdemeleri = DB._oku('hakedisOdemeleri');
+    bildir('Hakediş ödemesi eklendi.', 'basari');
+    hakedisOdemeModal(donem, ortakId, sonrasi);
+  };
+  $$('[data-hosil]').forEach(b => b.onclick = () => onayModal('Ödeme silinsin mi?', 'Bu hakediş ödemesi kaldırılacak.', async () => {
+    await DB.sil('hakedisOdemeleri', b.dataset.hosil);
+    State.hakedisOdemeleri = DB._oku('hakedisOdemeleri');
+    bildir('Ödeme silindi.', 'basari');
+    hakedisOdemeModal(donem, ortakId, sonrasi);
+  }));
 }
 
 /* ---- Gelirler — Tahsilat Tanımla kayıtları (dönem listesi) ---- */

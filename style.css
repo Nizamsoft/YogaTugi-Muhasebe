@@ -672,6 +672,27 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .md-fark span{font-weight:800;color:var(--metin)} .md-fark b.poz{color:#8fe07a} .md-fark b.negatif{color:var(--kirmizi)}
 .md-top{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(180,232,58,.08);border:1px solid rgba(180,232,58,.25);font-weight:800}
 .md-top b{font-size:16px;font-variant-numeric:tabular-nums} .md-top b.poz{color:#8fe07a} .md-top b.negatif{color:var(--kirmizi)}
+/* hakediş defteri: devir satırı + Hakediş Ver butonu */
+.kar-sat.kk-devir{color:var(--metin-soluk)} .kar-sat.kk-devir b{color:var(--amber)} .kar-sat.kk-devir b.negatif{color:var(--kirmizi)}
+.kk-ode{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:10px;padding:9px;border:1px dashed var(--kenar);border-radius:10px;background:transparent;color:var(--metin-soluk);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.kk-ode:hover{border-color:var(--neon);color:var(--neon)} .kk-ode svg{width:15px;height:15px}
+/* hakediş ödeme modalı */
+.ho-kisi{font-size:13px;font-weight:800;color:var(--metin);margin-bottom:11px}
+.ho-ozet{background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:9px 13px;margin-bottom:13px}
+.ho-ozet .hoz{display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12.5px;color:var(--metin-soluk)}
+.ho-ozet .hoz b{font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
+.ho-ozet .hoz small{color:var(--metin-soluk);font-weight:600}
+.ho-ozet .hoz.vurgu{border-top:1px dashed var(--kenar);margin-top:3px;padding-top:8px}
+.ho-ozet .hoz.vurgu span{font-weight:800;color:var(--metin)} .ho-ozet .hoz.vurgu b{font-size:15px;color:var(--neon)} .ho-ozet .hoz.vurgu b.negatif{color:var(--kirmizi)}
+.ho-liste{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.ho-sat{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--gri);border:1px solid var(--kenar);border-radius:10px}
+.ho-sat .ho-t{font-size:11.5px;color:var(--metin-soluk);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ho-sat .ho-a{flex:1;font-size:12.5px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ho-sat .ho-tut{font-weight:800;color:var(--kirmizi);font-variant-numeric:tabular-nums}
+.ho-sat .ho-sil{border:0;background:transparent;color:var(--metin-soluk);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1;border-radius:6px}
+.ho-sat .ho-sil:hover{color:var(--kirmizi);background:rgba(240,133,122,.12)}
+.ho-bos{font-size:12.5px;color:var(--metin-soluk);text-align:center;padding:12px;background:var(--gri);border:1px dashed var(--kenar);border-radius:10px;margin-bottom:14px}
+.ho-bl{font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--metin-soluk);margin:0 0 9px}
 /* eski (kullanılmayan) ortak kartı grupları — kalsın */
 .kk-kart{padding:16px 17px}
 .kk-bas{display:flex;align-items:center;gap:13px;padding-bottom:14px;border-bottom:1px solid var(--kenar);margin-bottom:6px}
