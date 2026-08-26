@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '213';
+const APP_SURUM = '214';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '11:30';
+const APP_SURUM_SAAT = '11:45';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
