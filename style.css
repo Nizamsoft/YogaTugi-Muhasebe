@@ -421,8 +421,18 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-hata .uik{width:18px;height:18px;flex:0 0 auto}
 .ia-onizle{margin-top:16px;background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:16px}
 /* Tam ekran sade önizleme — kartsız, yalnız devir · tablo · kapanış · içe aktar */
-.ia-onizle.sade2{margin-top:12px;background:none;border:none;border-radius:0;padding:0}
-.ia-mini-bar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.ia-onizle.sade2{margin-top:4px;background:none;border:none;border-radius:0;padding:0}
+/* İçe aktar — tek ince kart (dosya yükle / değiştir) */
+.ia-kart{display:flex;align-items:center;gap:13px;padding:13px 15px;margin-bottom:14px;border:1px solid var(--kenar);border-radius:14px;background:var(--kart);cursor:pointer;transition:.15s}
+.ia-kart:hover,.ia-kart.uzeri{border-color:var(--neon)}
+.ia-kart-ik{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--gri);color:var(--neon);flex:none}
+.ia-kart-ik .uik{width:21px;height:21px}
+.ia-kart-metin{display:flex;flex-direction:column;min-width:0;flex:1}
+.ia-kart-bas{font-weight:800;font-size:15px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ia-kart-alt{font-size:12px;color:var(--metin-soluk);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ia-kart-ok{color:var(--metin-soluk);flex:none;display:grid;place-items:center}
+.ia-kart-ok .uik{width:17px;height:17px}
+.ia-kart.yuklu .ia-kart-ik{color:var(--metin-soluk)}
 .ia-dosad{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:800;font-size:14px;color:var(--metin);margin-bottom:12px}
 .ia-dosad-ad{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ia-yeni-dosya{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--kenar);background:var(--gri);color:var(--metin-soluk);font-family:inherit;font-weight:700;font-size:12px;border-radius:9px;padding:6px 11px;cursor:pointer}

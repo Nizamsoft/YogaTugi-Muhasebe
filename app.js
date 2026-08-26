@@ -527,7 +527,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '243';
+const APP_SURUM = '244';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1857,46 +1857,44 @@ let iaOnFiltre = 'yok';   // Plan4me önizleme filtresi: 'yok'=eşleşmeyen (var
 let iaOnLimit = 12;       // gösterilen satır sayısı; "Daha fazla" arttırır
 SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   if (iaSekme === 'nakit') iaSekme = 'planformi';   // Nakit sekmesi kaldırıldı → Kasa hesabında görünür
-  const pfN = (State.planformiTahsilat || []).length, bhN = (State.bankaHareketleri || []).length;
+  const isPf = iaSekme === 'planformi';
+  // Tek ince kart: başlık + "dosya yüklemek için dokunun". Sekme geçişi yok — ilgili sayfa doğrudan.
   ic().innerHTML = `
     <div class="ia-sayfa">
-      <div class="ia-ust">
-        <div class="ia-seg">
-          <button type="button" class="ia-oge ${iaSekme === 'planformi' ? 'sec' : ''}" data-ia="planformi">Plan4me${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
-          <button type="button" class="ia-oge ${iaSekme === 'banka' ? 'sec' : ''}" data-ia="banka">Banka${bhN ? ` <span class="ia-rk">${bhN}</span>` : ''}</button>
-        </div>
-      </div>
+      <label class="ia-kart" id="iaKart">
+        <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
+        <span class="ia-kart-ik" id="iaKartIk">${ik('indir')}</span>
+        <span class="ia-kart-metin"><span class="ia-kart-bas" id="iaKartBas">${isPf ? 'Plan4me Aktarımı' : 'Banka Aktarımı'}</span><span class="ia-kart-alt" id="iaKartAlt">Dosya yüklemek için dokunun · .xlsx · .csv</span></span>
+        <span class="ia-kart-ok">${ik('indir')}</span>
+      </label>
       <div id="iaGovde"></div>
     </div>`;
-  $$('.ia-oge').forEach(b => b.onclick = () => { iaSekme = b.dataset.ia; SAYFALAR['ice-aktar'](); });
   iaArsivAcik = false;   // arşiv artık Ayarlar > İçe Aktarma Arşivi'nde
+  const kart = $('#iaKart'), inp = $('#iaFile');
+  kart.addEventListener('dragover', e => { e.preventDefault(); kart.classList.add('uzeri'); });
+  kart.addEventListener('dragleave', () => kart.classList.remove('uzeri'));
+  kart.addEventListener('drop', e => { e.preventDefault(); kart.classList.remove('uzeri'); if (e.dataTransfer.files[0]) iaIsle(e.dataTransfer.files[0]); });
+  inp.onchange = () => { if (inp.files[0]) iaIsle(inp.files[0]); };
   iaTabCiz();
 };
 function iaTabCiz() {
   const g = $('#iaGovde'); const isPf = iaSekme === 'planformi';
-  const ust = $('.ia-sayfa .ia-ust');
-  if (iaArsivAcik) { if (ust) ust.style.display = ''; iaArsivCiz(g, isPf); return; }
-  // Dosya yüklüyse yükleme kutusu + sekme çubuğu gizlenir, tam ekran önizleme gösterilir
+  if (iaArsivAcik) { iaArsivCiz(g, isPf); return; }
   const onizleAktif = iaSonKayitlar && iaSonSekme === iaSekme;
-  if (ust) ust.style.display = onizleAktif ? 'none' : '';
+  const bas = $('#iaKartBas'), alt = $('#iaKartAlt'), kart = $('#iaKart');
   if (onizleAktif) {
+    // Dosya yüklü: kart başlığı dosya adı, alt yazı "değiştirmek için dokunun"
+    if (bas) bas.textContent = iaSonDosya || ((isPf ? 'Plan4me' : 'Banka') + ' dosyası');
+    if (alt) alt.textContent = 'Dosyayı değiştirmek için dokunun';
+    if (kart) kart.classList.add('yuklu');
     g.innerHTML = `<div id="iaOnizle"></div>`;
     iaOnizleCiz(iaSonKayitlar, iaSonDosya);
     return;
   }
-  g.innerHTML = `
-    <label class="ia-drop" id="iaDrop">
-      <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
-      <span class="ia-ik">${ik('indir')}</span>
-      <span class="ia-dt">${isPf ? 'Plan4me “Aylık Rapor”' : 'Banka ekstresi'} — dosya seç veya sürükle</span>
-      <span class="ia-ds">.xlsx · .csv</span>
-    </label>
-    <div id="iaOnizle"></div>`;
-  const drop = $('#iaDrop'), inp = $('#iaFile');
-  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('uzeri'); });
-  drop.addEventListener('dragleave', () => drop.classList.remove('uzeri'));
-  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('uzeri'); if (e.dataTransfer.files[0]) iaIsle(e.dataTransfer.files[0]); });
-  inp.onchange = () => { if (inp.files[0]) iaIsle(inp.files[0]); };
+  if (bas) bas.textContent = isPf ? 'Plan4me Aktarımı' : 'Banka Aktarımı';
+  if (alt) alt.textContent = 'Dosya yüklemek için dokunun · .xlsx · .csv';
+  if (kart) kart.classList.remove('yuklu');
+  g.innerHTML = '';
 }
 /* Nakit sekmesi kaldırıldı — nakit tahsilat: Tahsilat Defteri girişi, nakit harcama: Veri Gir >
    Nakit Harcama; ikisi de Kasa (Hesaplar > Nakit) defterinde görünür. */
@@ -2200,7 +2198,6 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   }
   on.innerHTML = `
     <div class="ia-onizle sade2">
-      <div class="ia-mini-bar"><button type="button" class="ia-yeni-dosya" id="iaYeniDosya">${ik('indir')} Yeni dosya</button></div>
       ${isPf ? `<div class="ia-ozet">${ozet}</div>` : ''}
       ${bakiyeUst}
       ${liste}
@@ -2210,7 +2207,6 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     </div>`;
   $$('.ia-flt-b', on).forEach(b => b.onclick = () => { iaOnFiltre = b.dataset.flt; iaOnLimit = 12; iaOnizleCiz(iaSonKayitlar, iaSonDosya); });
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
-  { const yd = $('#iaYeniDosya'); if (yd) yd.onclick = () => { iaSonKayitlar = null; iaSonSekme = ''; iaOnFiltre = 'yok'; iaOnLimit = 12; iaTabCiz(); }; }
   if (pfRows) $$('tr[data-esl]', on).forEach(tr => { const r = pfRows[+tr.dataset.esl]; if (r && !r.es) { tr.style.cursor = 'pointer'; tr.onclick = () => ttEslestirSec(r.k); } });
   if (!isPf) {
     $$('tr[data-brow]', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
