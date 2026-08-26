@@ -550,7 +550,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '254';
+const APP_SURUM = '255';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1593,8 +1593,9 @@ function ttListeBagla(kok) {
 }
 
 /* Bekleyen Tahsilatlar — defter girişleri; banka/nakit ile "hesaba yansıyınca" üstü çizilir */
+let bekDonem = buAy();
 SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
-  const liste = ttSirali();
+  const liste = ttSirali().filter(t => donemStr(t.tarih) === bekDonem);
   const bekleyen = liste.filter(t => !tahsilatUyum(t));
   const yansiyan = liste.filter(t => tahsilatUyum(t));
   const sirali = [...bekleyen, ...yansiyan];   // bekleyenler üstte
@@ -1616,6 +1617,7 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
   };
   ic().innerHTML = `<div class="kar-sayfa">
     <div class="gg-tekbar"><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
+    <div class="bt-aybar">${ayNavHTML(bekDonem)}<span class="say">${liste.length} tahsilat</span></div>
     <div class="bt-ozet">
       <div class="bt-oz bek"><span class="l">Bekleyen</span><span class="v">${TL(bekTop)} <small>· ${bekleyen.length}</small></span></div>
       <div class="bt-oz ger"><span class="l">Tahsil Edilen</span><span class="v">${TL(yanTop)} <small>· ${yansiyan.length}</small></span></div>
@@ -1624,8 +1626,9 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
         <colgroup><col style="width:16%"><col style="width:31%"><col style="width:22%"><col style="width:31%"></colgroup>
         <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
         <tbody>${sirali.map(satir).join('')}</tbody></table></div></div>`
-      : `<div class="gp-bos">Henüz tahsilat girişi yok. “Yeni” ile ekleyin; banka/nakitle yansıyınca üstü çizilir.</div>`}
+      : `<div class="gp-bos">${donemAdi(bekDonem)} için tahsilat girişi yok. “Yeni” ile ekleyin; banka/nakitle yansıyınca üstü çizilir.</div>`}
   </div>`;
+  $$('#icerik .bt-aybar [data-ay]').forEach(b => b.onclick = () => { bekDonem = donemKaydir(bekDonem, Number(b.dataset.ay)); SAYFALAR['bekleyen'](); });
   { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal(null, () => git('bekleyen')); }
   $$('#icerik tr[data-ttduz]').forEach(tr => tr.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === tr.dataset.ttduz), () => git('bekleyen')));
 };
