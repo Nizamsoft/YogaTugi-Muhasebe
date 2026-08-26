@@ -3561,3 +3561,19 @@ body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;heig
 .altsec .vg-oge.i-vergi .vg-ik{color:var(--amber);background:rgba(245,169,31,.15)}
 .altsec .vg-ad{font-size:15.5px}
 .altsec .vg-alt{font-size:12px}
+
+/* ===== Plan4me pasif ===== */
+.vg-pasif{font-size:9px;font-weight:800;color:var(--amber);background:rgba(245,169,31,.16);border-radius:6px;padding:2px 7px;margin-left:8px;text-transform:uppercase;letter-spacing:.3px;vertical-align:middle}
+.altsec .vg-oge.pasif{opacity:.6;cursor:default}
+.altsec .vg-oge.pasif:hover{background:none}
+.altsec .vg-oge.pasif .vg-ik{color:var(--metin-soluk);background:var(--gri)}
+.altsec .vg-oge.pasif .vg-ad{color:var(--metin-soluk)}
+.altsec .vg-oge.pasif .vg-ok{visibility:hidden}
+.ia-pasif{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--kart);border:1px solid rgba(245,169,31,.3);border-radius:18px;padding:30px 22px;margin-top:16px}
+.ia-pasif-ik{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;background:rgba(245,169,31,.14);color:var(--amber);margin-bottom:16px}
+.ia-pasif-ik .uik{width:30px;height:30px}
+.ia-pasif h3{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:19px;margin:0 0 8px}
+.ia-pasif p{margin:0;color:var(--metin-soluk);font-size:13.5px;line-height:1.6;max-width:34ch}
+.ia-pasif p b{color:var(--metin)}
+.ia-pasif-mail{margin-top:16px;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--amber);background:rgba(245,169,31,.1);border:1px solid rgba(245,169,31,.28);border-radius:10px;padding:9px 13px;line-height:1.35;text-align:left}
+.ia-pasif-mail .uik{width:15px;height:15px;flex:none}

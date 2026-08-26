@@ -550,7 +550,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '250';
+const APP_SURUM = '251';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1888,6 +1888,15 @@ let iaOnLimit = 12;       // gösterilen satır sayısı; "Daha fazla" arttırı
 SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   if (iaSekme === 'nakit') iaSekme = 'planformi';   // Nakit sekmesi kaldırıldı → Kasa hesabında görünür
   const isPf = iaSekme === 'planformi';
+  if (isPf) {   // Plan4me aktarımı pasif — yükleme yerine bilgi kartı
+    ic().innerHTML = `<div class="ia-sayfa"><div class="ia-pasif">
+        <div class="ia-pasif-ik">${ik('belge')}</div>
+        <h3>Plan4me aktarımı şu an kapalı</h3>
+        <p>Plan4me’de tahsilatlar yalnızca <b>nakit</b> olarak kapatılabildiği için aktarım geçici olarak durduruldu.</p>
+        <div class="ia-pasif-mail">${ik('onay')} Plan4me’ye mail atıldı · ödeme yöntemleri için dönüş bekleniyor</div>
+      </div></div>`;
+    return;
+  }
   // Tek ince kart: başlık + "dosya yüklemek için dokunun". Sekme geçişi yok — ilgili sayfa doğrudan.
   ic().innerHTML = `
     <div class="ia-sayfa">
@@ -2493,22 +2502,22 @@ let neonOzetAcik = false;
 /* Veri Gir → hangi kaynak? Plan4me / Banka içe aktarma önizlemesi, Nakit Harcama → gider girişi */
 function veriGirModal() {
   const sec = [
-    { k: 'planformi', ik: 'belge', ad: 'Plan4me', alt: 'Aylık rapor dosyası içe aktar', cls: 'i-plan' },
+    { k: 'planformi', ik: 'belge', ad: 'Plan4me', alt: 'Mail atıldı · ödeme yöntemleri için dönüş bekleniyor', cls: 'i-plan', pasif: true },
     { k: 'banka', ik: 'banka', ad: 'Banka', alt: 'Banka ekstresi içe aktar', cls: 'i-banka' },
     { k: 'nakit-harcama', ik: 'kasa', ad: 'Nakit Harcama', alt: 'Nakit gider / harcama ekle', cls: 'i-nakit' },
     { k: 'vergi', ik: 'kaydet', ad: 'Vergi Tahakkuku İşle', alt: 'Müşavirden gelen KDV / gelir vergisi', cls: 'i-vergi' },
   ];
-  const govde = `<div class="vg-sec">${sec.map(s => `<button type="button" class="vg-oge ${s.cls}" data-vg="${s.k}">
+  const govde = `<div class="vg-sec">${sec.map(s => `<button type="button" class="vg-oge ${s.cls}${s.pasif ? ' pasif' : ''}" data-vg="${s.k}"${s.pasif ? ' disabled' : ''}>
     <span class="vg-ik">${ik(s.ik)}</span>
-    <span class="vg-metin"><span class="vg-ad">${s.ad}</span><span class="vg-alt">${s.alt}</span></span>
+    <span class="vg-metin"><span class="vg-ad">${s.ad}${s.pasif ? '<span class="vg-pasif">Pasif</span>' : ''}</span><span class="vg-alt">${s.alt}</span></span>
     <span class="vg-ok">›</span></button>`).join('')}</div>`;
   const sh = altSheet('Veri Gir', govde);
-  sh.qq('[data-vg]').forEach(b => b.onclick = () => {
+  sh.qq('[data-vg]').forEach(b => { if (b.disabled) return; b.onclick = () => {
     const k = b.dataset.vg; sh.kapat();
     if (k === 'nakit-harcama') nakitGiderModal(null, () => { hesapAktif = 'nakit'; git('hesap-defter'); });   // kaydedilirse Kasa'ya git
     else if (k === 'vergi') vergiTahakkukModal(buAy(), null);   // vergi tahakkuku — modalde ay seçilir
     else { iaSekme = k; git('ice-aktar'); }
-  });
+  }; });
 }
 function neonAnaEkran() {
   const donem = buAy();
