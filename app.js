@@ -550,7 +550,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '252';
+const APP_SURUM = '253';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1602,10 +1602,11 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
   const satir = (t) => {
     const yansidi = tahsilatUyum(t);
     const dn = donemStr(t.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+    const tur = GELIR_TUR[t.odemeTuru] || t.odemeTuru || '';
     const durum = yansidi
-      ? `<span class="bt-yans">${ik('onay')} ${t.odemeTuru === 'nakit' ? 'Nakit alındı' : 'Hesaba yansıdı'}</span>`
-      : `<span class="bt-bek">${kacar((GELIR_TUR[t.odemeTuru] || t.odemeTuru || '') + ' bekliyor')}</span>`;
-    return `<tr data-ttduz="${t.id}" class="ttl-sat ${yansidi ? 'bt-ger yline' : 'bt-bek-r'}">
+      ? `<span class="bt-yans">${ik('onay')} ${kacar(tur + ' · Tahsil edildi')}</span>`
+      : `<span class="bt-bek">${kacar(tur + ' · Bekliyor')}</span>`;
+    return `<tr data-ttduz="${t.id}" class="ttl-sat ${yansidi ? 'bt-ger' : 'bt-bek-r'}">
         <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
         <td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(t.egitmenAd || '—')}</span>${t.ogrenciAd ? `<span class="a2-dn">${kacar(t.ogrenciAd)}</span>` : ''}</td>
         <td data-l="Ders">${kacar(t.dersPaketi || '—')}</td>
@@ -1616,7 +1617,7 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
     <div class="gg-tekbar"><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
     <div class="bt-ozet">
       <div class="bt-oz bek"><span class="l">Bekleyen</span><span class="v">${TL(bekTop)} <small>· ${bekleyen.length}</small></span></div>
-      <div class="bt-oz ger"><span class="l">Hesaba Yansıyan</span><span class="v">${TL(yanTop)} <small>· ${yansiyan.length}</small></span></div>
+      <div class="bt-oz ger"><span class="l">Tahsil Edilen</span><span class="v">${TL(yanTop)} <small>· ${yansiyan.length}</small></span></div>
     </div>
     ${liste.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo">
         <colgroup><col style="width:16%"><col style="width:31%"><col style="width:22%"><col style="width:31%"></colgroup>
