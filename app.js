@@ -527,7 +527,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '242';
+const APP_SURUM = '243';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2119,11 +2119,24 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     const gorunen = pfRows.map((r, i) => ({ ...r, gi: i })).filter(r => iaOnFiltre === 'ok' ? r.es : !r.es);
     const kesit = gorunen.slice(0, iaOnLimit);
     dahaVar = gorunen.length > iaOnLimit; kalan = gorunen.length - iaOnLimit;
-    thead = '<tr><th>Tarih</th><th>Üye</th><th>Tip</th><th class="sag">Tutar</th><th>Durum</th></tr>';
     tbody = kesit.length
-      ? kesit.map(r => `<tr class="ia-r-${r.es ? 'ok' : 'yok'}"><td>${kacar(kisaTarih(r.k.tarih))}</td><td>${kacar(r.k.uyeAd)}</td><td>${turRoz(r.k.tur)}</td><td class="sag mono">${TL(r.k.tutar)}</td><td>${r.es ? '<span class="ia-esles-ok">✓ Eşleşti</span>' : `<button type="button" class="ia-esles-btn" data-esl="${r.gi}">Eşleştir</button>`}</td></tr>`).join('')
-      : '<tr><td colspan="5" class="ia-bosgrup">Bu grupta kayıt yok.</td></tr>';
-    liste = `<div class="tablo-sar"><table class="tablo ia-tablo"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+      ? kesit.map(r => {
+          const k = r.k;
+          const dn = donemStr(k.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+          const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
+          const es = r.es ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">—</span>';
+          return `<tr data-esl="${r.gi}" class="ia-r-${r.es ? 'ok' : 'yok'}">
+              <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(k.tarih))}</span><span class="t2-dn">${dk}</span></td>
+              <td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(k.egitmenAd || '—')}</span>${k.uyeAd ? `<span class="a2-dn">${kacar(k.uyeAd)}</span>` : ''}</td>
+              <td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(k.tutar)}</span><span class="tut2-dn rozet-etk ${tm[k.tur] || 'rz-notr'}">${kacar(GELIR_TUR[k.tur] || k.tur || '')}</span></td>
+              <td data-l="Eşleşme" class="ort">${es}</td>
+            </tr>`;
+        }).join('')
+      : '<tr><td colspan="4" class="ia-bosgrup">Bu grupta kayıt yok.</td></tr>';
+    liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir">
+        <colgroup><col style="width:18%"><col style="width:34%"><col style="width:30%"><col style="width:18%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Eğitmen</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
+        <tbody>${tbody}</tbody></table></div></div>`;
   } else {
     const grp = y => yeni.filter(k => k.yon === y);
     ozet = `${chip(`${yeni.length} yeni hareket`, 'lime')}${tekrar ? chip(`${tekrar} tekrar atlandı`, 'notr') : ''}
@@ -2198,7 +2211,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   $$('.ia-flt-b', on).forEach(b => b.onclick = () => { iaOnFiltre = b.dataset.flt; iaOnLimit = 12; iaOnizleCiz(iaSonKayitlar, iaSonDosya); });
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
   { const yd = $('#iaYeniDosya'); if (yd) yd.onclick = () => { iaSonKayitlar = null; iaSonSekme = ''; iaOnFiltre = 'yok'; iaOnLimit = 12; iaTabCiz(); }; }
-  if (pfRows) $$('.ia-esles-btn', on).forEach(b => b.onclick = () => { const r = pfRows[+b.dataset.esl]; if (r) ttEslestirSec(r.k); });
+  if (pfRows) $$('tr[data-esl]', on).forEach(tr => { const r = pfRows[+tr.dataset.esl]; if (r && !r.es) { tr.style.cursor = 'pointer'; tr.onclick = () => ttEslestirSec(r.k); } });
   if (!isPf) {
     $$('tr[data-brow]', on).forEach(tr => tr.onclick = () => bankaDetayModal(yeni[+tr.dataset.brow]));
     $$('[data-uyum]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); const k = yeni[+b.dataset.uyum]; if (k.yon === 'komisyon') komisyonTuttur(k); else bankaGunGoster(k); });
