@@ -1671,6 +1671,23 @@ body.tema-neon .gr-sat.lv3{background:rgba(255,255,255,.02)}
 body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ogr-tablo.sade tbody tr{cursor:pointer}
 .ogr-tablo tr.hs-tikla{cursor:pointer}
+/* Kasa/Banka defteri — flex satırlar (mobile'a tam sığar, boşluk yok) */
+.hs-defter{background:var(--kart);border:1px solid var(--kenar);border-radius:12px;overflow:hidden}
+.hs-row{display:flex;align-items:center;gap:9px;padding:11px 13px;border-top:1px solid var(--kenar);cursor:pointer}
+.hs-row:first-child{border-top:0}
+.hs-row:hover{background:rgba(255,255,255,.02)}
+.hs-head{background:var(--gri);cursor:default}
+.hs-head:hover{background:var(--gri)}
+.hs-head .hs-c{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--metin-soluk)}
+.hs-c{min-width:0}
+.hs-c-tar{flex:0 0 46px;font-size:12px;color:var(--metin);font-weight:600;white-space:nowrap}
+.hs-c-ack{flex:1 1 auto;min-width:0}
+.hs-c-tut{flex:0 0 84px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hs-c-tut.a{color:#8fe07a} .hs-c-tut.e{color:var(--kirmizi)}
+.hs-head .hs-c-tut,.hs-head .hs-c-bak{color:var(--metin-soluk)}
+.hs-c-bak{flex:0 0 72px;text-align:right;font-weight:700;color:var(--metin-soluk);font-variant-numeric:tabular-nums;font-size:12.5px;white-space:nowrap}
+.hs-acik-ad{display:block;font-weight:700;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs-acik-alt{display:block;font-size:11px;color:var(--metin-soluk);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Banka içe aktarım önizleme tablosu — geniş & okunur */
 .ia-onizle-tablo{min-width:520px;font-size:13.5px}
 .ia-onizle-tablo thead th{font-size:11.5px;padding:12px 12px}

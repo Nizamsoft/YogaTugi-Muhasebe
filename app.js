@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '232';
+const APP_SURUM = '233';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -6992,18 +6992,18 @@ SAYFALAR['hesap-defter'] = function () {
   const tumList = veri[hesapAktif].slice().reverse();   // en yeni üstte
   const satir = (h) => {
     const rtip = h.tip === 'tahsilat' ? 'tahsilat' : 'gider';   // düzenle/sil yönlendirmesi
-    const alt = h.altYazi ? `<div class="hs-alt ${h.altTip}">${h.altTip === 'ogr' ? ik('ogrenci','uik-mini') : ik('grup','uik-mini')}${kacar(h.altYazi)}</div>` : '';
-    const ortHucre = h.ilgiliId ? `<span class="ogr-egit">${egitmenAv(h.ilgiliId, 'ogr-ea')}${kacar(h.ilgiliAd)}</span>` : `<span class="gid-tum">${ik('kisi','uik-mini')}${kacar(h.ilgiliAd)}</span>`;
-    const ana = h.aciklama ? (h.tip === 'tahsilat' ? `<span class="hs-tur">${kacar(h.aciklama)}</span>` : kacar(h.aciklama)) : '<span class="ogr-soluk">—</span>';
+    const ana = h.aciklama ? kacar(h.aciklama) : '—';
+    const parts = [];
+    if (h.altYazi) parts.push(kacar(h.altYazi));   // açıklama notu / paket
+    if (h.ilgiliAd && !['Genel', 'Tahsilat', 'Gider', '—'].includes(h.ilgiliAd)) parts.push(kacar(h.ilgiliAd));   // ilgili eğitmen
+    const sub = parts.join(' · ');
     const rowAttr = h.banka ? `data-hdetay="${h.ref.id}"` : h.nakit ? `data-nrow="${h.kind}:${h.ref.id}"` : `data-hduz="${h.ref.id}" data-htip="${rtip}"`;
-    return `<tr class="hs-tikla" ${rowAttr}>
-      <td data-l="Tarih">${fmtTarihUzun(h.tarih)}</td>
-      <td data-l="İşlem Adı"><span class="isl-tur ${HS_PILL_CLS[h.tip]}">${HS_PILL_AD[h.tip]}</span></td>
-      <td data-l="Açıklama">${ana}${alt}</td>
-      <td data-l="İlgili Ortak">${ortHucre}</td>
-      <td data-l="Tutar" class="sag"><span class="hs-art ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span></td>
-      <td data-l="Güncel Bakiye" class="sag"><span class="hs-bak">${binlik(h.bakiye)} ₺</span></td>
-    </tr>`;
+    return `<div class="hs-row hs-tikla" ${rowAttr}>
+      <span class="hs-c hs-c-tar">${kacar(kisaTarih(h.tarih))}</span>
+      <span class="hs-c hs-c-ack"><span class="hs-acik-ad">${ana}</span>${sub ? `<span class="hs-acik-alt">${sub}</span>` : ''}</span>
+      <span class="hs-c hs-c-tut ${h.tutar >= 0 ? 'a' : 'e'}">${h.tutar >= 0 ? '+' : '−'}${binlik(Math.abs(h.tutar))} ₺</span>
+      <span class="hs-c hs-c-bak">${binlik(h.bakiye)} ₺</span>
+    </div>`;
   };
   // Banka: içe aktar önizlemesindeki sade satır düzeni (tarih → işlem → açıklama · sağ: yön → tutar → bakiye)
   const bankaKart = (h) => `<div class="ia-satir" data-hdetay="${h.ref.id}">
@@ -7016,8 +7016,8 @@ SAYFALAR['hesap-defter'] = function () {
   const govdeCiz = () => {
     const q = (hesapArama || '').trim().toLocaleLowerCase('tr');
     const list = tumList.filter(h => eslesir(h, q));
-    if (!list.length) return kartMod ? `<div class="gp-bos" style="margin:10px 4px">Eşleşen hareket yok.</div>` : `<tr><td colspan="6"><div class="gp-bos" style="margin:6px 4px">Eşleşen hareket yok.</div></td></tr>`;
-    return list.map(kartMod ? kartCiz : satir).join('');
+    if (!list.length) return `<div class="gp-bos" style="margin:14px 4px">Eşleşen hareket yok.</div>`;
+    return list.map(satir).join('');
   };
   ic().innerHTML = `
     <div class="odeme-sayfa">
@@ -7028,13 +7028,11 @@ SAYFALAR['hesap-defter'] = function () {
       </div>
       <div class="hesap-ara"><div class="uys-ara" style="margin:0"><span class="ara-ik">${ik('ara')}</span><input type="text" id="hsAra" placeholder="Tabloda ara… (tarih, işlem, açıklama, ilgili ortak, tutar)" value="${kacar(hesapArama)}" autocomplete="off" autocorrect="off" spellcheck="false"></div></div>
       ${tumList.length
-      ? (kartMod
-        ? `<div class="hs-liste" id="hsListe">${govdeCiz()}</div>`
-        : `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo ogr-genis hs-ledger sade">
-          <colgroup><col style="width:13%"><col style="width:12%"><col style="width:26%"><col style="width:20%"><col style="width:14%"><col style="width:15%"></colgroup>
-          <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Açıklama</th><th>İlgili Ortak</th><th class="sag">Tutar</th><th class="sag">Güncel Bakiye</th></tr></thead>
-          <tbody id="hsTbody">${govdeCiz()}</tbody></table></div></div>`)
-      : `<div class="gp-bos">Bu hesapta hareket yok.</div>`}
+        ? `<div class="hs-defter">
+            <div class="hs-row hs-head"><span class="hs-c hs-c-tar">Tarih</span><span class="hs-c hs-c-ack">Açıklama</span><span class="hs-c hs-c-tut">Tutar</span><span class="hs-c hs-c-bak">Bakiye</span></div>
+            <div id="hsTbody">${govdeCiz()}</div>
+          </div>`
+        : `<div class="gp-bos">Bu hesapta hareket yok.</div>`}
     </div>`;
   const rowBagla = () => {
     $$('[data-hdetay]').forEach(b => b.onclick = () => { const k = (State.bankaHareketleri || []).find(x => x.id === b.dataset.hdetay); if (k) bankaDetayModal(k); });
