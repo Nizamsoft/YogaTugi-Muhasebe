@@ -464,8 +464,23 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ia-bakiye.alt.ok .iab-kontrol{color:#8fe07a}
 .ia-bakiye.alt.yok .iab-kontrol{color:var(--amber)}
 .iab-kontrol .uik{width:15px;height:15px;flex:0 0 auto}
-/* Hareket açıklama modalı — yalnız banka dosyasındaki tam açıklama */
-.bd-aciklama{font-size:14px;line-height:1.6;color:var(--metin);word-break:break-word;white-space:pre-wrap}
+/* Banka hareket detayı — "kime ait" (ilgili tahsilatlar) + açıklama */
+.bd-bolum{margin-bottom:16px}
+.bd-bolum-bas{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px}
+.bd-bolum-bas .t{font-size:11px;font-weight:800;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.4px}
+.bd-bolum-bas .n{font-size:11px;color:var(--metin-soluk);font-weight:700}
+.bd-kisiler{display:flex;flex-direction:column}
+.bd-kisi{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--kenar)}
+.bd-kisi:last-child{border-bottom:0}
+.bd-av{width:34px;height:34px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-weight:800;font-size:13px;background:rgba(180,232,58,.14);color:var(--neon);border:1px solid rgba(180,232,58,.25)}
+.bd-ort{flex:1;min-width:0}
+.bd-ad{font-weight:800;font-size:14px;color:var(--metin);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-eg{font-size:11.5px;color:var(--metin-soluk);margin-top:2px}
+.bd-tt{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;color:var(--metin);white-space:nowrap}
+.bd-bos-kisi{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--metin-soluk);background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:11px 13px}
+.bd-git{background:none;border:0;color:var(--amber);font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap}
+.bd-et{font-size:10.5px;font-weight:800;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.bd-aciklama{font-size:13px;line-height:1.55;color:var(--metin-soluk);word-break:break-word;white-space:pre-wrap}
 .bd-bos{color:var(--metin-soluk)}
 .ia-esles-ok.gid:active{transform:scale(.95)}
 .ia-e0{color:var(--amber);font-weight:800}

@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '209';
+const APP_SURUM = '210';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '09:30';
+const APP_SURUM_SAAT = '09:50';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -1833,14 +1833,46 @@ function giderTanimlaModal(k) {
   });
   m.q('[data-geri]').onclick = m.kapat;
 }
-/* Banka hareketinin dosyadaki tüm alanları */
+/* Bir banka tahsilat/komisyon hareketinin ilgili Tahsilat Tanımla kayıtları (kime ait) */
+function bankaIlgiliTahsilatlar(k) {
+  if (!k) return [];
+  const gunOncesi = t => Math.round(gunFark(k.tarih, t.tarih)) === 1;   // D-1 kart tanımları
+  const ayniGun = t => Math.round(gunFark(t.tarih, k.tarih)) === 0;
+  const tanim = State.tahsilatTanimlari || [];
+  if (k.yon === 'komisyon' || (k.yon === 'gelir' && /batch\s*yatan/i.test(k.islem || '')))
+    return tanim.filter(t => t.odemeTuru === 'kart' && gunOncesi(t));
+  if (k.yon === 'gelir') {   // havale — açıklamada adı geçen, tutarı & günü tutan tek tanım
+    const t = tanim.find(t => isimGecer(k.aciklama, t.ogrenciAd) && Math.abs((Number(t.tutar) || 0) - (Number(k.tutar) || 0)) < 1 && ayniGun(t));
+    return t ? [t] : [];
+  }
+  return [];
+}
+/* Banka hareket detayı — tahsilat/komisyon ise "kime ait" (ilgili tahsilatlar) + tam açıklama */
 function bankaDetayModal(k) {
   if (!k) return;
-  // Diğer bilgiler zaten kartta görünüyor — burada yalnız banka dosyasındaki tam açıklamayı göster
   const acik = String(k.aciklama || '').trim();
-  const govde = `<div class="bd-aciklama">${acik ? kacar(acik) : '<span class="bd-bos">Bu hareketin açıklaması yok.</span>'}</div>`;
-  modalAc('Açıklama', govde, '<button type="button" class="btn btn-ana" id="bdKapat" style="flex:1">Kapat</button>');
+  const tahsilatMi = k.yon === 'gelir' || k.yon === 'komisyon';
+  const komisyonMu = k.yon === 'komisyon';
+  const bh = ad => (String(ad || '?').trim().charAt(0) || '?').toLocaleUpperCase('tr');
+  let kimeAit = '';
+  if (tahsilatMi) {
+    const ilgili = bankaIlgiliTahsilatlar(k);
+    kimeAit = `<div class="bd-bolum">
+      <div class="bd-bolum-bas"><span class="t">Kime ait${komisyonMu ? ' · komisyon payı' : ''}</span>${ilgili.length ? `<span class="n">${ilgili.length} kişi</span>` : ''}</div>
+      ${ilgili.length
+        ? `<div class="bd-kisiler">${ilgili.map(t => {
+            const deg = komisyonMu ? kartKomTutar(t) : (Number(t.tutar) || 0);
+            return `<div class="bd-kisi"><span class="bd-av">${kacar(bh(t.ogrenciAd))}</span><div class="bd-ort"><div class="bd-ad">${kacar(t.ogrenciAd || '—')}</div>${t.egitmenAd ? `<div class="bd-eg">${kacar(t.egitmenAd)}</div>` : ''}</div><span class="bd-tt">${komisyonMu ? '−' : ''}${binlik(deg)} ₺</span></div>`;
+          }).join('')}</div>`
+        : `<div class="bd-bos-kisi"><span>Eşleşen tahsilat bulunamadı.</span><button type="button" class="bd-git" id="bdGun">O güne git ›</button></div>`}
+    </div>`;
+  }
+  const govde = `${kimeAit}
+    <div class="bd-aciklama-sar"><div class="bd-et">Banka açıklaması</div>
+      <div class="bd-aciklama">${acik ? kacar(acik) : '<span class="bd-bos">Bu hareketin açıklaması yok.</span>'}</div></div>`;
+  modalAc('Hareket Detayı', govde, '<button type="button" class="btn btn-ana" id="bdKapat" style="flex:1">Kapat</button>');
   $('#bdKapat').onclick = modalKapat;
+  { const g = $('#bdGun'); if (g) g.onclick = () => { modalKapat(); bankaGunGoster(k); }; }
 }
 /* Eşleşmeyen banka tahsilatı: uyarı + var olan tanımla eşleştir (batch → tanımlar ekranı) */
 function bankaEslestir(k) {
