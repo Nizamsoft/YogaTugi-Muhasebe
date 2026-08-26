@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '224';
+const APP_SURUM = '225';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1149,6 +1149,7 @@ function hakedisOdemeModal(donem, ortakId, sonrasi) {
 let gelirDonem = null;
 let gelirGorunum = 'rapor';   // 'rapor' | 'tablo'
 let gelirKapali = new Set();  // rapor: kapalı eğitmen grupları
+let gelirLimit = 25;          // tablo: gösterilen satır sayısı
 const GELIR_TUR = { nakit: 'Nakit', havale: 'Havale', kart: 'Kart', multinet: 'Multinet' };
 SAYFALAR['gelirler'] = function gelirlerSayfasi() {
   const donem = gelirDonem || buAy();
@@ -1157,41 +1158,43 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
   const bru = topla(kayitlar), nak = topla(kayitlar.filter(p => p.odemeTuru === 'nakit')), hav = topla(kayitlar.filter(p => p.odemeTuru === 'havale')), krt = topla(kayitlar.filter(p => p.odemeTuru === 'kart' || p.odemeTuru === 'multinet'));
   const turAd = (t) => GELIR_TUR[t] || t || '—';
-  // RAPOR: eğitmene (ilgili kişi) göre grupla
+  // RAPOR: eğitmen (hoca) grubu — altında Banka Havale / Kart / Nakit toplamları (tıklanamaz)
   const raporCiz = () => {
-    if (!kayitlar.length) return `<div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
+    const buyukKart = `<div class="buyuk-ozet"><div class="bo-ust"><span class="bo-lbl">Brüt Satış</span><span class="bo-val">${TL(bru)}</span></div><div class="bo-dagilim"><div class="bo-d"><span>Nakit</span><b>${binlik(nak)} ₺</b></div><div class="bo-d"><span>Havale</span><b>${binlik(hav)} ₺</b></div><div class="bo-d"><span>Kart</span><b>${binlik(krt)} ₺</b></div></div></div>`;
+    if (!kayitlar.length) return buyukKart + `<div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
     const gr = {};
-    kayitlar.forEach(p => { const ad = (p.egitmenAd || '').trim() || 'Atanmamış'; (gr[ad] || (gr[ad] = { ad, toplam: 0, kayitlar: [] })); gr[ad].toplam += Number(p.tutar) || 0; gr[ad].kayitlar.push(p); });
+    kayitlar.forEach(p => { const ad = (p.egitmenAd || '').trim() || 'Atanmamış'; const g = gr[ad] || (gr[ad] = { ad, toplam: 0, adet: 0, havale: 0, kart: 0, nakit: 0 }); g.toplam += Number(p.tutar) || 0; g.adet++; const t = Number(p.tutar) || 0; if (p.odemeTuru === 'havale') g.havale += t; else if (p.odemeTuru === 'kart' || p.odemeTuru === 'multinet') g.kart += t; else g.nakit += t; });
     const gruplar = Object.values(gr).sort((a, b) => b.toplam - a.toplam);
+    const bolum = (etiket, tutar) => `<div class="gr-sat norow"><span class="ad"><span class="nk"></span>${etiket}</span><span class="gr-tut art">${tutar > 0 ? '+' : ''}${binlik(tutar)} ₺</span></div>`;
     const grpHTML = gruplar.map(g => {
       const acik = !gelirKapali.has(g.ad);
-      const satirlar = acik ? g.kayitlar.map(p => `<div class="gr-sat" data-gelir="${p.id}"><span class="ad"><span class="nk"></span>${kacar(p.ogrenciAd || '—')}</span><span class="gr-cnt">${kacar(turAd(p.odemeTuru))}</span><span class="gr-tut art">+${binlik(p.tutar)} ₺</span><span class="gr-chev">›</span></div>`).join('') : '';
-      return `<div class="gr-grp"><div class="gr-grpbas" data-gkapa="${kacar(g.ad)}"><span class="ad"><span class="ik">${ik('kisi')}</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.kayitlar.length} tahsilat</span><span class="gr-tut top art">+${binlik(g.toplam)} ₺</span><span class="gr-chev">${acik ? '⌃' : '⌄'}</span></div>${satirlar}</div>`;
+      const satirlar = acik ? (bolum('Banka Havale', g.havale) + bolum('Kart', g.kart) + bolum('Nakit', g.nakit)) : '';
+      return `<div class="gr-grp"><div class="gr-grpbas" data-gkapa="${kacar(g.ad)}"><span class="ad"><span class="ik">${ik('kisi')}</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.adet} tahsilat</span><span class="gr-tut top art">+${binlik(g.toplam)} ₺</span><span class="gr-chev">${acik ? '⌃' : '⌄'}</span></div>${satirlar}</div>`;
     }).join('');
-    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Toplam — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div></div>`;
+    return buyukKart + `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Toplam — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div></div>`;
   };
-  // TABLO: düz kayıt tablosu
-  const tabloCiz = () => !kayitlar.length ? `<div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`
-    : `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+  // TABLO: sade düz kayıt tablosu + "daha fazla yükle"
+  const tabloCiz = () => {
+    if (!kayitlar.length) return `<div class="defter-bas">Tahsilat Defteri</div><div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
+    const kesit = kayitlar.slice(0, gelirLimit); const dahaVar = kayitlar.length > gelirLimit;
+    return `<div class="defter-bas">Tahsilat Defteri</div>
+      <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade">
         <thead><tr><th>Tarih</th><th>Üye Adı</th><th>Ödeme Türü</th><th class="sag">Tutar</th><th>Eğitmen</th><th>Ders Adı</th></tr></thead>
-        <tbody>${kayitlar.map(p => `<tr data-gelir="${p.id}"><td data-l="Tarih">${kacar(kisaTarih(p.tarih))}</td><td data-l="Üye Adı">${kacar(p.ogrenciAd || '—')}</td><td data-l="Ödeme Türü">${kacar(turAd(p.odemeTuru))}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td><td data-l="Eğitmen">${kacar(p.egitmenAd || '—')}</td><td data-l="Ders Adı">${kacar(p.dersPaketi || '—')}</td></tr>`).join('')}</tbody>
-      </table></div></div>`;
+        <tbody>${kesit.map(p => `<tr data-gelir="${p.id}"><td data-l="Tarih">${kacar(kisaTarih(p.tarih))}</td><td data-l="Üye Adı">${kacar(p.ogrenciAd || '—')}</td><td data-l="Ödeme Türü">${kacar(turAd(p.odemeTuru))}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td><td data-l="Eğitmen">${kacar(p.egitmenAd || '—')}</td><td data-l="Ders Adı">${kacar(p.dersPaketi || '—')}</td></tr>`).join('')}</tbody>
+      </table></div></div>
+      ${dahaVar ? `<button type="button" class="ia-daha-btn" id="glDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kayitlar.length - gelirLimit)})</button>` : ''}`;
+  };
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="kar-ust"><h3 class="kar-baslik">Gelirler</h3>${ayNavHTML(donem)}</div>
-      <div class="kar-genel">
-        <div class="kg-kutu vurgu"><span>Brüt Tahsilat</span><b>${TL(bru)}</b></div>
-        <div class="kg-kutu"><span>Nakit</span><b>${TL(nak)}</b></div>
-        <div class="kg-kutu"><span>Havale</span><b>${TL(hav)}</b></div>
-        <div class="kg-kutu"><span>Kart</span><b>${TL(krt)}</b></div>
-      </div>
       <div class="ia-seg gr-seg"><button type="button" class="ia-oge ${gelirGorunum === 'rapor' ? 'sec' : ''}" data-glr="rapor">Rapor</button><button type="button" class="ia-oge ${gelirGorunum === 'tablo' ? 'sec' : ''}" data-glr="tablo">Tablo</button></div>
       <div id="glGovde">${gelirGorunum === 'rapor' ? raporCiz() : tabloCiz()}</div>
     </div>`;
-  $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { gelirDonem = donemKaydir(donem, Number(b.dataset.ay)); gelirlerSayfasi(); });
-  $$('[data-glr]').forEach(b => b.onclick = () => { gelirGorunum = b.dataset.glr; gelirlerSayfasi(); });
+  $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { gelirDonem = donemKaydir(donem, Number(b.dataset.ay)); gelirLimit = 25; gelirlerSayfasi(); });
+  $$('[data-glr]').forEach(b => b.onclick = () => { gelirGorunum = b.dataset.glr; gelirLimit = 25; gelirlerSayfasi(); });
   $$('[data-gkapa]').forEach(b => b.onclick = () => { const a = b.dataset.gkapa; if (gelirKapali.has(a)) gelirKapali.delete(a); else gelirKapali.add(a); gelirlerSayfasi(); });
-  $$('[data-gelir]').forEach(b => b.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.gelir), () => gelirlerSayfasi()));
+  { const d = $('#glDaha'); if (d) d.onclick = () => { gelirLimit += 25; gelirlerSayfasi(); }; }
+  $$('#glGovde tr[data-gelir]').forEach(b => b.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.gelir), () => gelirlerSayfasi()));
 };
 
 /* ---- Ayar: Banka gider kategorileri (kural editörü) ---- */
@@ -7011,52 +7014,51 @@ function giderKalemleriDonem(donem) {
 }
 let giderGorunum = 'rapor';   // 'rapor' | 'tablo'
 let giderDonem = null;
-let giderKapali = new Set();   // rapor: kapalı gider grupları
+let giderLimit = 25;          // tablo: gösterilen satır sayısı
 SAYFALAR['giderler'] = function giderlerSayfasi() {
   const donem = giderDonem || buAy();
   const kalemler = giderKalemleriDonem(donem);
   const toplam = kalemler.reduce((s, k) => s + k.tutar, 0);
+  const nakitTop = kalemler.filter(k => k.kaynak === 'nakit').reduce((s, k) => s + k.tutar, 0);
+  const bankaTop = kalemler.filter(k => k.kaynak === 'banka').reduce((s, k) => s + k.tutar, 0);
   const kaynakAd = (k) => k === 'nakit' ? 'Nakit' : 'Banka';
   const egAd = (id) => id ? egitmenAdiById(id) : 'Genel';
   const yenile = () => giderlerSayfasi();
   const acKayit = (k) => k.kaynak === 'nakit' ? nakitGiderModal(k.ref, yenile) : bankaDetayModal(k.ref);
-  // RAPOR: gider adına göre grupla
+  // RAPOR: tek "Genel Gider" grubu — altında TÜM tanımlı giderler (0 dahil) + kaynak toplamları
   const raporCiz = () => {
-    if (!kalemler.length) return `<div class="gp-bos">${donemAdi(donem)} için gider yok.</div>`;
-    const gr = {};
-    kalemler.forEach(k => { (gr[k.ad] || (gr[k.ad] = { ad: k.ad, toplam: 0, kayitlar: [] })); gr[k.ad].toplam += k.tutar; gr[k.ad].kayitlar.push(k); });
-    const gruplar = Object.values(gr).sort((a, b) => b.toplam - a.toplam);
-    const grpHTML = gruplar.map((g) => {
-      const acik = !giderKapali.has(g.ad);
-      const satirlar = acik ? g.kayitlar.map((k) => `<div class="gr-sat" data-gk="${kalemler.indexOf(k)}"><span class="ad"><span class="nk"></span>${kacar(kisaTarih(k.tarih))} · ${kaynakAd(k.kaynak)}</span><span class="gr-cnt">${kacar(egAd(k.egitmenId))}</span><span class="gr-tut">−${binlik(k.tutar)} ₺</span><span class="gr-chev">›</span></div>`).join('') : '';
-      return `<div class="gr-grp"><div class="gr-grpbas" data-gkapa="${kacar(g.ad)}"><span class="ad"><span class="ik">${ik('gider')}</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.kayitlar.length} kayıt</span><span class="gr-tut top">−${binlik(g.toplam)} ₺</span><span class="gr-chev">${acik ? '⌃' : '⌄'}</span></div>${satirlar}</div>`;
-    }).join('');
-    return `<div class="gr-kutu" data-gruplar>${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Genel Gider — ${donemAdi(donem)}</span><span class="v">−${binlik(toplam)} ₺</span></div></div>`;
+    const buyukKart = `<div class="buyuk-ozet"><div class="bo-ust"><span class="bo-lbl">Genel Gider</span><span class="bo-val">${TL(toplam)}</span></div><div class="bo-dagilim"><div class="bo-d"><span>Nakit</span><b>${binlik(nakitTop)} ₺</b></div><div class="bo-d"><span>Banka</span><b>${binlik(bankaTop)} ₺</b></div></div></div>`;
+    const totMap = {}; kalemler.forEach(k => { totMap[k.ad] = (totMap[k.ad] || 0) + k.tutar; });
+    const tanimli = (State.giderler || []).map(g => (g.ad || '').trim()).filter(Boolean);
+    const adlar = [...new Set([...tanimli, ...Object.keys(totMap)])];
+    if (!adlar.length) return buyukKart + `<div class="gp-bos">Önce Tanımlamalar › Giderler'den gider ekleyin.</div>`;
+    adlar.sort((a, b) => (totMap[b] || 0) - (totMap[a] || 0) || a.localeCompare(b, 'tr'));
+    const satirlar = adlar.map(ad => { const v = totMap[ad] || 0; return `<div class="gr-sat norow"><span class="ad"><span class="nk"></span>${kacar(ad)}</span><span class="gr-tut">${v > 0 ? '−' : ''}${binlik(v)} ₺</span></div>`; }).join('');
+    return buyukKart + `<div class="gr-kutu">
+        <div class="gr-grp"><div class="gr-grpbas" style="cursor:default"><span class="ad"><span class="ik">${ik('gider')}</span>Genel Gider</span><span class="gr-cnt">${adlar.length} kalem</span><span class="gr-tut top">−${binlik(toplam)} ₺</span><span class="gr-chev"></span></div>${satirlar}</div>
+        <div class="gr-dip"><span class="k">${ik('para')} Genel Gider — ${donemAdi(donem)}</span><span class="v">−${binlik(toplam)} ₺</span></div></div>`;
   };
-  // TABLO: düz kayıt tablosu
-  const tabloCiz = () => !kalemler.length ? `<div class="gp-bos">${donemAdi(donem)} için gider yok.</div>`
-    : `<div class="ogr-tkart"><div class="ogr-kaydir"><table class="ogr-tablo">
+  // TABLO: sade düz kayıt tablosu + "daha fazla yükle"
+  const tabloCiz = () => {
+    if (!kalemler.length) return `<div class="defter-bas">Masraf Defteri</div><div class="gp-bos">${donemAdi(donem)} için gider yok.</div>`;
+    const kesit = kalemler.slice(0, giderLimit); const dahaVar = kalemler.length > giderLimit;
+    return `<div class="defter-bas">Masraf Defteri</div>
+      <div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade">
         <thead><tr><th>Tarih</th><th>İşlem Adı</th><th>Ödeme Türü</th><th class="sag">Tutar</th><th>İlgili Eğitmen</th><th>İlgili Dönem</th></tr></thead>
-        <tbody>${kalemler.map((k, i) => `<tr data-gk="${i}"><td data-l="Tarih">${kacar(kisaTarih(k.tarih))}</td><td data-l="İşlem Adı">${kacar(k.ad)}</td><td data-l="Ödeme Türü">${kaynakAd(k.kaynak)}</td><td data-l="Tutar" class="sag mono">${binlik(k.tutar)} ₺</td><td data-l="İlgili Eğitmen">${kacar(egAd(k.egitmenId))}</td><td data-l="İlgili Dönem">${kacar(donemAdi(donemStr(k.tarih)))}</td></tr>`).join('')}</tbody>
-      </table></div></div>`;
+        <tbody>${kesit.map((k, i) => `<tr data-gk="${i}"><td data-l="Tarih">${kacar(kisaTarih(k.tarih))}</td><td data-l="İşlem Adı">${kacar(k.ad)}</td><td data-l="Ödeme Türü">${kaynakAd(k.kaynak)}</td><td data-l="Tutar" class="sag mono">${binlik(k.tutar)} ₺</td><td data-l="İlgili Eğitmen">${kacar(egAd(k.egitmenId))}</td><td data-l="İlgili Dönem">${kacar(donemAdi(donemStr(k.tarih)))}</td></tr>`).join('')}</tbody>
+      </table></div></div>
+      ${dahaVar ? `<button type="button" class="ia-daha-btn" id="gdDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kalemler.length - giderLimit)})</button>` : ''}`;
+  };
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="kar-ust"><h3 class="kar-baslik">Giderler</h3>${ayNavHTML(donem)}</div>
-      <div class="kar-genel">
-        <div class="kg-kutu vurgu"><span>Genel Gider</span><b>${TL(toplam)}</b></div>
-        <div class="kg-kutu"><span>Nakit</span><b>${TL(kalemler.filter(k => k.kaynak === 'nakit').reduce((s, k) => s + k.tutar, 0))}</b></div>
-        <div class="kg-kutu"><span>Banka</span><b>${TL(kalemler.filter(k => k.kaynak === 'banka').reduce((s, k) => s + k.tutar, 0))}</b></div>
-        <div class="kg-kutu"><span>Kayıt</span><b>${kalemler.length}</b></div>
-      </div>
       <div class="ia-seg gr-seg"><button type="button" class="ia-oge ${giderGorunum === 'rapor' ? 'sec' : ''}" data-gdg="rapor">Rapor</button><button type="button" class="ia-oge ${giderGorunum === 'tablo' ? 'sec' : ''}" data-gdg="tablo">Tablo</button></div>
-      <div class="gr-arac"><button type="button" class="gp-ekle" id="giderNakitBtn">＋ Nakit Gider</button></div>
       <div id="gdGovde">${giderGorunum === 'rapor' ? raporCiz() : tabloCiz()}</div>
     </div>`;
-  $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { giderDonem = donemKaydir(donem, Number(b.dataset.ay)); giderlerSayfasi(); });
-  $$('[data-gdg]').forEach(b => b.onclick = () => { giderGorunum = b.dataset.gdg; giderlerSayfasi(); });
-  $$('[data-gkapa]').forEach(b => b.onclick = () => { const a = b.dataset.gkapa; if (giderKapali.has(a)) giderKapali.delete(a); else giderKapali.add(a); giderlerSayfasi(); });
-  { const nb = $('#giderNakitBtn'); if (nb) nb.onclick = () => nakitGiderModal(null, yenile); }
-  $$('#gdGovde [data-gk]').forEach(el => el.onclick = () => { const k = kalemler[Number(el.dataset.gk)]; if (k) acKayit(k); });
+  $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { giderDonem = donemKaydir(donem, Number(b.dataset.ay)); giderLimit = 25; giderlerSayfasi(); });
+  $$('[data-gdg]').forEach(b => b.onclick = () => { giderGorunum = b.dataset.gdg; giderLimit = 25; giderlerSayfasi(); });
+  { const d = $('#gdDaha'); if (d) d.onclick = () => { giderLimit += 25; giderlerSayfasi(); }; }
+  $$('#gdGovde tr[data-gk]').forEach(el => el.onclick = () => { const k = kalemler[Number(el.dataset.gk)]; if (k) acKayit(k); });
 };
 
 function giderKayitFormu(mevcut) {
