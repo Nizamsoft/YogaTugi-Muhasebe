@@ -333,6 +333,19 @@ function altSecici(o) {
   kap.onclick = (e) => { if (e.target === kap) kapat(); };
   return { kapat };
 }
+/* Genel alttan-sheet kabuğu (özel içerik) — {kap,kapat,q,qq} döner */
+function altSheet(baslik, govdeHTML) {
+  const kap = document.createElement('div'); kap.className = 'altsec-perde';
+  kap.innerHTML = `<div class="altsec" role="dialog"><div class="altsec-tut"></div>
+      <div class="altsec-bas"><h3>${kacar(baslik)}</h3><button class="altsec-x" type="button" aria-label="Kapat">✕</button></div>
+      <div class="altsec-icerik">${govdeHTML}</div></div>`;
+  document.body.appendChild(kap);
+  requestAnimationFrame(() => kap.classList.add('acik'));
+  const kapat = () => { kap.classList.remove('acik'); setTimeout(() => kap.remove(), 300); };
+  kap.querySelector('.altsec-x').onclick = kapat;
+  kap.onclick = (e) => { if (e.target === kap) kapat(); };
+  return { kap, kapat, q: (s) => kap.querySelector(s), qq: (s) => Array.from(kap.querySelectorAll(s)) };
+}
 
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
@@ -527,7 +540,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '246';
+const APP_SURUM = '247';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2470,26 +2483,21 @@ let neonOzetAcik = false;
 /* Veri Gir → hangi kaynak? Plan4me / Banka içe aktarma önizlemesi, Nakit Harcama → gider girişi */
 function veriGirModal() {
   const sec = [
-    { k: 'planformi', ik: 'belge', ad: 'Plan4me', alt: 'Aylık rapor dosyası içe aktar' },
-    { k: 'banka', ik: 'banka', ad: 'Banka', alt: 'Banka ekstresi içe aktar' },
-    { k: 'nakit-harcama', ik: 'kasa', ad: 'Nakit Harcama', alt: 'Nakit gider / harcama ekle' },
-    { k: 'vergi', ik: 'kaydet', ad: 'Vergi Tahakkuku İşle', alt: 'Müşavirden gelen KDV / gelir vergisi' },
+    { k: 'planformi', ik: 'belge', ad: 'Plan4me', alt: 'Aylık rapor dosyası içe aktar', cls: 'i-plan' },
+    { k: 'banka', ik: 'banka', ad: 'Banka', alt: 'Banka ekstresi içe aktar', cls: 'i-banka' },
+    { k: 'nakit-harcama', ik: 'kasa', ad: 'Nakit Harcama', alt: 'Nakit gider / harcama ekle', cls: 'i-nakit' },
+    { k: 'vergi', ik: 'kaydet', ad: 'Vergi Tahakkuku İşle', alt: 'Müşavirden gelen KDV / gelir vergisi', cls: 'i-vergi' },
   ];
-  const govde = `<div class="vg-sec">${sec.map(s => `<button type="button" class="vg-oge" data-vg="${s.k}">
+  const govde = `<div class="vg-sec">${sec.map(s => `<button type="button" class="vg-oge ${s.cls}" data-vg="${s.k}">
     <span class="vg-ik">${ik(s.ik)}</span>
     <span class="vg-metin"><span class="vg-ad">${s.ad}</span><span class="vg-alt">${s.alt}</span></span>
     <span class="vg-ok">›</span></button>`).join('')}</div>`;
-  modalAc('Veri Gir', govde, '<button type="button" class="btn" id="vgIptal" style="flex:1">Vazgeç</button>');
-  $('#vgIptal').onclick = modalKapat;
-  $$('[data-vg]').forEach(b => b.onclick = () => {
-    const k = b.dataset.vg;
-    if (k === 'nakit-harcama') {   // kaydedilirse Kasa'ya git; vazgeçilirse dashboard'da kal
-      nakitGiderModal(null, () => { hesapAktif = 'nakit'; git('hesap-defter'); });
-    } else if (k === 'vergi') {   // Vergi tahakkuku — modalde ay seçilir
-      modalKapat(); vergiTahakkukModal(buAy(), null);
-    } else {
-      iaSekme = k; modalKapat(); git('ice-aktar');
-    }
+  const sh = altSheet('Veri Gir', govde);
+  sh.qq('[data-vg]').forEach(b => b.onclick = () => {
+    const k = b.dataset.vg; sh.kapat();
+    if (k === 'nakit-harcama') nakitGiderModal(null, () => { hesapAktif = 'nakit'; git('hesap-defter'); });   // kaydedilirse Kasa'ya git
+    else if (k === 'vergi') vergiTahakkukModal(buAy(), null);   // vergi tahakkuku — modalde ay seçilir
+    else { iaSekme = k; git('ice-aktar'); }
   });
 }
 function neonAnaEkran() {

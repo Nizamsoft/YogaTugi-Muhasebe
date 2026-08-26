@@ -3541,3 +3541,17 @@ body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;heig
 .bts-sag{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .bts-tut{font-weight:800;font-size:14px;color:var(--metin);font-variant-numeric:tabular-nums;white-space:nowrap}
 .bts-sag .rozet-etk{font-size:8.5px}
+
+/* ===== Veri Gir — alttan sheet satırları ===== */
+.altsec-icerik{overflow-y:auto}
+.altsec .vg-sec{padding:4px 10px 16px;gap:0}
+.altsec .vg-oge{background:none;border:0;border-radius:12px;padding:14px 12px}
+.altsec .vg-oge+.vg-oge{border-top:1px solid #454f5a}
+.altsec .vg-oge:hover{background:rgba(255,255,255,.04);border-color:transparent}
+.altsec .vg-oge .vg-ik{width:46px;height:46px;border-radius:13px;background:var(--gri);border:0;color:var(--neon)}
+.altsec .vg-oge .vg-ik svg,.altsec .vg-oge .vg-ik .uik{width:22px;height:22px}
+.altsec .vg-oge.i-banka .vg-ik{color:#8fb8f5;background:rgba(96,165,250,.14)}
+.altsec .vg-oge.i-nakit .vg-ik{color:var(--neon);background:rgba(180,232,58,.14)}
+.altsec .vg-oge.i-vergi .vg-ik{color:var(--amber);background:rgba(245,169,31,.15)}
+.altsec .vg-ad{font-size:15.5px}
+.altsec .vg-alt{font-size:12px}
