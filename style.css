@@ -1634,6 +1634,8 @@ body.tema-koyu .krs-tablo tbody td.num{color:#cdba86}
 .gp-kaldir{border:1px solid var(--kenar);background:#fff;color:var(--metin-soluk);font-family:inherit;font-weight:700;font-size:12.5px;border-radius:11px;padding:9px 13px;cursor:pointer}
 .gp-alan{margin-bottom:16px}
 .gp-alan label{display:block;font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--metin-soluk);margin:0 0 7px 2px}
+.gp-alan label.gp-lbl-ik{display:flex;align-items:center;gap:6px}
+.gp-alan label.gp-lbl-ik .uik{width:13px;height:13px;flex:none;color:var(--neon);opacity:.92}
 .gp-inp{width:100%;border:1px solid var(--kenar);background:#fff;border-radius:13px;padding:13px 14px;font-size:15px;color:var(--metin);font-family:inherit}
 .gp-inp:focus{outline:none;border-color:var(--gold)}
 .gp-kaydet{width:100%;border:none;border-radius:13px;padding:14px;font-weight:800;font-size:15px;color:#40320f;cursor:pointer;font-family:inherit;

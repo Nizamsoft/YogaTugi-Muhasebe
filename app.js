@@ -134,8 +134,8 @@ function tutarKutusuBagla(el, baslangic) {
   });
 }
 /* Tarih satırı: görünmez <input type=date> değişince görünen metni (28 Tem 2026) günceller */
-function tarihGostergeBagla() {
-  const inp = document.querySelector('#hrTarih'), gos = document.querySelector('#hrTarihGos');
+function tarihGostergeBagla(inpSel = '#hrTarih', gosSel = '#hrTarihGos') {
+  const inp = document.querySelector(inpSel), gos = document.querySelector(gosSel);
   if (!inp || !gos) return;
   const guncelle = () => { gos.textContent = fmtTarihUzun(inp.value); };
   inp.addEventListener('input', guncelle);
@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '220';
+const APP_SURUM = '221';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1521,12 +1521,12 @@ function tahsilatTanimModal(mevcut, sonrasi) {
   };
   const egTrigIc = () => trig(ttForm.egitmenAd ? `<span class="st-nm">${kacar(ttForm.egitmenAd)}</span>` : `<span class="st-ph">Eğitmen seçin</span>`);
   const govde = `
-    <div class="gp-alan"><label>Öğrenci Adı</label><button type="button" class="sec-trig" id="ttOgrTrig">${ogrTrigIc()}</button></div>
-    <div class="gp-alan"><label>Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger tt-tarih-gos" id="hrTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="hrTarih" value="${(ttForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
-    <div class="gp-alan"><label>Ödeme Türü</label><button type="button" class="sec-trig" id="ttTurTrig">${turTrigIc()}</button></div>
-    <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="ttTutar" inputmode="decimal" placeholder="0 ₺" autocomplete="off"></div>
-    <div class="gp-alan"><label>Eğitmen</label>${ortaklar.length ? `<button type="button" class="sec-trig" id="ttEgTrig">${egTrigIc()}</button>` : `<div class="tt-egyok">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}</div>
-    <div class="gp-alan" style="margin:0"><label>Ders Paketi</label><input type="text" class="gp-inp" id="ttPk" value="${kacar(ttForm.dersPaketi)}" placeholder="Örn. 8 Ders" autocomplete="off"></div>`;
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('sure')} Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger tt-tarih-gos" id="hrTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="hrTarih" value="${(ttForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('ogrenci')} Öğrenci Adı</label><button type="button" class="sec-trig" id="ttOgrTrig">${ogrTrigIc()}</button></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kart')} Ödeme Türü</label><button type="button" class="sec-trig" id="ttTurTrig">${turTrigIc()}</button></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('para')} Tutar</label><input type="text" class="gp-inp" id="ttTutar" inputmode="decimal" placeholder="0 ₺" autocomplete="off"></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kisi')} Eğitmen</label>${ortaklar.length ? `<button type="button" class="sec-trig" id="ttEgTrig">${egTrigIc()}</button>` : `<div class="tt-egyok">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}</div>
+    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('dersler')} Ders Paketi</label><input type="text" class="gp-inp" id="ttPk" value="${kacar(ttForm.dersPaketi)}" placeholder="Örn. 8 Ders" autocomplete="off"></div>`;
   const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="ttSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="ttIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="ttKaydet">${ik('kaydet')} Kaydet</button>`;
   modalAc(duzenle ? 'Tahsilat Düzenle' : 'Yeni Tahsilat', govde, alt);
   tutarKutusuBagla($('#ttTutar'), ttForm.tutar || '');
@@ -1786,12 +1786,13 @@ function nakitGiderModal(mevcut, sonrasi) {
   const duzenle = !!(mevcut && mevcut.id);
   nkGiderForm = { tarih: bugunISO(), aciklama: '', tutar: '', kategori: '', ...(mevcut || {}) };
   const govde = `
-    <div class="gp-alan"><label>Tarih</label><input type="date" class="gp-inp" id="nkgTarih" value="${(nkGiderForm.tarih || bugunISO()).slice(0, 10)}"></div>
-    <div class="gp-alan"><label>Açıklama</label><input type="text" class="gp-inp" id="nkgAcik" value="${kacar(nkGiderForm.aciklama)}" placeholder="Örn. Temizlik malzemesi" autocomplete="off"></div>
-    <div class="gp-alan"><label>Tutar</label><input type="text" class="gp-inp" id="nkgTutar" inputmode="decimal" value="${nkGiderForm.tutar ? binlik(nkGiderForm.tutar) : ''}" placeholder="0 ₺" autocomplete="off"></div>
-    <div class="gp-alan" style="margin:0"><label>Kategori (opsiyonel)</label><input type="text" class="gp-inp" id="nkgKat" value="${kacar(nkGiderForm.kategori || '')}" placeholder="Örn. Malzeme" autocomplete="off"></div>`;
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('sure')} Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger" id="nkgTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="nkgTarih" value="${(nkGiderForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kalem')} Açıklama</label><input type="text" class="gp-inp" id="nkgAcik" value="${kacar(nkGiderForm.aciklama)}" placeholder="Örn. Temizlik malzemesi" autocomplete="off"></div>
+    <div class="gp-alan"><label class="gp-lbl-ik">${ik('para')} Tutar</label><input type="text" class="gp-inp" id="nkgTutar" inputmode="decimal" value="${nkGiderForm.tutar ? binlik(nkGiderForm.tutar) : ''}" placeholder="0 ₺" autocomplete="off"></div>
+    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('tanimlar')} Kategori (opsiyonel)</label><input type="text" class="gp-inp" id="nkgKat" value="${kacar(nkGiderForm.kategori || '')}" placeholder="Örn. Malzeme" autocomplete="off"></div>`;
   const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="nkgSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="nkgIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="nkgKaydet">${ik('kaydet')} Kaydet</button>`;
   modalAc(duzenle ? 'Nakit Gider' : 'Nakit Gider Ekle', govde, alt);
+  tarihGostergeBagla('#nkgTarih', '#nkgTarihGos');   // yerli/uyumlu tarih göstergesi (native date input gizlenir)
   const kapat = () => modalKapat();
   { const b = $('#nkgIptal'); if (b) b.onclick = kapat; }
   { const b = $('#nkgSil'); if (b) b.onclick = () => onayModal('Nakit gider silinsin mi?', 'Bu kayıt kaldırılacak.', async () => { await DB.sil('nakitGiderleri', mevcut.id); State.nakitGiderleri = DB._oku('nakitGiderleri'); modalKapat(); bildir('Nakit gider silindi.', 'basari'); if (sonrasi) sonrasi(); }); }
@@ -7837,7 +7838,7 @@ function ustCubukKur() {
 const ALT_MENU = [
   { tip: 'sayfa', id: 'dashboard', ad: 'Panel',    ikon: 'panel' },
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
-  { tip: 'aksiyon', id: 'tahsilat-yeni', ad: 'Tanımla', ikon: 'arti', merkez: true },
+  { tip: 'aksiyon', id: 'tahsilat-yeni', ad: 'Tahsilat Ekle', ikon: 'arti', merkez: true },
   { tip: 'sayfa', id: 'gelirler', ad: 'Gelirler', ikon: 'gelir' },
   { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
 ];
