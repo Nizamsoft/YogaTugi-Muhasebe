@@ -648,6 +648,30 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kk-vsat b{font-weight:700;color:var(--metin);font-variant-numeric:tabular-nums}
 .kk-vsat.o{color:var(--amber)} .kk-vsat.o b{color:var(--amber)}
 .kk-vsat.b b{color:var(--metin-soluk)}
+.kk-vsat.t b{color:var(--metin)}
+.kk-mini.t{color:#8fe07a;background:rgba(126,224,164,.13)}
+/* vergi mahsuplaştırması satırı (tıklanır) */
+.kk-mahsup{cursor:pointer}
+.kk-mahsup .kk-mtik{color:var(--mavi,#8fb6f5);font-size:11px;font-weight:800;margin-left:5px}
+.kk-mahsup b.poz{color:#8fe07a} .kk-mahsup b.negatif{color:var(--kirmizi)}
+/* tahakkuk giriş modalı */
+.tk-not{font-size:12.5px;color:var(--metin-soluk);line-height:1.5;margin:0 0 14px}
+.tk-not b{color:var(--metin)}
+.tk-ong{font-size:11px;font-weight:700;color:var(--amber);margin-left:7px}
+/* mahsup detay modalı */
+.md-kisi{font-size:13px;font-weight:800;color:var(--metin);margin-bottom:12px}
+.md-g{background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:10px 13px;margin-bottom:9px}
+.md-gb{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+.md-sat{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12.5px;color:var(--metin-soluk)}
+.md-sat b{font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
+.md-tag{font-size:9px;font-weight:800;border-radius:5px;padding:1px 6px;margin-left:6px}
+.md-tag.o{color:var(--amber);background:rgba(245,169,31,.13)}
+.md-tag.g{color:#8fe07a;background:rgba(126,224,164,.13)}
+.md-bek{color:var(--metin-soluk)!important;font-weight:700!important}
+.md-fark{border-top:1px dashed var(--kenar);margin-top:2px;padding-top:8px}
+.md-fark span{font-weight:800;color:var(--metin)} .md-fark b.poz{color:#8fe07a} .md-fark b.negatif{color:var(--kirmizi)}
+.md-top{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:11px 13px;border-radius:11px;background:rgba(180,232,58,.08);border:1px solid rgba(180,232,58,.25);font-weight:800}
+.md-top b{font-size:16px;font-variant-numeric:tabular-nums} .md-top b.poz{color:#8fe07a} .md-top b.negatif{color:var(--kirmizi)}
 /* eski (kullanılmayan) ortak kartı grupları — kalsın */
 .kk-kart{padding:16px 17px}
 .kk-bas{display:flex;align-items:center;gap:13px;padding-bottom:14px;border-bottom:1px solid var(--kenar);margin-bottom:6px}
