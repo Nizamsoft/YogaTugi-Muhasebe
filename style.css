@@ -615,6 +615,14 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kar-grup-not{font-size:11px;font-weight:600;color:var(--metin-soluk)}
 .kar-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:14px 16px;margin-bottom:11px}
 .kar-kart.maasli{border-style:dashed}
+/* Ortak kartı: 3 kolon — sol tam boy foto | başlık | tutar */
+.ok-kart{display:flex;align-items:stretch;gap:0;padding:0;overflow:hidden}
+.ok-foto{flex:0 0 92px;display:grid;place-items:center;background:var(--gri);overflow:hidden}
+.ok-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.ok-foto.bos{font-family:Georgia,serif;font-size:30px;font-weight:800;color:var(--neon);background:rgba(180,232,58,.1)}
+.ok-sag{flex:1;min-width:0;padding:13px 15px;display:flex;flex-direction:column}
+.ok-ad{font-size:16px;font-weight:800;color:var(--metin);margin-bottom:6px;padding-bottom:9px;border-bottom:1px solid var(--kenar)}
+.ok-kart .kar-sat{padding:5px 0}
 .kar-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .kar-ad{font-size:16px;font-weight:800;color:var(--metin)}
 .kar-e0{color:var(--amber);font-weight:800}

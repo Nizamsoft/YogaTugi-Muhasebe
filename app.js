@@ -464,9 +464,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '210';
+const APP_SURUM = '211';
 const APP_SURUM_TARIH = '26 Ağu 2026';
-const APP_SURUM_SAAT = '09:50';
+const APP_SURUM_SAAT = '10:10';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -906,30 +906,43 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const gKom = [...r.ortaklar, ...r.egitmenler].reduce((s, e) => s + e.komisyon, 0);
   const gNet = r.ortaklar.reduce((s, e) => s + e.net, 0);
   const sat = (l, v, cls = '') => `<div class="kar-sat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
-  const kirilim = (e) => `<div class="kar-kir"><span>Nakit ${TL(e.nakit)}</span><span>Havale ${TL(e.havale)}</span><span>Kart ${TL(e.kart)}</span></div>`;
+  const imzali = (n) => n ? '−' + TL(n) : TL(0);   // gider satırları: boşsa 0
   const ortAdBul = id => { const o = State.ortaklar.find(x => x.id === id); return o ? o.ad : '—'; };
+  const ortFoto = (id, ad) => { const o = State.ortaklar.find(x => x.id === id); return (o && o.foto) ? `<span class="ok-foto"><img src="${o.foto}" alt=""></span>` : `<span class="ok-foto bos">${basHarf(ad)}</span>`; };
+  // Ortak kartı: sol tam boy foto + sabit sıralı başlıklar (boşsa 0) + tutar
   const ortakKart = (e) => `
-    <div class="kar-kart">
-      <div class="kar-bas"><span class="kar-ad">${kacar(e.ad)}</span><span class="kar-net ${e.net < 0 ? 'negatif' : 'pozitif'}">${TL(e.net)}</span></div>
-      ${kirilim(e)}
-      ${sat('Brüt Tahsilat', TL(e.brut))}
-      ${sat('Kart Komisyonu', e.komisyon ? '−' + TL(e.komisyon) : TL(0))}
-      ${sat('Genel Gider Payı', e.giderPayi ? '−' + TL(e.giderPayi) : TL(0))}
-      ${sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, e.vergi ? '−' + TL(e.vergi) : TL(0), 'kar-vergi')}
-      ${Math.abs(e.havuzPayi) > 0.5 ? sat('Havuz Payı (maaşlı)', (e.havuzPayi < 0 ? '−' : '+') + TL(Math.abs(e.havuzPayi))) : ''}
-      ${sat('Net', TL(e.net), 'kar-net-b ' + (e.net < 0 ? 'negatif' : 'pozitif'))}
-      ${e.odenen ? sat('Ödenen (huzur hakkı/payı)', '−' + TL(e.odenen)) + sat('Kalan Verilecek', TL(e.kalan), e.kalan < 0 ? 'negatif' : 'pozitif') : ''}
+    <div class="kar-kart ok-kart">
+      ${ortFoto(e.id, e.ad)}
+      <div class="ok-sag">
+        <div class="ok-ad">${kacar(e.ad)}</div>
+        ${sat('Brüt Tahsilat', TL(e.brut))}
+        ${sat('Nakit', TL(e.nakit))}
+        ${sat('Havale', TL(e.havale))}
+        ${sat('Kart', TL(e.kart))}
+        ${sat('Kart Komisyonu', imzali(e.komisyon))}
+        ${sat('Genel Gider Payı', imzali(e.giderPayi))}
+        ${sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, imzali(e.vergi), 'kar-vergi')}
+        ${sat('Havuz Payı (maaşlı)', Math.abs(e.havuzPayi) > 0.5 ? (e.havuzPayi < 0 ? '−' : '+') + TL(Math.abs(e.havuzPayi)) : TL(0))}
+        ${sat('Net', TL(e.net), 'kar-net-b ' + (e.net < 0 ? 'negatif' : 'pozitif'))}
+        ${sat('Ödenen (huzur hakkı/payı)', imzali(e.odenen))}
+        ${sat('Kalan Verilecek', TL(e.kalan), e.kalan < 0 ? 'negatif' : 'pozitif')}
+      </div>
     </div>`;
   const dagitimEt = (m) => m.dagitim === 'havuz' ? '4 ortağa eşit' : m.dagitim === 'ortak' ? kacar(ortAdBul(m.hedefOrtakId)) : 'atanmadı';
   const maasKart = (e) => `
-    <div class="kar-kart maasli">
-      <div class="kar-bas"><span class="kar-ad">${kacar(e.ad)}</span><span class="kar-net">${TL(e.net)}</span></div>
-      ${kirilim(e)}
-      ${sat('Brüt Tahsilat', TL(e.brut))}
-      ${e.komisyon ? sat('Kart Komisyonu', '−' + TL(e.komisyon)) : ''}
-      ${e.vergi ? sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, '−' + TL(e.vergi), 'kar-vergi') : ''}
-      ${sat('Net', TL(e.net), 'kar-net-b')}
-      <div class="kar-dagitim ${e.dagitim === 'bekliyor' ? 'bekliyor' : ''}">${ik('link')} Dağıtım: <b>${dagitimEt(e)}</b></div>
+    <div class="kar-kart ok-kart maasli">
+      <span class="ok-foto bos">${basHarf(e.ad)}</span>
+      <div class="ok-sag">
+        <div class="ok-ad">${kacar(e.ad)}</div>
+        ${sat('Brüt Tahsilat', TL(e.brut))}
+        ${sat('Nakit', TL(e.nakit))}
+        ${sat('Havale', TL(e.havale))}
+        ${sat('Kart', TL(e.kart))}
+        ${sat('Kart Komisyonu', imzali(e.komisyon))}
+        ${sat(`Vergi (havale+kart · %${Math.round(r.vOran * 100)})`, imzali(e.vergi), 'kar-vergi')}
+        ${sat('Net', TL(e.net), 'kar-net-b')}
+        <div class="kar-dagitim ${e.dagitim === 'bekliyor' ? 'bekliyor' : ''}">${ik('link')} Dağıtım: <b>${dagitimEt(e)}</b></div>
+      </div>
     </div>`;
   ic().innerHTML = `
     <div class="kar-sayfa">
