@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '237';
+const APP_SURUM = '238';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1197,7 +1197,7 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
         <tbody>${kesit.map(p => {
           const dn = donemStr(p.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
           const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
-          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Tür"><span class="rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td></tr>`;
+          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Tür" class="c-roz"><span class="rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag mono">${TL(p.tutar)}</td></tr>`;
         }).join('')}</tbody>
       </table></div></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="glDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kayitlar.length - gelirLimit)})</button>` : ''}`;

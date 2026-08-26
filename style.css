@@ -1703,25 +1703,28 @@ body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .hs-acik-ad{display:block;font-weight:700;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hs-acik-alt{display:block;font-size:11px;color:var(--metin-soluk);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Banka içe aktarım önizleme tablosu — geniş & okunur */
-.ia-onizle-tablo{min-width:0;font-size:14px}
-.ia-onizle-tablo thead th{font-size:11px;padding:12px 11px}
-.ia-onizle-tablo tbody td{padding:13px 11px;vertical-align:middle;font-size:14px}
-.ia-tar-hcr{white-space:nowrap;line-height:1.25}
-.ia-tar-us{display:block;font-weight:700;font-size:12.5px;color:var(--metin)}
-.ia-tar-dn{display:block;font-weight:700;font-size:9.5px;color:var(--metin-soluk);letter-spacing:.3px}
-/* Ortak 2-satır hücre sınıfları (Gelir / Gider / Banka önizleme) */
-.ogr-tablo.sade .t2-hcr{white-space:nowrap;line-height:1.25}
-.ogr-tablo.sade .t2-us{display:block;font-weight:700;font-size:13.5px;color:var(--metin)}
-.ogr-tablo.sade .t2-dn{display:block;font-weight:700;font-size:10.5px;color:var(--metin-soluk);letter-spacing:.3px}
-.ogr-tablo.sade .a2-us{display:block;font-weight:700;font-size:15px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ogr-tablo.sade .a2-dn{display:block;font-size:12px;color:var(--metin-soluk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
-/* Bu tablolar 4–5 sütun — 640px min-width'e gerek yok, ekranı doldursun ve yazılar Kasa defteriyle aynı okunur ölçekte olsun */
-.ogr-tablo.sade.iki-satir{min-width:0;font-size:14px}
-.ogr-tablo.sade.iki-satir tbody td{vertical-align:middle;padding:13px 11px;font-size:14px}
-.ogr-tablo.sade.iki-satir thead th{font-size:11px;padding:12px 11px}
-.ogr-tablo.sade.iki-satir td.mono{font-size:13.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* Banka içe aktarım önizleme tablosu — orta-küçük ölçek (B) */
+.ia-onizle-tablo{min-width:0;font-size:12px}
+.ia-onizle-tablo thead th{font-size:10px;padding:10px 8px}
+.ia-onizle-tablo tbody td{padding:9.5px 8px;vertical-align:middle;font-size:12px}
+.ia-tar-hcr{white-space:nowrap;line-height:1.2}
+.ia-tar-us{display:block;font-weight:700;font-size:12px;color:var(--metin)}
+.ia-tar-dn{display:block;font-weight:700;font-size:9px;color:var(--metin-soluk);letter-spacing:.3px}
+/* Ortak 2-satır hücre sınıfları (Gelir / Gider / Banka önizleme) — orta-küçük ölçek (B) */
+.ogr-tablo.sade .t2-hcr{white-space:nowrap;line-height:1.2}
+.ogr-tablo.sade .t2-us{display:block;font-weight:700;font-size:12px;color:var(--metin)}
+.ogr-tablo.sade .t2-dn{display:block;font-weight:700;font-size:9px;color:var(--metin-soluk);letter-spacing:.3px}
+.ogr-tablo.sade .a2-us{display:block;font-weight:700;font-size:12.5px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15}
+.ogr-tablo.sade .a2-dn{display:block;font-size:10.5px;color:var(--metin-soluk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+/* Bu tablolar 4–5 sütun — ekranı doldursun, orta-küçük ölçek */
+.ogr-tablo.sade.iki-satir{min-width:0;font-size:11.5px}
+.ogr-tablo.sade.iki-satir tbody td{vertical-align:middle;padding:9.5px 8px;font-size:11.5px}
+.ogr-tablo.sade.iki-satir thead th{font-size:10px;padding:10px 8px}
+.ogr-tablo.sade.iki-satir td.mono{font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ogr-tablo.sade.iki-satir tbody td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ogr-tablo.sade.iki-satir thead th{white-space:nowrap}
+.ogr-tablo.sade.iki-satir .rozet-etk{font-size:8.5px}
+.ogr-tablo.sade.iki-satir td.c-roz{overflow:visible;text-overflow:clip}
 .ia-isl-ad{display:block;font-weight:700;font-size:13.5px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
 .ia-isl-ac{display:block;font-size:11.5px;color:var(--metin-soluk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;margin-top:2px}
 .ia-ait{font-weight:600} .ia-ait.g{color:var(--metin)}
