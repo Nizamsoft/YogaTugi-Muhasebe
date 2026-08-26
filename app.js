@@ -527,7 +527,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '245';
+const APP_SURUM = '246';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1554,6 +1554,13 @@ function ttSatirHTML(t) {
     </span>
   </button>`;
 }
+/* Dashboard "Bugünkü Tahsilatlar" satırı — sade: öğrenci+eğitmen · tutar+tür (uyum yok) */
+function bugunTahsilatSatir(t) {
+  return `<button type="button" class="ttl-sat bts" data-ttduz="${t.id}" data-gun="${kacar(t.tarih || '')}">
+    <span class="bts-kisi"><span class="bts-ad">${kacar(t.ogrenciAd || '—')}</span>${t.egitmenAd ? `<span class="bts-eg">${kacar(t.egitmenAd)}</span>` : ''}</span>
+    <span class="bts-sag"><span class="bts-tut mono">${TL(t.tutar)}</span>${odemeTuruRoz(t.odemeTuru)}</span>
+  </button>`;
+}
 function ttListeBagla(kok) {
   (kok || document).querySelectorAll('.ttl-sat[data-ttduz]').forEach(b => b.onclick = () => {
     tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.ttduz));
@@ -2530,9 +2537,10 @@ function neonAnaEkran() {
       </div>
       ${(() => {
         const bugunku = ttSirali().filter(t => (t.tarih || '') === bugunISO());
+        const toplam = bugunku.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
         const baslik = `<div class="ttl-dbaslik"><span>Bugünkü Tahsilatlar</span><button type="button" class="ttl-tumu" data-git="gelirler">Tümü ›</button></div>`;
         return baslik + `<div class="ttl-dash">${bugunku.length
-          ? `<div class="ttl-tablo">${bugunku.map(ttSatirHTML).join('')}</div>`
+          ? `<div class="bts-toplam"><span class="lbl">Bugün Toplam</span><span class="val">${TL(toplam)}<small>${bugunku.length} tahsilat</small></span></div><div class="ttl-tablo bts-tablo">${bugunku.map(bugunTahsilatSatir).join('')}</div>`
           : `<div class="ttl-bosbugun"><span>Bugün tahsilat yapılmadı.</span></div>`}</div>`;
       })()}
     </div>`;

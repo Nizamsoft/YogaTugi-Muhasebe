@@ -3525,3 +3525,19 @@ body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;heig
 .altsec-oge.sec{background:rgba(180,232,58,.08)} .altsec-oge.sec .ad{color:var(--neon)}
 .altsec-ekle .ad{color:var(--neon)}
 .altsec-bos{padding:22px 20px;text-align:center;color:var(--metin-soluk);font-size:13px}
+
+/* ===== Dashboard "Bugünkü Tahsilatlar" (revize — sade satır, uyum yok) ===== */
+.bts-toplam{display:flex;align-items:baseline;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--kenar)}
+.bts-toplam .lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--metin-soluk)}
+.bts-toplam .val{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:18px;color:var(--metin);font-variant-numeric:tabular-nums}
+.bts-toplam .val small{font-size:11.5px;color:var(--metin-soluk);font-weight:600;margin-left:6px;font-family:var(--font,inherit)}
+.ttl-tablo.bts-tablo{display:block;border:0;background:none;padding:0}
+.ttl-sat.bts{display:flex;align-items:center;justify-content:space-between;gap:11px;width:100%;padding:12px 15px;border:0;border-bottom:1px solid var(--kenar);border-radius:0;background:transparent;text-align:left;cursor:pointer;font-family:inherit;box-shadow:none}
+.ttl-sat.bts:last-child{border-bottom:0}
+.ttl-sat.bts:hover{background:rgba(255,255,255,.02)}
+.bts-kisi{min-width:0;flex:1;display:flex;flex-direction:column}
+.bts-ad{font-weight:700;font-size:14px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bts-eg{font-size:11.5px;color:var(--metin-soluk);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bts-sag{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.bts-tut{font-weight:800;font-size:14px;color:var(--metin);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bts-sag .rozet-etk{font-size:8.5px}
