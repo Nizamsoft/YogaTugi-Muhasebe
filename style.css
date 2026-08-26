@@ -1600,8 +1600,14 @@ body.tema-koyu .gr-grpbas .ad{color:var(--metin)}
 .gr-cnt{flex:0 0 auto;width:58px;text-align:right;font-size:11px;color:var(--metin-soluk);font-weight:700}
 .gr-tut{flex:0 0 auto;width:110px;text-align:right;font-family:Georgia,serif;font-weight:800;color:#c0483f;font-variant-numeric:tabular-nums;font-size:13.5px}
 .gr-tut.art{color:#3f9c63} body.tema-koyu .gr-tut.art,body.tema-neon .gr-tut.art{color:#8fe07a}
-.gr-seg{margin:12px 0}
+.gr-seg{display:flex;width:100%;margin:12px 0}
+.gr-seg .ia-oge{flex:1;justify-content:center}
 .gr-arac{display:flex;justify-content:flex-end;margin:0 0 12px}
+/* Sade tablo başlıkları — daha belirgin + hizalı (th/td aynı yatay padding) */
+.ogr-tablo.sade thead th{font-size:11.5px;letter-spacing:.6px;padding:12px 14px}
+.ogr-tablo.sade tbody td{padding:11px 14px}
+body.tema-neon .ogr-tablo.sade thead th{background:var(--gri);color:var(--metin);border-bottom:2px solid rgba(180,232,58,.4);box-shadow:none;font-weight:800}
+body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 /* rapor: tıklanamaz satır (özet — kayda basılmaz) */
 .gr-sat.norow{cursor:default}
 .gr-sat.norow:hover{background:none}
