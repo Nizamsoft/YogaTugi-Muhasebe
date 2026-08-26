@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '234';
+const APP_SURUM = '235';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1060,18 +1060,16 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
         <span class="gg-bas">Ortaklar</span>
         <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${karGorunum === 'ben' ? 'sec' : ''}" data-kg="ben">Ben</button><button type="button" class="ia-oge ${karGorunum === 'ortaklar' ? 'sec' : ''}" data-kg="ortaklar">Ortaklar</button></div></div>
       </div>
-      <div class="kar-arac-row"><button type="button" class="btn btn-kucuk ${r.tah && (r.tah.kdv !== '' || r.tah.gv !== '') ? 'sec' : ''}" id="karTahakkuk">${ik('kaydet')} Tahakkuk</button><button type="button" class="btn btn-kucuk" id="karEsle">${ik('kisi')} Eğitmen Eşleme</button></div>
       ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “Tahsilat Tanımla” ile tahsilatları girin, ardından “İçe Aktar” ile banka dosyasını yükleyip eşleştirin.</p></div>` : `
       ${gosterilecek.map(ortakKart).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}
       ${!benMod && r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
   $$('[data-kg]').forEach(b => b.onclick = () => { karGorunum = b.dataset.kg; karlilikSayfasi(); });
-  const eb = $('#karEsle'), eb2 = $('#karEsle2'); if (eb) eb.onclick = () => git('tanim-egitmen'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
+  const eb2 = $('#karEsle2'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
   $$('.kk-bas2[data-tog]').forEach(b => b.onclick = () => { const id = b.dataset.tog; if (karAcikSet.has(id)) karAcikSet.delete(id); else karAcikSet.add(id); karlilikSayfasi(); });
   $$('[data-mahsup]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); mahsupDetayModal(donem, b.dataset.mahsup); });
   $$('[data-ode]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); hakedisOdemeModal(donem, b.dataset.ode, () => karlilikSayfasi()); });
-  { const tb = $('#karTahakkuk'); if (tb) tb.onclick = () => vergiTahakkukModal(donem, () => karlilikSayfasi()); }
 };
 /* Müşavirden gelen gerçek KDV / gelir vergisi tahakkukunu gir (öngörüyle mutabakat) */
 function vergiTahakkukModal(donem, sonrasi) {
@@ -1080,10 +1078,12 @@ function vergiTahakkukModal(donem, sonrasi) {
   const kdvOng = r.ortaklar.reduce((s, e) => s + (e.kdvOngoru || 0), 0);
   const gvOng = r.ortaklar.reduce((s, e) => s + (e.gvOngoru || 0), 0);
   const govde = `
+    <div class="tk-ay">${ayNavHTML(donem)}</div>
     <p class="tk-not">${donemAdi(donem)} için müşavirden gelen <b>gerçek</b> vergiyi girin. Öngörüyle farkı ortaklara mahsuplaştırılır. Boş bırakılan “henüz gelmedi” sayılır.</p>
     <div class="gp-alan"><label>KDV tahakkuku <span class="tk-ong">öngörü ${TL(kdvOng)}</span></label><input type="text" class="gp-inp" id="tkKdv" inputmode="decimal" value="${mevcut.kdv != null && mevcut.kdv !== '' ? binlik(mevcut.kdv) : ''}" placeholder="Müşavirden gelen KDV" autocomplete="off"></div>
     <div class="gp-alan" style="margin:0"><label>Gelir vergisi tahakkuku <span class="tk-ong">öngörü ${TL(gvOng)}</span></label><input type="text" class="gp-inp" id="tkGv" inputmode="decimal" value="${mevcut.gv != null && mevcut.gv !== '' ? binlik(mevcut.gv) : ''}" placeholder="Boş = henüz gelmedi" autocomplete="off"></div>`;
   modalAc('Vergi Tahakkuku · ' + donemAdi(donem), govde, `<button type="button" class="btn" id="tkIptal">Vazgeç</button><button type="button" class="btn btn-ana" id="tkKaydet">${ik('kaydet')} Kaydet</button>`);
+  $$('#modalKap .tk-ay [data-ay]').forEach(b => b.onclick = () => vergiTahakkukModal(donemKaydir(donem, Number(b.dataset.ay)), sonrasi));
   $('#tkIptal').onclick = modalKapat;
   $('#tkKaydet').onclick = async () => {
     const kdvV = $('#tkKdv').value.trim(), gvV = $('#tkGv').value.trim();
@@ -1811,9 +1811,12 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
 };
 function iaTabCiz() {
   const g = $('#iaGovde'); const isPf = iaSekme === 'planformi';
-  if (iaArsivAcik) { iaArsivCiz(g, isPf); return; }
-  // Dosya yüklüyse yükleme kutusu gizlenir, tam ekran önizleme gösterilir
-  if (iaSonKayitlar && iaSonSekme === iaSekme) {
+  const ust = $('.ia-sayfa .ia-ust');
+  if (iaArsivAcik) { if (ust) ust.style.display = ''; iaArsivCiz(g, isPf); return; }
+  // Dosya yüklüyse yükleme kutusu + sekme çubuğu gizlenir, tam ekran önizleme gösterilir
+  const onizleAktif = iaSonKayitlar && iaSonSekme === iaSekme;
+  if (ust) ust.style.display = onizleAktif ? 'none' : '';
+  if (onizleAktif) {
     g.innerHTML = `<div id="iaOnizle"></div>`;
     iaOnizleCiz(iaSonKayitlar, iaSonDosya);
     return;
@@ -2102,15 +2105,14 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     }
   }
   on.innerHTML = `
-    <div class="ia-onizle">
-      <div class="ia-dosad"><span class="ia-dosad-ad">${ik('belge')} ${kacar(dosyaAd)}</span><button type="button" class="ia-yeni-dosya" id="iaYeniDosya">${ik('indir')} Yeni dosya</button></div>
-      <div class="ia-ozet">${ozet}</div>
+    <div class="ia-onizle sade2">
+      <div class="ia-mini-bar"><button type="button" class="ia-yeni-dosya" id="iaYeniDosya">${ik('indir')} Yeni dosya</button></div>
+      ${isPf ? `<div class="ia-ozet">${ozet}</div>` : ''}
       ${bakiyeUst}
       ${liste}
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="iaDaha">Daha fazla (+${Math.min(25, kalan)})</button>` : ''}
       ${bakiyeAlt}
-      ${uyusmayan ? `<div class="ia-uyari">${ik('uyari')} ${uyusmayan} kayıt uyuşmuyor — içe aktarmadan önce eşleştirin${isPf ? '' : ' / gider tanımlayın'}.</div>` : ''}
-      <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${(yeni.length && !uyusmayan) ? '' : 'disabled'}>${ik('kaydet')} ${uyusmayan ? 'Önce uyuşmayanları çözün' : yeni.length + ' kaydı içe aktar'}</button>
+      <button type="button" class="btn btn-ana ia-kaydet" id="iaKaydet" ${(yeni.length && !uyusmayan) ? '' : 'disabled'}>${ik('kaydet')} ${uyusmayan ? (isPf ? 'Önce eşleştirin' : 'Önce eşleştirin / gider seçin') : yeni.length + ' kaydı içe aktar'}</button>
     </div>`;
   $$('.ia-flt-b', on).forEach(b => b.onclick = () => { iaOnFiltre = b.dataset.flt; iaOnLimit = 12; iaOnizleCiz(iaSonKayitlar, iaSonDosya); });
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
@@ -2369,6 +2371,7 @@ function veriGirModal() {
     { k: 'planformi', ik: 'belge', ad: 'Plan4me', alt: 'Aylık rapor dosyası içe aktar' },
     { k: 'banka', ik: 'banka', ad: 'Banka', alt: 'Banka ekstresi içe aktar' },
     { k: 'nakit-harcama', ik: 'kasa', ad: 'Nakit Harcama', alt: 'Nakit gider / harcama ekle' },
+    { k: 'vergi', ik: 'kaydet', ad: 'Vergi Tahakkuku İşle', alt: 'Müşavirden gelen KDV / gelir vergisi' },
   ];
   const govde = `<div class="vg-sec">${sec.map(s => `<button type="button" class="vg-oge" data-vg="${s.k}">
     <span class="vg-ik">${ik(s.ik)}</span>
@@ -2380,6 +2383,8 @@ function veriGirModal() {
     const k = b.dataset.vg;
     if (k === 'nakit-harcama') {   // kaydedilirse Kasa'ya git; vazgeçilirse dashboard'da kal
       nakitGiderModal(null, () => { hesapAktif = 'nakit'; git('hesap-defter'); });
+    } else if (k === 'vergi') {   // Vergi tahakkuku — modalde ay seçilir
+      modalKapat(); vergiTahakkukModal(buAy(), null);
     } else {
       iaSekme = k; modalKapat(); git('ice-aktar');
     }
