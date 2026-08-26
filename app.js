@@ -550,7 +550,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '251';
+const APP_SURUM = '252';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -709,7 +709,7 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Giderler', 'tanim-egitmen': 'Eğitmen → Ortak Eşleme', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi / KDV Oranı', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar' };
+const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Giderler', 'tanim-egitmen': 'Eğitmen → Ortak Eşleme', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi / KDV Oranı', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
 const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-egitmen', 'tanim-gider', 'tanim-kategori', 'tanim-komisyon', 'ayar-vergi', 'ayar-giris-kul', 'ayar-arsiv'];
 
@@ -766,6 +766,7 @@ const IK = {
   yeni: '<path d="M12 20v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3 2.2-5.2 5.5-5.2C17.5 11 15.3 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" fill="currentColor" opacity=".26"/><path d="M12 13c0-3.2-2.2-5.5-5.5-5.5C6.5 11 8.7 13 12 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
   anahtar: '<circle cx="8" cy="8" r="4" fill="currentColor" opacity=".22"/><circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="m11 11 8 8M16 20l3-3M19 17l2 .5-.5-2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
   belge: '<path d="M6 3.5h7l5 5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" fill="currentColor" opacity=".22"/><path d="M6 3.5h7l5 5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 3.5V8.5h5M8 12.5h8M8 15.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+  defter: '<path d="M5.5 4H11v15.5H5.5A1.5 1.5 0 0 1 4 18V5.5A1.5 1.5 0 0 1 5.5 4Z" fill="currentColor" opacity=".22"/><path d="M12 5.2A2 2 0 0 0 10 4H5.5A1.5 1.5 0 0 0 4 5.5V18a1.5 1.5 0 0 0 1.5 1.5H11M12 5.2A2 2 0 0 1 14 4h4.5A1.5 1.5 0 0 1 20 5.5V18a1.5 1.5 0 0 1-1.5 1.5H13M12 5.2V19.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 8h3M6.5 11h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
   kaydet: '<path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
   link: '<path d="M9.5 14.5 14.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M11 7.5 12.6 6a3.6 3.6 0 0 1 5.1 5.1l-1.6 1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M13 16.5 11.4 18a3.6 3.6 0 0 1-5.1-5.1l1.6-1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
   cop: '<path d="M6 7h12M9.5 7V5.6A1.2 1.2 0 0 1 10.7 4.4h2.6A1.2 1.2 0 0 1 14.5 5.6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" fill="currentColor" opacity=".2"/><path d="M6.8 7h10.4l-.8 11.1A1.8 1.8 0 0 1 14.6 20H9.4a1.8 1.8 0 0 1-1.8-1.9L6.8 7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10.3 10.5v6M13.7 10.5v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
@@ -1589,6 +1590,43 @@ function ttListeBagla(kok) {
     tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === b.dataset.ttduz));
   });
 }
+
+/* Bekleyen Tahsilatlar — defter girişleri; banka/nakit ile "hesaba yansıyınca" üstü çizilir */
+SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
+  const liste = ttSirali();
+  const bekleyen = liste.filter(t => !tahsilatUyum(t));
+  const yansiyan = liste.filter(t => tahsilatUyum(t));
+  const sirali = [...bekleyen, ...yansiyan];   // bekleyenler üstte
+  const bekTop = bekleyen.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+  const yanTop = yansiyan.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+  const satir = (t) => {
+    const yansidi = tahsilatUyum(t);
+    const dn = donemStr(t.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+    const durum = yansidi
+      ? `<span class="bt-yans">${ik('onay')} ${t.odemeTuru === 'nakit' ? 'Nakit alındı' : 'Hesaba yansıdı'}</span>`
+      : `<span class="bt-bek">${kacar((GELIR_TUR[t.odemeTuru] || t.odemeTuru || '') + ' bekliyor')}</span>`;
+    return `<tr data-ttduz="${t.id}" class="ttl-sat ${yansidi ? 'bt-ger yline' : 'bt-bek-r'}">
+        <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
+        <td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(t.egitmenAd || '—')}</span>${t.ogrenciAd ? `<span class="a2-dn">${kacar(t.ogrenciAd)}</span>` : ''}</td>
+        <td data-l="Ders">${kacar(t.dersPaketi || '—')}</td>
+        <td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(t.tutar)}</span>${durum}</td>
+      </tr>`;
+  };
+  ic().innerHTML = `<div class="kar-sayfa">
+    <div class="gg-tekbar"><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
+    <div class="bt-ozet">
+      <div class="bt-oz bek"><span class="l">Bekleyen</span><span class="v">${TL(bekTop)} <small>· ${bekleyen.length}</small></span></div>
+      <div class="bt-oz ger"><span class="l">Hesaba Yansıyan</span><span class="v">${TL(yanTop)} <small>· ${yansiyan.length}</small></span></div>
+    </div>
+    ${liste.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo">
+        <colgroup><col style="width:16%"><col style="width:31%"><col style="width:22%"><col style="width:31%"></colgroup>
+        <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
+        <tbody>${sirali.map(satir).join('')}</tbody></table></div></div>`
+      : `<div class="gp-bos">Henüz tahsilat girişi yok. “Yeni” ile ekleyin; banka/nakitle yansıyınca üstü çizilir.</div>`}
+  </div>`;
+  { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal(null, () => git('bekleyen')); }
+  ttListeBagla(ic());
+};
 
 SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
   const tumListe = ttSirali();
@@ -2554,7 +2592,7 @@ function neonAnaEkran() {
       </div>
       <div class="neon-aksiyon">
         <button type="button" class="neon-abtn lime" id="dashVeriGir"><span class="na-ik">${ik('indir')}</span><span>Veri Gir</span></button>
-        <button type="button" class="neon-abtn amber" id="dashTahsilat"><span class="na-ik">${ik('onay')}</span><span>Tahsilat Defteri</span></button>
+        <button type="button" class="neon-abtn amber" id="dashTahsilat"><span class="na-ik">${ik('defter')}</span><span>Tahsilat Defteri</span></button>
       </div>
       <div class="neon-grid">
         ${kart('gelir', 'Gelirler', 'gelirler')}
@@ -2574,7 +2612,7 @@ function neonAnaEkran() {
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   ttListeBagla(ic());
   { const vg = $('#dashVeriGir'); if (vg) vg.onclick = () => veriGirModal(); }   // Veri Gir → Plan4me / Banka / Nakit Harcama
-  { const dt = $('#dashTahsilat'); if (dt) dt.onclick = () => tahsilatTanimModal(); }   // Tahsilat Defteri girişi → dashboard'da kalır
+  { const dt = $('#dashTahsilat'); if (dt) dt.onclick = () => git('bekleyen'); }   // Tahsilat Defteri → Bekleyen Tahsilatlar listesi
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; akordeon($('#neonOzet'), $('#neonOzet .no-govde'), neonOzetAcik); };
 }
 
