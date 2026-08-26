@@ -274,6 +274,66 @@ function modalAc(baslik, govdeHTML, altHTML, basAksesuar) {
 }
 function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.remove('govde-kilit'); }
 
+/* ---- Yeni form: floating-label alan + alttan seçici (ortak yardımcılar) ---- */
+function ffInput(o) {   // {id,label,zorunlu,deger,tip,inputmode,ph}
+  const v = (o.deger == null ? '' : String(o.deger));
+  return `<div class="ff-alan"><input class="ff-in" id="${o.id}" type="${o.tip || 'text'}"${o.inputmode ? ` inputmode="${o.inputmode}"` : ''} value="${kacar(v)}" placeholder=" " autocomplete="off"><label for="${o.id}">${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
+}
+function ffTrig(o) {   // {id,label,zorunlu,deger,oto}
+  const dolu = o.deger != null && o.deger !== '';
+  return `<div class="ff-alan ff-trig ${dolu ? 'dolu' : ''}" id="${o.id}"><span class="ff-val">${dolu ? kacar(o.deger) : ''}</span>${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
+}
+function ffTrigGuncelle(id, deger) {   // seçim sonrası tetik değerini güncelle (oto rozetini kaldırır)
+  const el = $('#' + id); if (!el) return;
+  const bos = deger == null || deger === '';
+  el.classList.toggle('dolu', !bos);
+  const v = el.querySelector('.ff-val'); if (v) v.textContent = bos ? '' : deger;
+  const o = el.querySelector('.ff-oto'); if (o) o.remove();
+}
+/* Alttan açılan seçici: arama + (grup/harf) + seç. secenekler: [{deger,ad,alt,ik,grup}] */
+function altSecici(o) {
+  const kap = document.createElement('div'); kap.className = 'altsec-perde';
+  kap.innerHTML = `<div class="altsec" role="dialog">
+      <div class="altsec-tut"></div>
+      <div class="altsec-bas"><h3>${kacar(o.baslik || 'Seç')}</h3><button class="altsec-x" type="button" aria-label="Kapat">✕</button></div>
+      ${o.arama ? `<div class="altsec-ara">${ik('ara')}<input type="text" id="asAra" placeholder="${kacar(o.placeholder || 'Ara…')}" autocomplete="off" autocorrect="off" spellcheck="false"></div>` : ''}
+      <div class="altsec-liste" id="asListe"></div>
+    </div>`;
+  document.body.appendChild(kap);
+  requestAnimationFrame(() => kap.classList.add('acik'));
+  const kapat = () => { kap.classList.remove('acik'); setTimeout(() => kap.remove(), 300); };
+  const sec = (deger) => { kapat(); if (o.onSec) o.onSec(deger); };
+  const ogeHTML = (x) => {
+    const s = String(x.deger) === String(o.secili);
+    return `<div class="altsec-oge ${s ? 'sec' : ''}" data-deger="${kacar(String(x.deger))}">${x.ik ? `<span class="as-ik">${x.ik}</span>` : ''}<span class="as-bil"><span class="ad">${kacar(x.ad)}</span>${x.alt ? `<span class="alt">${kacar(x.alt)}</span>` : ''}</span>${s ? '<span class="tik">✓</span>' : ''}</div>`;
+  };
+  const listeEl = kap.querySelector('#asListe');
+  const ciz = (liste, ham) => {
+    let html = ''; let sonG = null;
+    liste.forEach(x => {
+      let g = null;
+      if (o.grup) g = x.grup || 'Diğer';
+      else if (o.harf) g = (String(x.ad).trim()[0] || '#').toLocaleUpperCase('tr');
+      if (g != null && g !== sonG) { html += `<div class="altsec-grp">${kacar(g)}</div>`; sonG = g; }
+      html += ogeHTML(x);
+    });
+    if (o.onEkle && ham) { const q = adNorm(ham); const tam = o.secenekler.some(x => adNorm(x.ad) === q); if (!tam) html = `<div class="altsec-oge altsec-ekle" data-ekle="1"><span class="as-bil"><span class="ad">＋ “${kacar(ham)}” ekle</span></span></div>` + html; }
+    if (!html) html = `<div class="altsec-bos">Eşleşen yok.</div>`;
+    listeEl.innerHTML = html;
+    listeEl.querySelectorAll('[data-deger]').forEach(el => el.onclick = () => sec(el.dataset.deger));
+    const eb = listeEl.querySelector('[data-ekle]'); if (eb) eb.onclick = () => { kapat(); if (o.onEkle) o.onEkle(ham.trim()); };
+  };
+  ciz(o.secenekler, '');
+  if (o.arama) {
+    const inp = kap.querySelector('#asAra');
+    inp.addEventListener('input', () => { const ham = inp.value.trim(); const q = adNorm(ham); ciz(o.secenekler.filter(x => adNorm(x.ad).includes(q)), ham); });
+    setTimeout(() => inp.focus(), 260);
+  }
+  kap.querySelector('.altsec-x').onclick = kapat;
+  kap.onclick = (e) => { if (e.target === kap) kapat(); };
+  return { kapat };
+}
+
 /* ==========================================================
    2) VERİ KATMANI (Yerel depolama / localStorage)
    ========================================================== */
@@ -467,7 +527,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '241';
+const APP_SURUM = '242';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1566,48 +1626,46 @@ function tahsilatTanimModal(mevcut, sonrasi) {
   const duzenle = !!(mevcut && mevcut.id);
   ttForm = { ogrenciAd: '', tarih: bugunISO(), odemeTuru: 'nakit', kartTipi: 'kampanyali', tutar: '', egitmenAd: '', dersPaketi: '', ...(mevcut || {}) };
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false);
-  const trig = (icHTML) => `<span class="st-col">${icHTML}</span><span class="st-ok">›</span>`;
-  const ogrTrigIc = () => trig(ttForm.ogrenciAd ? `<span class="st-nm">${kacar(ttForm.ogrenciAd)}</span>` : `<span class="st-ph">Öğrenci seçin / yazın</span>`);
-  const turTrigIc = () => {
-    const m = ODEME_TURLERI_TT.find(x => x.id === ttForm.odemeTuru);
-    const ek = ttForm.odemeTuru === 'kart' ? ` · ${kartTipiAd(ttForm.kartTipi)} %${String(tahsilatKomisyonOran('kart', ttForm.kartTipi)).replace('.', ',')}` : '';
-    return trig(`<span class="st-nm">${kacar((m ? m.ad : 'Seçin') + ek)}</span>`);
-  };
-  const egTrigIc = () => trig(ttForm.egitmenAd ? `<span class="st-nm">${kacar(ttForm.egitmenAd)}</span>` : `<span class="st-ph">Eğitmen seçin</span>`);
+  // Eğitmen: yeni kayıtta giriş yapan eğitmenle otomatik dol
+  let otoSen = '';
+  if (!duzenle && !ttForm.egitmenAd) { const ben = ortaklar.find(o => o.id === benId()); if (ben) { ttForm.egitmenAd = ben.ad; otoSen = 'SEN'; } }
+  const turGoster = () => { const m = ODEME_TURLERI_TT.find(x => x.id === ttForm.odemeTuru); const ek = ttForm.odemeTuru === 'kart' ? ` · ${kartTipiAd(ttForm.kartTipi)}` : ''; return (m ? m.ad : '') + ek; };
   const govde = `
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('sure')} Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger tt-tarih-gos" id="hrTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="hrTarih" value="${(ttForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('ogrenci')} Öğrenci Adı</label><button type="button" class="sec-trig" id="ttOgrTrig">${ogrTrigIc()}</button></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kart')} Ödeme Türü</label><button type="button" class="sec-trig" id="ttTurTrig">${turTrigIc()}</button></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('para')} Tutar</label><input type="text" class="gp-inp" id="ttTutar" inputmode="decimal" placeholder="0 ₺" autocomplete="off"></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kisi')} Eğitmen</label>${ortaklar.length ? `<button type="button" class="sec-trig" id="ttEgTrig">${egTrigIc()}</button>` : `<div class="tt-egyok">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}</div>
-    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('dersler')} Ders Paketi</label><input type="text" class="gp-inp" id="ttPk" value="${kacar(ttForm.dersPaketi)}" placeholder="Örn. 8 Ders" autocomplete="off"></div>`;
-  const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="ttSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="ttIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="ttKaydet">${ik('kaydet')} Kaydet</button>`;
-  modalAc(duzenle ? 'Tahsilat Düzenle' : 'Yeni Tahsilat', govde, alt);
+    <div class="ff-alan ff-trig ff-tarih dolu"><span class="ff-val" id="hrTarihGos"></span><span class="ff-ok">⌄</span><label>Tarih <span class="zor">*</span></label><input type="date" id="hrTarih" class="ff-tarih-in" value="${(ttForm.tarih || bugunISO()).slice(0, 10)}"></div>
+    ${ffTrig({ id: 'ttTurTrig', label: 'Ödeme Türü', zorunlu: true, deger: turGoster() })}
+    ${ffInput({ id: 'ttTutar', label: 'Tutar', zorunlu: true, deger: ttForm.tutar ? binlik(ttForm.tutar) : '', inputmode: 'decimal' })}
+    <div class="ff-grpbas">Eğitmen &amp; Öğrenci</div>
+    ${ortaklar.length ? ffTrig({ id: 'ttEgTrig', label: 'Eğitmen', zorunlu: true, deger: ttForm.egitmenAd, oto: otoSen }) : `<div class="tt-egyok" style="margin-top:22px;color:var(--metin-soluk);font-size:13px">Önce Ayarlar › Ortak Bilgileri’nden eğitmen ekleyin.</div>`}
+    ${ffTrig({ id: 'ttOgrTrig', label: 'Öğrenci Adı', zorunlu: true, deger: ttForm.ogrenciAd })}
+    ${ffInput({ id: 'ttPk', label: 'Ders Paketi', zorunlu: false, deger: ttForm.dersPaketi })}`;
+  const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="ttSil" style="flex:0 0 auto">${ik('cop')}</button>` : ''}<button type="button" class="btn btn-ana ff-kaydet" id="ttKaydet">${ik('kaydet')} Kaydet</button>`;
+  modalAc(duzenle ? 'Tahsilat Düzenle' : 'Tahsilat Ekle', govde, alt);
+  $('#modalKap .modal').classList.add('modal-tam');
   tutarKutusuBagla($('#ttTutar'), ttForm.tutar || '');
-  tarihGostergeBagla();   // Tarih alanı: varsayılan bugün, değiştirilebilir (yerli tarih seçici)
-  $('#ttOgrTrig').onclick = () => tahsilatOgrSecModal(ttForm.ogrenciAd, (ad) => {
-    ttForm.ogrenciAd = ad;
-    $('#ttOgrTrig').innerHTML = ogrTrigIc();
-    // Plan4me kaydından eğitmeni otomatik öner (eğitmen boşsa)
-    if (!ttForm.egitmenAd) {
-      const p = (State.planformiTahsilat || []).find(x => adNorm(x.uyeAd) === adNorm(ad) && x.egitmenAd);
-      const o = p && ortaklar.find(k => adNorm(k.ad) === adNorm(p.egitmenAd));
-      if (o) { ttForm.egitmenAd = o.ad; if ($('#ttEgTrig')) $('#ttEgTrig').innerHTML = egTrigIc(); }
-    }
-  });
-  // Ödeme türü → tıkla, listeden seç. "Kredi Kartı" seçilince kart tipi de sorulur.
-  $('#ttTurTrig').onclick = () => tahsilatSecModal('Ödeme Türü', 'para',
-    ODEME_TURLERI_TT.map(x => ({ deger: x.id, ad: x.ad })), ttForm.odemeTuru, (v) => {
+  tarihGostergeBagla('#hrTarih', '#hrTarihGos');
+  // Ödeme Türü
+  $('#ttTurTrig').onclick = () => altSecici({ baslik: 'Ödeme Türü', secili: ttForm.odemeTuru,
+    secenekler: ODEME_TURLERI_TT.map(x => ({ deger: x.id, ad: x.ad })),
+    onSec: (v) => {
       ttForm.odemeTuru = v;
-      if (v === 'kart') {
-        tahsilatSecModal('Kart Tipi', 'kart',
-          KART_TIPLERI_TT.map(x => ({ deger: x.id, ad: x.ad, alt: 'Komisyon %' + String(tahsilatKomisyonOran('kart', x.id)).replace('.', ',') })),
-          ttForm.kartTipi, (kt) => { ttForm.kartTipi = kt; $('#ttTurTrig').innerHTML = turTrigIc(); });
-      } else { $('#ttTurTrig').innerHTML = turTrigIc(); }
-    });
-  if ($('#ttEgTrig')) $('#ttEgTrig').onclick = () => tahsilatSecModal('Eğitmen', 'ortaklar',
-    ortaklar.map(o => ({ deger: o.ad, ad: o.ad })), ttForm.egitmenAd, (v) => { ttForm.egitmenAd = v; $('#ttEgTrig').innerHTML = egTrigIc(); });
-  if ($('#ttIptal')) $('#ttIptal').onclick = modalKapat;
+      if (v === 'kart') altSecici({ baslik: 'Kart Tipi', secili: ttForm.kartTipi, secenekler: KART_TIPLERI_TT.map(x => ({ deger: x.id, ad: x.ad, alt: 'Komisyon %' + String(tahsilatKomisyonOran('kart', x.id)).replace('.', ',') })), onSec: (kt) => { ttForm.kartTipi = kt; ffTrigGuncelle('ttTurTrig', turGoster()); } });
+      else ffTrigGuncelle('ttTurTrig', turGoster());
+    } });
+  // Eğitmen
+  { const egEl = $('#ttEgTrig'); if (egEl) egEl.onclick = () => altSecici({ baslik: 'Eğitmen Seç', arama: ortaklar.length > 6, placeholder: 'Eğitmen ara…', harf: true, secili: ttForm.egitmenAd,
+      secenekler: ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.ad, ad: o.ad, alt: o.id === benId() ? 'Sen' : '' })),
+      onSec: (v) => { ttForm.egitmenAd = v; ffTrigGuncelle('ttEgTrig', v); } }); }
+  // Öğrenci (Plan4me kayıtlarından, serbest yazım da olur)
+  $('#ttOgrTrig').onclick = () => {
+    const pf = State.planformiTahsilat || []; const harita = new Map();
+    pf.forEach(p => { const ad = String(p.uyeAd || '').trim(); if (!ad) return; const k = adNorm(ad); if (!harita.has(k)) harita.set(k, { ad, eg: p.egitmenAd || '', sayi: 0 }); harita.get(k).sayi++; });
+    const adlar = Array.from(harita.values()).sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+    const secAd = (ad) => { ad = String(ad).trim(); if (!ad) return; ttForm.ogrenciAd = ad; ffTrigGuncelle('ttOgrTrig', ad);
+      if (!ttForm.egitmenAd) { const p = pf.find(x => adNorm(x.uyeAd) === adNorm(ad) && x.egitmenAd); const o = p && ortaklar.find(k => adNorm(k.ad) === adNorm(p.egitmenAd)); if (o) { ttForm.egitmenAd = o.ad; ffTrigGuncelle('ttEgTrig', o.ad); } } };
+    altSecici({ baslik: 'Öğrenci Seç', arama: true, placeholder: 'Öğrenci ara veya yaz…', harf: true, secili: ttForm.ogrenciAd,
+      secenekler: adlar.map(r => ({ deger: r.ad, ad: r.ad, alt: (r.eg || 'Plan4me') + ' · ' + r.sayi + ' kayıt' })),
+      onSec: secAd, onEkle: secAd });
+  };
   if ($('#ttSil')) $('#ttSil').onclick = () => onayModal('Sil', 'Bu tahsilat tanımı silinsin mi?', async () => {
     await DB.sil('tahsilatTanimlari', mevcut.id); State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
     modalKapat(); if (sonrasi) sonrasi(); else { const r = SAYFALAR[State.aktifSayfa]; if (r) r(); } bildir('Silindi.', 'basari');
@@ -1878,30 +1936,45 @@ function nakitGiderModal(mevcut, sonrasi) {
   const duzenle = !!(mevcut && mevcut.id);
   nkGiderForm = { tarih: bugunISO(), giderAd: '', giderId: null, tutar: '', aciklama: '', egitmenId: null, ...(mevcut || {}) };
   if (!nkGiderForm.giderAd) nkGiderForm.giderAd = (mevcut && (mevcut.kategori || mevcut.aciklama)) || '';   // eski kayıt uyumu
+  if (!nkGiderForm.donem) nkGiderForm.donem = giderAitDonem(nkGiderForm);
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false);
-  const trig = (ic) => `<span class="st-col">${ic}</span><span class="st-ok">›</span>`;
-  const gdTrigIc = () => trig(nkGiderForm.giderAd ? `<span class="st-nm">${kacar(nkGiderForm.giderAd)}</span>` : `<span class="st-ph">Gider seçin / yazın</span>`);
-  const egTrigIc = () => { const o = ortaklar.find(x => x.id === nkGiderForm.egitmenId); return trig(o ? `<span class="st-nm">${kacar(o.ad)}</span>` : `<span class="st-ph">Genel (tüm ortaklar)</span>`); };
+  const egGoster = () => { const o = ortaklar.find(x => x.id === nkGiderForm.egitmenId); return o ? o.ad : 'Genel (tüm ortaklar)'; };
+  const donGoster = () => donemAdi(nkGiderForm.donem || buAy());
   const govde = `
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('sure')} Tarih</label><div class="sec-trig tt-tarih hr-tarih-satir"><span class="st-col"><span class="hr-deger" id="nkgTarihGos"></span></span><span class="st-ok">▾</span><input type="date" id="nkgTarih" value="${(nkGiderForm.tarih || bugunISO()).slice(0, 10)}"></div></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('belge')} Ait Olduğu Dönem</label><div class="gp-sel-sar"><select class="gp-sel" id="nkgDonem">${donemSecenekleri(giderAitDonem(nkGiderForm))}</select><span class="st-ok">▾</span></div></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('gider')} Gider</label><button type="button" class="sec-trig" id="nkgGiderTrig">${gdTrigIc()}</button></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('para')} Tutar</label><input type="text" class="gp-inp" id="nkgTutar" inputmode="decimal" value="${nkGiderForm.tutar ? binlik(nkGiderForm.tutar) : ''}" placeholder="0 ₺" autocomplete="off"></div>
-    <div class="gp-alan"><label class="gp-lbl-ik">${ik('kisi')} İlgili Eğitmen (opsiyonel)</label><button type="button" class="sec-trig" id="nkgEgTrig">${egTrigIc()}</button></div>
-    <div class="gp-alan" style="margin:0"><label class="gp-lbl-ik">${ik('kalem')} Açıklama (opsiyonel)</label><input type="text" class="gp-inp" id="nkgAcik" value="${kacar(nkGiderForm.aciklama || '')}" placeholder="Ek not…" autocomplete="off"></div>`;
-  const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="nkgSil">${ik('cop')} Sil</button>` : `<button type="button" class="btn" id="nkgIptal">Vazgeç</button>`}<button type="button" class="btn btn-ana" id="nkgKaydet">${ik('kaydet')} Kaydet</button>`;
-  modalAc(duzenle ? 'Nakit Gider' : 'Nakit Gider Ekle', govde, alt);
-  tarihGostergeBagla('#nkgTarih', '#nkgTarihGos');   // yerli/uyumlu tarih göstergesi (native date input gizlenir)
-  $('#nkgGiderTrig').onclick = () => giderSecModal(nkGiderForm.giderAd, (ad, id) => { nkGiderForm.giderAd = ad; nkGiderForm.giderId = id; $('#nkgGiderTrig').innerHTML = gdTrigIc(); });
-  $('#nkgEgTrig').onclick = () => tahsilatSecModal('İlgili Eğitmen', 'kisi', [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.map(o => ({ deger: o.id, ad: o.ad }))], nkGiderForm.egitmenId || '', (v) => { nkGiderForm.egitmenId = v || null; $('#nkgEgTrig').innerHTML = egTrigIc(); });
-  const kapat = () => modalKapat();
-  { const b = $('#nkgIptal'); if (b) b.onclick = kapat; }
+    <div class="ff-alan ff-trig ff-tarih dolu"><span class="ff-val" id="nkgTarihGos"></span><span class="ff-ok">⌄</span><label>Tarih <span class="zor">*</span></label><input type="date" id="nkgTarih" class="ff-tarih-in" value="${(nkGiderForm.tarih || bugunISO()).slice(0, 10)}"></div>
+    ${ffTrig({ id: 'nkgGiderTrig', label: 'Gider Adı', zorunlu: true, deger: nkGiderForm.giderAd })}
+    ${ffInput({ id: 'nkgTutar', label: 'Tutar', zorunlu: true, deger: nkGiderForm.tutar ? binlik(nkGiderForm.tutar) : '', inputmode: 'decimal' })}
+    <div class="ff-grpbas">Detay</div>
+    ${ffTrig({ id: 'nkgEgTrig', label: 'İlgili Eğitmen', zorunlu: true, deger: egGoster() })}
+    ${ffTrig({ id: 'nkgDonemTrig', label: 'Ait Olduğu Dönem', zorunlu: true, deger: donGoster() })}
+    ${ffInput({ id: 'nkgAcik', label: 'Açıklama', zorunlu: false, deger: nkGiderForm.aciklama || '' })}`;
+  const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="nkgSil" style="flex:0 0 auto">${ik('cop')}</button>` : ''}<button type="button" class="btn btn-ana ff-kaydet" id="nkgKaydet">${ik('kaydet')} Kaydet</button>`;
+  modalAc('Nakit Harcama', govde, alt);
+  $('#modalKap .modal').classList.add('modal-tam');
+  tutarKutusuBagla($('#nkgTutar'), nkGiderForm.tutar || '');
+  tarihGostergeBagla('#nkgTarih', '#nkgTarihGos');
+  // Gider Adı — aramalı liste + yeni gider ekle
+  $('#nkgGiderTrig').onclick = () => {
+    const giderler = (State.giderler || []).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
+    const secId = (deger) => { const g = (State.giderler || []).find(x => x.id === deger); if (g) { nkGiderForm.giderAd = g.ad; nkGiderForm.giderId = g.id; ffTrigGuncelle('nkgGiderTrig', g.ad); } };
+    const ekle = async (ham) => { const ad = ham.trim(); if (!ad) return; let g = (State.giderler || []).find(x => adNorm(x.ad) === adNorm(ad)); if (!g) { g = await DB.ekle('giderler', { ad, grupId: null }); State.giderler.push(g); } nkGiderForm.giderAd = g.ad; nkGiderForm.giderId = g.id; ffTrigGuncelle('nkgGiderTrig', g.ad); };
+    altSecici({ baslik: 'Gider Seç', arama: true, placeholder: 'Gider ara veya yaz…', harf: true, secili: nkGiderForm.giderId || '',
+      secenekler: giderler.map(g => ({ deger: g.id, ad: g.ad })), onSec: secId, onEkle: ekle });
+  };
+  // İlgili Eğitmen
+  $('#nkgEgTrig').onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, placeholder: 'Eğitmen ara…', secili: nkGiderForm.egitmenId || '',
+    secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad, alt: o.id === benId() ? 'Sen' : '' }))],
+    onSec: (v) => { nkGiderForm.egitmenId = v || null; ffTrigGuncelle('nkgEgTrig', egGoster()); } });
+  // Ait Olduğu Dönem
+  $('#nkgDonemTrig').onclick = () => { const aylar = []; for (let i = 0; i < 15; i++) aylar.push(donemKaydir(buAy(), -i));
+    altSecici({ baslik: 'Ait Olduğu Dönem', secili: nkGiderForm.donem || buAy(), secenekler: aylar.map(d => ({ deger: d, ad: donemAdi(d) })),
+      onSec: (v) => { nkGiderForm.donem = v; ffTrigGuncelle('nkgDonemTrig', donemAdi(v)); } }); };
   { const b = $('#nkgSil'); if (b) b.onclick = () => onayModal('Nakit gider silinsin mi?', 'Bu kayıt kaldırılacak.', async () => { await DB.sil('nakitGiderleri', mevcut.id); State.nakitGiderleri = DB._oku('nakitGiderleri'); modalKapat(); bildir('Nakit gider silindi.', 'basari'); if (sonrasi) sonrasi(); }); }
   $('#nkgKaydet').onclick = async () => {
     const tutar = tutarCoz($('#nkgTutar').value);
-    if (!tutar || tutar <= 0) { bildir('Geçerli bir tutar girin.', 'uyari'); return; }
     if (!nkGiderForm.giderAd) { bildir('Gider seçmelisiniz.', 'uyari'); return; }
-    const kayit = { tarih: ($('#nkgTarih').value || bugunISO()).slice(0, 10), donem: ($('#nkgDonem') && $('#nkgDonem').value) || null, giderAd: nkGiderForm.giderAd, giderId: nkGiderForm.giderId || null, tutar: Math.abs(tutar), egitmenId: nkGiderForm.egitmenId || null, aciklama: $('#nkgAcik').value.trim() };
+    if (!tutar || tutar <= 0) { bildir('Geçerli bir tutar girin.', 'uyari'); return; }
+    const kayit = { tarih: ($('#nkgTarih').value || bugunISO()).slice(0, 10), donem: nkGiderForm.donem || null, giderAd: nkGiderForm.giderAd, giderId: nkGiderForm.giderId || null, tutar: Math.abs(tutar), egitmenId: nkGiderForm.egitmenId || null, aciklama: $('#nkgAcik').value.trim() };
     if (duzenle) await DB.guncelle('nakitGiderleri', mevcut.id, kayit); else await DB.ekle('nakitGiderleri', kayit);
     State.nakitGiderleri = DB._oku('nakitGiderleri');
     modalKapat(); bildir('Nakit gider kaydedildi.', 'basari'); if (sonrasi) sonrasi();
