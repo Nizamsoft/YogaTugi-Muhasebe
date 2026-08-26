@@ -1647,8 +1647,10 @@ body.tema-neon .ogr-tablo.sade thead th.sag{text-align:right}
 .gg-tekbar .gg-bas{flex:0 1 auto;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gg-tekbar-sag{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
 /* kompakt ay seçici — küçük, gold halka yok, min-width küçültüldü */
-.gg-tekbar .ay-nav{padding:2px;border-radius:10px;flex:none}
+.gg-tekbar .ay-nav{padding:2px;border-radius:10px;flex:none;background:var(--gri);border-color:var(--kenar);box-shadow:none}
 .gg-tekbar .ay-nav::before{display:none}
+.gg-tekbar .ay-nav button{background:var(--kart);color:var(--metin-soluk);box-shadow:none}
+.gg-tekbar .ay-nav .ay .m{color:var(--metin)} .gg-tekbar .ay-nav .ay .y{color:var(--metin-soluk)}
 .gg-tekbar .ay-nav button{width:22px;height:22px;font-size:12px;border-radius:7px}
 .gg-tekbar .ay-nav .ay{min-width:56px;padding:0 2px}
 .gg-tekbar .ay-nav .ay .m{font-size:11.5px}
@@ -1669,15 +1671,19 @@ body.tema-neon .gr-sat.lv3{background:rgba(255,255,255,.02)}
 body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ogr-tablo.sade tbody tr{cursor:pointer}
 .ogr-tablo tr.hs-tikla{cursor:pointer}
-/* Banka içe aktarım önizleme tablosu */
-.ia-onizle-tablo{min-width:0}
-.ia-tar-hcr{white-space:nowrap;line-height:1.25}
-.ia-tar-us{display:block;font-size:11.5px;color:var(--metin-soluk)}
-.ia-tar-dn{display:block;font-weight:800;font-size:12px;color:var(--metin)}
+/* Banka içe aktarım önizleme tablosu — geniş & okunur */
+.ia-onizle-tablo{min-width:520px;font-size:13.5px}
+.ia-onizle-tablo thead th{font-size:11.5px;padding:12px 12px}
+.ia-onizle-tablo tbody td{padding:13px 12px;vertical-align:middle}
+.ia-tar-hcr{white-space:nowrap;line-height:1.3}
+.ia-tar-us{display:block;font-size:12px;color:var(--metin-soluk)}
+.ia-tar-dn{display:block;font-weight:800;font-size:13px;color:var(--metin)}
+.ia-isl-ad{display:block;font-weight:700;font-size:13.5px;color:var(--metin);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.ia-isl-ac{display:block;font-size:11.5px;color:var(--metin-soluk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;margin-top:2px}
 .ia-ait{font-weight:600} .ia-ait.g{color:var(--metin)}
-.ia-ait-sec{border:1px solid var(--amber);background:rgba(245,169,31,.12);color:var(--amber);font-family:inherit;font-weight:800;font-size:11.5px;border-radius:8px;padding:5px 9px;cursor:pointer}
-.ogr-tablo.sade td.ia-kir{color:var(--kirmizi)} .ogr-tablo.sade td.ia-yes{color:#8fe07a}
-.ia-es{font-size:15px} .ia-es.ok{color:#8fe07a;font-weight:800} .ia-es.no{color:var(--metin-soluk)}
+.ia-ait-sec{border:1px solid var(--amber);background:rgba(245,169,31,.12);color:var(--amber);font-family:inherit;font-weight:800;font-size:12px;border-radius:8px;padding:6px 10px;cursor:pointer}
+.ogr-tablo.sade td.ia-kir{color:var(--kirmizi);font-weight:800} .ogr-tablo.sade td.ia-yes{color:#8fe07a;font-weight:800}
+.ia-es{font-size:16px} .ia-es.ok{color:#8fe07a;font-weight:800} .ia-es.no{color:var(--metin-soluk)}
 .ogr-tablo th.ort,.ogr-tablo td.ort{text-align:center}
 .gr-grpbas .gr-tut{font-size:15px}
 .gr-chev{flex:0 0 14px;text-align:center;color:#c9a94e;font-size:15px;opacity:.6}

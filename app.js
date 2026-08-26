@@ -467,7 +467,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '231';
+const APP_SURUM = '232';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2057,16 +2057,18 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
         const es = bankaTahsilatEslesme(k);
         esles = (es && es.durum === 'ok') ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">—</span>';
       }
+      const ackKisa = bankaAciklamaKisa(k.aciklama);
       return `<tr data-brow="${i}">
           <td data-l="Tarih" class="ia-tar-hcr"><span class="ia-tar-us">${kacar(kisaTarih(k.tarih))}</span><span class="ia-tar-dn">${kacar(dnmKisa)}</span></td>
+          <td data-l="İşlem"><span class="ia-isl-ad">${kacar(k.islem || '—')}</span>${ackKisa ? `<span class="ia-isl-ac">${kacar(ackKisa)}</span>` : ''}</td>
           <td data-l="Neye Ait">${neyeAit}</td>
           <td data-l="Tutar" class="sag mono ${k.tutar < 0 ? 'ia-kir' : 'ia-yes'}">${TL(k.tutar)}</td>
           <td data-l="Eşleşme" class="ort">${esles}</td>
         </tr>`;
     }).join('');
     liste = `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade ia-onizle-tablo">
-        <colgroup><col style="width:16%"><col style="width:44%"><col style="width:24%"><col style="width:16%"></colgroup>
-        <thead><tr><th>Tarih</th><th>Neye Ait</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
+        <colgroup><col style="width:15%"><col style="width:30%"><col style="width:24%"><col style="width:19%"><col style="width:12%"></colgroup>
+        <thead><tr><th>Tarih</th><th>İşlem</th><th>Neye Ait</th><th class="sag">Tutar</th><th class="ort">Eşleşme</th></tr></thead>
         <tbody>${tbody}</tbody></table></div></div>`;
     // Devir (açılış) + aktarım sonrası (kapanış) bakiyesi — banka dosyasındaki Bakiye sütunundan
     // ve dosyanın kendi bakiyesiyle tutarlılık kontrolü (tüm hareketlerin toplamı = kapanış − devir)
@@ -6901,8 +6903,8 @@ function nakitDefteri() {
     rows.push({ kind: 'tahsilat', tarih: t.tarih, aciklama: t.ogrenciAd || 'Nakit Tahsilat', altYazi: t.dersPaketi || '', ilgiliAd: t.egitmenAd || 'Tahsilat', tutar: Number(t.tutar) || 0, ref: t, nakit: true });
   });
   (State.nakitGiderleri || []).forEach(g => {
-    const ad = g.giderAd || g.kategori || g.aciklama || 'Nakit Gider';   // yeni: gider adı; eski kayıt uyumu
-    const not = (g.giderAd && g.aciklama) ? g.aciklama : '';
+    const ad = g.giderAd || g.kategori || g.aciklama || 'Nakit Gider';   // ana satır: gider adı
+    const not = (g.aciklama && adNorm(g.aciklama) !== adNorm(ad)) ? g.aciklama : '';   // 2. satır: açıklama notu (addan farklıysa)
     rows.push({ kind: 'gider', tarih: g.tarih, aciklama: ad, altYazi: not, ilgiliId: g.egitmenId || null, ilgiliAd: g.egitmenId ? egitmenAdiById(g.egitmenId) : 'Genel', tutar: -(Number(g.tutar) || 0), ref: g, nakit: true });
   });
   rows.sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || ((a.ref.olusturma || '').localeCompare(b.ref.olusturma || '')));
@@ -7115,7 +7117,7 @@ SAYFALAR['giderler'] = function giderlerSayfasi() {
       if (gAcik) kalemler2.forEach(k => {
         const kkey = 'k:' + g.ad + ':' + k.ad, kAcik = giderAcik.has(kkey);
         ic += `<div class="gr-sat lv2" data-gacik="${kacar(kkey)}"><span class="ad"><span class="nk"></span>${kacar(k.ad)}</span><span class="gr-cnt">${k.kayitlar.length}</span><span class="gr-tut">${k.tutar > 0 ? '−' : ''}${binlik(k.tutar)} ₺</span><span class="gr-chev">${k.kayitlar.length ? (kAcik ? '⌃' : '⌄') : ''}</span></div>`;
-        if (kAcik) ic += k.kayitlar.slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).map(r => `<div class="gr-sat lv3 norow"><span class="ad">${kacar(kisaTarih(r.tarih))} · ${kaynakAd(r.kaynak)}</span><span class="gr-tut">−${binlik(r.tutar)} ₺</span></div>`).join('');
+        if (kAcik) ic += k.kayitlar.slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).map(r => `<div class="gr-sat lv3 norow"><span class="ad">${kacar(kisaTarih(r.tarih))} · ${kacar((r.aciklama || '').trim() || r.ad)}</span><span class="gr-tut">−${binlik(r.tutar)} ₺</span></div>`).join('');
       });
       return `<div class="gr-grp"><div class="gr-grpbas" data-gacik="${kacar(gkey)}"><span class="ad"><span class="ik">📁</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.kalemler.length} kalem</span><span class="gr-tut top">−${binlik(g.toplam)} ₺</span><span class="gr-chev">${gAcik ? '⌃' : '⌄'}</span></div>${ic}</div>`;
     }).join('');
