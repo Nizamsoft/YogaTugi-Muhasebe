@@ -625,7 +625,30 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kar-grup-not{font-size:11px;font-weight:600;color:var(--metin-soluk)}
 .kar-kart{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:14px 16px;margin-bottom:11px}
 .kar-kart.maasli{border-style:dashed}
-/* Ortak kartı: avatar + isim başlık, altında gruplar (Gelir/Kesintiler/Sonuç, alt toplamlı) */
+/* Açılır/daraltılır ortak hakediş kartı (dar ↔ genişlemiş) */
+.kk-kart2{padding:0;overflow:hidden}
+.kk-bas2{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;font-family:inherit;text-align:left;cursor:pointer;padding:14px 16px 12px;color:var(--metin)}
+.kk-bas2 .kk-ort{flex:1;min-width:0;display:flex;flex-direction:column}
+.kk-bas2 .kk-ad{font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kk-bas2 .kk-rol{font-size:11.5px;color:var(--metin-soluk);margin-top:1px}
+.kk-cev{color:var(--metin-soluk);font-size:16px;flex:0 0 auto}
+.kk-kart2 .kk-govde{padding:0 16px 14px}
+.kk-kart2 .kar-sat{padding:5px 0;font-size:13.5px}
+.kk-hak{border-top:1px solid var(--kenar);margin-top:4px;padding-top:9px!important}
+.kk-hak span{font-weight:800;color:var(--metin);font-size:14px} .kk-hak b{font-size:16.5px;color:var(--neon)}
+.kk-hak b.negatif{color:var(--kirmizi)}
+.kk-kalan span{font-weight:800;color:var(--metin)} .kk-kalan b{font-size:14.5px}
+/* genişlemiş gruplar */
+.kk-g{margin-top:2px}
+.kk-gb{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-size:12.5px;font-weight:700;color:var(--metin);text-transform:uppercase;letter-spacing:1.3px;padding:12px 2px 6px;border-bottom:1px solid var(--kenar);margin-bottom:3px}
+.kk-sub{font-size:11px;color:var(--metin-soluk);padding:1px 2px 5px}
+.kk-mini{font-size:9.5px;font-weight:800;color:var(--amber);background:rgba(245,169,31,.14);border-radius:5px;padding:1px 6px;margin-left:5px;vertical-align:middle}
+.kk-vad{font-size:13px;font-weight:800;color:var(--metin);margin:5px 2px 2px}
+.kk-vsat{display:flex;align-items:center;justify-content:space-between;padding:3px 2px 3px 14px;font-size:12px;color:var(--metin-soluk)}
+.kk-vsat b{font-weight:700;color:var(--metin);font-variant-numeric:tabular-nums}
+.kk-vsat.o{color:var(--amber)} .kk-vsat.o b{color:var(--amber)}
+.kk-vsat.b b{color:var(--metin-soluk)}
+/* eski (kullanılmayan) ortak kartı grupları — kalsın */
 .kk-kart{padding:16px 17px}
 .kk-bas{display:flex;align-items:center;gap:13px;padding-bottom:14px;border-bottom:1px solid var(--kenar);margin-bottom:6px}
 .kk-av{width:52px;height:52px;border-radius:50%;flex:0 0 auto;overflow:hidden;display:grid;place-items:center;font-family:Georgia,serif;font-weight:800;font-size:20px;color:var(--neon);background:rgba(180,232,58,.12);border:2px solid rgba(180,232,58,.4)}
