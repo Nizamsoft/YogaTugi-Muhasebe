@@ -448,6 +448,16 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 /* Hesaplar > Banka: içe aktar önizlemesiyle aynı sade satır düzeni + güncel bakiye */
 .hs-liste{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:2px 14px;margin-top:2px}
 .ia-sd-bak{font-size:11px;color:var(--metin-soluk);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:1px}
+/* İçe Aktar > Nakit: kasa bakiyesi + ekle düğmeleri */
+.ia-nakit-bar{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:14px 16px;margin-top:16px}
+.ia-nakit-bakiye{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ia-nakit-bakiye span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--metin-soluk);font-weight:700}
+.ia-nakit-bakiye .uik{width:16px;height:16px}
+.ia-nakit-bakiye b{font-size:19px;font-weight:800;color:var(--metin);font-variant-numeric:tabular-nums}
+.ia-nakit-ekle{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ia-nk-btn{font-size:13px}
+.ia-nk-btn.gelir{border-color:rgba(126,224,164,.4);color:#8fe07a}
+.ia-nk-btn.gider{border-color:rgba(240,133,122,.4);color:#f0857a}
 .ia-esles-ok.gid{color:var(--metin);background:var(--gri);border:1px solid var(--kenar);border-radius:999px;padding:5px 13px;font-size:11.5px;font-family:inherit;font-weight:800;cursor:pointer;white-space:nowrap}
 /* Devir / aktarım sonrası bakiye bantları (banka dosyasındaki Bakiye ile kontrol) */
 .ia-bakiye{border-radius:12px;padding:12px 14px}
