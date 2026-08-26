@@ -550,7 +550,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '253';
+const APP_SURUM = '254';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -913,6 +913,7 @@ function tabloSigdir() {
   document.querySelectorAll('.ogr-kaydir, .tablo-sar').forEach(w => {
     const t = w.querySelector('table'); if (!t) return;
     t.style.transform = ''; w.style.height = '';           // önce sıfırla, doğal ölçüyü oku
+    if (t.classList.contains('iki-satir')) return;         // yeni sade tablolar zaten ekrana sığar (min-width:0) — ölçekleme bozar
     if (!mobil) return;
     const dogal = t.offsetWidth, kap = w.clientWidth;
     if (dogal > kap + 1) {
@@ -1606,7 +1607,7 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
     const durum = yansidi
       ? `<span class="bt-yans">${ik('onay')} ${kacar(tur + ' · Tahsil edildi')}</span>`
       : `<span class="bt-bek">${kacar(tur + ' · Bekliyor')}</span>`;
-    return `<tr data-ttduz="${t.id}" class="ttl-sat ${yansidi ? 'bt-ger' : 'bt-bek-r'}">
+    return `<tr data-ttduz="${t.id}" class="${yansidi ? 'bt-ger' : 'bt-bek-r'}">
         <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
         <td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(t.egitmenAd || '—')}</span>${t.ogrenciAd ? `<span class="a2-dn">${kacar(t.ogrenciAd)}</span>` : ''}</td>
         <td data-l="Ders">${kacar(t.dersPaketi || '—')}</td>
@@ -1626,7 +1627,7 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
       : `<div class="gp-bos">Henüz tahsilat girişi yok. “Yeni” ile ekleyin; banka/nakitle yansıyınca üstü çizilir.</div>`}
   </div>`;
   { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal(null, () => git('bekleyen')); }
-  ttListeBagla(ic());
+  $$('#icerik tr[data-ttduz]').forEach(tr => tr.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === tr.dataset.ttduz), () => git('bekleyen')));
 };
 
 SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
