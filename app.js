@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '297';
+const APP_SURUM = '298';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2656,7 +2656,10 @@ function bankaOtoEslestir(kayitlar) {
     if (Array.isArray(k.eslesenIds) && k.eslesenIds.length) return;   // zaten eşleşmiş
     if (k.yon !== 'gelir') return;
     const hedef = kurus(k.tutar);
-    if (/havale|eft|fast/i.test(k.islem || '')) {
+    if (/multinet/i.test((k.islem || '') + ' ' + (k.aciklama || ''))) {   // Multinet toplu ödeme → aynı ay/40 gün multinet tahsilatların toplamı tutuyorsa
+      const list = tanim.filter(t => { if (t.odemeTuru !== 'multinet' || kullanilan.has(String(t.id))) return false; const d = Math.round(gunFark(k.tarih, t.tarih)); return d >= 0 && d <= 40; });
+      if (list.length && list.reduce((s, t) => s + kurus(t.tutar), 0) === hedef) { k.eslesenIds = list.map(t => t.id); k.otoEsles = true; list.forEach(t => kullanilan.add(String(t.id))); }
+    } else if (/havale|eft|fast/i.test(k.islem || '')) {
       const t = tanim.find(t => t.odemeTuru === 'havale' && ayniGun(t, k) && kurus(t.tutar) === hedef && !kullanilan.has(String(t.id)));
       if (t) { k.eslesenIds = [t.id]; k.otoEsles = true; kullanilan.add(String(t.id)); }
     } else if (/batch\s*yatan/i.test(k.islem || '')) {
@@ -2681,6 +2684,7 @@ function bankaAdaylar(k) {
   const tanim = State.tahsilatTanimlari || [];
   const kullanilan = bankaKullanilanTanimlar(k);   // başka kayda atanmışlar listede çıkmaz
   const uygun = t => !kullanilan.has(String(t.id));
+  if (/multinet/i.test((k.islem || '') + ' ' + (k.aciklama || ''))) return tanim.filter(t => { if (t.odemeTuru !== 'multinet' || !uygun(t)) return false; const d = Math.round(gunFark(k.tarih, t.tarih)); return d >= 0 && d <= 40; });   // Multinet toplu ödeme → aynı ay/40 gün içindeki MULTINET tahsilatlar
   const toplu = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
   if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1 && uygun(t));   // Batch Yatan/komisyon → D-1 KART
   if (/havale|eft|fast/i.test(k.islem || '')) return tanim.filter(t => t.odemeTuru === 'havale' && Math.round(gunFark(t.tarih, k.tarih)) === 0 && uygun(t));   // Havale/EFT/FAST → aynı gün HAVALE
