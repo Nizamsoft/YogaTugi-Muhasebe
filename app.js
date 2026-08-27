@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '285';
+const APP_SURUM = '286';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1058,6 +1058,7 @@ function egitmenKarlilik(donem) {
   const hedef = (ad, alan, tutar) => { const c = egitmenCoz(ad); if (c.rol === 'ortak' && pMap[c.ortakId]) pMap[c.ortakId][alan] += tutar; else maasli(ad)[alan] += tutar; };
   // Gelir + komisyon: Tahsilat Tanımla kayıtları (banka mutabakatı kartTipi/komisyonTutar'ı netleştirir)
   for (const t of tt) {
+    if (!tahsilatGercek(t)) continue;   // yalnız gerçekleşen (nakit + bankaya yatmış) gelir sayılır
     const tutar = Number(t.tutar) || 0;
     hedef(t.egitmenAd, 'brut', tutar);
     const kova = t.odemeTuru === 'havale' ? 'havale' : (t.odemeTuru === 'kart' || t.odemeTuru === 'multinet') ? 'kart' : 'nakit';
@@ -1307,7 +1308,9 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
   const kayitlar = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem)
     .sort((a, b) => (b.tarih || '').localeCompare(a.tarih || ''));
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
-  const bru = topla(kayitlar), nak = topla(kayitlar.filter(p => p.odemeTuru === 'nakit')), hav = topla(kayitlar.filter(p => p.odemeTuru === 'havale')), krt = topla(kayitlar.filter(p => p.odemeTuru === 'kart' || p.odemeTuru === 'multinet'));
+  // Defter tüm tahsilatı listeler; "gelir" toplamı yalnız GERÇEKLEŞEN (nakit + bankaya yatmış)
+  const bru = topla(kayitlar.filter(tahsilatGercek));
+  const bekTop = topla(kayitlar.filter(t => !tahsilatGercek(t)));
   const turAd = (t) => GELIR_TUR[t] || t || '—';
   // RAPOR: eğitmen (hoca) → ödeme türü (Banka Havale / Kart / Nakit) → tahsilatlar (hepsi kapalı başlar)
   const raporCiz = () => {
@@ -1323,11 +1326,11 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
         const arr = g[tip]; const top = arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
         const tkey = 't:' + g.ad + ':' + tip, tAcik = gelirAcik.has(tkey);
         ic += `<div class="gr-sat lv2" data-gacik="${kacar(tkey)}"><span class="ad"><span class="nk"></span>${tipEt[tip]}</span><span class="gr-cnt">${arr.length}</span><span class="gr-tut art">${top > 0 ? '+' : ''}${binlik(top)} ₺</span><span class="gr-chev">${arr.length ? (tAcik ? '⌃' : '⌄') : ''}</span></div>`;
-        if (tAcik) ic += arr.slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).map(p => `<div class="gr-sat lv3 norow"><span class="ad">${kacar(kisaTarih(p.tarih))} · ${kacar(p.ogrenciAd || '—')}</span><span class="gr-tut art">+${binlik(p.tutar)} ₺</span></div>`).join('');
+        if (tAcik) ic += arr.slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).map(p => { const bek = !tahsilatGercek(p); return `<div class="gr-sat lv3 norow${bek ? ' gr-bek-row' : ''}"><span class="ad">${kacar(kisaTarih(p.tarih))} · ${kacar(p.ogrenciAd || '—')}${bek ? ' <span class="gr-bek-et">bekliyor</span>' : ''}</span><span class="gr-tut art">+${binlik(p.tutar)} ₺</span></div>`; }).join('');
       });
       return `<div class="gr-grp"><div class="gr-grpbas" data-gacik="${kacar(gkey)}"><span class="ad"><span class="ik">${ik('kisi')}</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.adet} tahsilat</span><span class="gr-tut top art">+${binlik(g.toplam)} ₺</span><span class="gr-chev">${gAcik ? '⌃' : '⌄'}</span></div>${ic}</div>`;
     }).join('');
-    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Toplam — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div></div>`;
+    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Gerçekleşen — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div>${bekTop ? `<div class="gr-dip gr-bek-dip"><span class="k">Bekleyen (bankaya yatmadı)</span><span class="v">+${binlik(bekTop)} ₺</span></div>` : ''}</div>`;
   };
   // TABLO: sade düz kayıt tablosu + "daha fazla yükle"
   const tabloCiz = () => {
@@ -1340,7 +1343,8 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
         <tbody>${kesit.map(p => {
           const dn = donemStr(p.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
           const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
-          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(p.tutar)}</span><span class="tut2-dn rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td></tr>`;
+          const bek = !tahsilatGercek(p);
+          return `<tr data-gelir="${p.id}"${bek ? ' class="gr-bek-row"' : ''}><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(p.tutar)}</span><span class="tut2-dn rozet-etk ${bek ? 'rz-notr' : (tm[p.odemeTuru] || 'rz-notr')}">${bek ? 'Bekliyor' : kacar(turAd(p.odemeTuru))}</span></td></tr>`;
         }).join('')}</tbody>
       </table></div></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="glDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kayitlar.length - gelirLimit)})</button>` : ''}`;
@@ -1620,20 +1624,15 @@ function ttSirali() {
 }
 let ttGunFiltre = null;   // Tahsilat listesinde tek gün filtresi (uyuşmayana tıklayınca)
 /* Bir tahsilat tanımı gerçek parayla (Plan4me VEYA banka) uyuşuyor mu? */
-function tahsilatUyum(t) {
-  if (t.odemeTuru === 'nakit') return true;   // nakit tahsilat elle girilir, kasaya girer → doğrudan uyuşur
-  if ((State.bankaHareketleri || []).some(k => Array.isArray(k.eslesenIds) && k.eslesenIds.map(String).includes(String(t.id)))) return true;   // elle banka eşleşmesi
-  const pf = (State.planformiTahsilat || []).some(p => adNorm(p.uyeAd) === adNorm(t.ogrenciAd) && Math.abs((+p.tutar || 0) - (+t.tutar || 0)) < 1 && Math.round(gunFark(p.tarih, t.tarih)) === 0);
-  if (pf) return true;
-  const bh = State.bankaHareketleri || [];
-  if (t.odemeTuru === 'havale') {
-    return bh.some(k => k.yon === 'gelir' && !/batch\s*yatan/i.test(k.islem || '') && isimGecer(k.aciklama, t.ogrenciAd) && Math.abs((+k.tutar || 0) - (+t.tutar || 0)) < 1 && Math.round(gunFark(k.tarih, t.tarih)) === 0);
-  }
-  if (t.odemeTuru === 'kart') {   // ertesi gün (T+1) Batch Yatan'ı var ve o gün kart toplamı batch'e uyuyor
-    return bh.some(k => k.yon === 'gelir' && /batch\s*yatan/i.test(k.islem || '') && Math.round(gunFark(k.tarih, t.tarih)) === 1 && (() => { const es = bankaTahsilatEslesme(k); return es && es.durum === 'ok'; })());
-  }
-  return false;   // havale/kart eşleşmedi
+/* Bir tahsilat GERÇEK gelir mi? Kural: nakit her zaman; kart/multinet/havale ancak
+   bankaya yatınca (bir banka hareketinin eslesenIds'ine girince) gelir sayılır. */
+function tahsilatGercek(t) {
+  if (!t) return false;
+  if (t.odemeTuru === 'nakit') return true;   // nakit anında gelir (kasaya girer)
+  const id = String(t.id);
+  return (State.bankaHareketleri || []).some(k => Array.isArray(k.eslesenIds) && k.eslesenIds.map(String).includes(id));   // yalnız banka eşleşmesi
 }
+function tahsilatUyum(t) { return tahsilatGercek(t); }   // Bekleyen sayfası + rozetler aynı kurala uyar
 /* Tek satır — mobil dostu, 2 kademeli: üst(tarih·öğrenci·tutar) / alt(ödeme türü·eğitmen·ders·durum) */
 function ttSatirHTML(t) {
   const u = tahsilatUyum(t);
@@ -2293,9 +2292,9 @@ function bankaAckKart(k) {   // Banka Açıklaması → küçük tek-satır kart
   const baslik = kt.ad || k.islem || '—';
   const rozet = kt.ad ? kt.rol : (kt.rol === 'POS Batch' ? 'POS Batch' : '');
   const tarih = fmtTarihUzun(k.tarih);
-  const notHTML = bn ? ` · <span class="bk-nt">${kacar(bn)}</span>` : '';
-  const sub = kt.ad ? `${kacar(k.islem || '')} · ${kacar(tarih)}${notHTML}` : `${kacar(tarih)} · Banka${notHTML}`;
-  return `<div class="bd-kart"><div class="bd-kl">${rozet ? `<span class="bd-rol ${rolCls}">${kacar(rozet)}</span>` : ''}<div class="bd-kad">${kacar(baslik)}</div><div class="bd-ksub">${sub}</div></div><div class="bd-ktut ${kir ? 'kir' : 'yes'} mono">${TL(k.tutar)}</div></div>`;
+  const sub = kt.ad ? `${kacar(k.islem || '')} · ${kacar(tarih)}` : `${kacar(tarih)} · Banka`;
+  const notSatir = bn ? `<div class="bd-knot">📝 <b>${kacar(bn)}</b></div>` : '';
+  return `<div class="bd-kart"><div class="bd-krow"><div class="bd-kl">${rozet ? `<span class="bd-rol ${rolCls}">${kacar(rozet)}</span>` : ''}<div class="bd-kad">${kacar(baslik)}</div><div class="bd-ksub">${sub}</div></div><div class="bd-ktut ${kir ? 'kir' : 'yes'} mono">${TL(k.tutar)}</div></div>${notSatir}</div>`;
 }
 /* Açıklamadan gider eşleştirme anahtarı (ilk anlamlı kelime) */
 function giderAnahtar(a) {
@@ -2554,7 +2553,7 @@ function bankaOtoEslestir(kayitlar) {
     if (Array.isArray(k.eslesenIds) && k.eslesenIds.length) return;   // zaten eşleşmiş
     if (k.yon !== 'gelir') return;
     const hedef = kurus(k.tutar);
-    if (/havale/i.test(k.islem || '')) {
+    if (/havale|eft|fast/i.test(k.islem || '')) {
       const t = tanim.find(t => t.odemeTuru === 'havale' && ayniGun(t, k) && kurus(t.tutar) === hedef && !kullanilan.has(String(t.id)));
       if (t) { k.eslesenIds = [t.id]; k.otoEsles = true; kullanilan.add(String(t.id)); }
     } else if (/batch\s*yatan/i.test(k.islem || '')) {
@@ -2563,13 +2562,26 @@ function bankaOtoEslestir(kayitlar) {
     }
   });
 }
+/* Başka banka kayıtlarınca kullanılmış tahsilat id'leri (haric kaydınınkiler hariç) —
+   mükerrer eşleşmeyi engeller. Hem önizleme (iaSonKayitlar) hem işlenmiş kayıtlar. */
+function bankaKullanilanTanimlar(haric) {
+  const s = new Set();
+  [...(iaSonKayitlar || []), ...(State.bankaHareketleri || [])].forEach(x => {
+    if (x === haric) return;
+    if (haric && haric.id != null && x.id === haric.id) return;
+    (x.eslesenIds || []).forEach(id => s.add(String(id)));
+  });
+  return s;
+}
 function bankaAdaylar(k) {
   if (!k) return [];
   const tanim = State.tahsilatTanimlari || [];
+  const kullanilan = bankaKullanilanTanimlar(k);   // başka kayda atanmışlar listede çıkmaz
+  const uygun = t => !kullanilan.has(String(t.id));
   const toplu = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
-  if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1);   // Batch Yatan/komisyon → D-1 KART
-  if (/havale/i.test(k.islem || '')) return tanim.filter(t => t.odemeTuru === 'havale' && Math.round(gunFark(t.tarih, k.tarih)) === 0);   // Havale → aynı gün HAVALE
-  return tanim.filter(t => t.odemeTuru !== 'nakit' && Math.round(gunFark(t.tarih, k.tarih)) === 0);   // diğer gelir → aynı gün (nakit asla)
+  if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1 && uygun(t));   // Batch Yatan/komisyon → D-1 KART
+  if (/havale|eft|fast/i.test(k.islem || '')) return tanim.filter(t => t.odemeTuru === 'havale' && Math.round(gunFark(t.tarih, k.tarih)) === 0 && uygun(t));   // Havale/EFT/FAST → aynı gün HAVALE
+  return tanim.filter(t => t.odemeTuru !== 'nakit' && Math.round(gunFark(t.tarih, k.tarih)) === 0 && uygun(t));   // diğer gelir → aynı gün (nakit asla)
 }
 /* Aday tahsilatlardan toplamı hedefe (banka tutarı) eşit olan alt kümeyi bulur — sheet
    açılışında otomatik işaretlemek için. Hepsi tutuyorsa tümü; değilse alt-küme araması. */
@@ -2714,7 +2726,7 @@ function bankaDetayModal(k, wiz) {
     { const n = $('#wizNext'); if (n) n.onclick = () => wizGit(wiz.i + 1); }
     $('#bdAtla').onclick = () => { if (sonKayit) { modalKapat(); iaOnizleTazele(); } else wizGit(wiz.i + 1); };
   }
-  const zorunluEksik = () => (f.yon === 'gider' && !f.giderKategori) || (f.yon === 'ortakOdeme' && !f.egitmenId);
+  const zorunluEksik = () => (f.yon === 'gider' && !f.giderKategori) || (f.yon === 'ortakOdeme' && !f.egitmenId) || (f.yon === 'gelir' && !f.eslesenIds.length) || (f.yon === 'komisyon' && !komTam());
   const kaydetGuncelle = () => { const b = $('#bdKaydet'); if (b) { const eks = zorunluEksik(); b.disabled = eks; b.classList.toggle('ff-kaydet-pasif', eks); } };
   const yenile = () => { $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); kaydetGuncelle(); };
   function bagla() {
@@ -2758,6 +2770,8 @@ function bankaDetayModal(k, wiz) {
   $('#bdKaydet').onclick = async () => {
     if (f.yon === 'gider' && !f.giderKategori) { const el = $('#bdGider'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Gider kategorisi zorunlu.', 'uyari'); return; }
     if (f.yon === 'ortakOdeme' && !f.egitmenId) { const el = $('#bdOrtak'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('İlgili ortak zorunlu.', 'uyari'); return; }
+    if (f.yon === 'gelir' && !f.eslesenIds.length) { const el = $('#bdOgr'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Önce tahsilatı eşleştirin.', 'uyari'); return; }
+    if (f.yon === 'komisyon' && !komTam()) { const el = $('#bdKom'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Önce komisyonu ayarlayın.', 'uyari'); return; }
     const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? (f.egitmenId || null) : null, eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
@@ -2957,7 +2971,8 @@ function veriGirModal() {
 function neonAnaEkran() {
   const donem = buAy();
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
-  const tt = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem);   // gelir kaynağı: Tahsilat Tanımla
+  const ttHam = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem);   // dönemin tüm tahsilatları (defter)
+  const tt = ttHam.filter(tahsilatGercek);   // gelir = yalnız gerçekleşen (nakit + bankaya yatmış)
   const bru = topla(tt);
   const nakit = topla(tt.filter(t => t.odemeTuru === 'nakit'));
   const havale = topla(tt.filter(t => t.odemeTuru === 'havale'));
@@ -2969,7 +2984,8 @@ function neonAnaEkran() {
   const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;
   const vergi = Math.round((havale + kartT) * vOran);   // bankaya giren tahsilatın oranı
   const net = bru - komisyon - gider - vergi;
-  const bosVeri = !tt.length && !bh.length;
+  const bosVeri = !ttHam.length && !bh.length;
+  const bekleyenTop = topla(ttHam.filter(t => !tahsilatGercek(t)));   // henüz bankaya yatmamış (bilgi amaçlı)
   const kart = (ikAd, et, sayfa) => `<button type="button" class="neon-kart" data-git="${sayfa}"><span class="nk-ik">${ik(ikAd)}</span><span class="nk-et">${kacar(et)}</span></button>`;
   const ozetSat = (l, v, cls = '') => `<div class="no-sat"><span>${l}</span><b class="${cls}">${v}</b></div>`;
   ic().innerHTML = `
@@ -2984,6 +3000,7 @@ function neonAnaEkran() {
           ${ozetSat('Kart Komisyonu', komisyon ? '−' + TL(komisyon) : TL(0))}
           ${ozetSat(`Vergi (%${Math.round(vOran * 100)})`, vergi ? '−' + TL(vergi) : TL(0))}
           ${ozetSat('Gider', gider ? '−' + TL(gider) : TL(0))}
+          ${bekleyenTop ? ozetSat('Bekleyen (bankaya yatmadı)', TL(bekleyenTop), 'soluk') : ''}
           ${ozetSat('Net', TL(net), net < 0 ? 'negatif' : 'pozitif')}
         </div></div>
       </div>
@@ -7525,7 +7542,14 @@ function hesapHareketleri(hesap) {
         ust = k.giderKategori || YON_AD.gider;
         alt = k.islem || bankaAciklamaKisa(k.aciklama) || '';
         dnm = giderAitDonem(k);
-      } else if (k.yon === 'gelir' || k.yon === 'komisyon') {   // tahsilat/komisyon → ilgili hoca + öğrenci
+      } else if (k.yon === 'komisyon') {   // komisyon → üst "Komisyon", alt: ilgili eğitmen(ler) ilk isimleri
+        const ilg = bankaIlgiliTahsilatlar(k);
+        const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
+        const ilkAd = ad => String(ad || '').trim().split(/\s+/)[0] || '';
+        ust = 'Komisyon';
+        alt = hoc.length ? (hoc.length === 1 ? hoc[0] : hoc.map(ilkAd).join(', ')) : (bankaAciklamaKisa(k.aciklama) || k.islem || '');
+        dnm = donemStr(k.tarih);
+      } else if (k.yon === 'gelir') {   // tahsilat → ilgili hoca + öğrenci
         const ilg = bankaIlgiliTahsilatlar(k);
         const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
         const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
