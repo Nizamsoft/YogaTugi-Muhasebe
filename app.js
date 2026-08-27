@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '272';
+const APP_SURUM = '273';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2635,9 +2635,10 @@ function bankaDetayModal(k, wiz) {
         // Ayrı sheet yerine Bekleyen Tahsilatlar sayfasına git; seçimi orada yap
         const adaylar = bankaAdaylar(k);
         const otoSec = (f.eslesenIds && f.eslesenIds.length) ? f.eslesenIds : (tahsilatKombinasyonAra(adaylar, Math.abs(Number(k.tutar) || 0)) || []);
+        const doner = () => { bankaEsCtx = null; git('ice-aktar'); bankaDetayModal(k, wiz); };   // banka önizlemesine dön + detayı yeniden aç
         bankaEsCtx = { k, wiz, secili: new Set(otoSec.map(String)),
-          onOnay: async (sel) => { k.eslesenIds = sel; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } bankaEsCtx = null; iaOnizleTazele(); bankaDetayModal(k, wiz); },
-          onVazgec: () => { bankaEsCtx = null; bankaDetayModal(k, wiz); } };
+          onOnay: async (sel) => { k.eslesenIds = sel; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } doner(); },
+          onVazgec: doner };
         modalKapat(); git('bekleyen');
       } }
   }
