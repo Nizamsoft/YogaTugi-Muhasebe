@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '289';
+const APP_SURUM = '290';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1075,8 +1075,10 @@ function egitmenKarlilik(donem) {
   const odenen = {}; ortaklar.forEach(o => { odenen[o.id] = odemeD.filter(x => x.ortakId === o.id).reduce((s, x) => s + Math.abs(Number(x.tutar) || 0), 0); });
   // Maaşlı eğitmen netleri + dağıtım
   const maasliList = Object.values(mMap).map(m => {
-    const kdvOngoru = kdvOn(m.brut), kdvHaric = m.brut - kdvOngoru;
-    const gvOngoru = Math.round((kdvHaric - m.komisyon) * vOran);
+    const vergiTabi = (m.havale || 0) + (m.kart || 0);   // nakit vergiye tabi DEĞİL — vergi yalnız banka parasından
+    const kdvOngoru = kdvOn(vergiTabi);
+    const gvOngoru = Math.round((vergiTabi - kdvOngoru - m.komisyon) * vOran);
+    const kdvHaric = m.brut - kdvOngoru;   // hakediş: brütten (nakit dahil) KDV öngörüsü düşülür
     const hakedis = kdvHaric - m.komisyon - gvOngoru;
     return { ...m, kdvOngoru, gvOngoru, giderPayi: 0, hakedis, net: hakedis, maasliMi: true };
   });
@@ -1086,8 +1088,10 @@ function egitmenKarlilik(donem) {
   });
   const ortakList = ortaklar.map(o => {
     const a = pMap[o.id];
-    const kdvOngoru = kdvOn(a.brut), kdvHaric = a.brut - kdvOngoru;
-    const gvOngoru = Math.round((kdvHaric - a.komisyon) * vOran);
+    const vergiTabi = (a.havale || 0) + (a.kart || 0);   // nakit vergiye tabi DEĞİL
+    const kdvOngoru = kdvOn(vergiTabi);
+    const gvOngoru = Math.round((vergiTabi - kdvOngoru - a.komisyon) * vOran);
+    const kdvHaric = a.brut - kdvOngoru;
     const hakedis = kdvHaric - a.komisyon - gvOngoru - giderPayi + a.havuzPayi;
     return { ...a, kdvOngoru, gvOngoru, giderPayi, hakedis, net: hakedis, odenen: odenen[o.id] || 0, kalan: hakedis - (odenen[o.id] || 0) };
   });
