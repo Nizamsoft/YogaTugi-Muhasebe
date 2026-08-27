@@ -3642,7 +3642,23 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .bd-oz .l .tar{font-size:11.5px;color:var(--metin-soluk);margin-top:2px}
 .bd-oz .tut{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:18px;flex:none}
 .bd-oz .tut.kir{color:#f0857a} .bd-oz .tut.yes{color:#8fe07a}
-.bd-aciklama{margin:10px 0 4px;background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:13px 15px;font-size:14px;line-height:1.5;color:var(--metin-soluk);word-break:break-word;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
+.bd-islem{margin:8px 0 6px;font-weight:700;font-size:14px;color:var(--metin)}
+.bd-aciklama{margin:0 0 4px;background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:13px 15px;font-size:14px;line-height:1.5;color:var(--metin-soluk);word-break:break-word;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
+.ff-alan.ff-deger-ok .ff-val{color:#8fe07a;font-weight:700}
+/* Hareket detayı — eğitmen/öğrenci dağılım kartı */
+.bd-dg{margin-top:8px;background:var(--gri);border:1px solid var(--kenar);border-radius:13px;overflow:hidden}
+.bd-dg-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px}
+.bd-dg-row+.bd-dg-row{border-top:1px solid var(--kenar)}
+.bd-dg-e{display:flex;align-items:center;gap:9px;min-width:0}
+.bd-dg-av{width:26px;height:26px;border-radius:50%;background:rgba(180,232,58,.15);color:var(--neon);display:grid;place-items:center;font-weight:800;font-size:12px;flex:none}
+.bd-dg-col{display:flex;flex-direction:column;min-width:0}
+.bd-dg-col .ad{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-dg-col .sub{font-size:10px;color:var(--metin-soluk);margin-top:1px}
+.bd-dg-row>.bd-dg-e>.ad{font-weight:700;font-size:13.5px}
+.bd-dg-tt{font-weight:800;font-size:13.5px;white-space:nowrap}
+.bd-dg-tt.yes{color:#8fe07a}.bd-dg-tt.kir{color:#f0857a}
+.bd-dg-row.tot{background:rgba(255,255,255,.02);border-top:1px dashed var(--kenar)}
+.bd-dg-row.tot .ad{color:var(--metin-soluk);font-weight:700}
 .ff-alan.ff-eksik{border-bottom-color:var(--amber)}
 .ff-alan.ff-eksik>label{color:var(--amber)}
 .ff-eksik-uyari{font-size:9.5px;font-weight:800;color:var(--amber);background:rgba(245,169,31,.14);border-radius:6px;padding:2px 7px;flex:none;align-self:center}

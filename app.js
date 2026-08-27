@@ -289,11 +289,11 @@ function ffInput(o) {   // {id,label,zorunlu,deger,tip,inputmode,ph}
   const v = (o.deger == null ? '' : String(o.deger));
   return `<div class="ff-alan"><input class="ff-in" id="${o.id}" type="${o.tip || 'text'}"${o.inputmode ? ` inputmode="${o.inputmode}"` : ''} value="${kacar(v)}" placeholder=" " autocomplete="off"><label for="${o.id}">${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
 }
-function ffTrig(o) {   // {id,label,zorunlu,deger,oto,ph,eksik}
+function ffTrig(o) {   // {id,label,zorunlu,deger,oto,ph,eksik,yes}
   const dolu = o.deger != null && o.deger !== '';
   const phVar = !dolu && o.ph != null && o.ph !== '';
   const val = dolu ? `<span class="ff-val">${kacar(o.deger)}</span>` : (phVar ? `<span class="ff-val ph">${kacar(o.ph)}</span>` : `<span class="ff-val"></span>`);
-  return `<div class="ff-alan ff-trig ${dolu || phVar ? 'dolu' : ''}${o.eksik ? ' ff-eksik' : ''}" id="${o.id}">${val}${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
+  return `<div class="ff-alan ff-trig ${dolu || phVar ? 'dolu' : ''}${o.eksik ? ' ff-eksik' : ''}${o.yes ? ' ff-deger-ok' : ''}" id="${o.id}">${val}${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
 }
 function ffTrigGuncelle(id, deger) {   // seçim sonrası tetik değerini güncelle (oto rozetini kaldırır)
   const el = $('#' + id); if (!el) return;
@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '266';
+const APP_SURUM = '267';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2480,21 +2480,52 @@ function bankaDetayModal(k) {
   const ogrGoster = () => { const adlar = f.eslesenIds.map(id => { const t = (State.tahsilatTanimlari || []).find(x => String(x.id) === String(id)); return t ? t.ogrenciAd : ''; }).filter(Boolean); return adlar.length ? adlar[0] + (adlar.length > 1 ? ` +${adlar.length - 1}` : '') : ''; };
   const kir = (Number(k.tutar) || 0) < 0;
   const oz = `<div class="bd-oz"><div class="l"><div class="ad">${kacar(k.islem || '—')}</div><div class="tar">${kacar(fmtTarihUzun(k.tarih))} · Banka</div></div><div class="tut ${kir ? 'kir' : 'yes'} mono">${TL(k.tutar)}</div></div>`;
+  const bas = (ad) => { const p = String(ad || '—').trim().split(/\s+/); return (((p[0] || '')[0] || '') + ((p[1] || '')[0] || '')).toLocaleUpperCase('tr'); };
   const giderAlan = () => (f.giderKategori
     ? ffTrig({ id: 'bdGider', label: 'Gider Kategorisi', zorunlu: true, deger: f.giderKategori })
     : `<div class="ff-alan ff-trig ff-eksik dolu" id="bdGider"><span class="ff-val ph">Gider seçin</span><span class="ff-eksik-uyari">Zorunlu</span><span class="ff-ok">⌄</span><label>Gider Kategorisi <span class="zor">*</span></label></div>`);
+  const ortakAlan = () => { const o = ortaklar.find(x => x.id === f.egitmenId); return o
+    ? ffTrig({ id: 'bdOrtak', label: 'İlgili Ortak', zorunlu: true, deger: o.ad })
+    : `<div class="ff-alan ff-trig ff-eksik dolu" id="bdOrtak"><span class="ff-val ph">Ortak seçin</span><span class="ff-eksik-uyari">Zorunlu</span><span class="ff-ok">⌄</span><label>İlgili Ortak <span class="zor">*</span></label></div>`; };
   const komHazir = komisyonHazir(k);
+  const komToplam = () => bankaIlgiliTahsilatlar(k).reduce((s, t) => s + kartKomTutar(t), 0);
+  const komTam = () => komHazir && Math.abs(komToplam() - Math.abs(Number(k.tutar) || 0)) <= 1;
+  const ogrToplam = () => f.eslesenIds.reduce((s, id) => { const t = (State.tahsilatTanimlari || []).find(x => String(x.id) === String(id)); return s + (t ? Number(t.tutar) || 0 : 0); }, 0);
+  const komField = () => (!komHazir)
+    ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: '🔒 Önce tahsilatı seçin' })
+    : (komTam()
+        ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: `✓ Ayarlandı · ${TL(komToplam())}`, yes: true })
+        : ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›', eksik: true }));
+  const ogrField = () => (f.eslesenIds.length)
+    ? ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: `✓ Eşleşti · ${f.eslesenIds.length} tahsilat · ${TL(ogrToplam())}`, yes: true })
+    : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', ph: 'Tahsilatla eşleştir ›', eksik: true });
   const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
-    : (f.yon === 'komisyon') ? (komHazir
-        ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›', eksik: true })
-        : ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: '🔒 Önce tahsilatı seçin' }))
-    : (f.yon === 'ortakOdeme') ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster(), ph: 'Tahsilatla eşleştir ›', eksik: !f.eslesenIds.length });
+    : (f.yon === 'komisyon') ? komField()
+    : (f.yon === 'ortakOdeme') ? ortakAlan() : ogrField();
+  const dagilimHTML = () => {
+    const ilg = bankaIlgiliTahsilatlar(k);
+    if (!ilg.length) return '';
+    if (f.yon === 'gelir') {
+      const top = ilg.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+      const rows = ilg.map(t => `<div class="bd-dg-row"><span class="bd-dg-e"><span class="bd-dg-av">${kacar(bas(t.ogrenciAd))}</span><span class="bd-dg-col"><span class="ad">${kacar(t.ogrenciAd || '—')}</span><span class="sub">${kacar(t.egitmenAd || '')}</span></span></span><span class="bd-dg-tt yes">${TL(t.tutar)}</span></div>`).join('');
+      return `<div class="ff-grpbas">Öğrenci Dağılımı</div><div class="bd-dg">${rows}<div class="bd-dg-row tot"><span class="bd-dg-e"><span class="ad">Toplam · ${ilg.length} öğrenci</span></span><span class="bd-dg-tt yes">${TL(top)}</span></div></div>`;
+    }
+    if (f.yon === 'komisyon') {
+      const grup = {}; ilg.forEach(t => { const e = t.egitmenAd || '—'; if (!grup[e]) grup[e] = { ad: e, adet: 0, kom: 0 }; grup[e].adet++; grup[e].kom += kartKomTutar(t); });
+      const list = Object.values(grup); const top = list.reduce((s, g) => s + g.kom, 0);
+      const rows = list.map(g => `<div class="bd-dg-row"><span class="bd-dg-e"><span class="bd-dg-av">${kacar(bas(g.ad))}</span><span class="bd-dg-col"><span class="ad">${kacar(g.ad)}</span><span class="sub">${g.adet} kart tahsilatı</span></span></span><span class="bd-dg-tt kir">−${TL(g.kom)}</span></div>`).join('');
+      return `<div class="ff-grpbas">Eğitmen Dağılımı</div><div class="bd-dg">${rows}<div class="bd-dg-row tot"><span class="bd-dg-e"><span class="ad">Toplam</span></span><span class="bd-dg-tt kir">−${TL(top)}</span></div></div>`;
+    }
+    return '';
+  };
   const alanlarHTML = () => `
     ${ffTrig({ id: 'bdDonem', label: 'Ait Olduğu Dönem', deger: donemAdi(f.donem) })}
     ${ffTrig({ id: 'bdTur', label: 'Tür', deger: yonAd(f.yon) })}
     ${ortaAlan()}
-    ${ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() })}
+    ${f.yon === 'gider' ? ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() }) : ''}
+    ${dagilimHTML()}
     <div class="ff-grpbas">Banka Açıklaması</div>
+    <div class="bd-islem">${kacar(k.islem || '—')}</div>
     <div class="bd-aciklama">${kacar(k.aciklama || '—')}</div>`;
   modalAc('Hareket Detayı', `${oz}<div id="bdAlanlar">${alanlarHTML()}</div>`, `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`);
   $('#modalKap .modal').classList.add('modal-tam');
@@ -2509,7 +2540,8 @@ function bankaDetayModal(k) {
         altSecici({ baslik: 'Gider Seç', arama: true, placeholder: 'Gider ara veya yaz…', harf: true, secili: '', secenekler: list.map(gg => ({ deger: gg.id, ad: gg.ad })), onSec: secId, onEkle: ekle });
       } }
     $('#bdDonem').onclick = () => { const aylar = []; for (let i = 0; i < 15; i++) aylar.push(donemKaydir(buAy(), -i)); altSecici({ baslik: 'Ait Olduğu Dönem', secili: f.donem, secenekler: aylar.map(d => ({ deger: d, ad: donemAdi(d) })), onSec: (v) => { f.donem = v; ffTrigGuncelle('bdDonem', donemAdi(v)); } }); };
-    $('#bdEg').onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, secili: f.egitmenId || '', secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad }))], onSec: (v) => { f.egitmenId = v || null; ffTrigGuncelle('bdEg', egGoster()); } });
+    { const e = $('#bdEg'); if (e) e.onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, secili: f.egitmenId || '', secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad }))], onSec: (v) => { f.egitmenId = v || null; ffTrigGuncelle('bdEg', egGoster()); } }); }
+    { const or = $('#bdOrtak'); if (or) or.onclick = () => altSecici({ baslik: 'İlgili Ortak', arama: ortaklar.length > 6, secili: f.egitmenId || '', secenekler: ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad, alt: o.id === benId() ? 'Sen' : '' })), onSec: (v) => { f.egitmenId = v || null; yenile(); } }); }
     { const km = $('#bdKom'); if (km) km.onclick = async () => {
         if (!komHazir) { bildir('Önce aynı günün Batch Yatan tahsilatını eşleştirin.', 'uyari'); return; }
         const yama = { yon: f.yon, donem: f.donem, egitmenId: f.egitmenId || null };   // düzenlemeleri koru
@@ -2534,7 +2566,8 @@ function bankaDetayModal(k) {
   bagla();
   $('#bdKaydet').onclick = async () => {
     if (f.yon === 'gider' && !f.giderKategori) { const el = $('#bdGider'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Gider kategorisi zorunlu.', 'uyari'); return; }
-    const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: f.egitmenId || null, eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
+    if (f.yon === 'ortakOdeme' && !f.egitmenId) { const el = $('#bdOrtak'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('İlgili ortak zorunlu.', 'uyari'); return; }
+    const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? (f.egitmenId || null) : null, eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
     modalKapat(); bildir('Hareket güncellendi.', 'basari'); iaOnizleTazele();
