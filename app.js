@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '280';
+const APP_SURUM = '281';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2220,6 +2220,7 @@ function iaIsle(file) {
     if (sonuc.hata) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} ${kacar(sonuc.hata)}</div>`; return; }
     if (!sonuc.kayitlar.length) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} Dosyada uygun kayıt bulunamadı.</div>`; return; }
     iaOnFiltre = 'yok'; iaOnLimit = 12;   // yeni dosya → filtre/limit sıfırla
+    if (iaSekme !== 'planformi') bankaOtoEslestir(sonuc.kayitlar);   // güvenli-tek eşleşmeleri otomatik yap
     iaOnizleCiz(sonuc.kayitlar, file.name);
   });
 }
@@ -2389,7 +2390,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
           const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
           ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
           if (ogr.length) alt = kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : ''));
-          esles = '<span class="ia-es ok">✓</span>';
+          esles = `<span class="ia-es ok">✓</span>${k.otoEsles ? '<span class="ia-oto">OTO</span>' : ''}`;
         } else {
           ust = `<button type="button" class="ia-ait-sec tahsil" data-gtan="${i}">Tahsilat Seç ›</button>`; esatir = 'ia-esz-tahsil';
           esles = '<span class="ia-es no">✕</span>';
@@ -2491,6 +2492,29 @@ function giderTanimlaModal(k) {
 }
 /* Bir banka tahsilat/komisyon hareketinin ilgili Tahsilat Tanımla kayıtları (kime ait) */
 /* Bir banka tahsilatı için aday tahsilatlar (öğrenci eşleşmesi seçici) — türe göre akıllı tarih */
+/* Güvenli-tek otomatik eşleştirme: havale → aynı gün aynı tutar boşta tanım;
+   Batch Yatan → D-1 kartların toplamı tam eşitse. Belirsiz olan elle bırakılır. */
+function bankaOtoEslestir(kayitlar) {
+  if (!Array.isArray(kayitlar)) return;
+  const tanim = State.tahsilatTanimlari || [];
+  const kullanilan = new Set();   // başka kayda atanmış tanım id'leri (preview + commit'li)
+  [...kayitlar, ...(State.bankaHareketleri || [])].forEach(x => (x.eslesenIds || []).forEach(id => kullanilan.add(String(id))));
+  const kurus = v => Math.round(Math.abs(Number(v) || 0) * 100);
+  const ayniGun = (t, k) => Math.round(gunFark(t.tarih, k.tarih)) === 0;
+  const dOnce = (t, k) => Math.round(gunFark(k.tarih, t.tarih)) === 1;
+  kayitlar.forEach(k => {
+    if (Array.isArray(k.eslesenIds) && k.eslesenIds.length) return;   // zaten eşleşmiş
+    if (k.yon !== 'gelir') return;
+    const hedef = kurus(k.tutar);
+    if (/havale/i.test(k.islem || '')) {
+      const t = tanim.find(t => t.odemeTuru === 'havale' && ayniGun(t, k) && kurus(t.tutar) === hedef && !kullanilan.has(String(t.id)));
+      if (t) { k.eslesenIds = [t.id]; k.otoEsles = true; kullanilan.add(String(t.id)); }
+    } else if (/batch\s*yatan/i.test(k.islem || '')) {
+      const kartlar = tanim.filter(t => t.odemeTuru === 'kart' && dOnce(t, k) && !kullanilan.has(String(t.id)));
+      if (kartlar.length && kartlar.reduce((s, t) => s + kurus(t.tutar), 0) === hedef) { k.eslesenIds = kartlar.map(t => t.id); k.otoEsles = true; kartlar.forEach(t => kullanilan.add(String(t.id))); }
+    }
+  });
+}
 function bankaAdaylar(k) {
   if (!k) return [];
   const tanim = State.tahsilatTanimlari || [];
@@ -2603,7 +2627,7 @@ function bankaDetayModal(k, wiz) {
         ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: `✓ Ayarlandı · ${TL(Math.abs(Number(k.tutar) || 0))}`, yes: true })
         : ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›', eksik: true }));
   const ogrField = () => (f.eslesenIds.length)
-    ? ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: `✓ Eşleşti · ${f.eslesenIds.length} tahsilat · ${TL(ogrToplam())}`, yes: true })
+    ? ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: `✓ ${k.otoEsles ? 'Otomatik' : 'Eşleşti'} · ${f.eslesenIds.length} tahsilat · ${TL(ogrToplam())}`, yes: true })
     : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', ph: 'Tahsilatla eşleştir ›', eksik: true });
   const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
     : (f.yon === 'komisyon') ? komField()
@@ -2673,7 +2697,7 @@ function bankaDetayModal(k, wiz) {
           bankaDetayModal(k, wiz);   // yerinde güncelle
         };
         bankaEsCtx = { k, wiz, secili: new Set(otoSec.map(String)),
-          onOnay: async (sel) => { k.eslesenIds = sel; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } doner(); },
+          onOnay: async (sel) => { k.eslesenIds = sel; k.otoEsles = false; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel, otoEsles: false }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } doner(); },
           onVazgec: doner };
         const p = $('#modalPerde'); if (p) p.style.display = 'none';   // detayı arka planda tut
         document.body.classList.remove('govde-kilit');
