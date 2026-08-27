@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '296';
+const APP_SURUM = '297';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -631,12 +631,13 @@ async function veriYukle() {
   ESKI_KOLEKSIYONLAR.forEach(k => { if (localStorage.getItem('yt_' + k) !== null) { localStorage.removeItem('yt_' + k); temizlik = true; } });
   // Ortakları sadeleştir (id + ad + foto)
   const ham = DB._oku('ortaklar');
-  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false, girisAd: o.girisAd || null, sifreHash: o.sifreHash || null, girisAktif: o.girisAktif !== false }));
+  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false, girisAd: o.girisAd || null, sifreHash: o.sifreHash || null, girisAktif: o.girisAktif !== false, katilimAy: o.katilimAy || null, ayrilisAy: o.ayrilisAy || null }));
   const degisti = JSON.stringify(ham) !== JSON.stringify(temiz);
   if (degisti) DB._yaz('ortaklar', temiz);   // bu aynı zamanda buluta temiz veriyi gönderir
   else if (temizlik && window._Bulut) window._Bulut.itPlanla();
   State.ortaklar = temiz;
   State.giderler = DB._oku('giderler');
+  if (!State.giderler.some(g => adNorm(g.ad) === adNorm(KAR_DAGITIM_KAT))) { const y = await DB.ekle('giderler', { ad: KAR_DAGITIM_KAT, grupId: null }); State.giderler = DB._oku('giderler'); }   // ortağa pay ödemesi kategorisi hazır olsun
   State.giderGruplari = DB._oku('giderGruplari');
   State.giderKayitlari = DB._oku('giderKayitlari');
   State.uyelikler = DB._oku('uyelikler');
@@ -1045,10 +1046,17 @@ function ortakDevir(donem) {
   }
   return dev;
 }
+const KAR_DAGITIM_KAT = 'Kâr Dağıtımı';   // ortağa yapılan pay ödemesi kategorisi (genel gidere bölünmez, "verilen" sayılır)
+/* Ortak, verilen dönemde (ay) aktif mi? Katılım ayından itibaren, ayrılış ayından önce. */
+function ortakAyAktif(o, donem) {
+  if (o.katilimAy && donem < o.katilimAy) return false;   // henüz katılmamış
+  if (o.ayrilisAy && donem >= o.ayrilisAy) return false;  // çıkmış (çıktığı aydan itibaren pay yok)
+  return true;
+}
 function egitmenKarlilik(donem) {
   const tt = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem);   // gelir kaynağı: Tahsilat Tanımla
   const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem);
-  const ortaklar = State.ortaklar.filter(o => o.aktif !== false);
+  const ortaklar = State.ortaklar.filter(o => o.aktif !== false && ortakAyAktif(o, donem));   // o ay aktif ortaklar (katılım/ayrılış)
   const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;   // gelir vergisi öngörü oranı
   const kdvOran = ((State.ayarlar && State.ayarlar.kdvOrani) || 20);            // KDV öngörü oranı (%)
   const kdvOn = b => Math.round((Number(b) || 0) * kdvOran / (100 + kdvOran));  // KDV dahil brütten KDV öngörüsü
@@ -1066,13 +1074,20 @@ function egitmenKarlilik(donem) {
     if (t.odemeTuru === 'kart') hedef(t.egitmenAd, 'komisyon', kartKomTutar(t));
   }
   // Giderler "ait olduğu döneme" göre (elle atanmış donem varsa o, yoksa tarihten)
-  const nakitGiderTop = (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).reduce((s, g) => s + Math.abs(Number(g.tutar) || 0), 0);
-  const bankaGiderTop = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem).reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
-  const genelGider = bankaGiderTop + nakitGiderTop;   // banka + nakit giderler ortaklara bölünür
+  const isKarDagitim = (kat) => !!kat && adNorm(kat) === adNorm(KAR_DAGITIM_KAT);
+  const nakitGiderTop = (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem && !isKarDagitim(g.giderAd || g.kategori)).reduce((s, g) => s + Math.abs(Number(g.tutar) || 0), 0);
+  const bankaGiderTop = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem && !isKarDagitim(b.giderKategori)).reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
+  const genelGider = bankaGiderTop + nakitGiderTop;   // banka + nakit giderler (Kâr Dağıtımı hariç) ortaklara eşit bölünür
   const giderPayi = ortaklar.length ? genelGider / ortaklar.length : 0;
-  // Verilmiş hakediş: bu döneme işlenmiş ortak ödemeleri (Hakediş Ver kaydı)
+  const bankaGiderPayi = ortaklar.length ? bankaGiderTop / ortaklar.length : 0;   // Gelir Vergisi matrahından düşülür
+  // Verilmiş hakediş: bu döneme işlenmiş ortak ödemeleri (Hakediş Ver kaydı) + bankadan "Kâr Dağıtımı" gideri (İlgili Ortağa)
   const odemeD = (State.hakedisOdemeleri || []).filter(o => o.donem === donem);
-  const odenen = {}; ortaklar.forEach(o => { odenen[o.id] = odemeD.filter(x => x.ortakId === o.id).reduce((s, x) => s + Math.abs(Number(x.tutar) || 0), 0); });
+  const karDagitimD = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem && isKarDagitim(b.giderKategori));
+  const odenen = {}; ortaklar.forEach(o => {
+    const eski = odemeD.filter(x => x.ortakId === o.id).reduce((s, x) => s + Math.abs(Number(x.tutar) || 0), 0);
+    const kd = karDagitimD.filter(b => String(b.egitmenId) === String(o.id)).reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
+    odenen[o.id] = eski + kd;
+  });
   // Maaşlı eğitmen netleri + dağıtım
   const maasliList = Object.values(mMap).map(m => {
     const vergiTabi = (m.havale || 0) + (m.kart || 0);   // nakit vergiye tabi DEĞİL — vergi yalnız banka parasından
@@ -1082,15 +1097,14 @@ function egitmenKarlilik(donem) {
     const hakedis = kdvHaric - m.komisyon - gvOngoru;
     return { ...m, kdvOngoru, gvOngoru, giderPayi: 0, hakedis, net: hakedis, maasliMi: true };
   });
-  maasliList.forEach(m => {
-    if (m.dagitim === 'havuz' && ortaklar.length) { const pay = m.net / ortaklar.length; ortaklar.forEach(o => pMap[o.id].havuzPayi += pay); }
-    else if (m.dagitim === 'ortak' && m.hedefOrtakId && pMap[m.hedefOrtakId]) pMap[m.hedefOrtakId].havuzPayi += m.net;
-  });
+  // Maaşlı eğitmen = personel: neti her zaman tüm aktif ortaklara EŞİT dağıtılır (ayrı kart yok, "bekliyor" kaçağı yok)
+  maasliList.forEach(m => { if (ortaklar.length) { const pay = m.net / ortaklar.length; ortaklar.forEach(o => pMap[o.id].havuzPayi += pay); } });
   const ortakList = ortaklar.map(o => {
     const a = pMap[o.id];
     const vergiTabi = (a.havale || 0) + (a.kart || 0);   // nakit vergiye tabi DEĞİL
     const kdvOngoru = kdvOn(vergiTabi);
-    const gvOngoru = Math.round((vergiTabi - kdvOngoru - a.komisyon) * vOran);
+    const gvMatrah = Math.max(0, vergiTabi - kdvOngoru - a.komisyon - bankaGiderPayi);   // banka giderleri de GV matrahından düşer
+    const gvOngoru = Math.round(gvMatrah * vOran);
     const kdvHaric = a.brut - kdvOngoru;
     const hakedis = kdvHaric - a.komisyon - gvOngoru - giderPayi + a.havuzPayi;
     return { ...a, kdvOngoru, gvOngoru, giderPayi, hakedis, net: hakedis, odenen: odenen[o.id] || 0, kalan: hakedis - (odenen[o.id] || 0) };
@@ -1270,7 +1284,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   };
   const detayli = karGorunum === 'detayli';
   // ÖZET: tam-genişlik eğitmen seçici + seçili kart (hep açık, veri olmasa bile). Varsayılan: kendisi (benId).
-  const ozHepsi = [...r.ortaklar.map(e => ({ e, rol: 'Ortak' })), ...r.egitmenler.map(e => ({ e, rol: 'Maaşlı eğitmen' }))];
+  const ozHepsi = r.ortaklar.map(e => ({ e, rol: 'Ortak' }));   // maaşlı eğitmen = personel: Ortaklar sayfasında gösterilmez
   let ozSel = ozHepsi.find(x => String(x.e.id) === String(karOzetSecili));
   if (!ozSel) ozSel = ozHepsi.find(x => String(x.e.id) === String(benId())) || ozHepsi[0];
   const ozSecId = ozSel ? ozSel.e.id : null;
@@ -5598,7 +5612,9 @@ function ortakFormu(mevcut) {
       </div>
       <input type="file" id="oFotoDosya" accept="image/*" hidden>
     </div>
-    <div class="gp-alan" style="margin:0"><label>Ad Soyad</label><input type="text" class="gp-inp" id="oAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Ayşe Yılmaz"></div>`;
+    <div class="gp-alan" style="margin:0 0 14px"><label>Ad Soyad</label><input type="text" class="gp-inp" id="oAd" value="${mevcut ? kacar(mevcut.ad) : ''}" placeholder="Örn. Ayşe Yılmaz"></div>
+    <div class="gp-alan" style="margin:0 0 14px"><label>Katılım Ayı</label><input type="month" class="gp-inp" id="oKat" value="${mevcut ? kacar(mevcut.katilimAy || '') : ''}"></div>
+    <div class="gp-alan" style="margin:0"><label>Ayrılış Ayı (boş = devam ediyor)</label><input type="month" class="gp-inp" id="oAyr" value="${mevcut ? kacar(mevcut.ayrilisAy || '') : ''}"></div>`;
   modalAc(mevcut ? 'Ortak Düzenle' : 'Yeni Ortak', govde,
     `<button class="btn" id="oiIptal">İptal</button><button class="btn btn-ana gp-kaydet gp-kaydet-mini" id="oiKaydet"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" fill="currentColor" opacity=".2"/><path d="M6 4.5h9.5l3 3V18a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 4.5h6v4H8zM8 19v-5h8v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Kaydet</button>`,
     `<span class="hr-rozet"><span class="hr-rz-ik"><svg class="uik" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="2.8" fill="currentColor" opacity=".28"/><circle cx="8.5" cy="8.5" r="2.8" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="9.5" r="2.3" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 18.5c0-2.8 2.2-4.7 5-4.7s5 1.9 5 4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.6 14.1c2.3-.2 4.2 1.4 4.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>Ortak</span>`);
@@ -5614,7 +5630,7 @@ function ortakFormu(mevcut) {
   $('#oiKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
     if (!ad) return bildir('Ad girin.', 'hata');
-    const veri = { ad, foto: fotoData || null, aktif: true };
+    const veri = { ad, foto: fotoData || null, aktif: true, katilimAy: ($('#oKat').value || '') || null, ayrilisAy: ($('#oAyr').value || '') || null };
     if (mevcut) { await DB.guncelle('ortaklar', mevcut.id, veri); Object.assign(mevcut, veri); }
     else { const y = await DB.ekle('ortaklar', veri); State.ortaklar.push(y); }
     modalKapat(); bildir('Kaydedildi.', 'basari');
