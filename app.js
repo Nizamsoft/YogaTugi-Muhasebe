@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '275';
+const APP_SURUM = '276';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2261,7 +2261,7 @@ function bankaTahsilatEslesme(k) {
   if (k.yon === 'komisyon') {
     const kartlar = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && gunOncesi(t));
     const komTop = kartlar.reduce((s, t) => s + kartKomTutar(t), 0);   // banka gibi tam TL (yuvarlı)
-    return { tip: 'komisyon', durum: (kartlar.length && Math.abs(komTop - Math.round(Math.abs(Number(k.tutar) || 0))) <= 1) ? 'ok' : 'yok', toplam: komTop };
+    return { tip: 'komisyon', durum: (k.komisyonOnay && kartlar.length && Math.abs(komTop - Math.round(Math.abs(Number(k.tutar) || 0))) <= 1) ? 'ok' : 'yok', toplam: komTop };
   }
   if (k.yon !== 'gelir') return null;
   if (/batch\s*yatan/i.test(k.islem || '')) {
@@ -2512,7 +2512,7 @@ function bankaKayitTamam(k) {
   if (k.yon === 'ortakOdeme') return !!k.egitmenId;
   if (k.yon === 'gider' || (k.yon !== 'komisyon' && t < 0)) return !!bankaGiderEsle(k);
   if (k.yon === 'komisyon') {
-    if (!komisyonHazir(k)) return false;
+    if (!k.komisyonOnay || !komisyonHazir(k)) return false;   // yalnız Komisyon Eşleştir'de onaylandıysa
     const top = bankaIlgiliTahsilatlar(k).reduce((s, x) => s + kartKomTutar(x), 0);
     return Math.abs(top - Math.abs(t)) <= 1;
   }
@@ -2573,7 +2573,7 @@ function bankaDetayModal(k, wiz) {
     : `<div class="ff-alan ff-trig ff-eksik dolu" id="bdOrtak"><span class="ff-val ph">Ortak seçin</span><span class="ff-eksik-uyari">Zorunlu</span><span class="ff-ok">⌄</span><label>İlgili Ortak <span class="zor">*</span></label></div>`; };
   const komHazir = komisyonHazir(k);
   const komToplam = () => bankaIlgiliTahsilatlar(k).reduce((s, t) => s + kartKomTutar(t), 0);
-  const komTam = () => komHazir && Math.abs(komToplam() - Math.abs(Number(k.tutar) || 0)) <= 1;
+  const komTam = () => !!k.komisyonOnay && komHazir && Math.abs(komToplam() - Math.abs(Number(k.tutar) || 0)) <= 1;
   const ogrToplam = () => f.eslesenIds.reduce((s, id) => { const t = (State.tahsilatTanimlari || []).find(x => String(x.id) === String(id)); return s + (t ? Number(t.tutar) || 0 : 0); }, 0);
   const komField = () => (!komHazir)
     ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: '🔒 Önce tahsilatı seçin' })
@@ -2665,11 +2665,6 @@ function bankaDetayModal(k, wiz) {
       return;
     }
     modalKapat(); bildir('Hareket güncellendi.', 'basari');
-    // Batch Yatan tahsilatı eşleştirildiyse eşli komisyonu doğrudan aç
-    if (f.yon === 'gelir' && /batch\s*yatan/i.test(k.islem || '') && (f.eslesenIds || []).length) {
-      const kom = [...(iaSonKayitlar || []), ...(State.bankaHareketleri || [])].find(x => x.yon === 'komisyon' && Math.round(gunFark(x.tarih, k.tarih)) === 0);
-      if (kom) setTimeout(() => komisyonTuttur(kom), 200);
-    }
   };
 }
 /* Eşleşmeyen banka tahsilatı: uyarı + var olan tanımla eşleştir (batch → tanımlar ekranı) */
@@ -2703,14 +2698,7 @@ function komisyonTuttur(k, onDone) {
   const komTur = tip => tahsilatKomisyonOran('kart', tip);
   const komTut = (tutar, tip) => Math.round(tutar * komTur(tip) / 100);   // banka gibi en yakın TL
   let mod = komTutForm.some(r => r.dagit != null) ? 'dagit' : 'tip';   // varsa orantılı dağıtımla aç
-  let otoAyar = false;
-  if (mod === 'tip') {   // açılışta tam tutan tip kombinasyonunu otomatik dene ve uygula
-    const suanTop = komTutForm.reduce((s, r) => s + komTut(r.tutar, r.tip), 0);
-    if (Math.abs(suanTop - hedef) > 1) {
-      const kombo = komisyonKombinasyonAra(komTutForm, hedef);
-      if (kombo) { komTutForm.forEach((r, i) => r.tip = kombo[i]); otoAyar = true; }
-    }
-  }
+  let otoAyar = false;   // "Otomatik Bul" ile bulunduysa true (açılışta otomatik eşleştirme YOK)
   const ozetHTML = (top) => {
     const tut = Math.abs(top - hedef) <= 1; const fark = Math.abs(top - hedef);
     return `<div class="ktm-oz">
@@ -2746,19 +2734,19 @@ function komisyonTuttur(k, onDone) {
     const top = mod === 'dagit' ? komTutForm.reduce((s, r) => s + (Number(r.dagit) || 0), 0) : komTutForm.reduce((s, r) => s + komTut(r.tutar, r.tip), 0);
     const tam = Math.abs(top - hedef) <= 1;
     const a = $('#ktDagit');
-    if (a) { a.style.display = (mod === 'tip' && tam) ? 'none' : ''; a.innerHTML = mod === 'dagit' ? `${ik('onay')} Tiplere Dön` : `${ik('onay')} Orantılı Dağıt`; }
+    if (a) { a.style.display = (mod === 'tip' && tam) ? 'none' : ''; a.innerHTML = mod === 'dagit' ? `${ik('onay')} Tiplere Dön` : `${ik('onay')} Otomatik Bul`; }
   };
   modalTamAcVeyaGuncelle('Komisyon Eşleştir', `<div id="ktGovde">${govde()}</div>`,
-    `<button type="button" class="btn" id="ktDagit" style="flex:1">${ik('onay')} Orantılı Dağıt</button><button type="button" class="btn btn-ana ff-kaydet" id="ktKaydet" style="flex:1.3">${ik('kaydet')} Kaydet</button>`);
+    `<button type="button" class="btn" id="ktDagit" style="flex:1">${ik('onay')} Otomatik Bul</button><button type="button" class="btn btn-ana ff-kaydet" id="ktKaydet" style="flex:1.3">${ik('kaydet')} Kaydet</button>`);
   { const mdl = $('#modalKap .modal'); if (mdl) mdl.classList.remove('modal-wiz'); }
   { const kp = $('#modalKapat'); if (kp) kp.onclick = kapat; }   // ✕ ile de sihirbaza dön
   bagla(); btnTazele();
+  const orantiliDagit = () => { const pay = komisyonOrantiliDagit(komTutForm, hedef); komTutForm.forEach((r, i) => r.dagit = pay[i]); mod = 'dagit'; cizGovde(); bildir('Komisyon tahsilatlara orantılı paylaştırıldı.', 'basari'); };
   $('#ktDagit').onclick = () => {
     if (mod === 'dagit') { mod = 'tip'; komTutForm.forEach(r => r.dagit = null); cizGovde(); return; }
-    const pay = komisyonOrantiliDagit(komTutForm, hedef);
-    komTutForm.forEach((r, i) => r.dagit = pay[i]);
-    mod = 'dagit'; cizGovde();
-    bildir('Komisyon tahsilat tutarlarına göre dağıtıldı.', 'basari');
+    const kombo = komisyonKombinasyonAra(komTutForm, hedef);   // Otomatik Bul: tam tutan kart tipi kombinasyonu
+    if (kombo) { komTutForm.forEach((r, i) => r.tip = kombo[i]); otoAyar = true; cizGovde(); bildir('Tam tutan kart tipi kombinasyonu bulundu.', 'basari'); return; }
+    onayModal('Bulunamadı', 'Tam tutan kart tipi kombinasyonu bulunamadı. Komisyonu tahsilatlara <b>orantılı paylaştıralım</b> mı?', orantiliDagit);
   };
   $('#ktKaydet').onclick = async () => {
     for (const r of komTutForm) {
@@ -2773,6 +2761,8 @@ function komisyonTuttur(k, onDone) {
       }
     }
     State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
+    k.komisyonOnay = true;   // komisyon artık onaylandı (açmadan otomatik eşleşmesin)
+    if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { komisyonOnay: true }); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
     iaOnizleTazele();
     bildir(mod === 'dagit' ? 'Komisyon orantılı paylaştırıldı.' : 'Kart tipleri güncellendi.', 'basari');
     kapat();
