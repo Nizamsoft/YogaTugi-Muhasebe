@@ -289,11 +289,11 @@ function ffInput(o) {   // {id,label,zorunlu,deger,tip,inputmode,ph}
   const v = (o.deger == null ? '' : String(o.deger));
   return `<div class="ff-alan"><input class="ff-in" id="${o.id}" type="${o.tip || 'text'}"${o.inputmode ? ` inputmode="${o.inputmode}"` : ''} value="${kacar(v)}" placeholder=" " autocomplete="off"><label for="${o.id}">${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
 }
-function ffTrig(o) {   // {id,label,zorunlu,deger,oto,ph}
+function ffTrig(o) {   // {id,label,zorunlu,deger,oto,ph,eksik}
   const dolu = o.deger != null && o.deger !== '';
   const phVar = !dolu && o.ph != null && o.ph !== '';
   const val = dolu ? `<span class="ff-val">${kacar(o.deger)}</span>` : (phVar ? `<span class="ff-val ph">${kacar(o.ph)}</span>` : `<span class="ff-val"></span>`);
-  return `<div class="ff-alan ff-trig ${dolu || phVar ? 'dolu' : ''}" id="${o.id}">${val}${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
+  return `<div class="ff-alan ff-trig ${dolu || phVar ? 'dolu' : ''}${o.eksik ? ' ff-eksik' : ''}" id="${o.id}">${val}${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
 }
 function ffTrigGuncelle(id, deger) {   // seçim sonrası tetik değerini güncelle (oto rozetini kaldırır)
   const el = $('#' + id); if (!el) return;
@@ -575,7 +575,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '261';
+const APP_SURUM = '262';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1829,14 +1829,11 @@ function giderKategoriOner(islem, aciklama) {
 }
 function bankaYon(islem, ba, aciklama) {
   const i = String(islem || '').toLocaleLowerCase('tr');
-  const a = String(aciklama || '').toLocaleLowerCase('tr');
   if (/komisyon/.test(i)) return 'komisyon';
   if (/batch yatan/.test(i)) return 'gelir';
-  if (/huzur\s*(hakk|pay)/.test(a)) return 'ortakOdeme';
   const b = String(ba || '').toLocaleUpperCase('tr');
-  if (b === 'A') return 'gelir';
-  if (b === 'B') return 'gider';
-  return 'gider';
+  if (b === 'A') return 'gelir';   // yalnız hesaba GİREN (A) tahsilat sayılır
+  return 'gider';                  // çıkan/eksi (B) her zaman gider — ortak pay dahil
 }
 
 // Dosyayı oku → {names:[...], sheet:{ad:rows[][]}}  (xlsx: tüm sayfalar, csv: tek sayfa)
@@ -2265,26 +2262,42 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
       const ackKisa = bankaAciklamaKisa(k.aciklama);
       let ust, alt, esles, esatir = '';
       let eksik = false;
-      if (k.yon === 'gider') {
+      const tutarSay = Number(k.tutar) || 0;
+      alt = kacar(k.islem || ackKisa || '');   // 2. satır: ekstredeki işlem/açıklama
+      if (k.yon === 'gider' || (k.yon !== 'komisyon' && tutarSay < 0)) {
+        // Eksi (−) her zaman gider — ortak pay ödemeleri dahil, tahsilat sayılmaz
         const gk = bankaGiderEsle(k);
         eksik = !gk;   // zorunlu gider kategorisi eksik
         ust = gk ? `<span class="a2-us">${kacar(gk)}</span>` : `<button type="button" class="ia-ait-sec" data-gtan="${i}">Gider Seç ›</button>`;
-        alt = kacar(k.islem || ackKisa || '');   // 2. satır: ekstredeki işlem/açıklama
         esles = gk ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">✕</span>';
-      } else {
+      } else if (k.yon === 'komisyon') {
         const es = bankaTahsilatEslesme(k);
-        const esOk = !!(es && es.durum === 'ok');
-        alt = kacar(k.islem || ackKisa || '');   // 2. satır: ekstredeki işlem (Batch Yatan / Alınan havale / Batch Komisyonu)
-        if (esOk) {
+        if (es && es.durum === 'ok') {
           const ilg = bankaIlgiliTahsilatlar(k);
           const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
           const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
           ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
           if (ogr.length) alt = kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : ''));
           esles = '<span class="ia-es ok">✓</span>';
-        } else {   // eşleşmemiş → türe göre eylem çipi (havale/batch tahsilat + komisyon)
-          if (k.yon === 'komisyon') { ust = `<button type="button" class="ia-ait-sec kom" data-gtan="${i}">Komisyonu ayarla ›</button>`; esatir = 'ia-esz-kom'; }
-          else { ust = `<button type="button" class="ia-ait-sec tahsil" data-gtan="${i}">Tahsilatla eşleştir ›</button>`; esatir = 'ia-esz-tahsil'; }
+        } else if (komisyonHazir(k)) {   // ilgili tahsilat eşleşti → oran ayarlanabilir
+          ust = `<button type="button" class="ia-ait-sec kom" data-gtan="${i}">Komisyon Seç ›</button>`; esatir = 'ia-esz-kom';
+          esles = '<span class="ia-es no">✕</span>';
+        } else {   // tahsilat seçilmeden pasif
+          ust = `<span class="ia-ait-sec pasif">🔒 Komisyon Seç</span>`; alt = 'Önce tahsilatı seç'; esatir = 'ia-esz-pasif';
+          esles = '<span class="ia-es no">✕</span>';
+        }
+      } else {
+        // Artı (+) → tahsilat
+        const es = bankaTahsilatEslesme(k);
+        if (es && es.durum === 'ok') {
+          const ilg = bankaIlgiliTahsilatlar(k);
+          const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
+          const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
+          ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
+          if (ogr.length) alt = kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : ''));
+          esles = '<span class="ia-es ok">✓</span>';
+        } else {
+          ust = `<button type="button" class="ia-ait-sec tahsil" data-gtan="${i}">Tahsilat Seç ›</button>`; esatir = 'ia-esz-tahsil';
           esles = '<span class="ia-es no">✕</span>';
         }
       }
@@ -2390,6 +2403,14 @@ function bankaAdaylar(k) {
   if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1);   // kart batch/komisyon → T-1
   return tanim.filter(t => Math.round(gunFark(t.tarih, k.tarih)) === 0);   // havale/gelir → aynı gün
 }
+/* Komisyon oranı ayarlanabilir mi? — aynı günün Batch Yatan tahsilatı eşleşmiş olmalı
+   (komisyon, o seçilen kart tahsilatlarına göre hesaplanır). */
+function komisyonHazir(k) {
+  if (!k) return false;
+  const hepsi = [...(State.bankaHareketleri || []), ...(iaSonKayitlar || [])];   // commit'li + önizlemedeki kayıtlar
+  return hepsi.some(x => x.yon === 'gelir' && /batch\s*yatan/i.test(x.islem || '')
+    && Math.round(gunFark(x.tarih, k.tarih)) === 0 && Array.isArray(x.eslesenIds) && x.eslesenIds.length);
+}
 function bankaIlgiliTahsilatlar(k) {
   if (!k) return [];
   if (Array.isArray(k.eslesenIds) && k.eslesenIds.length) {   // elle işaretlenmiş öğrenciler öncelikli
@@ -2422,9 +2443,12 @@ function bankaDetayModal(k) {
   const giderAlan = () => (f.giderKategori
     ? ffTrig({ id: 'bdGider', label: 'Gider Kategorisi', zorunlu: true, deger: f.giderKategori })
     : `<div class="ff-alan ff-trig ff-eksik dolu" id="bdGider"><span class="ff-val ph">Gider seçin</span><span class="ff-eksik-uyari">Zorunlu</span><span class="ff-ok">⌄</span><label>Gider Kategorisi <span class="zor">*</span></label></div>`);
+  const komHazir = komisyonHazir(k);
   const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
-    : (f.yon === 'komisyon') ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›' })
-    : (f.yon === 'ortakOdeme') ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster(), ph: 'Tahsilatla eşleştir ›' });
+    : (f.yon === 'komisyon') ? (komHazir
+        ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›', eksik: true })
+        : ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: '🔒 Önce tahsilatı seçin' }))
+    : (f.yon === 'ortakOdeme') ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster(), ph: 'Tahsilatla eşleştir ›', eksik: !f.eslesenIds.length });
   const alanlarHTML = () => `
     ${ffTrig({ id: 'bdDonem', label: 'Ait Olduğu Dönem', deger: donemAdi(f.donem) })}
     ${ffTrig({ id: 'bdTur', label: 'Tür', deger: yonAd(f.yon) })}
@@ -2447,6 +2471,7 @@ function bankaDetayModal(k) {
     $('#bdDonem').onclick = () => { const aylar = []; for (let i = 0; i < 15; i++) aylar.push(donemKaydir(buAy(), -i)); altSecici({ baslik: 'Ait Olduğu Dönem', secili: f.donem, secenekler: aylar.map(d => ({ deger: d, ad: donemAdi(d) })), onSec: (v) => { f.donem = v; ffTrigGuncelle('bdDonem', donemAdi(v)); } }); };
     $('#bdEg').onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, secili: f.egitmenId || '', secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad }))], onSec: (v) => { f.egitmenId = v || null; ffTrigGuncelle('bdEg', egGoster()); } });
     { const km = $('#bdKom'); if (km) km.onclick = async () => {
+        if (!komHazir) { bildir('Önce aynı günün Batch Yatan tahsilatını eşleştirin.', 'uyari'); return; }
         const yama = { yon: f.yon, donem: f.donem, egitmenId: f.egitmenId || null };   // düzenlemeleri koru
         Object.assign(k, yama);
         if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }

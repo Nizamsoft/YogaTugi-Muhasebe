@@ -1751,6 +1751,7 @@ body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ia-ait-sec{border:1px solid var(--amber);background:rgba(245,169,31,.12);color:var(--amber);font-family:inherit;font-weight:800;font-size:12px;border-radius:8px;padding:6px 10px;cursor:pointer}
 .ia-ait-sec.tahsil{border-color:var(--neon);background:rgba(180,232,58,.12);color:var(--neon)}
 .ia-ait-sec.kom{border-color:#f0b45a;background:rgba(240,180,90,.12);color:#f0b45a}
+.ia-ait-sec.pasif{border:1px dashed #3f4954;background:rgba(255,255,255,.02);color:#6b747e;cursor:not-allowed}
 .ogr-tablo.sade td.ia-kir{color:var(--kirmizi);font-weight:800} .ogr-tablo.sade td.ia-yes{color:#8fe07a;font-weight:800}
 .ia-es{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;font-size:12px;font-weight:900;line-height:1}
 .ia-es.ok{color:#8fe07a;background:rgba(143,224,122,.18)}
@@ -3628,6 +3629,7 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .ia-onizle-tablo tbody tr.ia-eksik td:first-child{box-shadow:inset 3px 0 0 var(--amber)}
 .ia-onizle-tablo tbody tr.ia-esz-tahsil td:first-child{box-shadow:inset 3px 0 0 var(--neon)}
 .ia-onizle-tablo tbody tr.ia-esz-kom td:first-child{box-shadow:inset 3px 0 0 #f0b45a}
+.ia-onizle-tablo tbody tr.ia-esz-pasif td:first-child{box-shadow:inset 3px 0 0 #3f4954}
 
 /* ===== Çoklu seçim sheet (öğrenci eşleşmesi) ===== */
 .altsec-bas2{align-items:flex-start}
