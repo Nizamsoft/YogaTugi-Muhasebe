@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '284';
+const APP_SURUM = '285';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2250,6 +2250,53 @@ function bankaAciklamaKisa(a) {
   if ((s.match(/[a-zçğıöşü]/gi) || []).length < 3) return '';   // anlamlı harf yoksa gizle
   return s.length > 42 ? s.slice(0, 40).trim() + '…' : s;
 }
+/* Banka açıklamasından KARŞI TARAF (bizim için tek değerli veri): İşyeri / Alıcı / Gönderen / Kurum.
+   Uzun ham metin gösterilmez; ayrıştırılamazsa {ad:'',rol:''} döner (uydurma isim üretilmez). */
+function bankaAdBicim(s) {
+  return String(s || '').trim().split(/\s+/).map(w =>
+    /^[A-ZÇĞİÖŞÜ]{2,4}$/.test(w) ? w   // kısa akronim (AVM, LTD, A.Ş.) büyük kalsın
+      : w.toLocaleLowerCase('tr').replace(/(^|[\/'-])([a-zçğıöşü])/g, (m, a, b) => a + b.toLocaleUpperCase('tr'))
+  ).join(' ');
+}
+const BANKA_SEHIR = ['İSTANBUL', 'ISTANBUL', 'ANKARA', 'İZMİR', 'IZMIR', 'BURSA', 'ANTALYA', 'ADANA', 'KONYA', 'GAZİANTEP', 'MERSİN'];
+function bankaSehirAt(s) { const p = String(s || '').trim().split(/\s+/); if (p.length > 1 && BANKA_SEHIR.includes(p[p.length - 1].toLocaleUpperCase('tr'))) p.pop(); return p.join(' '); }
+function bankaSonIsim(x) {   // banka/IBAN/NO'LU önekini atıp son isim bloğunu al
+  x = String(x || '').replace(/\s+/g, ' ').trim();
+  const mm = [...x.matchAll(/(A\.?\s*Ş\.?|NO'?LU|NEZD[İI]NDEK[İI])/gi)];
+  if (mm.length) { const last = mm[mm.length - 1]; x = x.slice(last.index + last[0].length); }
+  x = x.replace(/^[^A-Za-zÇĞİÖŞÜçğıöşü]+/, '').trim();
+  x = x.replace(/\b(VADES[İI]Z|HESAB[İI]NDAN|IBAN|MERKEZ|SUBE|ŞUBES[İI])\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  return x;
+}
+function bankaKarsiTaraf(k) {
+  const s = String(k && k.aciklama || '').replace(/\s+/g, ' ').trim();
+  if (!s) return { ad: '', rol: '' };
+  let m;
+  if (m = s.match(/[İI]SLEM\s*NO\s*:?\s*-?\s*(.+?)\s+TR(?:TR)?\*/i)) return { ad: bankaAdBicim(bankaSehirAt(m[1].replace(/\s{2,}/g, ' ').trim())), rol: 'İşyeri' };   // POS / Sanal POS
+  if (/isyerinin.*(batch|pos)/i.test(s)) return { ad: '', rol: 'POS Batch' };   // batch/komisyon → işyeri yok
+  if (/\bSGK\b/i.test(s)) return { ad: 'SGK', rol: 'Kurum' };
+  if (m = s.match(/hesab[ıi]ndan\s+(.+?)\s+hesab[ıi]na\s+(?:giden|yap)/i)) return { ad: bankaAdBicim(bankaSonIsim(m[1])), rol: 'Alıcı' };   // giden ödeme
+  if (m = s.match(/(.+?)\s+hesab[ıi]ndan\s+(?:TR[\d* ]+\s*nolu\s+)?GREEN/i)) return { ad: bankaAdBicim(bankaSonIsim(m[1])), rol: 'Gönderen' };   // gelen (bize)
+  if ((m = s.match(/^(.+?)\s+hesab[ıi]ndan/i)) && !/GREEN\s*VIL/i.test(m[1])) return { ad: bankaAdBicim(bankaSonIsim(m[1])), rol: 'Gönderen' };
+  return { ad: '', rol: '' };
+}
+function bankaNot(k) {   // kullanıcının girdiği kısa not (parantezden önceki metin): huzur hakkı, aidat, kira…
+  const s = String(k && k.aciklama || '').trim();
+  const i = s.indexOf('(');
+  if (i > 0) { const n = s.slice(0, i).trim(); if (n && !/GREEN\s*VIL/i.test(n) && n.length <= 40) return n; }
+  return '';
+}
+function bankaAckKart(k) {   // Banka Açıklaması → küçük tek-satır kart (ham metin yok)
+  const kt = bankaKarsiTaraf(k), bn = bankaNot(k);
+  const kir = (Number(k.tutar) || 0) < 0;
+  const rolCls = { 'İşyeri': 'isy', 'Alıcı': 'al', 'Gönderen': 'gon', 'Kurum': 'kur', 'POS Batch': 'pos' }[kt.rol] || 'pos';
+  const baslik = kt.ad || k.islem || '—';
+  const rozet = kt.ad ? kt.rol : (kt.rol === 'POS Batch' ? 'POS Batch' : '');
+  const tarih = fmtTarihUzun(k.tarih);
+  const notHTML = bn ? ` · <span class="bk-nt">${kacar(bn)}</span>` : '';
+  const sub = kt.ad ? `${kacar(k.islem || '')} · ${kacar(tarih)}${notHTML}` : `${kacar(tarih)} · Banka${notHTML}`;
+  return `<div class="bd-kart"><div class="bd-kl">${rozet ? `<span class="bd-rol ${rolCls}">${kacar(rozet)}</span>` : ''}<div class="bd-kad">${kacar(baslik)}</div><div class="bd-ksub">${sub}</div></div><div class="bd-ktut ${kir ? 'kir' : 'yes'} mono">${TL(k.tutar)}</div></div>`;
+}
 /* Açıklamadan gider eşleştirme anahtarı (ilk anlamlı kelime) */
 function giderAnahtar(a) {
   const kel = trFold(a).replace(/[^\p{L} ]/gu, ' ').split(/\s+/).filter(w => w.length >= 3);
@@ -2610,7 +2657,6 @@ function bankaDetayModal(k, wiz) {
   const egGoster = () => { const o = ortaklar.find(x => x.id === f.egitmenId); return o ? o.ad : 'Genel (tüm ortaklar)'; };
   const ogrGoster = () => { const adlar = f.eslesenIds.map(id => { const t = (State.tahsilatTanimlari || []).find(x => String(x.id) === String(id)); return t ? t.ogrenciAd : ''; }).filter(Boolean); return adlar.length ? adlar[0] + (adlar.length > 1 ? ` +${adlar.length - 1}` : '') : ''; };
   const kir = (Number(k.tutar) || 0) < 0;
-  const oz = `<div class="bd-oz"><div class="l"><div class="ad">${kacar(k.islem || '—')}</div><div class="tar">${kacar(fmtTarihUzun(k.tarih))} · Banka</div></div><div class="tut ${kir ? 'kir' : 'yes'} mono">${TL(k.tutar)}</div></div>`;
   const bas = (ad) => { const p = String(ad || '—').trim().split(/\s+/); return (((p[0] || '')[0] || '') + ((p[1] || '')[0] || '')).toLocaleUpperCase('tr'); };
   const giderAlan = () => (f.giderKategori
     ? ffTrig({ id: 'bdGider', label: 'Gider Kategorisi', zorunlu: true, deger: f.giderKategori })
@@ -2627,9 +2673,13 @@ function bankaDetayModal(k, wiz) {
     : (komTam()
         ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: `✓ Ayarlandı · ${TL(Math.abs(Number(k.tutar) || 0))}`, yes: true })
         : ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›', eksik: true }));
-  const ogrField = () => (f.eslesenIds.length)
-    ? ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: `✓ ${k.otoEsles ? 'Otomatik' : 'Eşleşti'} · ${f.eslesenIds.length} tahsilat · ${TL(ogrToplam())}`, yes: true })
-    : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', ph: 'Tahsilatla eşleştir ›', eksik: true });
+  const ogrField = () => {   // 2 satır: Öğrenci (dokunulur → Tahsilat Defteri) + Eğitmen (otomatik, dagilimHTML'de)
+    if (!f.eslesenIds.length) return `<div class="ff-alan ff-trig ff-eksik dolu" id="bdOgr"><span class="ff-val ph">Tahsilatla eşleştir ›</span><span class="ff-ok">⌄</span><label>Öğrenci</label></div>`;
+    const adlar = f.eslesenIds.map(id => (State.tahsilatTanimlari || []).find(x => String(x.id) === String(id))).filter(Boolean).map(t => t.ogrenciAd);
+    const n = f.eslesenIds.length;
+    const meta = (n > 1 ? `${n} · ` : '') + TL(ogrToplam());
+    return `<div class="ff-alan ff-trig dolu bd-ogr" id="bdOgr"><span class="ff-val bd-ogrv"><span class="bd-ck">✓</span>${k.otoEsles ? '<span class="bd-otob">OTO</span>' : ''}<span class="bd-ograd">${kacar(isimListe(adlar))}</span></span><span class="bd-ogrmeta">${kacar(meta)}</span><span class="ff-ok">⌄</span><label>Öğrenci</label></div>`;
+  };
   const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
     : (f.yon === 'komisyon') ? komField()
     : (f.yon === 'ortakOdeme') ? ortakAlan() : ogrField();
@@ -2639,7 +2689,7 @@ function bankaDetayModal(k, wiz) {
   const dagilimHTML = () => {   // tablo yerine kompakt alan (birden fazlaysa ilk isimler virgülle)
     const ilg = bankaIlgiliTahsilatlar(k);
     if (!ilg.length) return '';
-    if (f.yon === 'gelir') return roAlan('Öğrenci', isimListe(ilg.map(t => t.ogrenciAd))) + roAlan('Eğitmen', isimListe(ilg.map(t => t.egitmenAd)));
+    if (f.yon === 'gelir') return roAlan('Eğitmen', isimListe(ilg.map(t => t.egitmenAd)));   // Öğrenci artık üstteki tetik alanında
     if (f.yon === 'komisyon') return roAlan('Eğitmen', isimListe(ilg.map(t => t.egitmenAd)));
     return '';
   };
@@ -2650,8 +2700,7 @@ function bankaDetayModal(k, wiz) {
     ${f.yon === 'gider' ? ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() }) : ''}
     ${dagilimHTML()}
     <div class="ff-grpbas">Banka Açıklaması</div>
-    ${oz}
-    <div class="bd-aciklama">${kacar(k.aciklama || '—')}</div>`;
+    ${bankaAckKart(k)}`;
   const sonKayit = wiz && wiz.i >= wiz.liste.length - 1;
   const footerHTML = wiz
     ? `<button type="button" class="btn bd-atla" id="bdAtla">Atla →</button><button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} ${sonKayit ? 'Kaydet ve Bitir' : 'Kaydet ve Sonraki ›'}</button>`

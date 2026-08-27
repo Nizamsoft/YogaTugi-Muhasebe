@@ -3671,6 +3671,26 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .bd-islem{margin:8px 0 6px;font-weight:700;font-size:14px;color:var(--metin)}
 .bd-aciklama{margin:9px 0 4px;background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:13px 15px;font-size:14px;line-height:1.5;color:var(--metin-soluk);word-break:break-word;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
 .ff-alan.ff-deger-ok .ff-val{color:#8fe07a;font-weight:700}
+/* Banka Açıklaması — küçük tek-satır kart (kısa isim + rol + not, ham metin yok) */
+.bd-kart{margin:9px 0 4px;background:var(--kart);border:1px solid var(--kenar);border-radius:13px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bd-kl{min-width:0;flex:1}
+.bd-rol{font-size:8.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;border-radius:5px;padding:2px 7px;display:inline-block;margin-bottom:5px}
+.bd-rol.isy{color:var(--amber);background:rgba(245,169,31,.15)}
+.bd-rol.al{color:#f0857a;background:rgba(240,133,122,.16)}
+.bd-rol.gon{color:#8fe07a;background:rgba(143,224,122,.16)}
+.bd-rol.kur{color:#8fb8f5;background:rgba(143,184,245,.16)}
+.bd-rol.pos{color:var(--metin-soluk);background:var(--gri);border:1px solid var(--kenar)}
+.bd-kad{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-ksub{font-size:10.5px;color:var(--metin-soluk);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-ksub .bk-nt{color:var(--neon);font-weight:700}
+.bd-ktut{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:16px;flex:none}
+.bd-ktut.kir{color:#f0857a}.bd-ktut.yes{color:#8fe07a}
+/* Öğrenci eşleşme tetiği — 2 satır (✓/OTO + isim, sağda tutar/adet) */
+.bd-ogr .ff-val.bd-ogrv{display:inline-flex;align-items:center;gap:7px;flex:1;min-width:0}
+.bd-ck{width:19px;height:19px;border-radius:50%;background:rgba(143,224,122,.18);color:#8fe07a;display:inline-grid;place-items:center;font-size:11px;font-weight:900;flex:none}
+.bd-otob{font-size:8px;font-weight:800;color:var(--neon-metin);background:var(--neon);border-radius:4px;padding:1px 5px;flex:none}
+.bd-ograd{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--metin);font-weight:600}
+.bd-ogrmeta{font-size:11px;color:var(--metin-soluk);white-space:nowrap;flex:none;margin-right:6px}
 /* Hareket detayı — kompakt salt-okunur dağılım alanı (öğrenci/eğitmen) */
 .bd-ro{position:relative;margin-top:20px;border-bottom:1.5px dashed var(--kenar);padding:19px 0 9px}
 .bd-ro label{position:absolute;left:0;top:0;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--metin-soluk)}
