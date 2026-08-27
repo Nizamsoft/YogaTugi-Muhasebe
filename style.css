@@ -761,6 +761,16 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .oz-sec-bas{cursor:pointer}
 .oz-sec-bas .kk-cev{color:var(--neon);flex:none;margin-left:6px}
 .oz-degtag{font-size:8.5px;font-weight:800;letter-spacing:.3px;color:var(--neon);background:rgba(180,232,58,.14);border:1px solid rgba(180,232,58,.35);border-radius:5px;padding:2px 6px;margin-left:auto;white-space:nowrap}
+/* Detaylı — matematiksel hikâye (waterfall) */
+.dt-tt{font-size:13.5px;font-weight:700;color:var(--metin)}.dt-tt b{font-weight:800}
+.dt-formul{font-size:10.5px;color:var(--metin-soluk);margin-top:3px;font-family:ui-monospace,Menlo,monospace;word-break:break-word;line-height:1.4}
+.dt-tah{font-size:10px;color:var(--amber);margin-top:3px}
+.dt-amrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:5px}
+.dt-kalan{font-size:11px;color:var(--metin-soluk);white-space:nowrap}.dt-kalan b{color:var(--metin);font-weight:700}
+.dt-son{text-align:left}
+.dt-big{display:flex;justify-content:space-between;align-items:center;padding:2px 0 8px;border-bottom:1px solid rgba(180,232,58,.3);margin-bottom:6px}
+.dt-big span{font-size:14px;font-weight:800}.dt-big b{font-size:21px;font-weight:800;color:var(--neon)}
+.dt-r{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--metin-soluk);padding:3px 0}.dt-r b{color:var(--metin);font-weight:700}.dt-r b.poz{color:var(--yesil)}
 /* hakediş ödeme modalı */
 .ho-kisi{font-size:13px;font-weight:800;color:var(--metin);margin-bottom:11px}
 .ho-ozet{background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:9px 13px;margin-bottom:13px}

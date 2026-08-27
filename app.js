@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '295';
+const APP_SURUM = '296';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1234,22 +1234,55 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
       <div class="kk-govde">${acik ? govde : dar}</div>
     </div>`;
   };
+  // DETAYLI: samimi + matematiksel hikâye (waterfall). Her adımda formül + koşan "Kalan" bakiye; hiçbir şey gizlenmez.
+  const kartCizDetay = (e, rol) => {
+    const id = e.id || ('m_' + adNorm(e.ad));
+    const komisyon = e.komisyon || 0, giderPayi = e.maasliMi ? 0 : (e.giderPayi || 0);
+    const kdv = e.kdvOngoru || 0, gv = e.gvOngoru || 0, devir = e.devir || 0, mahsup = e.mahsup || 0;
+    const bankaGiren = (e.havale || 0) + (e.kart || 0);   // nakit hariç (vergiye tabi)
+    const verilen = e.odenen || 0;
+    const buAyHak = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
+    const hakTop = (e.hakToplam != null ? e.hakToplam : buAyHak);
+    const kalanTop = (e.kalanTop != null ? e.kalanTop : hakTop - verilen);
+    let bak = e.brut || 0;
+    const step = (cls, ikon, tt, formul, tah, amStr, amCls) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="dt-tt">${tt}</div>${formul ? `<div class="dt-formul">${kacar(formul)}</div>` : ''}${tah ? `<div class="dt-tah">${tah}</div>` : ''}<div class="dt-amrow"><span class="oz-am ${amCls}">${amStr}</span><span class="dt-kalan">Kalan <b>${TL(bak)}</b></span></div></div></div>`;
+    let m = step('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> kazandın 👏`, `Nakit ${TL(e.nakit)} + Havale ${TL(e.havale)} + Kart ${TL(e.kart)}`, '', `+${TL(e.brut)}`, 'poz');
+    bak -= komisyon;
+    m += step('kes', '🏦', 'Bankaya kart komisyonu verdik.', e.kart ? `Kart ${TL(e.kart)} × %${(komisyon / e.kart * 100).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}` : 'Kart tahsilatı yok', '', `−${TL(komisyon)}`, 'negatif');
+    if (!e.maasliMi) { bak -= giderPayi; m += step('kes', '🏢', 'Stüdyonun ortak giderlerine katkın.', `Toplam gider ${TL(r.genelGider)} ÷ ${r.ortaklar.length} ortak (eşit)`, '', `−${TL(giderPayi)}`, 'negatif'); }
+    bak -= kdv;
+    m += step('kes', '🧾', 'Devlet için KDV ayırdık (tahmini).', `Bankaya giren ${TL(bankaGiren)} (nakit hariç) × %${r.kdvOran} ⁄ ${100 + r.kdvOran}`, `Tahakkuk: ${e.kdvTahakkukVar ? '✓ ' + TL(e.kdvTahakkukPay || 0) : '⏳ bekliyor'}`, `−${TL(kdv)}`, 'negatif');
+    bak -= gv;
+    m += step('kes', '🏛️', 'Gelir vergisi payını ayırdık (tahmini).', `(${TL(bankaGiren)} − ${TL(kdv)} KDV − ${TL(komisyon)} kom.) × %${Math.round(r.vOran * 100)}`, `Tahakkuk: ${e.gvTahakkukVar ? '✓ ' + TL(e.gvTahakkukPay || 0) : '⏳ 3 ayda bir'}`, `−${TL(gv)}`, 'negatif');
+    bak += devir;
+    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> vardı, ekledik.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, düştük.' : 'Geçen aydan devir yok.';
+    m += step(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki ayların bakiyesi', '', `${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz');
+    bak += mahsup;
+    const mahsupTx = mahsup > 0 ? 'Fazla ayrılan vergiyi <b>iade ettik</b>.' : mahsup < 0 ? 'Eksik ayrılan vergiyi <b>tamamladık</b>.' : 'Vergi düzeltmesi yok.';
+    m += step(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', '', `${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz');
+    const son = e.maasliMi
+      ? `<div class="oz-son dt-son"><div class="dt-big"><span>Bu ay net payı</span><b class="mono">${TL(buAyHak)}</b></div><div class="dt-r"><span>Dağıtım</span><b>${dagitimEt(e)}</b></div></div>`
+      : `<div class="oz-son dt-son"><div class="dt-big"><span>Toplam hakedişin 🎉</span><b class="mono">${TL(hakTop)}</b></div><div class="dt-r"><span>Bu ayki hakediş (öngörü)</span><b>${TL(buAyHak)}</b></div><div class="dt-r"><span>Şimdiye kadar verilen</span><b>−${TL(verilen)}</b></div><div class="dt-r"><span>Sana kalan (verilecek)</span><b class="poz">${TL(kalanTop)}</b></div></div>`;
+    return `<div class="kar-kart kk-kart2 oz-kart acik ${e.maasliMi ? 'maasli' : ''}">
+      <button type="button" class="kk-bas2 oz-sec-bas" id="ozSec">${ortAv(e)}<span class="kk-ort"><span class="kk-ad">${kacar(e.ad)}</span><span class="kk-rol">${rol}</span></span><span class="oz-degtag">DEĞİŞTİR</span><span class="kk-cev">⌄</span></button>
+      <div class="kk-govde"><div class="oz-tl">${m}</div>${son}</div>
+    </div>`;
+  };
   const detayli = karGorunum === 'detayli';
   // ÖZET: tam-genişlik eğitmen seçici + seçili kart (hep açık, veri olmasa bile). Varsayılan: kendisi (benId).
   const ozHepsi = [...r.ortaklar.map(e => ({ e, rol: 'Ortak' })), ...r.egitmenler.map(e => ({ e, rol: 'Maaşlı eğitmen' }))];
   let ozSel = ozHepsi.find(x => String(x.e.id) === String(karOzetSecili));
   if (!ozSel) ozSel = ozHepsi.find(x => String(x.e.id) === String(benId())) || ozHepsi[0];
   const ozSecId = ozSel ? ozSel.e.id : null;
-  const ozGovde = ozSel ? kartCizOzet(ozSel.e, ozSel.rol, true) : `<div class="gp-bos">Eğitmen yok.</div>`;   // seçici artık kartın başlığında (#ozSec)
-  const bosMsg = `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “Tahsilat Tanımla” ile tahsilatları girin, ardından “İçe Aktar” ile banka dosyasını yükleyip eşleştirin.</p></div>`;
-  const detayGovde = `${r.ortaklar.map(ortakKart).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`;
+  // Hem Özet hem Detaylı tek eğitmen gösterir (başlık = seçici). Veri olmasa bile kart açılır.
+  const ozGovde = ozSel ? (detayli ? kartCizDetay(ozSel.e, ozSel.rol) : kartCizOzet(ozSel.e, ozSel.rol, true)) : `<div class="gp-bos">Eğitmen yok.</div>`;
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="gg-tekbar">
         <span class="gg-bas">Ortaklar</span>
         <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${!detayli ? 'sec' : ''}" data-kg="ozet"><span class="seg-ik">${segIk('rapor')}</span>Özet</button><button type="button" class="ia-oge ${detayli ? 'sec' : ''}" data-kg="detayli"><span class="seg-ik">${segIk('tablo')}</span>Detaylı</button></div></div>
       </div>
-      ${detayli ? (bosVeri ? bosMsg : detayGovde) : ozGovde}
+      ${ozGovde}
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
   $$('[data-kg]').forEach(b => b.onclick = () => { karGorunum = b.dataset.kg; karlilikSayfasi(); });
