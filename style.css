@@ -3628,6 +3628,23 @@ body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;heig
 /* Bekleyen Tahsilatlar — ay seçici satırı (C stili) */
 .bt-aybar{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
 .bt-aybar .say{font-size:11.5px;color:var(--metin-soluk);font-weight:700}
+/* Bekleyen — banka eşleştirme modu */
+.es-vazgec{width:30px;height:30px;border-radius:9px;border:1px solid var(--kenar);background:var(--gri);color:var(--neon);font-size:16px;font-weight:800;cursor:pointer;flex:none}
+.bt-aybar .es-gun{font-size:12px;color:var(--metin-soluk);font-weight:700}
+.es-tablo thead th:first-child,.es-tablo td.es-cbcell{width:34px;padding-left:10px;padding-right:0}
+.es-cb{width:21px;height:21px;border-radius:6px;border:2px solid var(--kenar);display:grid;place-items:center;color:var(--neon-metin);font-size:12px;font-weight:900}
+.es-tablo tbody tr.es-sec{background:rgba(180,232,58,.06)}
+.es-tablo tbody tr.es-sec .es-cb{background:var(--neon);border-color:var(--neon)}
+.es-tablo tbody tr.es-sec td:first-child{box-shadow:inset 3px 0 0 var(--neon)}
+.es-onbar{position:sticky;bottom:0;margin-top:14px;padding-bottom:8px;background:linear-gradient(180deg,transparent,var(--krem) 40%)}
+.es-onbtn{position:relative;width:100%;min-height:56px;border-radius:99px;overflow:hidden;background:var(--gri);border:1px solid var(--kenar);display:flex;align-items:center;justify-content:center;cursor:not-allowed;font-family:inherit}
+.es-onbtn .es-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(180,232,58,.28),rgba(180,232,58,.15));border-right:2px solid rgba(180,232,58,.7)}
+.es-onbtn .es-txt{position:relative;text-align:center;line-height:1.25}
+.es-onbtn .es-txt .a{display:block;font-weight:800;font-size:14.5px;color:var(--metin)}
+.es-onbtn .es-onalt{display:block;font-size:11px;font-weight:700;color:var(--amber);margin-top:1px}
+.es-onbtn.tam{background:var(--neon);border-color:var(--neon);cursor:pointer}
+.es-onbtn.tam .es-txt .a{color:var(--neon-metin);font-size:15px}
+.es-onbtn.fazla{border-color:rgba(240,133,122,.6)}.es-onbtn.fazla .es-txt .a{color:#f0857a}
 .bt-aybar .ay-nav{padding:2px 4px;border-radius:11px;flex:none;background:var(--gri);border:1px solid var(--kenar);box-shadow:none;display:inline-flex;align-items:center}
 .bt-aybar .ay-nav::before{display:none}
 body.tema-neon .bt-aybar .ay-nav button,.bt-aybar .ay-nav button{background:transparent;color:var(--neon);box-shadow:none;width:20px;height:24px;font-size:15px;border-radius:6px;padding:0;border:0;cursor:pointer;font-family:inherit}

@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '270';
+const APP_SURUM = '271';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -920,6 +920,7 @@ function ustSayfa(sayfa) {
 function git(sayfa, geri) {
   // Dersler / Öğrenciler / Stüdyolar → tek "Ders Takibi" ekranında ilgili sekme
   if (sayfa === 'dersler' || sayfa === 'ogrenciler' || sayfa === 'studyolar') { dtSekme = sayfa; sayfa = 'ders-takibi'; }
+  if (sayfa !== 'bekleyen') bankaEsCtx = null;   // eşleştirme modundan çıkıldıysa iptal et
   State.aktifSayfa = sayfa;
   const m = menuBul(sayfa) || { baslik: '—' };
   $('#sayfaBaslik').textContent = m.baslik;
@@ -1636,7 +1637,9 @@ function ttListeBagla(kok) {
 
 /* Bekleyen Tahsilatlar — defter girişleri; banka/nakit ile "hesaba yansıyınca" üstü çizilir */
 let bekDonem = buAy();
+let bankaEsCtx = null;   // banka hareketini tahsilatla eşleştirme modu: {k, wiz, secili:Set, onOnay, onVazgec}
 SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
+  if (bankaEsCtx) return bekleyenEslesModu();
   const liste = ttSirali().filter(t => donemStr(t.tarih) === bekDonem);
   const bekleyen = liste.filter(t => !tahsilatUyum(t));
   const yansiyan = liste.filter(t => tahsilatUyum(t));
@@ -1674,6 +1677,44 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
   { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal(null, () => git('bekleyen')); }
   $$('#icerik tr[data-ttduz]').forEach(tr => tr.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === tr.dataset.ttduz), () => git('bekleyen')));
 };
+/* Bekleyen Tahsilatlar — banka hareketini tahsilatlarla eşleştirme modu */
+function bekleyenEslesModu() {
+  const ctx = bankaEsCtx, k = ctx.k;
+  const adaylar = bankaAdaylar(k);
+  const hedef = Math.abs(Number(k.tutar) || 0);
+  const secTop = adaylar.filter(t => ctx.secili.has(String(t.id))).reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+  const diff = Math.round(secTop) - Math.round(hedef), tam = Math.abs(diff) <= 1, fazla = diff > 0;
+  const tPlus = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
+  const gunISO = tPlus ? gunKaydir(k.tarih, -1) : k.tarih;
+  const dp = donemStr(gunISO).split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+  const satir = (t) => {
+    const s = ctx.secili.has(String(t.id)); const tur = GELIR_TUR[t.odemeTuru] || t.odemeTuru || '';
+    return `<tr data-esrow="${kacar(String(t.id))}" class="${s ? 'es-sec' : ''}">
+        <td class="es-cbcell"><span class="es-cb">${s ? '✓' : ''}</span></td>
+        <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
+        <td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(t.egitmenAd || '—')}</span>${t.ogrenciAd ? `<span class="a2-dn">${kacar(t.ogrenciAd)}</span>` : ''}</td>
+        <td data-l="Ders">${kacar(t.dersPaketi || '—')}</td>
+        <td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(t.tutar)}</span><span class="bt-bek">${kacar(tur + ' · Bekliyor')}</span></td>
+      </tr>`;
+  };
+  const pct = Math.max(4, Math.min(100, Math.round(secTop / Math.max(hedef, 1) * 100)));
+  const btnA = tam ? `${ik('onay')} ${TL(secTop)} — Onayla` : (fazla ? `${TL(Math.abs(diff))} fazla — tahsilat çıkar` : `Seçili ${TL(secTop)} / Hedef ${TL(hedef)}`);
+  const btnB = (!tam && !fazla) ? `<span class="es-onalt">${TL(Math.abs(diff))} açık — tahsilat seç</span>` : '';
+  ic().innerHTML = `<div class="kar-sayfa es-sayfa">
+    <div class="gg-tekbar"><button type="button" class="es-vazgec" id="esVazgec">‹</button><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
+    <div class="bt-aybar"><span class="es-gun">${kacar(k.islem || 'Banka hareketi')} · ${kacar(kisaTarih(gunISO))} tahsilatları</span></div>
+    ${adaylar.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo es-tablo">
+        <colgroup><col style="width:34px"><col style="width:15%"><col style="width:29%"><col style="width:18%"><col style="width:28%"></colgroup>
+        <thead><tr><th></th><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
+        <tbody>${adaylar.map(satir).join('')}</tbody></table></div></div>`
+      : `<div class="gp-bos">${kacar(kisaTarih(gunISO))} için tanımlı tahsilat yok. “Yeni” ile ekleyip seçin.</div>`}
+    <div class="es-onbar"><button type="button" class="es-onbtn ${tam ? 'tam' : (fazla ? 'fazla' : '')}" id="esOnay" ${tam ? '' : 'disabled'}>${(!tam && !fazla) ? `<span class="es-fill" style="width:${pct}%"></span>` : ''}<span class="es-txt"><span class="a">${btnA}</span>${btnB}</span></button></div>
+  </div>`;
+  $('#esVazgec').onclick = () => ctx.onVazgec();
+  { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal({ tarih: gunISO }, () => git('bekleyen')); }
+  $$('#icerik tr[data-esrow]').forEach(tr => tr.onclick = () => { const id = tr.dataset.esrow; if (ctx.secili.has(id)) ctx.secili.delete(id); else ctx.secili.add(id); git('bekleyen'); });
+  { const o = $('#esOnay'); if (o && tam) o.onclick = () => ctx.onOnay([...ctx.secili]); }
+}
 
 SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
   const tumListe = ttSirali();
@@ -2591,17 +2632,13 @@ function bankaDetayModal(k, wiz) {
         komisyonTuttur(k);
       } }
     { const og = $('#bdOgr'); if (og) og.onclick = () => {
+        // Ayrı sheet yerine Bekleyen Tahsilatlar sayfasına git; seçimi orada yap
         const adaylar = bankaAdaylar(k);
-        const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
-        const tPlus = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
-        const gunEt = tPlus ? (kisaTarih(gunKaydir(k.tarih, -1)) + ' (bir gün önce)') : kisaTarih(k.tarih);
-        // Henüz elle seçilmediyse, toplamı tutan aday alt kümesini otomatik işaretle (bu ekranda)
         const otoSec = (f.eslesenIds && f.eslesenIds.length) ? f.eslesenIds : (tahsilatKombinasyonAra(adaylar, Math.abs(Number(k.tutar) || 0)) || []);
-        altCoklu({ baslik: 'Tahsilat Eşleştir', alt: `${kacar(k.islem || 'Tahsilat')} · ${TL(k.tutar)} · ${gunEt} tahsilatları`, secili: otoSec,
-          hedef: Math.abs(Number(k.tutar) || 0),   // seçili toplam = banka tutarı zorunlu
-          secenekler: adaylar.map(t => ({ deger: t.id, ad: t.ogrenciAd || '—', alt: t.egitmenAd || '', tutar: Number(t.tutar) || 0, roz: (GELIR_TUR[t.odemeTuru] || t.odemeTuru), rozCls: tm[t.odemeTuru] || 'rz-notr' })),
-          bosMetin: 'Bu tarihte tanımlı tahsilat yok. Önce Tahsilat Defteri’nden girin.',
-          onOnay: (sel) => { f.eslesenIds = sel; yenile(); } });
+        bankaEsCtx = { k, wiz, secili: new Set(otoSec.map(String)),
+          onOnay: async (sel) => { k.eslesenIds = sel; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } bankaEsCtx = null; iaOnizleTazele(); bankaDetayModal(k, wiz); },
+          onVazgec: () => { bankaEsCtx = null; bankaDetayModal(k, wiz); } };
+        modalKapat(); git('bekleyen');
       } }
   }
   bagla(); kaydetGuncelle();
