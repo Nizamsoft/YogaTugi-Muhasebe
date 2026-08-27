@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '279';
+const APP_SURUM = '280';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1740,7 +1740,15 @@ function bekleyenEslesModu() {
     <div class="es-onbar"><button type="button" class="es-onbtn ${tam ? 'tam' : (fazla ? 'fazla' : '')}" id="esOnay" ${tam ? '' : 'disabled'}>${(!tam && !fazla) ? `<span class="es-fill" style="width:${pct}%"></span>` : ''}<span class="es-txt"><span class="a">${btnA}</span>${btnB}</span></button></div>
   </div>`;
   $('#esVazgec').onclick = () => ctx.onVazgec();
-  { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal({ tarih: gunISO }, () => git('bekleyen')); }
+  { const y = $('#btYeni'); if (y) y.onclick = () => {
+      const turu = tPlus ? 'kart' : (/havale/i.test(k.islem || '') ? 'havale' : 'kart');   // Batch → Kart, Havale → Havale
+      const acik = Math.max(0, Math.round((hedef - secTop) * 100) / 100);   // açık kadar (kalan)
+      tahsilatTanimModal({ tarih: gunISO, odemeTuru: turu, tutar: acik || hedef }, () => {
+        const yeni = bankaAdaylar(k).filter(t => !ctx.secili.has(String(t.id))).sort((a, b) => String(b.olusturma || '').localeCompare(String(a.olusturma || '')))[0];
+        if (yeni) ctx.secili.add(String(yeni.id));   // yeni eklenen tahsilatı otomatik seç
+        git('bekleyen');
+      });
+    } }
   $$('#icerik tr[data-esrow]').forEach(tr => tr.onclick = () => { const id = tr.dataset.esrow; if (ctx.secili.has(id)) ctx.secili.delete(id); else ctx.secili.add(id); git('bekleyen'); });
   { const o = $('#esOnay'); if (o && tam) o.onclick = () => ctx.onOnay([...ctx.secili]); }
 }
