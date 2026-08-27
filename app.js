@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '290';
+const APP_SURUM = '291';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1117,7 +1117,7 @@ function egitmenKarlilik(donem) {
 }
 let karDonem = null;
 let karAcikSet = new Set();   // açık (genişlemiş) ortak/maaşlı kartları
-let karGorunum = 'ortaklar';  // 'ben' (kendi kartı) | 'ortaklar' (hepsi)
+let karGorunum = 'ozet';  // 'ozet' (hikâye/sade rapor) | 'detayli' (tam muhasebe kartı)
 SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const donem = karDonem || buAy();
   const r = egitmenKarlilik(donem);
@@ -1199,18 +1199,52 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   };
   const ortakKart = (e) => kartCiz(e, 'Ortak');
   const maasKart = (e) => kartCiz(e, 'Maaşlı eğitmen');
-  const benim = benId();
-  const gosterilecek = (karGorunum === 'ben' && benim) ? r.ortaklar.filter(o => o.id === benim) : r.ortaklar;
-  const benMod = karGorunum === 'ben';
+  // ÖZET: hikâye/sohbet balonları — muhasebe bilmeyene sade dille (aynı bilgiler)
+  const kartCizOzet = (e, rol) => {
+    const id = e.id || ('m_' + adNorm(e.ad));
+    const acik = karAcikSet.has(id);
+    const hakGuncel = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
+    const verilen = e.odenen || 0;
+    const hakTop = (e.hakToplam != null ? e.hakToplam : hakGuncel);
+    const kalanTop = (e.kalanTop != null ? e.kalanTop : hakGuncel - verilen);
+    const ledger = (e.devir || 0) !== 0 || verilen !== 0;
+    const vergiTop = (e.kdvOngoru || 0) + (e.gvOngoru || 0);
+    const dm = (e.devir || 0) + (e.mahsup || 0);
+    const kanal = [e.nakit ? `Nakit ${TL(e.nakit)}` : '', e.havale ? `Havale ${TL(e.havale)}` : '', e.kart ? `Kart ${TL(e.kart)}` : ''].filter(Boolean).join(' · ');
+    const bal = (cls, msg) => `<div class="oz-bl ${cls}"><span class="oz-rob">🌿</span><div class="oz-msg">${msg}</div></div>`;
+    let m = bal('iyi', `Bu ay <b>${TL(e.brut)}</b> tahsilat yaptın 👏${kanal ? `<span class="oz-alt">${kanal}</span>` : ''}`);
+    if (e.komisyon > 0) m += bal('kes', `Karttan banka komisyonu kesildi: <b class="negatif">−${TL(e.komisyon)}</b>`);
+    if (!e.maasliMi && e.giderPayi > 0) m += bal('kes', `Ortak stüdyo giderlerinden payın: <b class="negatif">−${TL(e.giderPayi)}</b>`);
+    if (vergiTop > 0) m += bal('kes', `Devlete tahmini vergi ayırdık: <b class="negatif">−${TL(vergiTop)}</b><span class="oz-alt">KDV ${TL(e.kdvOngoru)} + Gelir V. ${TL(e.gvOngoru)} · kesinleşince güncellenir</span>`);
+    if (dm !== 0) m += bal('iyi', `Geçmişten kalan/düzeltme eklendi: <b class="${dm < 0 ? 'negatif' : 'poz'}">${dm >= 0 ? '+' : '−'}${TL(Math.abs(dm))}</b><span class="oz-alt">${[e.devir ? `Devir ${e.devir >= 0 ? '+' : '−'}${TL(Math.abs(e.devir))}` : '', e.mahsup ? `Mahsup ${e.mahsup >= 0 ? '+' : '−'}${TL(Math.abs(e.mahsup))}` : ''].filter(Boolean).join(' · ')}</span>`);
+    m += e.maasliMi
+      ? bal('final', `Bu ay net payı:<span class="oz-big mono">${TL(hakGuncel)}</span><span class="oz-alt">Dağıtım: <b>${dagitimEt(e)}</b></span>`)
+      : bal('final', `Kısaca bu ay senin payın:<span class="oz-big mono">${TL(hakTop)}</span>${ledger ? `<span class="oz-alt">${verilen ? `${TL(verilen)} aldın · ` : ''}<b class="poz">${TL(kalanTop)}</b> kaldı</span>` : ''}`);
+    const govde = `<div class="oz-cb">${m}</div>${e.maasliMi ? '' : `<button type="button" class="kk-ode oz-ode" data-ode="${kacar(id)}">${ik('kaydet')} Hakediş Ver</button>`}`;
+    const dar = `<div class="oz-dar"><span>Bu ayki payın</span><b class="mono">${TL(ledger ? kalanTop : hakGuncel)}</b></div>`;
+    return `<div class="kar-kart kk-kart2 oz-kart ${e.maasliMi ? 'maasli' : ''} ${acik ? 'acik' : ''}">
+      <button type="button" class="kk-bas2" data-tog="${kacar(id)}">
+        ${ortAv(e)}
+        <span class="kk-ort"><span class="kk-ad">${kacar(e.ad)}</span><span class="kk-rol">${rol}</span></span>
+        <span class="kk-cev">${acik ? '⌃' : '⌄'}</span>
+      </button>
+      <div class="kk-govde">${acik ? govde : dar}</div>
+    </div>`;
+  };
+  const ortakOzet = (e) => kartCizOzet(e, 'Ortak');
+  const maasOzet = (e) => kartCizOzet(e, 'Maaşlı eğitmen');
+  const detayli = karGorunum === 'detayli';
+  const oCiz = detayli ? ortakKart : ortakOzet;
+  const mCiz = detayli ? maasKart : maasOzet;
   ic().innerHTML = `
     <div class="kar-sayfa">
       <div class="gg-tekbar">
         <span class="gg-bas">Ortaklar</span>
-        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${karGorunum === 'ben' ? 'sec' : ''}" data-kg="ben"><span class="seg-ik">${segIk('ben')}</span>Ben</button><button type="button" class="ia-oge ${karGorunum === 'ortaklar' ? 'sec' : ''}" data-kg="ortaklar"><span class="seg-ik">${segIk('ortaklar')}</span>Ortaklar</button></div></div>
+        <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${!detayli ? 'sec' : ''}" data-kg="ozet"><span class="seg-ik">${segIk('rapor')}</span>Özet</button><button type="button" class="ia-oge ${detayli ? 'sec' : ''}" data-kg="detayli"><span class="seg-ik">${segIk('tablo')}</span>Detaylı</button></div></div>
       </div>
       ${bosVeri ? `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “Tahsilat Tanımla” ile tahsilatları girin, ardından “İçe Aktar” ile banka dosyasını yükleyip eşleştirin.</p></div>` : `
-      ${gosterilecek.map(ortakKart).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}
-      ${!benMod && r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`}
+      ${r.ortaklar.map(oCiz).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}
+      ${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(mCiz).join('')}` : ''}`}
     </div>`;
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
   $$('[data-kg]').forEach(b => b.onclick = () => { karGorunum = b.dataset.kg; karlilikSayfasi(); });
