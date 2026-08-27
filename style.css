@@ -3682,6 +3682,9 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .bd-krow{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .bd-knot{margin-top:9px;padding-top:8px;border-top:1px dashed var(--kenar);font-size:11.5px;color:var(--metin-soluk);white-space:normal;word-break:break-word}
 .bd-knot b{color:var(--neon);font-weight:700}
+.bd-ackin{width:100%;background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:11px 13px;color:var(--metin);font-family:inherit;font-size:14px;line-height:1.5;resize:vertical;min-height:52px;margin-top:2px}
+.bd-ackin:focus{outline:none;border-color:var(--neon)}
+.bd-ackin::placeholder{color:var(--metin-soluk)}
 .bd-kl{min-width:0;flex:1}
 .bd-rol{font-size:8.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;border-radius:5px;padding:2px 7px;display:inline-block;margin-bottom:5px}
 .bd-rol.isy{color:var(--amber);background:rgba(245,169,31,.15)}
