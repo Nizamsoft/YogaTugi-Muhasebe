@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '278';
+const APP_SURUM = '279';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2486,9 +2486,10 @@ function giderTanimlaModal(k) {
 function bankaAdaylar(k) {
   if (!k) return [];
   const tanim = State.tahsilatTanimlari || [];
-  const toplu = k.yon === 'komisyon' || (k.yon === 'gelir' && /batch\s*yatan/i.test(k.islem || ''));
-  if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1);   // kart batch/komisyon → T-1
-  return tanim.filter(t => Math.round(gunFark(t.tarih, k.tarih)) === 0);   // havale/gelir → aynı gün
+  const toplu = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
+  if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1);   // Batch Yatan/komisyon → D-1 KART
+  if (/havale/i.test(k.islem || '')) return tanim.filter(t => t.odemeTuru === 'havale' && Math.round(gunFark(t.tarih, k.tarih)) === 0);   // Havale → aynı gün HAVALE
+  return tanim.filter(t => t.odemeTuru !== 'nakit' && Math.round(gunFark(t.tarih, k.tarih)) === 0);   // diğer gelir → aynı gün (nakit asla)
 }
 /* Aday tahsilatlardan toplamı hedefe (banka tutarı) eşit olan alt kümeyi bulur — sheet
    açılışında otomatik işaretlemek için. Hepsi tutuyorsa tümü; değilse alt-küme araması. */
