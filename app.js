@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '268';
+const APP_SURUM = '269';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2360,13 +2360,10 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   { const d = $('#iaDaha'); if (d) d.onclick = () => { iaOnLimit += 25; iaOnizleCiz(iaSonKayitlar, iaSonDosya); }; }
   if (pfRows) $$('tr[data-esl]', on).forEach(tr => { const r = pfRows[+tr.dataset.esl]; if (r && !r.es) { tr.style.cursor = 'pointer'; tr.onclick = () => ttEslestirSec(r.k); } });
   if (!isPf) {
-    $$('tr[data-brow]', on).forEach(tr => tr.onclick = () => {
-      const k = yeni[+tr.dataset.brow];
-      if (k && k.yon === 'komisyon' && !komisyonHazir(k)) { bildir('Önce aynı günün Batch Yatan tahsilatını eşleştirin.', 'uyari'); return; }
-      bankaDetayModal(k);
-    });
+    const wizAc = (idx) => bankaDetayModal(yeni[idx], { liste: yeni, i: idx });   // sihirbaz: satır index'inden başla
+    $$('tr[data-brow]', on).forEach(tr => tr.onclick = () => wizAc(+tr.dataset.brow));
     $$('[data-uyum]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); const k = yeni[+b.dataset.uyum]; if (k.yon === 'komisyon') komisyonTuttur(k); else bankaGunGoster(k); });
-    $$('[data-gtan]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); bankaDetayModal(yeni[+b.dataset.gtan]); });
+    $$('[data-gtan]', on).forEach(b => b.onclick = (e) => { e.stopPropagation(); wizAc(+b.dataset.gtan); });
   }
   $('#iaKaydet').onclick = async () => {
     const btn = $('#iaKaydet'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
@@ -2451,6 +2448,19 @@ function komisyonHazir(k) {
   return hepsi.some(x => x.yon === 'gelir' && /batch\s*yatan/i.test(x.islem || '')
     && Math.round(gunFark(x.tarih, k.tarih)) === 0 && Array.isArray(x.eslesenIds) && x.eslesenIds.length);
 }
+/* Bir banka kaydı işlenmiş (tamamlanmış) sayılır mı? — sihirbaz ilerleme barı için */
+function bankaKayitTamam(k) {
+  if (!k) return false;
+  const t = Number(k.tutar) || 0;
+  if (k.yon === 'ortakOdeme') return !!k.egitmenId;
+  if (k.yon === 'gider' || (k.yon !== 'komisyon' && t < 0)) return !!bankaGiderEsle(k);
+  if (k.yon === 'komisyon') {
+    if (!komisyonHazir(k)) return false;
+    const top = bankaIlgiliTahsilatlar(k).reduce((s, x) => s + kartKomTutar(x), 0);
+    return Math.abs(top - Math.abs(t)) <= 1;
+  }
+  return Array.isArray(k.eslesenIds) && k.eslesenIds.length > 0;   // gelir → elle eşleşmiş
+}
 function bankaIlgiliTahsilatlar(k) {
   if (!k) return [];
   if (Array.isArray(k.eslesenIds) && k.eslesenIds.length) {   // elle işaretlenmiş öğrenciler öncelikli
@@ -2470,9 +2480,26 @@ function bankaIlgiliTahsilatlar(k) {
 }
 /* Banka hareket detayı — tahsilat/komisyon ise "kime ait" (ilgili tahsilatlar) + tam açıklama */
 /* Banka hareketi — tam ekran düzenleme (tür, gider kategorisi*, dönem, ilgili eğitmen, açıklama) */
-function bankaDetayModal(k) {
+function bankaDetayModal(k, wiz) {
   if (!k) return;
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false);
+  const wizHeaderHTML = () => {
+    if (!wiz) return '';
+    const N = wiz.liste.length, cur = wiz.i;
+    const tamam = wiz.liste.filter(bankaKayitTamam).length;
+    const bar = (N <= 40)
+      ? `<div class="bd-wiz-seg">${wiz.liste.map((x, idx) => `<i class="${idx === cur ? 'cur' : (bankaKayitTamam(x) ? 'done' : '')}"></i>`).join('')}</div>`
+      : `<div class="bd-wiz-fill"><i style="width:${Math.round(tamam / N * 100)}%"></i><b style="left:${Math.round((cur + 0.5) / N * 100)}%"></b></div>`;
+    return `<div class="bd-wiz">
+      <div class="bd-wiz-top">
+        <button type="button" class="bd-wiz-x" id="wizX">✕</button>
+        <div class="bd-wiz-ttl"><h3>Banka Ekstresi</h3><span>Kayıt ${cur + 1} / ${N}</span></div>
+        <div class="bd-wiz-nav"><button type="button" id="wizPrev" ${cur <= 0 ? 'disabled' : ''}>‹</button><button type="button" id="wizNext" ${cur >= N - 1 ? 'disabled' : ''}>›</button></div>
+      </div>
+      ${bar}
+      <div class="bd-wiz-alt"><span class="a">${tamam} tamam</span><span class="b">${N - tamam} kaldı</span></div>
+    </div>`;
+  };
   const YONS = [{ v: 'gider', ad: 'Gider' }, { v: 'gelir', ad: 'Tahsilat' }, { v: 'komisyon', ad: 'Komisyon' }, { v: 'ortakOdeme', ad: 'Ortak Ödeme' }];
   const yonAd = y => (YONS.find(x => x.v === y) || {}).ad || y;
   const f = { yon: k.yon || ((Number(k.tutar) || 0) < 0 ? 'gider' : 'gelir'), giderKategori: k.giderKategori || '', donem: giderAitDonem(k), egitmenId: k.egitmenId || null, aciklama: k.aciklama || '', eslesenIds: (Array.isArray(k.eslesenIds) ? k.eslesenIds.slice() : []) };   // ön doldurma yok — elle eşleştirilir
@@ -2527,8 +2554,20 @@ function bankaDetayModal(k) {
     <div class="ff-grpbas">Banka Açıklaması</div>
     ${oz}
     <div class="bd-aciklama">${kacar(k.aciklama || '—')}</div>`;
-  modalAc('Hareket Detayı', `<div id="bdAlanlar">${alanlarHTML()}</div>`, `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`);
+  const sonKayit = wiz && wiz.i >= wiz.liste.length - 1;
+  const footerHTML = wiz
+    ? `<button type="button" class="btn bd-atla" id="bdAtla">Atla →</button><button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} ${sonKayit ? 'Kaydet ve Bitir' : 'Kaydet ve Sonraki ›'}</button>`
+    : `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`;
+  modalAc('Hareket Detayı', `${wizHeaderHTML()}<div id="bdAlanlar">${alanlarHTML()}</div>`, footerHTML);
   $('#modalKap .modal').classList.add('modal-tam');
+  if (wiz) {
+    $('#modalKap .modal').classList.add('modal-wiz');
+    const wizGit = (j) => { if (j >= 0 && j < wiz.liste.length) bankaDetayModal(wiz.liste[j], { liste: wiz.liste, i: j }); };
+    $('#wizX').onclick = () => { modalKapat(); iaOnizleTazele(); };
+    { const p = $('#wizPrev'); if (p) p.onclick = () => wizGit(wiz.i - 1); }
+    { const n = $('#wizNext'); if (n) n.onclick = () => wizGit(wiz.i + 1); }
+    $('#bdAtla').onclick = () => { if (sonKayit) { modalKapat(); iaOnizleTazele(); } else wizGit(wiz.i + 1); };
+  }
   const yenile = () => { $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); };
   function bagla() {
     $('#bdTur').onclick = () => altSecici({ baslik: 'Tür', secili: f.yon, secenekler: YONS.map(x => ({ deger: x.v, ad: x.ad })), onSec: (v) => { f.yon = v; yenile(); } });
@@ -2570,7 +2609,13 @@ function bankaDetayModal(k) {
     const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? (f.egitmenId || null) : null, eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
-    modalKapat(); bildir('Hareket güncellendi.', 'basari'); iaOnizleTazele();
+    iaOnizleTazele();
+    if (wiz) {   // sihirbaz: kaydet → otomatik sonraki kayda geç (son kayıtta bitir)
+      if (wiz.i >= wiz.liste.length - 1) { modalKapat(); bildir('Tüm kayıtlar işlendi.', 'basari'); }
+      else bankaDetayModal(wiz.liste[wiz.i + 1], { liste: wiz.liste, i: wiz.i + 1 });
+      return;
+    }
+    modalKapat(); bildir('Hareket güncellendi.', 'basari');
     // Batch Yatan tahsilatı eşleştirildiyse eşli komisyonu doğrudan aç
     if (f.yon === 'gelir' && /batch\s*yatan/i.test(k.islem || '') && (f.eslesenIds || []).length) {
       const kom = [...(iaSonKayitlar || []), ...(State.bankaHareketleri || [])].find(x => x.yon === 'komisyon' && Math.round(gunFark(x.tarih, k.tarih)) === 0);

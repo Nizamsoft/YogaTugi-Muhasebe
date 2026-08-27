@@ -3659,6 +3659,28 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .bd-dg-tt.yes{color:#8fe07a}.bd-dg-tt.kir{color:#f0857a}
 .bd-dg-row.tot{background:rgba(255,255,255,.02);border-top:1px dashed var(--kenar)}
 .bd-dg-row.tot .ad{color:var(--metin-soluk);font-weight:700}
+/* Kayıt işleme sihirbazı — üst ilerleme barı */
+.modal.modal-wiz .modal-ust{display:none}
+.bd-wiz{padding:12px 2px 11px;border-bottom:1px solid var(--kenar);margin:0 0 4px}
+.bd-wiz-top{display:flex;align-items:center;gap:10px}
+.bd-wiz-x{width:32px;height:32px;border-radius:50%;background:var(--gri);border:0;color:var(--metin);font-size:17px;flex:none;cursor:pointer}
+.bd-wiz-ttl{flex:1;text-align:center;min-width:0}
+.bd-wiz-ttl h3{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:15px;margin:0}
+.bd-wiz-ttl span{font-size:11px;color:var(--metin-soluk)}
+.bd-wiz-nav{display:flex;gap:6px;flex:none}
+.bd-wiz-nav button{width:34px;height:34px;border-radius:10px;border:1px solid var(--kenar);background:var(--gri);color:var(--neon);font-size:16px;font-weight:800;cursor:pointer}
+.bd-wiz-nav button[disabled]{color:#4b545e;border-color:#2a323b;cursor:default}
+.bd-wiz-seg{display:flex;gap:2px;margin-top:11px}
+.bd-wiz-seg i{flex:1;min-width:2px;height:6px;border-radius:2px;background:#333c46}
+.bd-wiz-seg i.done{background:#8fe07a}
+.bd-wiz-seg i.cur{background:var(--neon);box-shadow:0 0 0 1px var(--neon)}
+.bd-wiz-fill{position:relative;height:6px;border-radius:3px;background:#333c46;margin-top:11px}
+.bd-wiz-fill i{position:absolute;left:0;top:0;bottom:0;background:#8fe07a;border-radius:3px}
+.bd-wiz-fill b{position:absolute;top:-2px;width:3px;height:10px;background:var(--neon);border-radius:2px;transform:translateX(-50%)}
+.bd-wiz-alt{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px;font-weight:700}
+.bd-wiz-alt .a{color:#8fe07a}.bd-wiz-alt .b{color:var(--metin-soluk)}
+.modal-alt .btn.bd-atla{flex:0 0 38%;background:var(--gri);color:var(--metin-soluk);border:1px solid var(--kenar);font-weight:700}
+.modal-alt .bd-atla+.ff-kaydet{flex:1;width:auto;font-size:14px;gap:6px;padding-left:8px;padding-right:8px}
 .ff-alan.ff-eksik{border-bottom-color:var(--amber)}
 .ff-alan.ff-eksik>label{color:var(--amber)}
 .ff-eksik-uyari{font-size:9.5px;font-weight:800;color:var(--amber);background:rgba(245,169,31,.14);border-radius:6px;padding:2px 7px;flex:none;align-self:center}
