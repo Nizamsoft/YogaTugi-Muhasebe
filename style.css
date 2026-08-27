@@ -551,6 +551,11 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .ktm-fark{font-size:10.5px;color:var(--amber);font-weight:700}
 .ktm-ipuc{margin:12px 2px 2px;color:var(--metin-soluk);font-size:11.5px;line-height:1.5}
 .ktm-rozbil{margin:11px 2px 2px;color:#8fe07a;font-size:11.5px;font-weight:700}
+.ktm-pay{margin:10px 0 2px;background:rgba(245,169,31,.08);border:1px solid rgba(245,169,31,.45);border-radius:13px;padding:12px 14px}
+.ktm-pay .t{font-size:13px;font-weight:700;line-height:1.5}.ktm-pay .t b{color:var(--amber)}
+.ktm-pay .btns{display:flex;gap:8px;margin-top:11px}
+.ktm-pay .pv{flex:1;min-height:42px;border:1px solid var(--kenar);background:var(--gri);color:var(--metin-soluk);border-radius:99px;font-weight:700;font-size:13px;cursor:pointer}
+.ktm-pay .pe{flex:1.3;min-height:42px;border:0;background:var(--amber);color:#241a06;border-radius:99px;font-weight:800;font-size:13px;cursor:pointer}
 .ktm-liste{display:flex;flex-direction:column;gap:9px;margin-top:8px}
 .ktm-kart{background:var(--gri);border:1px solid var(--kenar);border-radius:13px;padding:11px 12px}
 .ktm-ust{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:9px}
