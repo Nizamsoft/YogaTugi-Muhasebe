@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '287';
+const APP_SURUM = '288';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2499,7 +2499,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     bildir(`${yeni.length} kayıt içe aktarıldı.`, 'basari');
     iaSonKayitlar = null; iaSonSekme = '';
     if (isPf) SAYFALAR['ice-aktar']();   // Plan4me → içe aktar sayfasında kal
-    else git('hesap-banka');   // banka aktarımı → banka ekstresi ekranına git
+    else { hesapAktif = 'banka'; git('hesap-defter'); }   // banka aktarımı → Hesaplar defterinin Banka sekmesi (içe aktarılan hareketler)
   };
   function chip(t, c) { return `<span class="ia-chip ${c}">${kacar(t)}</span>`; }
   function turRoz(t) { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; }
