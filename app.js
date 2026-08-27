@@ -289,9 +289,11 @@ function ffInput(o) {   // {id,label,zorunlu,deger,tip,inputmode,ph}
   const v = (o.deger == null ? '' : String(o.deger));
   return `<div class="ff-alan"><input class="ff-in" id="${o.id}" type="${o.tip || 'text'}"${o.inputmode ? ` inputmode="${o.inputmode}"` : ''} value="${kacar(v)}" placeholder=" " autocomplete="off"><label for="${o.id}">${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
 }
-function ffTrig(o) {   // {id,label,zorunlu,deger,oto}
+function ffTrig(o) {   // {id,label,zorunlu,deger,oto,ph}
   const dolu = o.deger != null && o.deger !== '';
-  return `<div class="ff-alan ff-trig ${dolu ? 'dolu' : ''}" id="${o.id}"><span class="ff-val">${dolu ? kacar(o.deger) : ''}</span>${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
+  const phVar = !dolu && o.ph != null && o.ph !== '';
+  const val = dolu ? `<span class="ff-val">${kacar(o.deger)}</span>` : (phVar ? `<span class="ff-val ph">${kacar(o.ph)}</span>` : `<span class="ff-val"></span>`);
+  return `<div class="ff-alan ff-trig ${dolu || phVar ? 'dolu' : ''}" id="${o.id}">${val}${o.oto ? `<span class="ff-oto">${kacar(o.oto)}</span>` : ''}<span class="ff-ok">⌄</span><label>${kacar(o.label)}${o.zorunlu ? ' <span class="zor">*</span>' : ''}</label></div>`;
 }
 function ffTrigGuncelle(id, deger) {   // seçim sonrası tetik değerini güncelle (oto rozetini kaldırır)
   const el = $('#' + id); if (!el) return;
@@ -573,7 +575,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '259';
+const APP_SURUM = '260';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2404,7 +2406,7 @@ function bankaDetayModal(k) {
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false);
   const YONS = [{ v: 'gider', ad: 'Gider' }, { v: 'gelir', ad: 'Tahsilat' }, { v: 'komisyon', ad: 'Komisyon' }, { v: 'ortakOdeme', ad: 'Ortak Ödeme' }];
   const yonAd = y => (YONS.find(x => x.v === y) || {}).ad || y;
-  const f = { yon: k.yon || ((Number(k.tutar) || 0) < 0 ? 'gider' : 'gelir'), giderKategori: k.giderKategori || '', donem: giderAitDonem(k), egitmenId: k.egitmenId || null, aciklama: k.aciklama || '', eslesenIds: (Array.isArray(k.eslesenIds) ? k.eslesenIds.slice() : bankaIlgiliTahsilatlar(k).map(t => t.id).filter(Boolean)) };
+  const f = { yon: k.yon || ((Number(k.tutar) || 0) < 0 ? 'gider' : 'gelir'), giderKategori: k.giderKategori || '', donem: giderAitDonem(k), egitmenId: k.egitmenId || null, aciklama: k.aciklama || '', eslesenIds: (Array.isArray(k.eslesenIds) ? k.eslesenIds.slice() : []) };   // ön doldurma yok — elle eşleştirilir
   const egGoster = () => { const o = ortaklar.find(x => x.id === f.egitmenId); return o ? o.ad : 'Genel (tüm ortaklar)'; };
   const ogrGoster = () => { const adlar = f.eslesenIds.map(id => { const t = (State.tahsilatTanimlari || []).find(x => String(x.id) === String(id)); return t ? t.ogrenciAd : ''; }).filter(Boolean); return adlar.length ? adlar[0] + (adlar.length > 1 ? ` +${adlar.length - 1}` : '') : ''; };
   const kir = (Number(k.tutar) || 0) < 0;
@@ -2413,18 +2415,18 @@ function bankaDetayModal(k) {
     ? ffTrig({ id: 'bdGider', label: 'Gider Kategorisi', zorunlu: true, deger: f.giderKategori })
     : `<div class="ff-alan ff-trig ff-eksik dolu" id="bdGider"><span class="ff-val ph">Gider seçin</span><span class="ff-eksik-uyari">Zorunlu</span><span class="ff-ok">⌄</span><label>Gider Kategorisi <span class="zor">*</span></label></div>`);
   const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
-    : (f.yon === 'komisyon') ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Kart tahsilatlarıyla tuttur ›' })
-    : (f.yon === 'ortakOdeme') ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster() });
+    : (f.yon === 'komisyon') ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Komisyonu ayarla ›' })
+    : (f.yon === 'ortakOdeme') ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster(), ph: 'Tahsilatla eşleştir ›' });
   const alanlarHTML = () => `
     ${ffTrig({ id: 'bdDonem', label: 'Ait Olduğu Dönem', deger: donemAdi(f.donem) })}
     ${ffTrig({ id: 'bdTur', label: 'Tür', deger: yonAd(f.yon) })}
     ${ortaAlan()}
     ${ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() })}
-    <div class="ff-grpbas">Not</div>
-    ${ffInput({ id: 'bdAcik', label: 'Açıklama', deger: f.aciklama })}`;
+    <div class="ff-grpbas">Banka Açıklaması</div>
+    <div class="bd-aciklama">${kacar(k.aciklama || '—')}</div>`;
   modalAc('Hareket Detayı', `${oz}<div id="bdAlanlar">${alanlarHTML()}</div>`, `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`);
   $('#modalKap .modal').classList.add('modal-tam');
-  const yenile = () => { const a = $('#bdAcik'); if (a) f.aciklama = a.value; $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); };
+  const yenile = () => { $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); };
   function bagla() {
     $('#bdTur').onclick = () => altSecici({ baslik: 'Tür', secili: f.yon, secenekler: YONS.map(x => ({ deger: x.v, ad: x.ad })), onSec: (v) => { f.yon = v; yenile(); } });
     { const g = $('#bdGider'); if (g) g.onclick = () => {
@@ -2437,8 +2439,7 @@ function bankaDetayModal(k) {
     $('#bdDonem').onclick = () => { const aylar = []; for (let i = 0; i < 15; i++) aylar.push(donemKaydir(buAy(), -i)); altSecici({ baslik: 'Ait Olduğu Dönem', secili: f.donem, secenekler: aylar.map(d => ({ deger: d, ad: donemAdi(d) })), onSec: (v) => { f.donem = v; ffTrigGuncelle('bdDonem', donemAdi(v)); } }); };
     $('#bdEg').onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, secili: f.egitmenId || '', secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad }))], onSec: (v) => { f.egitmenId = v || null; ffTrigGuncelle('bdEg', egGoster()); } });
     { const km = $('#bdKom'); if (km) km.onclick = async () => {
-        const a = $('#bdAcik'); if (a) f.aciklama = a.value;   // açık düzenlemeleri koru
-        const yama = { yon: f.yon, donem: f.donem, egitmenId: f.egitmenId || null, aciklama: (f.aciklama || '').trim() };
+        const yama = { yon: f.yon, donem: f.donem, egitmenId: f.egitmenId || null };   // düzenlemeleri koru
         Object.assign(k, yama);
         if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
         komisyonTuttur(k);
@@ -2451,13 +2452,13 @@ function bankaDetayModal(k) {
         altCoklu({ baslik: 'Öğrenci Eşleşmesi', alt: gunEt + ' tarihindeki tahsilatlar · işaretleyin', secili: f.eslesenIds,
           secenekler: adaylar.map(t => ({ deger: t.id, ad: t.ogrenciAd || '—', alt: t.egitmenAd || '', tutar: Number(t.tutar) || 0, roz: (GELIR_TUR[t.odemeTuru] || t.odemeTuru), rozCls: tm[t.odemeTuru] || 'rz-notr' })),
           bosMetin: 'Bu tarihte tanımlı tahsilat yok. Önce Tahsilat Defteri’nden girin.',
-          onOnay: (sel) => { f.eslesenIds = sel; ffTrigGuncelle('bdOgr', ogrGoster()); } });
+          onOnay: (sel) => { f.eslesenIds = sel; yenile(); } });
       } }
   }
   bagla();
   $('#bdKaydet').onclick = async () => {
     if (f.yon === 'gider' && !f.giderKategori) { const el = $('#bdGider'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Gider kategorisi zorunlu.', 'uyari'); return; }
-    const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: f.egitmenId || null, aciklama: ($('#bdAcik').value || '').trim(), eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
+    const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: f.egitmenId || null, eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
     modalKapat(); bildir('Hareket güncellendi.', 'basari'); iaOnizleTazele();
