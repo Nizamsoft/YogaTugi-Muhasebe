@@ -541,6 +541,28 @@ body.tema-neon .ia-oge.sec{background:linear-gradient(135deg,#c7f24a,#a4d92f);co
 .kt-dpay b{color:var(--amber);font-size:14.5px;font-weight:800}
 .kt-bos{font-size:13.5px;color:var(--metin);line-height:1.5}
 .kt-bos .uik{width:18px;height:18px;color:var(--amber);vertical-align:-.2em}
+/* Komisyon Eşleştir — yeni tam ekran tarz (variant A: satır içi tip çipleri) */
+.ktm-oz{background:var(--kart);border:1px solid var(--kenar);border-radius:14px;padding:13px 15px;margin:2px 0 2px}
+.ktm-oz .ktm-r{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ktm-oz .ktm-r+.ktm-r{margin-top:8px;padding-top:8px;border-top:1px solid var(--kenar)}
+.ktm-lb{font-size:12.5px;color:var(--metin-soluk);font-weight:600}
+.ktm-v{font-weight:800;font-size:16px}
+.ktm-v.ok{color:#8fe07a} .ktm-v.yok{color:var(--amber)}
+.ktm-fark{font-size:10.5px;color:var(--amber);font-weight:700}
+.ktm-ipuc{margin:12px 2px 2px;color:var(--metin-soluk);font-size:11.5px;line-height:1.5}
+.ktm-liste{display:flex;flex-direction:column;gap:9px;margin-top:8px}
+.ktm-kart{background:var(--gri);border:1px solid var(--kenar);border-radius:13px;padding:11px 12px}
+.ktm-ust{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:9px}
+.ktm-ogr{font-weight:800;font-size:13.5px}
+.ktm-tut{font-weight:800;font-size:12.5px;color:var(--metin-soluk)}
+.ktm-tipler{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ktm-tc{border:1px solid var(--kenar);background:var(--kart);border-radius:9px;padding:7px 9px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;font-family:inherit}
+.ktm-tc .ad{font-size:11px;font-weight:800;color:var(--metin)}
+.ktm-tc .or{font-size:9.5px;color:var(--metin-soluk);font-weight:700}
+.ktm-tc.sec{border-color:var(--neon);background:rgba(180,232,58,.13)}
+.ktm-tc.sec .ad,.ktm-tc.sec .or{color:var(--neon)}
+.ktm-dpay{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--metin-soluk);font-weight:600}
+.ktm-dpay b{color:var(--amber);font-size:14.5px;font-weight:800}
 /* Banka hareket detayı — alan listesi */
 .bd-liste{border:1px solid var(--kenar);border-radius:13px;overflow:hidden;background:var(--gri)}
 .bd-liste .hr-satir{padding:11px 14px}
