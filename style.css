@@ -1785,7 +1785,8 @@ body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ia-es{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;font-size:12px;font-weight:900;line-height:1}
 .ia-es.ok{color:#8fe07a;background:rgba(143,224,122,.18)}
 .ia-es.no{color:#f0857a;background:rgba(240,133,122,.2)}
-.ia-oto{display:inline-block;font-size:7.5px;font-weight:800;color:var(--neon-metin);background:var(--neon);border-radius:4px;padding:1px 4px;margin-left:4px;letter-spacing:.3px;vertical-align:middle}
+.ia-esw{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.ia-oto{display:inline-block;font-size:7px;font-weight:800;color:var(--neon-metin);background:var(--neon);border-radius:4px;padding:0 4px;letter-spacing:.3px;line-height:1.5}
 .ogr-tablo th.ort,.ogr-tablo td.ort{text-align:center}
 .gr-grpbas .gr-tut{font-size:15px}
 .gr-chev{flex:0 0 14px;text-align:center;color:#c9a94e;font-size:15px;opacity:.6}

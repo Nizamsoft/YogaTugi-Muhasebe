@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '281';
+const APP_SURUM = '282';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2390,7 +2390,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
           const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
           ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
           if (ogr.length) alt = kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : ''));
-          esles = `<span class="ia-es ok">✓</span>${k.otoEsles ? '<span class="ia-oto">OTO</span>' : ''}`;
+          esles = `<span class="ia-esw"><span class="ia-es ok">✓</span>${k.otoEsles ? '<span class="ia-oto">OTO</span>' : ''}</span>`;
         } else {
           ust = `<button type="button" class="ia-ait-sec tahsil" data-gtan="${i}">Tahsilat Seç ›</button>`; esatir = 'ia-esz-tahsil';
           esles = '<span class="ia-es no">✕</span>';
