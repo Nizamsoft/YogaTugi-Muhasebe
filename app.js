@@ -283,6 +283,22 @@ function modalAc(baslik, govdeHTML, altHTML, basAksesuar) {
   document.body.classList.add('govde-kilit');   // arka plan kaymasın → açılış/kaydırma akıcı
 }
 function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.remove('govde-kilit'); }
+/* Tam ekran modal aç YA DA (zaten açıksa) içeriğini yerinde güncelle — geçişte
+   kapı-aç animasyonu (flicker) olmasın diye. */
+function modalTamAcVeyaGuncelle(baslik, govdeHTML, altHTML) {
+  const mdl = $('#modalKap .modal.modal-tam');
+  if (mdl) {
+    const h = mdl.querySelector('.modal-ust h3'); if (h) h.textContent = baslik;
+    const g = mdl.querySelector('.modal-govde'); if (g) g.innerHTML = govdeHTML;
+    let a = mdl.querySelector('.modal-alt');
+    if (altHTML != null && altHTML !== '') { if (!a) { a = document.createElement('div'); a.className = 'modal-alt'; mdl.appendChild(a); } a.innerHTML = altHTML; }
+    else if (a) a.remove();
+    const kp = mdl.querySelector('#modalKapat'); if (kp) kp.onclick = modalKapat;   // varsayılana dön (çağıran yeniden bağlar)
+    return;
+  }
+  modalAc(baslik, govdeHTML, altHTML);
+  $('#modalKap .modal').classList.add('modal-tam');
+}
 
 /* ---- Yeni form: floating-label alan + alttan seçici (ortak yardımcılar) ---- */
 function ffInput(o) {   // {id,label,zorunlu,deger,tip,inputmode,ph}
@@ -591,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '274';
+const APP_SURUM = '275';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2593,10 +2609,9 @@ function bankaDetayModal(k, wiz) {
   const footerHTML = wiz
     ? `<button type="button" class="btn bd-atla" id="bdAtla">Atla →</button><button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} ${sonKayit ? 'Kaydet ve Bitir' : 'Kaydet ve Sonraki ›'}</button>`
     : `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`;
-  modalAc('Hareket Detayı', `${wizHeaderHTML()}<div id="bdAlanlar">${alanlarHTML()}</div>`, footerHTML);
-  $('#modalKap .modal').classList.add('modal-tam');
+  modalTamAcVeyaGuncelle('Hareket Detayı', `${wizHeaderHTML()}<div id="bdAlanlar">${alanlarHTML()}</div>`, footerHTML);
+  { const mdl = $('#modalKap .modal'); if (mdl) mdl.classList.toggle('modal-wiz', !!wiz); }
   if (wiz) {
-    $('#modalKap .modal').classList.add('modal-wiz');
     const wizGit = (j) => { if (j >= 0 && j < wiz.liste.length) bankaDetayModal(wiz.liste[j], { liste: wiz.liste, i: j }); };
     $('#wizX').onclick = () => { modalKapat(); iaOnizleTazele(); };
     { const p = $('#wizPrev'); if (p) p.onclick = () => wizGit(wiz.i - 1); }
@@ -2675,8 +2690,10 @@ function komisyonTuttur(k, onDone) {
   const kartlar = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1)
     .sort((a, b) => (Number(b.tutar) || 0) - (Number(a.tutar) || 0));
   if (!kartlar.length) {
-    modalAc('Komisyon Eşleştir', `<div class="kt-bos">${ik('uyari')} Bu batch'in bir gün öncesinde tanımlı <b>kart tahsilatı</b> yok.<br><br>Önce Tahsilat Defteri girişinden o günün kart tahsilatlarını girin.</div>`,
+    modalTamAcVeyaGuncelle('Komisyon Eşleştir', `<div class="kt-bos">${ik('uyari')} Bu batch'in bir gün öncesinde tanımlı <b>kart tahsilatı</b> yok.<br><br>Önce Tahsilat Defteri girişinden o günün kart tahsilatlarını girin.</div>`,
       `<button type="button" class="btn" id="ktGit" style="flex:1">Gelirler</button><button type="button" class="btn btn-ana" id="ktKapat" style="flex:1">Kapat</button>`);
+    { const mdl = $('#modalKap .modal'); if (mdl) mdl.classList.remove('modal-wiz'); }
+    { const kp = $('#modalKapat'); if (kp) kp.onclick = kapat; }
     $('#ktGit').onclick = () => { modalKapat(); git('gelirler'); };
     $('#ktKapat').onclick = kapat;
     return;
@@ -2731,9 +2748,9 @@ function komisyonTuttur(k, onDone) {
     const a = $('#ktDagit');
     if (a) { a.style.display = (mod === 'tip' && tam) ? 'none' : ''; a.innerHTML = mod === 'dagit' ? `${ik('onay')} Tiplere Dön` : `${ik('onay')} Orantılı Dağıt`; }
   };
-  modalAc('Komisyon Eşleştir', `<div id="ktGovde">${govde()}</div>`,
+  modalTamAcVeyaGuncelle('Komisyon Eşleştir', `<div id="ktGovde">${govde()}</div>`,
     `<button type="button" class="btn" id="ktDagit" style="flex:1">${ik('onay')} Orantılı Dağıt</button><button type="button" class="btn btn-ana ff-kaydet" id="ktKaydet" style="flex:1.3">${ik('kaydet')} Kaydet</button>`);
-  $('#modalKap .modal').classList.add('modal-tam');
+  { const mdl = $('#modalKap .modal'); if (mdl) mdl.classList.remove('modal-wiz'); }
   { const kp = $('#modalKapat'); if (kp) kp.onclick = kapat; }   // ✕ ile de sihirbaza dön
   bagla(); btnTazele();
   $('#ktDagit').onclick = () => {
