@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '293';
+const APP_SURUM = '294';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1213,14 +1213,15 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const dm = (e.devir || 0) + (e.mahsup || 0);
     const kanal = [e.nakit ? `Nakit ${TL(e.nakit)}` : '', e.havale ? `Havale ${TL(e.havale)}` : '', e.kart ? `Kart ${TL(e.kart)}` : ''].filter(Boolean).join(' · ');
     const st = (cls, ikon, tx, cap, am) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="oz-tx">${tx}</div>${cap ? `<div class="oz-cap">${cap}</div>` : ''}${am ? `<span class="oz-am ${am[1] || ''}">${am[0]}</span>` : ''}</div></div>`;
-    let m = st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, kanal);
-    if (e.komisyon > 0) m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif']);
-    if (!e.maasliMi && e.giderPayi > 0) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', '', [`−${TL(e.giderPayi)}`, 'negatif']);
-    if (vergiTop > 0) m += st('kes', '🏛️', 'Devlet için tahmini vergi ayrıldı.', `KDV ${TL(e.kdvOngoru)} + Gelir Vergisi ${TL(e.gvOngoru)} · kesinleşince güncellenir ⏳`, [`−${TL(vergiTop)}`, 'negatif']);
-    if (dm !== 0) m += st('iyi', '📅', 'Geçen aylardan kalan + vergi düzeltmesi eklendi.', [e.devir ? `Devir ${e.devir >= 0 ? '+' : '−'}${TL(Math.abs(e.devir))}` : '', e.mahsup ? `Mahsup ${e.mahsup >= 0 ? '+' : '−'}${TL(Math.abs(e.mahsup))}` : ''].filter(Boolean).join(' · '), [`${dm >= 0 ? '+' : '−'}${TL(Math.abs(dm))}`, dm < 0 ? 'negatif' : 'poz']);
+    // ÖZET'te hiçbir adım gizlenmez — sıfır olsa bile hepsi görünür
+    let m = st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, kanal || 'Nakit 0,00 ₺');
+    m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif']);
+    if (!e.maasliMi) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', '', [`−${TL(e.giderPayi)}`, 'negatif']);
+    m += st('kes', '🏛️', 'Devlet için tahmini vergi ayrıldı.', `KDV ${TL(e.kdvOngoru)} + Gelir Vergisi ${TL(e.gvOngoru)} · kesinleşince güncellenir ⏳`, [`−${TL(vergiTop)}`, 'negatif']);
+    m += st(dm < 0 ? 'kes' : 'iyi', '📅', 'Geçmişten kalan + vergi düzeltmesi.', `Devir ${(e.devir || 0) >= 0 ? '+' : '−'}${TL(Math.abs(e.devir || 0))} · Mahsup ${(e.mahsup || 0) >= 0 ? '+' : '−'}${TL(Math.abs(e.mahsup || 0))}`, [`${dm >= 0 ? '+' : '−'}${TL(Math.abs(dm))}`, dm < 0 ? 'negatif' : 'poz']);
     const son = e.maasliMi
       ? `<div class="oz-son"><div class="oz-son-l">Bu ay net payı</div><div class="oz-son-v mono">${TL(hakGuncel)}</div><div class="oz-son-alt">Dağıtım: <b>${dagitimEt(e)}</b></div></div>`
-      : `<div class="oz-son"><div class="oz-son-l">Bu ayki payın (hakediş)</div><div class="oz-son-v mono">${TL(hakTop)}</div>${ledger ? `<div class="oz-son-alt">${verilen ? `Şimdiye kadar <b>${TL(verilen)}</b> aldın · ` : ''}Sana kalan <b class="poz">${TL(kalanTop)}</b></div>` : ''}</div>`;
+      : `<div class="oz-son"><div class="oz-son-l">Bu ayki payın (hakediş)</div><div class="oz-son-v mono">${TL(hakTop)}</div><div class="oz-son-alt">Şimdiye kadar <b>${TL(verilen)}</b> aldın · Sana kalan <b class="poz">${TL(kalanTop)}</b></div></div>`;
     const govde = `<div class="oz-tl">${m}</div>${son}${e.maasliMi ? '' : `<button type="button" class="kk-ode oz-ode" data-ode="${kacar(id)}">${ik('kaydet')} Hakediş Ver</button>`}`;
     const dar = `<div class="oz-dar"><span>Bu ayki payın</span><b class="mono">${TL(ledger ? kalanTop : hakGuncel)}</b></div>`;
     const bas = hepAcik
