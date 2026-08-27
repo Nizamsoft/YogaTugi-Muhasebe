@@ -3667,3 +3667,12 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .altck-oge .rozet-etk{font-size:8.5px;flex:none}
 .altck-alt{padding:12px 18px calc(16px + env(safe-area-inset-bottom,0px));border-top:1px solid #454f5a;flex:none}
 .altck-onay{width:100%;min-height:48px;border:0;border-radius:99px;background:var(--neon);color:var(--neon-metin);font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:15px;cursor:pointer}
+.altck-onay.pasif{background:var(--gri);color:var(--metin-soluk);border:1px solid var(--kenar);cursor:not-allowed}
+/* hedef/seçili/açık özet şeridi */
+.altck-oz{display:flex;gap:8px;margin:8px 16px 6px;flex:none}
+.altck-oz .c{flex:1;background:var(--gri);border:1px solid var(--kenar);border-radius:11px;padding:8px 6px;text-align:center}
+.altck-oz .c .l{font-size:9.5px;color:var(--metin-soluk);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.altck-oz .c .v{font-weight:800;font-size:13.5px;margin-top:2px}
+.altck-oz .c.acik{border-color:rgba(245,169,31,.5);background:rgba(245,169,31,.08)} .altck-oz .c.acik .v{color:var(--amber)}
+.altck-oz .c.fazla{border-color:rgba(240,133,122,.5);background:rgba(240,133,122,.08)} .altck-oz .c.fazla .v{color:#f0857a}
+.altck-oz .c.tam{border-color:rgba(143,224,122,.5);background:rgba(143,224,122,.08)} .altck-oz .c.tam .v{color:#8fe07a}

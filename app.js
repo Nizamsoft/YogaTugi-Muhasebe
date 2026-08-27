@@ -364,6 +364,7 @@ function altCoklu(o) {
   const kap = document.createElement('div'); kap.className = 'altsec-perde';
   kap.innerHTML = `<div class="altsec" role="dialog"><div class="altsec-tut"></div>
       <div class="altsec-bas altsec-bas2"><div><h3>${kacar(o.baslik || 'Seç')}</h3>${o.alt ? `<div class="altsec-alt">${kacar(o.alt)}</div>` : ''}</div><button class="altsec-x" type="button" aria-label="Kapat">✕</button></div>
+      ${o.hedef ? '<div class="altck-oz" id="ckOz"></div>' : ''}
       <div class="altsec-liste altck-liste" id="ckListe"></div>
       <div class="altck-alt"><button type="button" class="altck-onay" id="ckOnay"></button></div></div>`;
   document.body.appendChild(kap);
@@ -372,11 +373,26 @@ function altCoklu(o) {
   const liste = kap.querySelector('#ckListe'), onay = kap.querySelector('#ckOnay');
   const ogeHTML = (x) => { const s = secili.has(String(x.deger));
     return `<div class="altck-oge ${s ? 'sec' : ''}" data-deger="${kacar(String(x.deger))}"><span class="altck-cb">${s ? '✓' : ''}</span><span class="as-bil"><span class="ad">${kacar(x.ad)}</span>${x.alt ? `<span class="alt">${kacar(x.alt)}</span>` : ''}</span>${x.tutar != null ? `<span class="altck-tt mono">${TL(x.tutar)}</span>` : ''}${x.roz ? `<span class="rozet-etk ${x.rozCls || 'rz-notr'}">${kacar(x.roz)}</span>` : ''}</div>`; };
-  const onayGuncelle = () => { const say = secili.size; const top = o.secenekler.filter(x => secili.has(String(x.deger))).reduce((s, x) => s + (Number(x.tutar) || 0), 0); onay.textContent = say ? `${say} öğrenci · ${TL(top)} — Onayla` : 'Onayla'; };
+  const onayGuncelle = () => {
+    const say = secili.size;
+    const top = o.secenekler.filter(x => secili.has(String(x.deger))).reduce((s, x) => s + (Number(x.tutar) || 0), 0);
+    if (o.hedef) {   // seçili toplam = hedef zorunlu (batch tahsilat eşleştirmesi)
+      const hedef = Math.round(Number(o.hedef) || 0), topR = Math.round(top), diff = topR - hedef, tam = Math.abs(diff) <= 1;
+      const oz = kap.querySelector('#ckOz');
+      if (oz) { const dc = tam ? 'tam' : (diff > 0 ? 'fazla' : 'acik');
+        oz.innerHTML = `<div class="c"><div class="l">Hedef</div><div class="v">${binlik(hedef)} ₺</div></div>
+          <div class="c"><div class="l">Seçili</div><div class="v">${binlik(topR)} ₺</div></div>
+          <div class="c ${dc}"><div class="l">${diff > 0 ? 'Fazla' : 'Açık'}</div><div class="v">${tam ? '✓ Tam' : binlik(Math.abs(diff)) + ' ₺'}</div></div>`; }
+      onay.classList.toggle('pasif', !tam); onay.disabled = !tam;
+      onay.textContent = tam ? `✓ ${say} tahsilat · ${TL(top)} — Onayla` : (diff > 0 ? `${TL(Math.abs(diff))} fazla — tahsilat çıkar` : `${TL(Math.abs(diff))} açık — tahsilat seç`);
+      return;
+    }
+    onay.textContent = say ? `${say} öğrenci · ${TL(top)} — Onayla` : 'Onayla';
+  };
   const ciz = () => { liste.innerHTML = o.secenekler.length ? o.secenekler.map(ogeHTML).join('') : `<div class="altsec-bos">${kacar(o.bosMetin || 'Bu tarihte kayıt yok.')}</div>`;
     liste.querySelectorAll('[data-deger]').forEach(el => el.onclick = () => { const d = el.dataset.deger; if (secili.has(d)) secili.delete(d); else secili.add(d); ciz(); onayGuncelle(); }); };
   ciz(); onayGuncelle();
-  onay.onclick = () => { kapat(); if (o.onOnay) o.onOnay([...secili]); };
+  onay.onclick = () => { if (onay.disabled) return; kapat(); if (o.onOnay) o.onOnay([...secili]); };
   kap.querySelector('.altsec-x').onclick = kapat;
   kap.onclick = (e) => { if (e.target === kap) kapat(); };
   return { kapat };
@@ -575,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '263';
+const APP_SURUM = '264';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2486,7 +2502,8 @@ function bankaDetayModal(k) {
         const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
         const tPlus = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
         const gunEt = tPlus ? (kisaTarih(gunKaydir(k.tarih, -1)) + ' (bir gün önce)') : kisaTarih(k.tarih);
-        altCoklu({ baslik: 'Öğrenci Eşleşmesi', alt: gunEt + ' tarihindeki tahsilatlar · işaretleyin', secili: f.eslesenIds,
+        altCoklu({ baslik: 'Tahsilat Eşleştir', alt: `${kacar(k.islem || 'Tahsilat')} · ${TL(k.tutar)} · ${gunEt} tahsilatları`, secili: f.eslesenIds,
+          hedef: Math.abs(Number(k.tutar) || 0),   // seçili toplam = banka tutarı zorunlu
           secenekler: adaylar.map(t => ({ deger: t.id, ad: t.ogrenciAd || '—', alt: t.egitmenAd || '', tutar: Number(t.tutar) || 0, roz: (GELIR_TUR[t.odemeTuru] || t.odemeTuru), rozCls: tm[t.odemeTuru] || 'rz-notr' })),
           bosMetin: 'Bu tarihte tanımlı tahsilat yok. Önce Tahsilat Defteri’nden girin.',
           onOnay: (sel) => { f.eslesenIds = sel; yenile(); } });
