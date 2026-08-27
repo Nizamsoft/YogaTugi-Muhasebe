@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '265';
+const APP_SURUM = '266';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2423,6 +2423,26 @@ function bankaAdaylar(k) {
   if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1);   // kart batch/komisyon → T-1
   return tanim.filter(t => Math.round(gunFark(t.tarih, k.tarih)) === 0);   // havale/gelir → aynı gün
 }
+/* Aday tahsilatlardan toplamı hedefe (banka tutarı) eşit olan alt kümeyi bulur — sheet
+   açılışında otomatik işaretlemek için. Hepsi tutuyorsa tümü; değilse alt-küme araması. */
+function tahsilatKombinasyonAra(adaylar, hedef) {
+  const N = adaylar.length; if (!N) return null;
+  const H = Math.round(Number(hedef) || 0);
+  const tum = adaylar.reduce((s, x) => s + (Number(x.tutar) || 0), 0);
+  if (Math.abs(Math.round(tum) - H) <= 1) return adaylar.map(x => x.id);   // hepsi tam tutuyor
+  if (N > 18) return null;   // aşırı büyükse arama yapma
+  const sirali = adaylar.slice().sort((a, b) => (Number(b.tutar) || 0) - (Number(a.tutar) || 0));
+  let sonuc = null;
+  const rec = (i, acc, sel) => {
+    if (sonuc || acc > H + 1) return;
+    if (sel.length && Math.abs(acc - H) <= 1) { sonuc = sel.slice(); return; }
+    if (i >= sirali.length) return;
+    sel.push(sirali[i].id); rec(i + 1, acc + (Number(sirali[i].tutar) || 0), sel); sel.pop();
+    if (!sonuc) rec(i + 1, acc, sel);
+  };
+  rec(0, 0, []);
+  return sonuc;
+}
 /* Komisyon oranı ayarlanabilir mi? — aynı günün Batch Yatan tahsilatı eşleşmiş olmalı
    (komisyon, o seçilen kart tahsilatlarına göre hesaplanır). */
 function komisyonHazir(k) {
@@ -2502,7 +2522,9 @@ function bankaDetayModal(k) {
         const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
         const tPlus = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
         const gunEt = tPlus ? (kisaTarih(gunKaydir(k.tarih, -1)) + ' (bir gün önce)') : kisaTarih(k.tarih);
-        altCoklu({ baslik: 'Tahsilat Eşleştir', alt: `${kacar(k.islem || 'Tahsilat')} · ${TL(k.tutar)} · ${gunEt} tahsilatları`, secili: f.eslesenIds,
+        // Henüz elle seçilmediyse, toplamı tutan aday alt kümesini otomatik işaretle (bu ekranda)
+        const otoSec = (f.eslesenIds && f.eslesenIds.length) ? f.eslesenIds : (tahsilatKombinasyonAra(adaylar, Math.abs(Number(k.tutar) || 0)) || []);
+        altCoklu({ baslik: 'Tahsilat Eşleştir', alt: `${kacar(k.islem || 'Tahsilat')} · ${TL(k.tutar)} · ${gunEt} tahsilatları`, secili: otoSec,
           hedef: Math.abs(Number(k.tutar) || 0),   // seçili toplam = banka tutarı zorunlu
           secenekler: adaylar.map(t => ({ deger: t.id, ad: t.ogrenciAd || '—', alt: t.egitmenAd || '', tutar: Number(t.tutar) || 0, roz: (GELIR_TUR[t.odemeTuru] || t.odemeTuru), rozCls: tm[t.odemeTuru] || 'rz-notr' })),
           bosMetin: 'Bu tarihte tanımlı tahsilat yok. Önce Tahsilat Defteri’nden girin.',
