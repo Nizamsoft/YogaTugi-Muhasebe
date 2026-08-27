@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '283';
+const APP_SURUM = '284';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2370,9 +2370,10 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
         if (es && es.durum === 'ok') {
           const ilg = bankaIlgiliTahsilatlar(k);
           const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
-          const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
-          ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
-          if (ogr.length) alt = kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : ''));
+          const ilkAd = ad => String(ad || '').trim().split(/\s+/)[0] || '';
+          // Üst: "Komisyon" · alt satır: ait olduğu eğitmen(ler) — birden fazlaysa ilk isimler virgülle
+          ust = `<span class="a2-us">Komisyon</span>`;
+          alt = hoc.length ? kacar(hoc.length === 1 ? hoc[0] : hoc.map(ilkAd).join(', ')) : (ackKisa || '');
           esles = '<span class="ia-es ok">✓</span>';
         } else if (komisyonHazir(k)) {   // ilgili tahsilat eşleşti → oran ayarlanabilir
           ust = `<button type="button" class="ia-ait-sec kom" data-gtan="${i}">Komisyon Seç ›</button>`; esatir = 'ia-esz-kom';
