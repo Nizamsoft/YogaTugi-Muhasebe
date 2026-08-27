@@ -575,7 +575,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '260';
+const APP_SURUM = '261';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2263,7 +2263,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
       const dnm = k.yon === 'gider' ? giderAitDonem(k) : donemStr(k.tarih);
       const dp = String(dnm || '').split('-'); const dnmKisa = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + String(dp[0] || '').slice(2);
       const ackKisa = bankaAciklamaKisa(k.aciklama);
-      let ust, alt, esles;
+      let ust, alt, esles, esatir = '';
       let eksik = false;
       if (k.yon === 'gider') {
         const gk = bankaGiderEsle(k);
@@ -2272,15 +2272,23 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
         alt = kacar(k.islem || ackKisa || '');   // 2. satır: ekstredeki işlem/açıklama
         esles = gk ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">✕</span>';
       } else {
-        const ilg = bankaIlgiliTahsilatlar(k);
-        const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
-        const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
-        ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
-        alt = ogr.length ? kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : '')) : kacar(k.islem || '');
         const es = bankaTahsilatEslesme(k);
-        esles = (es && es.durum === 'ok') ? '<span class="ia-es ok">✓</span>' : '<span class="ia-es no">✕</span>';
+        const esOk = !!(es && es.durum === 'ok');
+        alt = kacar(k.islem || ackKisa || '');   // 2. satır: ekstredeki işlem (Batch Yatan / Alınan havale / Batch Komisyonu)
+        if (esOk) {
+          const ilg = bankaIlgiliTahsilatlar(k);
+          const hoc = [...new Set(ilg.map(x => x.egitmenAd).filter(Boolean))];
+          const ogr = [...new Set(ilg.map(x => x.ogrenciAd).filter(Boolean))];
+          ust = `<span class="a2-us">${kacar(hoc[0] || ackKisa || '—')}${hoc.length > 1 ? ` +${hoc.length - 1}` : ''}</span>`;
+          if (ogr.length) alt = kacar(ogr[0] + (ogr.length > 1 ? ` +${ogr.length - 1}` : ''));
+          esles = '<span class="ia-es ok">✓</span>';
+        } else {   // eşleşmemiş → türe göre eylem çipi (havale/batch tahsilat + komisyon)
+          if (k.yon === 'komisyon') { ust = `<button type="button" class="ia-ait-sec kom" data-gtan="${i}">Komisyonu ayarla ›</button>`; esatir = 'ia-esz-kom'; }
+          else { ust = `<button type="button" class="ia-ait-sec tahsil" data-gtan="${i}">Tahsilatla eşleştir ›</button>`; esatir = 'ia-esz-tahsil'; }
+          esles = '<span class="ia-es no">✕</span>';
+        }
       }
-      return `<tr data-brow="${i}"${eksik ? ' class="ia-eksik"' : ''}>
+      return `<tr data-brow="${i}"${eksik ? ' class="ia-eksik"' : (esatir ? ` class="${esatir}"` : '')}>
           <td data-l="Tarih" class="ia-tar-hcr"><span class="ia-tar-us">${kacar(kisaTarih(k.tarih))}</span><span class="ia-tar-dn">${kacar(dnmKisa)}</span></td>
           <td data-l="Gider / Eğitmen" class="a2-hcr">${ust}${alt ? `<span class="a2-dn">${alt}</span>` : ''}</td>
           <td data-l="Tutar" class="sag mono ${k.tutar < 0 ? 'ia-kir' : 'ia-yes'}">${TL(k.tutar)}</td>
