@@ -573,7 +573,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '258';
+const APP_SURUM = '259';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1939,7 +1939,7 @@ function bankaAyristir(data) {
     const kartNo = idx.kartNo != null ? String(row[idx.kartNo] || '').trim() : '';
     const islemNo = idx.islemNo != null ? String(row[idx.islemNo] || '').trim() : '';
     const yon = bankaYon(islem, ba, aciklama);
-    const giderKategori = yon === 'gider' ? giderKategoriOner(islem, aciklama) : '';
+    const giderKategori = '';   // otomatik tahmin kapalı — gider kategorisi elle seçilir
     const imza = islemNo || `${tarih}|${islem}|${tutar}|${aciklama.slice(0, 24)}`;
     const bakiye = idx.bakiye != null && String(row[idx.bakiye] || '').trim() !== '' ? tutarCoz(row[idx.bakiye]) : null;
     kayitlar.push({ tarih, harekettarih: idx.hareket != null ? String(row[idx.hareket] || '').trim() : '', islem, tutar, ba, aciklama, kanal, kartNo, islemNo, yon, giderKategori, bakiye, egitmenId: null, kaynak: 'vakifbank', imza });
@@ -2164,9 +2164,7 @@ function giderAnahtar(a) {
 /* Banka gider satırı ↔ uygulamadaki gider kalemi. ZORUNLU: yalnız State.giderler'de tanımlı
    bir gider adına karşılık gelen kural eşleşmesi geçerli sayılır; yoksa '' (Gider Tanımla). */
 function bankaGiderEsle(k) {
-  const kat = giderKategoriOner(k.islem, k.aciklama);
-  if (kat) { const gv = (State.giderler || []).find(g => adNorm(g.ad) === adNorm(kat)); if (gv) return gv.ad; }
-  return '';
+  return (k && k.giderKategori) || '';   // yalnız elle atanan kategori; otomatik tahmin kapalı
 }
 /* ISO tarihe gün ekle/çıkar (YYYY-MM-DD) */
 function tarihGunKaydir(iso, gun) {
@@ -2414,7 +2412,9 @@ function bankaDetayModal(k) {
   const giderAlan = () => (f.giderKategori
     ? ffTrig({ id: 'bdGider', label: 'Gider Kategorisi', zorunlu: true, deger: f.giderKategori })
     : `<div class="ff-alan ff-trig ff-eksik dolu" id="bdGider"><span class="ff-val ph">Gider seçin</span><span class="ff-eksik-uyari">Zorunlu</span><span class="ff-ok">⌄</span><label>Gider Kategorisi <span class="zor">*</span></label></div>`);
-  const ortaAlan = () => (f.yon === 'gider') ? giderAlan() : (f.yon === 'ortakOdeme' ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster() }));
+  const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
+    : (f.yon === 'komisyon') ? ffTrig({ id: 'bdKom', label: 'Komisyon Eşleşmesi', deger: 'Kart tahsilatlarıyla tuttur ›' })
+    : (f.yon === 'ortakOdeme') ? '' : ffTrig({ id: 'bdOgr', label: 'Öğrenci Eşleşmesi', deger: ogrGoster() });
   const alanlarHTML = () => `
     ${ffTrig({ id: 'bdDonem', label: 'Ait Olduğu Dönem', deger: donemAdi(f.donem) })}
     ${ffTrig({ id: 'bdTur', label: 'Tür', deger: yonAd(f.yon) })}
@@ -2436,6 +2436,13 @@ function bankaDetayModal(k) {
       } }
     $('#bdDonem').onclick = () => { const aylar = []; for (let i = 0; i < 15; i++) aylar.push(donemKaydir(buAy(), -i)); altSecici({ baslik: 'Ait Olduğu Dönem', secili: f.donem, secenekler: aylar.map(d => ({ deger: d, ad: donemAdi(d) })), onSec: (v) => { f.donem = v; ffTrigGuncelle('bdDonem', donemAdi(v)); } }); };
     $('#bdEg').onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, secili: f.egitmenId || '', secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad }))], onSec: (v) => { f.egitmenId = v || null; ffTrigGuncelle('bdEg', egGoster()); } });
+    { const km = $('#bdKom'); if (km) km.onclick = async () => {
+        const a = $('#bdAcik'); if (a) f.aciklama = a.value;   // açık düzenlemeleri koru
+        const yama = { yon: f.yon, donem: f.donem, egitmenId: f.egitmenId || null, aciklama: (f.aciklama || '').trim() };
+        Object.assign(k, yama);
+        if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
+        komisyonTuttur(k);
+      } }
     { const og = $('#bdOgr'); if (og) og.onclick = () => {
         const adaylar = bankaAdaylar(k);
         const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
