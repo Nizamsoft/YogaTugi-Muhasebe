@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '294';
+const APP_SURUM = '295';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1187,7 +1187,6 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
           : `<div class="kar-sat kk-hak"><span>Hakediş</span><b class="${hakCls}">${TL(hakGuncel)}</b></div>`}
         ${verilen ? sat('Verilmiş Hakediş' + (devir !== 0 ? ' <span class="kk-mini">bu ay</span>' : ''), '−' + TL(verilen)) : ''}
         ${ledger ? `<div class="kar-sat kk-kalan"><span>Kalan Verilecek</span><b class="${kalanTop < 0 ? 'negatif' : ''}">${TL(kalanTop)}</b></div>` : ''}
-        ${e.maasliMi ? '' : `<button type="button" class="kk-ode" data-ode="${kacar(id)}">${ik('kaydet')} Hakediş Ver</button>`}
         ${e.maasliMi ? `<div class="kar-dagitim ${e.dagitim === 'bekliyor' ? 'bekliyor' : ''}">${ik('link')} Dağıtım: <b>${dagitimEt(e)}</b></div>` : ''}</div>`;
     return `<div class="kar-kart kk-kart2 ${e.maasliMi ? 'maasli' : ''} ${acik ? 'acik' : ''}">
       <button type="button" class="kk-bas2" data-tog="${kacar(id)}">
@@ -1210,7 +1209,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const kalanTop = (e.kalanTop != null ? e.kalanTop : hakGuncel - verilen);
     const ledger = (e.devir || 0) !== 0 || verilen !== 0;
     const vergiTop = (e.kdvOngoru || 0) + (e.gvOngoru || 0);
-    const dm = (e.devir || 0) + (e.mahsup || 0);
+    const devir = e.devir || 0, mahsup = e.mahsup || 0;
     const kanal = [e.nakit ? `Nakit ${TL(e.nakit)}` : '', e.havale ? `Havale ${TL(e.havale)}` : '', e.kart ? `Kart ${TL(e.kart)}` : ''].filter(Boolean).join(' · ');
     const st = (cls, ikon, tx, cap, am) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="oz-tx">${tx}</div>${cap ? `<div class="oz-cap">${cap}</div>` : ''}${am ? `<span class="oz-am ${am[1] || ''}">${am[0]}</span>` : ''}</div></div>`;
     // ÖZET'te hiçbir adım gizlenmez — sıfır olsa bile hepsi görünür
@@ -1218,14 +1217,17 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif']);
     if (!e.maasliMi) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', '', [`−${TL(e.giderPayi)}`, 'negatif']);
     m += st('kes', '🏛️', 'Devlet için tahmini vergi ayrıldı.', `KDV ${TL(e.kdvOngoru)} + Gelir Vergisi ${TL(e.gvOngoru)} · kesinleşince güncellenir ⏳`, [`−${TL(vergiTop)}`, 'negatif']);
-    m += st(dm < 0 ? 'kes' : 'iyi', '📅', 'Geçmişten kalan + vergi düzeltmesi.', `Devir ${(e.devir || 0) >= 0 ? '+' : '−'}${TL(Math.abs(e.devir || 0))} · Mahsup ${(e.mahsup || 0) >= 0 ? '+' : '−'}${TL(Math.abs(e.mahsup || 0))}`, [`${dm >= 0 ? '+' : '−'}${TL(Math.abs(dm))}`, dm < 0 ? 'negatif' : 'poz']);
+    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> kalmıştı, bu aya eklendi.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, bu aydan düşüldü.' : 'Geçen aydan devreden bakiye yok.';
+    m += st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz']);
+    const mahsupTx = mahsup > 0 ? 'Tahmini vergi <b>fazla</b> ayrılmıştı, bu ay <b>iade edildi</b>.' : mahsup < 0 ? 'Tahmini vergi <b>eksik</b> ayrılmıştı, bu ay <b>tamamlandı</b>.' : 'Vergi tam ayrılmış, düzeltme yok.';
+    m += st(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', [`${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz']);
     const son = e.maasliMi
       ? `<div class="oz-son"><div class="oz-son-l">Bu ay net payı</div><div class="oz-son-v mono">${TL(hakGuncel)}</div><div class="oz-son-alt">Dağıtım: <b>${dagitimEt(e)}</b></div></div>`
       : `<div class="oz-son"><div class="oz-son-l">Bu ayki payın (hakediş)</div><div class="oz-son-v mono">${TL(hakTop)}</div><div class="oz-son-alt">Şimdiye kadar <b>${TL(verilen)}</b> aldın · Sana kalan <b class="poz">${TL(kalanTop)}</b></div></div>`;
-    const govde = `<div class="oz-tl">${m}</div>${son}${e.maasliMi ? '' : `<button type="button" class="kk-ode oz-ode" data-ode="${kacar(id)}">${ik('kaydet')} Hakediş Ver</button>`}`;
+    const govde = `<div class="oz-tl">${m}</div>${son}`;
     const dar = `<div class="oz-dar"><span>Bu ayki payın</span><b class="mono">${TL(ledger ? kalanTop : hakGuncel)}</b></div>`;
     const bas = hepAcik
-      ? `<div class="kk-bas2 oz-bas-statik">${ortAv(e)}<span class="kk-ort"><span class="kk-ad">${kacar(e.ad)}</span><span class="kk-rol">${rol}</span></span></div>`
+      ? `<button type="button" class="kk-bas2 oz-sec-bas" id="ozSec">${ortAv(e)}<span class="kk-ort"><span class="kk-ad">${kacar(e.ad)}</span><span class="kk-rol">${rol}</span></span><span class="oz-degtag">DEĞİŞTİR</span><span class="kk-cev">⌄</span></button>`
       : `<button type="button" class="kk-bas2" data-tog="${kacar(id)}">${ortAv(e)}<span class="kk-ort"><span class="kk-ad">${kacar(e.ad)}</span><span class="kk-rol">${rol}</span></span><span class="kk-cev">${acik ? '⌃' : '⌄'}</span></button>`;
     return `<div class="kar-kart kk-kart2 oz-kart ${e.maasliMi ? 'maasli' : ''} ${acik ? 'acik' : ''}">
       ${bas}
@@ -1238,8 +1240,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   let ozSel = ozHepsi.find(x => String(x.e.id) === String(karOzetSecili));
   if (!ozSel) ozSel = ozHepsi.find(x => String(x.e.id) === String(benId())) || ozHepsi[0];
   const ozSecId = ozSel ? ozSel.e.id : null;
-  const secBar = ozHepsi.length > 1 ? `<button type="button" class="oz-sec" id="ozSec">${ozSel ? ortAv(ozSel.e) : ''}<span class="oz-sec-ad">${ozSel ? kacar(ozSel.e.ad) : 'Eğitmen seç'}</span><span class="oz-sec-ok">⌄</span></button>` : '';
-  const ozGovde = secBar + (ozSel ? kartCizOzet(ozSel.e, ozSel.rol, true) : `<div class="gp-bos">Eğitmen yok.</div>`);
+  const ozGovde = ozSel ? kartCizOzet(ozSel.e, ozSel.rol, true) : `<div class="gp-bos">Eğitmen yok.</div>`;   // seçici artık kartın başlığında (#ozSec)
   const bosMsg = `<div class="faz-bos"><div class="faz-ik">${ik('ortaklar')}</div><h3>Kârlılık için veri yok</h3><p>Önce “Tahsilat Tanımla” ile tahsilatları girin, ardından “İçe Aktar” ile banka dosyasını yükleyip eşleştirin.</p></div>`;
   const detayGovde = `${r.ortaklar.map(ortakKart).join('') || `<div class="gp-bos">Gösterilecek ortak yok.</div>`}${r.egitmenler.length ? `<h4 class="kar-grup">Maaşlı Eğitmenler <button type="button" class="kar-grup-esle" id="karEsle2">${ik('link')} eşleştir</button></h4>${r.egitmenler.map(maasKart).join('')}` : ''}`;
   ic().innerHTML = `
