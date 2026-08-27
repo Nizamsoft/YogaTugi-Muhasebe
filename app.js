@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '282';
+const APP_SURUM = '283';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2746,7 +2746,8 @@ function komisyonTuttur(k, onDone) {
     $('#ktKapat').onclick = kapat;
     return;
   }
-  komTutForm = kartlar.map(t => ({ id: t.id, ogrenciAd: t.ogrenciAd, tutar: Number(t.tutar) || 0, tip: null, dagit: (t.komisyonTutar != null ? Math.round(Number(t.komisyonTutar) || 0) : null) }));   // açılışta hiçbir tip seçili değil
+  // Açılışta: yeni komisyonda hiçbir tip seçili değil; kaydedilmişse kart tipi seçili (normal tip ekranı, dağıt görünümü değil)
+  komTutForm = kartlar.map(t => ({ id: t.id, ogrenciAd: t.ogrenciAd, tutar: Number(t.tutar) || 0, tip: (k.komisyonOnay ? (t.kartTipi || null) : null), dagit: null }));
   const TIP = KART_TIPLERI_TUM;   // tüm ihtimaller: Kampanyalı / Kampanyasız / Yurt Dışı / Bankamatik
   const komTur = tip => tahsilatKomisyonOran('kart', tip);
   const komTut = (tutar, tip) => tip ? tutar * komTur(tip) / 100 : 0;   // seçili değilse 0, yuvarlama yok
