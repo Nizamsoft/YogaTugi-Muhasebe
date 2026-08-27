@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '271';
+const APP_SURUM = '272';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -8431,6 +8431,7 @@ function ustCubukKur() {
   // Güncelle — basınca sürüm sorgular: yeni sürüm varsa günceller, güncelse "Sürümünüz güncel" der.
   { const kg = $('#kmGuncelle'); if (kg) {
       const slot = kg.querySelector('.kmg-ik'); if (slot && !slot.innerHTML) slot.innerHTML = ik('guncel');
+      { const sv = kg.querySelector('#kmSurum'); if (sv) sv.textContent = 'v' + APP_SURUM; }
       kg.onclick = async () => {
         if (kg.dataset.dolu) return;
         kg.dataset.dolu = '1';

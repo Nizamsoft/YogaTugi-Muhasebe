@@ -1304,6 +1304,7 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
 .kul-menu #kmGuncelle .kmg-ik{width:22px;height:22px;display:inline-grid;place-items:center;flex:0 0 auto;color:var(--metin-soluk)}
 .kul-menu #kmGuncelle .kmg-ik .uik{width:20px;height:20px}
 .kul-menu #kmGuncelle .kmg-ik .kum{font-size:16px;line-height:1;display:inline-block;animation:kumDon .9s linear infinite}
+.kul-menu #kmGuncelle .kmg-surum{margin-left:auto;font-size:11px;font-weight:800;color:var(--neon);background:rgba(180,232,58,.12);border:1px solid rgba(180,232,58,.3);border-radius:8px;padding:2px 8px;flex:none}
 @keyframes kumDon{to{transform:rotate(360deg)}}
 
 /* --------- Duyarlı (mobil) --------- */
