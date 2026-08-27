@@ -3515,6 +3515,7 @@ body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;heig
 .modal-tam .modal-alt{border-top:0;padding:12px 20px calc(20px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;justify-content:stretch}
 .modal-tam .modal-alt .btn-ana{flex:1}
 .ff-kaydet{width:100%;min-height:54px;border-radius:99px !important;font-size:16.5px;font-weight:800;justify-content:center;font-family:'Quicksand','Segoe UI',system-ui,sans-serif}
+.ff-kaydet.ff-kaydet-pasif,.ff-kaydet:disabled{background:var(--gri) !important;color:var(--metin-soluk) !important;box-shadow:none !important;opacity:.75;cursor:not-allowed}
 
 /* Floating-label + alt-çizgi alan */
 .ff-grpbas{font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-weight:700;font-size:16px;margin:28px 0 2px;color:var(--metin)}

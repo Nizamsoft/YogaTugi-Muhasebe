@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '269';
+const APP_SURUM = '270';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2568,7 +2568,9 @@ function bankaDetayModal(k, wiz) {
     { const n = $('#wizNext'); if (n) n.onclick = () => wizGit(wiz.i + 1); }
     $('#bdAtla').onclick = () => { if (sonKayit) { modalKapat(); iaOnizleTazele(); } else wizGit(wiz.i + 1); };
   }
-  const yenile = () => { $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); };
+  const zorunluEksik = () => (f.yon === 'gider' && !f.giderKategori) || (f.yon === 'ortakOdeme' && !f.egitmenId);
+  const kaydetGuncelle = () => { const b = $('#bdKaydet'); if (b) { const eks = zorunluEksik(); b.disabled = eks; b.classList.toggle('ff-kaydet-pasif', eks); } };
+  const yenile = () => { $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); kaydetGuncelle(); };
   function bagla() {
     $('#bdTur').onclick = () => altSecici({ baslik: 'Tür', secili: f.yon, secenekler: YONS.map(x => ({ deger: x.v, ad: x.ad })), onSec: (v) => { f.yon = v; yenile(); } });
     { const g = $('#bdGider'); if (g) g.onclick = () => {
@@ -2602,7 +2604,7 @@ function bankaDetayModal(k, wiz) {
           onOnay: (sel) => { f.eslesenIds = sel; yenile(); } });
       } }
   }
-  bagla();
+  bagla(); kaydetGuncelle();
   $('#bdKaydet').onclick = async () => {
     if (f.yon === 'gider' && !f.giderKategori) { const el = $('#bdGider'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Gider kategorisi zorunlu.', 'uyari'); return; }
     if (f.yon === 'ortakOdeme' && !f.egitmenId) { const el = $('#bdOrtak'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('İlgili ortak zorunlu.', 'uyari'); return; }
