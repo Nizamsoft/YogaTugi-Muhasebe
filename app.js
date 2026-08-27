@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '298';
+const APP_SURUM = '299';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1047,6 +1047,9 @@ function ortakDevir(donem) {
   return dev;
 }
 const KAR_DAGITIM_KAT = 'Kâr Dağıtımı';   // ortağa yapılan pay ödemesi kategorisi (genel gidere bölünmez, "verilen" sayılır)
+/* Gelir vergisi takvim çeyreği yardımcıları (Oca-Şub-Mar / Nis-May-Haz / Tem-Ağu-Eyl / Eki-Kas-Ara) */
+function ceyrekSonMu(donem) { const mm = Number(String(donem).split('-')[1]) || 0; return mm % 3 === 0; }   // Mart/Haz/Eyl/Ara
+function ceyrekAylar(donem) { const [y, mm] = String(donem).split('-').map(Number); const q = Math.floor((mm - 1) / 3) * 3 + 1; return [0, 1, 2].map(i => `${y}-${String(q + i).padStart(2, '0')}`); }
 /* Ortak, verilen dönemde (ay) aktif mi? Katılım ayından itibaren, ayrılış ayından önce. */
 function ortakAyAktif(o, donem) {
   if (o.katilimAy && donem < o.katilimAy) return false;   // henüz katılmamış
@@ -1109,18 +1112,27 @@ function egitmenKarlilik(donem) {
     const hakedis = kdvHaric - a.komisyon - gvOngoru - giderPayi + a.havuzPayi;
     return { ...a, kdvOngoru, gvOngoru, giderPayi, hakedis, net: hakedis, odenen: odenen[o.id] || 0, kalan: hakedis - (odenen[o.id] || 0) };
   });
-  // Vergi mutabakatı: müşavir tahakkuku girildiyse öngörü ile karşılaştır, farkı öngörü payına göre ortaklara dağıt
+  // Vergi mutabakatı: KDV AYLIK; Gelir Vergisi 3 AYLIK (yalnız çeyreğin 3. ayında, çeyrek toplamıyla) mahsuplaşır
   const tah = (State.vergiTahakkuk || []).find(t => t.donem === donem) || null;
   const kdvOngTop = ortakList.reduce((s, e) => s + (e.kdvOngoru || 0), 0);
-  const gvOngTop = ortakList.reduce((s, e) => s + (e.gvOngoru || 0), 0);
   const kdvVar = tah && tah.kdv != null && tah.kdv !== '';
-  const gvVar = tah && tah.gv != null && tah.gv !== '';
+  // Gelir Vergisi: yalnız çeyrek-sonu ayında ve gv tahakkuku girildiyse; çeyreğin 3 ayının öngörü toplamına göre
+  const gvVar = ceyrekSonMu(donem) && tah && tah.gv != null && tah.gv !== '';
+  const qGv = {}; let qGvTop = 0;
+  if (gvVar) {
+    ceyrekAylar(donem).forEach(m => {
+      const rr = (m === donem) ? { ortaklar: ortakList } : egitmenKarlilik(m);   // diğer 2 ay öngörüsü (çeyrek toplamı)
+      rr.ortaklar.forEach(e => { qGv[e.id] = (qGv[e.id] || 0) + (e.gvOngoru || 0); });
+    });
+    qGvTop = Object.values(qGv).reduce((s, n) => s + n, 0);
+  }
   ortakList.forEach(e => {
-    e.kdvTahakkukVar = kdvVar; e.gvTahakkukVar = gvVar;
+    e.kdvTahakkukVar = kdvVar;
     e.kdvTahakkukPay = (kdvVar && kdvOngTop) ? Math.round(Number(tah.kdv) * e.kdvOngoru / kdvOngTop) : null;
-    e.gvTahakkukPay = (gvVar && gvOngTop) ? Math.round(Number(tah.gv) * e.gvOngoru / gvOngTop) : null;
     e.kdvFark = kdvVar ? (e.kdvOngoru - (e.kdvTahakkukPay || 0)) : 0;
-    e.gvFark = gvVar ? (e.gvOngoru - (e.gvTahakkukPay || 0)) : 0;
+    e.gvTahakkukVar = gvVar;
+    if (gvVar) { const qg = qGv[e.id] || 0; e.gvTahakkukPay = qGvTop ? Math.round(Number(tah.gv) * qg / qGvTop) : 0; e.gvFark = qg - e.gvTahakkukPay; }   // çeyrek öngörü toplamı − çeyrek gerçek pay
+    else { e.gvTahakkukPay = null; e.gvFark = 0; }
     e.mahsup = e.kdvFark + e.gvFark;
     e.hakedisGuncel = e.hakedis + e.mahsup;
     e.net = e.hakedisGuncel;
@@ -1311,17 +1323,21 @@ function vergiTahakkukModal(donem, sonrasi) {
   const mevcut = (State.vergiTahakkuk || []).find(t => t.donem === donem) || { donem };
   const r = egitmenKarlilik(donem);
   const kdvOng = r.ortaklar.reduce((s, e) => s + (e.kdvOngoru || 0), 0);
-  const gvOng = r.ortaklar.reduce((s, e) => s + (e.gvOngoru || 0), 0);
+  const ceyrek = ceyrekSonMu(donem);   // Gelir Vergisi yalnız çeyrek sonunda (Mart/Haz/Eyl/Ara)
+  const gvOngCeyrek = ceyrek ? ceyrekAylar(donem).reduce((s, m) => s + egitmenKarlilik(m).ortaklar.reduce((a, e) => a + (e.gvOngoru || 0), 0), 0) : 0;
+  const cAd = ceyrek ? ceyrekAylar(donem).map(m => donemAdi(m).split(' ')[0]).join('-') : '';
   const govde = `
     <div class="tk-ay">${ayNavHTML(donem)}</div>
     <p class="tk-not">${donemAdi(donem)} için müşavirden gelen <b>gerçek</b> vergiyi girin. Öngörüyle farkı ortaklara mahsuplaştırılır. Boş bırakılan “henüz gelmedi” sayılır.</p>
-    <div class="gp-alan"><label>KDV tahakkuku <span class="tk-ong">öngörü ${TL(kdvOng)}</span></label><input type="text" class="gp-inp" id="tkKdv" inputmode="decimal" value="${mevcut.kdv != null && mevcut.kdv !== '' ? binlik(mevcut.kdv) : ''}" placeholder="Müşavirden gelen KDV" autocomplete="off"></div>
-    <div class="gp-alan" style="margin:0"><label>Gelir vergisi tahakkuku <span class="tk-ong">öngörü ${TL(gvOng)}</span></label><input type="text" class="gp-inp" id="tkGv" inputmode="decimal" value="${mevcut.gv != null && mevcut.gv !== '' ? binlik(mevcut.gv) : ''}" placeholder="Boş = henüz gelmedi" autocomplete="off"></div>`;
+    <div class="gp-alan"><label>KDV tahakkuku <span class="tk-ong">aylık · öngörü ${TL(kdvOng)}</span></label><input type="text" class="gp-inp" id="tkKdv" inputmode="decimal" value="${mevcut.kdv != null && mevcut.kdv !== '' ? binlik(mevcut.kdv) : ''}" placeholder="Müşavirden gelen KDV" autocomplete="off"></div>
+    ${ceyrek
+      ? `<div class="gp-alan" style="margin:0"><label>Gelir vergisi tahakkuku <span class="tk-ong">çeyrek (${cAd}) · öngörü ${TL(gvOngCeyrek)}</span></label><input type="text" class="gp-inp" id="tkGv" inputmode="decimal" value="${mevcut.gv != null && mevcut.gv !== '' ? binlik(mevcut.gv) : ''}" placeholder="Bu 3 ayın gerçek gelir vergisi" autocomplete="off"></div>`
+      : `<div class="gp-alan" style="margin:0"><label>Gelir vergisi tahakkuku</label><p class="tk-not" style="margin:0">Gelir vergisi <b>3 ayda bir</b> — yalnız çeyrek sonunda (Mart / Haziran / Eylül / Aralık) girilir.</p></div>`}`;
   modalAc('Vergi Tahakkuku · ' + donemAdi(donem), govde, `<button type="button" class="btn" id="tkIptal">Vazgeç</button><button type="button" class="btn btn-ana" id="tkKaydet">${ik('kaydet')} Kaydet</button>`);
   $$('#modalKap .tk-ay [data-ay]').forEach(b => b.onclick = () => vergiTahakkukModal(donemKaydir(donem, Number(b.dataset.ay)), sonrasi));
   $('#tkIptal').onclick = modalKapat;
   $('#tkKaydet').onclick = async () => {
-    const kdvV = $('#tkKdv').value.trim(), gvV = $('#tkGv').value.trim();
+    const kdvV = $('#tkKdv').value.trim(); const gvEl = $('#tkGv'); const gvV = (ceyrek && gvEl) ? gvEl.value.trim() : '';
     const kayit = { donem, kdv: kdvV ? tutarCoz(kdvV) : '', gv: gvV ? tutarCoz(gvV) : '' };
     if (mevcut.id) await DB.guncelle('vergiTahakkuk', mevcut.id, kayit); else await DB.ekle('vergiTahakkuk', kayit);
     State.vergiTahakkuk = DB._oku('vergiTahakkuk');
