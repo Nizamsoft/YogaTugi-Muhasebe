@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '267';
+const APP_SURUM = '268';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2525,9 +2525,9 @@ function bankaDetayModal(k) {
     ${f.yon === 'gider' ? ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() }) : ''}
     ${dagilimHTML()}
     <div class="ff-grpbas">Banka Açıklaması</div>
-    <div class="bd-islem">${kacar(k.islem || '—')}</div>
+    ${oz}
     <div class="bd-aciklama">${kacar(k.aciklama || '—')}</div>`;
-  modalAc('Hareket Detayı', `${oz}<div id="bdAlanlar">${alanlarHTML()}</div>`, `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`);
+  modalAc('Hareket Detayı', `<div id="bdAlanlar">${alanlarHTML()}</div>`, `<button type="button" class="btn btn-ana ff-kaydet" id="bdKaydet">${ik('kaydet')} Kaydet</button>`);
   $('#modalKap .modal').classList.add('modal-tam');
   const yenile = () => { $('#bdAlanlar').innerHTML = alanlarHTML(); bagla(); };
   function bagla() {
