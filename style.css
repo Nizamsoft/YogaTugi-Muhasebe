@@ -1750,7 +1750,9 @@ body.tema-neon .ogr-tablo.sade tbody tr:hover td{background:transparent}
 .ia-ait{font-weight:600} .ia-ait.g{color:var(--metin)}
 .ia-ait-sec{border:1px solid var(--amber);background:rgba(245,169,31,.12);color:var(--amber);font-family:inherit;font-weight:800;font-size:12px;border-radius:8px;padding:6px 10px;cursor:pointer}
 .ogr-tablo.sade td.ia-kir{color:var(--kirmizi);font-weight:800} .ogr-tablo.sade td.ia-yes{color:#8fe07a;font-weight:800}
-.ia-es{font-size:16px} .ia-es.ok{color:#8fe07a;font-weight:800} .ia-es.no{color:var(--metin-soluk)}
+.ia-es{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;font-size:12px;font-weight:900;line-height:1}
+.ia-es.ok{color:#8fe07a;background:rgba(143,224,122,.18)}
+.ia-es.no{color:#f0857a;background:rgba(240,133,122,.2)}
 .ogr-tablo th.ort,.ogr-tablo td.ort{text-align:center}
 .gr-grpbas .gr-tut{font-size:15px}
 .gr-chev{flex:0 0 14px;text-align:center;color:#c9a94e;font-size:15px;opacity:.6}
