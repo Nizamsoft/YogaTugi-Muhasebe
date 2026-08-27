@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '286';
+const APP_SURUM = '287';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1305,16 +1305,16 @@ let gelirLimit = 25;          // tablo: gösterilen satır sayısı
 const GELIR_TUR = { nakit: 'Nakit', havale: 'Havale', kart: 'Kart', multinet: 'Multinet' };
 SAYFALAR['gelirler'] = function gelirlerSayfasi() {
   const donem = gelirDonem || buAy();
-  const kayitlar = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem)
+  const hepsi = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem)
     .sort((a, b) => (b.tarih || '').localeCompare(a.tarih || ''));
+  const kayitlar = hepsi.filter(tahsilatGercek);   // Gelirler YALNIZ gerçekleşen (nakit + bankaya yatmış); bekleyen hiç listelenmez
   const topla = (arr) => arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
-  // Defter tüm tahsilatı listeler; "gelir" toplamı yalnız GERÇEKLEŞEN (nakit + bankaya yatmış)
-  const bru = topla(kayitlar.filter(tahsilatGercek));
-  const bekTop = topla(kayitlar.filter(t => !tahsilatGercek(t)));
+  const bru = topla(kayitlar);
+  const bekTop = topla(hepsi.filter(t => !tahsilatGercek(t)));   // bilgi amaçlı (Bekleyen Tahsilatlar'da)
   const turAd = (t) => GELIR_TUR[t] || t || '—';
   // RAPOR: eğitmen (hoca) → ödeme türü (Banka Havale / Kart / Nakit) → tahsilatlar (hepsi kapalı başlar)
   const raporCiz = () => {
-    if (!kayitlar.length) return `<div class="gp-bos">${donemAdi(donem)} için gelir yok.</div>`;
+    if (!kayitlar.length) return `<div class="gp-bos">${donemAdi(donem)} için gerçekleşen gelir yok.</div>${bekTop ? `<div class="gr-kutu"><div class="gr-dip gr-bek-dip"><span class="k">Bekleyen (Bekleyen Tahsilatlar'da)</span><span class="v">+${binlik(bekTop)} ₺</span></div></div>` : ''}`;
     const gr = {};
     kayitlar.forEach(p => { const ad = (p.egitmenAd || '').trim() || 'Atanmamış'; const g = gr[ad] || (gr[ad] = { ad, toplam: 0, adet: 0, havale: [], kart: [], nakit: [] }); g.toplam += Number(p.tutar) || 0; g.adet++; const tip = p.odemeTuru === 'havale' ? 'havale' : (p.odemeTuru === 'kart' || p.odemeTuru === 'multinet') ? 'kart' : 'nakit'; g[tip].push(p); });
     const gruplar = Object.values(gr).sort((a, b) => b.toplam - a.toplam);
@@ -1326,11 +1326,11 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
         const arr = g[tip]; const top = arr.reduce((s, p) => s + (Number(p.tutar) || 0), 0);
         const tkey = 't:' + g.ad + ':' + tip, tAcik = gelirAcik.has(tkey);
         ic += `<div class="gr-sat lv2" data-gacik="${kacar(tkey)}"><span class="ad"><span class="nk"></span>${tipEt[tip]}</span><span class="gr-cnt">${arr.length}</span><span class="gr-tut art">${top > 0 ? '+' : ''}${binlik(top)} ₺</span><span class="gr-chev">${arr.length ? (tAcik ? '⌃' : '⌄') : ''}</span></div>`;
-        if (tAcik) ic += arr.slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).map(p => { const bek = !tahsilatGercek(p); return `<div class="gr-sat lv3 norow${bek ? ' gr-bek-row' : ''}"><span class="ad">${kacar(kisaTarih(p.tarih))} · ${kacar(p.ogrenciAd || '—')}${bek ? ' <span class="gr-bek-et">bekliyor</span>' : ''}</span><span class="gr-tut art">+${binlik(p.tutar)} ₺</span></div>`; }).join('');
+        if (tAcik) ic += arr.slice().sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).map(p => `<div class="gr-sat lv3 norow"><span class="ad">${kacar(kisaTarih(p.tarih))} · ${kacar(p.ogrenciAd || '—')}</span><span class="gr-tut art">+${binlik(p.tutar)} ₺</span></div>`).join('');
       });
       return `<div class="gr-grp"><div class="gr-grpbas" data-gacik="${kacar(gkey)}"><span class="ad"><span class="ik">${ik('kisi')}</span>${kacar(g.ad)}</span><span class="gr-cnt">${g.adet} tahsilat</span><span class="gr-tut top art">+${binlik(g.toplam)} ₺</span><span class="gr-chev">${gAcik ? '⌃' : '⌄'}</span></div>${ic}</div>`;
     }).join('');
-    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Gerçekleşen — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div>${bekTop ? `<div class="gr-dip gr-bek-dip"><span class="k">Bekleyen (bankaya yatmadı)</span><span class="v">+${binlik(bekTop)} ₺</span></div>` : ''}</div>`;
+    return `<div class="gr-kutu">${grpHTML}<div class="gr-dip"><span class="k">${ik('para')} Gerçekleşen — ${donemAdi(donem)}</span><span class="v art">+${binlik(bru)} ₺</span></div>${bekTop ? `<div class="gr-dip gr-bek-dip"><span class="k">Bekleyen (Bekleyen Tahsilatlar'da)</span><span class="v">+${binlik(bekTop)} ₺</span></div>` : ''}</div>`;
   };
   // TABLO: sade düz kayıt tablosu + "daha fazla yükle"
   const tabloCiz = () => {
@@ -1343,8 +1343,7 @@ SAYFALAR['gelirler'] = function gelirlerSayfasi() {
         <tbody>${kesit.map(p => {
           const dn = donemStr(p.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
           const tm = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk', multinet: 'rz-notr' };
-          const bek = !tahsilatGercek(p);
-          return `<tr data-gelir="${p.id}"${bek ? ' class="gr-bek-row"' : ''}><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(p.tutar)}</span><span class="tut2-dn rozet-etk ${bek ? 'rz-notr' : (tm[p.odemeTuru] || 'rz-notr')}">${bek ? 'Bekliyor' : kacar(turAd(p.odemeTuru))}</span></td></tr>`;
+          return `<tr data-gelir="${p.id}"><td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(p.tarih))}</span><span class="t2-dn">${dk}</span></td><td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(p.egitmenAd || '—')}</span>${p.ogrenciAd ? `<span class="a2-dn">${kacar(p.ogrenciAd)}</span>` : ''}</td><td data-l="Ders">${kacar(p.dersPaketi || '—')}</td><td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(p.tutar)}</span><span class="tut2-dn rozet-etk ${tm[p.odemeTuru] || 'rz-notr'}">${kacar(turAd(p.odemeTuru))}</span></td></tr>`;
         }).join('')}</tbody>
       </table></div></div>
       ${dahaVar ? `<button type="button" class="ia-daha-btn" id="glDaha" style="margin-top:10px">Daha fazla yükle (+${Math.min(25, kayitlar.length - gelirLimit)})</button>` : ''}`;
@@ -2494,10 +2493,13 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
   $('#iaKaydet').onclick = async () => {
     const btn = $('#iaKaydet'); btn.disabled = true; btn.textContent = 'Aktarılıyor…';
     if (!isPf) yeni.forEach(k => { if (k.yon === 'gider') k.giderKategori = bankaGiderEsle(k); });   // güncel kural/eşleşmeyi commit'e yaz
+    await new Promise(r => setTimeout(r, 450));   // "Aktarılıyor…" bir an görünür olsun
     await DB.topluEkle(kol, yeni);
     State[kol] = DB._oku(kol);
     bildir(`${yeni.length} kayıt içe aktarıldı.`, 'basari');
-    iaSonKayitlar = null; iaSonSekme = ''; SAYFALAR['ice-aktar']();
+    iaSonKayitlar = null; iaSonSekme = '';
+    if (isPf) SAYFALAR['ice-aktar']();   // Plan4me → içe aktar sayfasında kal
+    else git('hesap-banka');   // banka aktarımı → banka ekstresi ekranına git
   };
   function chip(t, c) { return `<span class="ia-chip ${c}">${kacar(t)}</span>`; }
   function turRoz(t) { const m = { nakit: 'rz-kasa', havale: 'rz-banka', kart: 'rz-kk' }; return `<span class="rozet-etk ${m[t] || 'rz-notr'}">${t}</span>`; }
