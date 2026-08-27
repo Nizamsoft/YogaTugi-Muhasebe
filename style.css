@@ -3664,7 +3664,11 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .bd-islem{margin:8px 0 6px;font-weight:700;font-size:14px;color:var(--metin)}
 .bd-aciklama{margin:9px 0 4px;background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:13px 15px;font-size:14px;line-height:1.5;color:var(--metin-soluk);word-break:break-word;white-space:pre-wrap;-webkit-user-select:text;user-select:text}
 .ff-alan.ff-deger-ok .ff-val{color:#8fe07a;font-weight:700}
-/* Hareket detayı — eğitmen/öğrenci dağılım kartı */
+/* Hareket detayı — kompakt salt-okunur dağılım alanı (öğrenci/eğitmen) */
+.bd-ro{position:relative;margin-top:20px;border-bottom:1.5px dashed var(--kenar);padding:19px 0 9px}
+.bd-ro label{position:absolute;left:0;top:0;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--metin-soluk)}
+.bd-ro .v{font-size:15.5px;color:var(--metin)}
+/* Hareket detayı — eğitmen/öğrenci dağılım kartı (eski, kullanılmıyor) */
 .bd-dg{margin-top:8px;background:var(--gri);border:1px solid var(--kenar);border-radius:13px;overflow:hidden}
 .bd-dg-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;gap:10px}
 .bd-dg-row+.bd-dg-row{border-top:1px solid var(--kenar)}

@@ -591,7 +591,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '273';
+const APP_SURUM = '274';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2570,20 +2570,14 @@ function bankaDetayModal(k, wiz) {
   const ortaAlan = () => (f.yon === 'gider') ? giderAlan()
     : (f.yon === 'komisyon') ? komField()
     : (f.yon === 'ortakOdeme') ? ortakAlan() : ogrField();
-  const dagilimHTML = () => {
+  const ilkAd = (ad) => String(ad || '').trim().split(/\s+/)[0] || '';
+  const isimListe = (adlar) => { const u = [...new Set(adlar.filter(Boolean))]; if (!u.length) return '—'; return u.length === 1 ? u[0] : u.map(ilkAd).join(', '); };
+  const roAlan = (lbl, val) => `<div class="bd-ro"><label>${kacar(lbl)}</label><span class="v">${kacar(val)}</span></div>`;
+  const dagilimHTML = () => {   // tablo yerine kompakt alan (birden fazlaysa ilk isimler virgülle)
     const ilg = bankaIlgiliTahsilatlar(k);
     if (!ilg.length) return '';
-    if (f.yon === 'gelir') {
-      const top = ilg.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
-      const rows = ilg.map(t => `<div class="bd-dg-row"><span class="bd-dg-e"><span class="bd-dg-av">${kacar(bas(t.ogrenciAd))}</span><span class="bd-dg-col"><span class="ad">${kacar(t.ogrenciAd || '—')}</span><span class="sub">${kacar(t.egitmenAd || '')}</span></span></span><span class="bd-dg-tt yes">${TL(t.tutar)}</span></div>`).join('');
-      return `<div class="ff-grpbas">Öğrenci Dağılımı</div><div class="bd-dg">${rows}<div class="bd-dg-row tot"><span class="bd-dg-e"><span class="ad">Toplam · ${ilg.length} öğrenci</span></span><span class="bd-dg-tt yes">${TL(top)}</span></div></div>`;
-    }
-    if (f.yon === 'komisyon') {
-      const grup = {}; ilg.forEach(t => { const e = t.egitmenAd || '—'; if (!grup[e]) grup[e] = { ad: e, adet: 0, kom: 0 }; grup[e].adet++; grup[e].kom += kartKomTutar(t); });
-      const list = Object.values(grup); const top = list.reduce((s, g) => s + g.kom, 0);
-      const rows = list.map(g => `<div class="bd-dg-row"><span class="bd-dg-e"><span class="bd-dg-av">${kacar(bas(g.ad))}</span><span class="bd-dg-col"><span class="ad">${kacar(g.ad)}</span><span class="sub">${g.adet} kart tahsilatı</span></span></span><span class="bd-dg-tt kir">−${TL(g.kom)}</span></div>`).join('');
-      return `<div class="ff-grpbas">Eğitmen Dağılımı</div><div class="bd-dg">${rows}<div class="bd-dg-row tot"><span class="bd-dg-e"><span class="ad">Toplam</span></span><span class="bd-dg-tt kir">−${TL(top)}</span></div></div>`;
-    }
+    if (f.yon === 'gelir') return roAlan('Öğrenci', isimListe(ilg.map(t => t.ogrenciAd))) + roAlan('Eğitmen', isimListe(ilg.map(t => t.egitmenAd)));
+    if (f.yon === 'komisyon') return roAlan('Eğitmen', isimListe(ilg.map(t => t.egitmenAd)));
     return '';
   };
   const alanlarHTML = () => `
@@ -2629,7 +2623,7 @@ function bankaDetayModal(k, wiz) {
         const yama = { yon: f.yon, donem: f.donem, egitmenId: f.egitmenId || null };   // düzenlemeleri koru
         Object.assign(k, yama);
         if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
-        komisyonTuttur(k);
+        komisyonTuttur(k, () => bankaDetayModal(k, wiz));   // komisyon sonrası sihirbaza/detaya dön
       } }
     { const og = $('#bdOgr'); if (og) og.onclick = () => {
         // Ayrı sheet yerine Bekleyen Tahsilatlar sayfasına git; seçimi orada yap
@@ -2674,8 +2668,9 @@ function bankaEslestir(k) {
 /* Komisyon tutturma yardımcısı — o günün (D-1) kart tahsilatlarının tiplerini değiştirerek
    banka Batch Komisyonu'nu tutturur. Kullanıcıya "Otomatik Dene" ile de yardım eder. */
 let komTutForm = null;
-function komisyonTuttur(k) {
+function komisyonTuttur(k, onDone) {
   if (!k) return;
+  const kapat = () => { if (onDone) onDone(); else modalKapat(); };   // sihirbazdaysa detaya dön
   const hedef = Math.round(Math.abs(Number(k.tutar) || 0));   // banka komisyonu (₺)
   const kartlar = (State.tahsilatTanimlari || []).filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1)
     .sort((a, b) => (Number(b.tutar) || 0) - (Number(a.tutar) || 0));
@@ -2683,7 +2678,7 @@ function komisyonTuttur(k) {
     modalAc('Komisyon Eşleştir', `<div class="kt-bos">${ik('uyari')} Bu batch'in bir gün öncesinde tanımlı <b>kart tahsilatı</b> yok.<br><br>Önce Tahsilat Defteri girişinden o günün kart tahsilatlarını girin.</div>`,
       `<button type="button" class="btn" id="ktGit" style="flex:1">Gelirler</button><button type="button" class="btn btn-ana" id="ktKapat" style="flex:1">Kapat</button>`);
     $('#ktGit').onclick = () => { modalKapat(); git('gelirler'); };
-    $('#ktKapat').onclick = modalKapat;
+    $('#ktKapat').onclick = kapat;
     return;
   }
   komTutForm = kartlar.map(t => ({ id: t.id, ogrenciAd: t.ogrenciAd, tutar: Number(t.tutar) || 0, tip: (t.kartTipi || 'kampanyali'), dagit: (t.komisyonTutar != null ? Math.round(Number(t.komisyonTutar) || 0) : null) }));
@@ -2739,6 +2734,7 @@ function komisyonTuttur(k) {
   modalAc('Komisyon Eşleştir', `<div id="ktGovde">${govde()}</div>`,
     `<button type="button" class="btn" id="ktDagit" style="flex:1">${ik('onay')} Orantılı Dağıt</button><button type="button" class="btn btn-ana ff-kaydet" id="ktKaydet" style="flex:1.3">${ik('kaydet')} Kaydet</button>`);
   $('#modalKap .modal').classList.add('modal-tam');
+  { const kp = $('#modalKapat'); if (kp) kp.onclick = kapat; }   // ✕ ile de sihirbaza dön
   bagla(); btnTazele();
   $('#ktDagit').onclick = () => {
     if (mod === 'dagit') { mod = 'tip'; komTutForm.forEach(r => r.dagit = null); cizGovde(); return; }
@@ -2760,8 +2756,9 @@ function komisyonTuttur(k) {
       }
     }
     State.tahsilatTanimlari = DB._oku('tahsilatTanimlari');
-    modalKapat(); iaOnizleTazele();
+    iaOnizleTazele();
     bildir(mod === 'dagit' ? 'Komisyon orantılı paylaştırıldı.' : 'Kart tipleri güncellendi.', 'basari');
+    kapat();
   };
 }
 /* 4^N kombinasyon arayarak floor'lu komisyon toplamı = hedef olan tip atamasını bulur (N≤10) */
