@@ -656,7 +656,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '309';
+const APP_SURUM = '310';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -679,9 +679,6 @@ const YETKILER = [
   { grup: 'Görüntüleme', key: 'gor_hesaplar',   ad: 'Hesaplar / Banka defteri' },
   { grup: 'Veri girişi', key: 'veri_ekle',      ad: 'Tahsilat / gider ekle' },
   { grup: 'Veri girişi', key: 'veri_iceAktar',  ad: 'İçe aktarma (dosya)' },
-  { grup: 'Ayarlar',     key: 'ayar_vergiFirma', ad: 'Vergi oranı / Firma' },
-  { grup: 'Ayarlar',     key: 'ayar_kullanici',  ad: 'Kullanıcı yönetimi' },
-  { grup: 'Ayarlar',     key: 'arsiv_topluSil',  ad: 'Arşiv toplu silme' },
 ];
 /* Giriş yapan kullanıcının belirtilen yetkisi var mı? (Admin → daima) */
 function yetki(key) {
@@ -2425,7 +2422,7 @@ function iaArsivCiz(g, isPf, yenile) {
 /* Ayarlar > İçe Aktarma Arşivi — içe aktarılan Plan4me / Banka kayıtlarını görüntüle-sil */
 let arsivSekme = 'banka';
 SAYFALAR['ayar-arsiv'] = function () {
-  if (!yetki('gor_hesaplar')) { git('dashboard'); return; }
+  if (!adminMi()) { git('dashboard'); return; }
   const pfN = (State.planformiTahsilat || []).length, bhN = (State.bankaHareketleri || []).length;
   ic().innerHTML = `
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="arsGeri">‹ Ayarlar</button></div>
@@ -5945,7 +5942,7 @@ function vergiOrani() {
   return (isFinite(n) && n >= 0 && n <= 100) ? n : 20;
 }
 SAYFALAR['ayar-vergi'] = function () {
-  if (!yetki('ayar_vergiFirma')) { git('dashboard'); return; }
+  if (!adminMi()) { git('dashboard'); return; }
   const oran = vergiOrani();
   ic().innerHTML = `
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="vgGeri">‹ Ayarlar</button></div>
@@ -6210,7 +6207,7 @@ async function enGuncelSurumuGetir() {
 
 /* -------- AYARLAR: Firma Bilgileri & Logo -------- */
 SAYFALAR['ayar-firma'] = function () {
-  if (!yetki('ayar_vergiFirma')) { git('dashboard'); return; }
+  if (!adminMi()) { git('dashboard'); return; }
   const a = State.ayarlar || {};
   const logoVar = !!a.logoData;
   ic().innerHTML = `
@@ -6256,7 +6253,7 @@ const ROL_AD = { admin: 'Admin', ortak: 'Ortak', kullanici: 'Kullanıcı' };
 const ROL_ACIK = { admin: 'tüm verileri yönetir', ortak: 'yalnız kendi finansalı', kullanici: 'salt görüntüleme' };
 function basHarfKisi(ad) { return (ad || '?').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toLocaleUpperCase('tr'); }
 SAYFALAR['ayar-ortak'] = function () {
-  if (!yetki('ayar_kullanici')) { git('dashboard'); return; }
+  if (!adminMi()) { git('dashboard'); return; }
   const list = State.ortaklar;
   const renk = ['a1', 'a2', 'a3', 'a4'];
   const kart = (o, i) => {
@@ -6382,22 +6379,21 @@ SAYFALAR['ortaklar'] = function () {
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
-  // İşletme
-  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', grup: 'İşletme', izin: 'ayar_vergiFirma' },
-  { id: 'ayar-ortak', ad: 'Kullanıcılar', ikon: 'ortaklar', alt: 'Kişiler, roller, girişler', grup: 'İşletme', izin: 'ayar_kullanici' },
+  // İşletme — yalnızca Admin
+  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', grup: 'İşletme', sadeceAdmin: true },
+  { id: 'ayar-ortak', ad: 'Kullanıcılar', ikon: 'ortaklar', alt: 'Kişiler, roller, girişler', grup: 'İşletme', sadeceAdmin: true },
   { id: 'ayar-yetki', ad: 'Roller & Yetkiler', ikon: 'kullanici', alt: 'Ortak / Kullanıcı yetkilerini düzenle', grup: 'İşletme', sadeceAdmin: true },
-  // Muhasebe
-  { id: 'ayar-vergi', ad: 'Vergi Oranları', ikon: 'belge', alt: 'KDV + Gelir Vergisi oranı', grup: 'Muhasebe', izin: 'ayar_vergiFirma' },
-  { id: 'ayar-vergi-tahakkuk', ad: 'Vergi Tahakkuku', ikon: 'kaydet', alt: 'Müşavirden gelen gerçek KDV / Gelir Vergisi', grup: 'Muhasebe', izin: 'ayar_vergiFirma', aksiyon: 'vergiTahakkuk' },
+  // Muhasebe — ortak yalnızca Gider Kalemleri + Hesap Açılış Bakiyeleri görür
+  { id: 'ayar-vergi', ad: 'Vergi Oranları', ikon: 'belge', alt: 'KDV + Gelir Vergisi oranı', grup: 'Muhasebe', sadeceAdmin: true },
+  { id: 'ayar-vergi-tahakkuk', ad: 'Vergi Tahakkuku', ikon: 'kaydet', alt: 'Müşavirden gelen gerçek KDV / Gelir Vergisi', grup: 'Muhasebe', sadeceAdmin: true, aksiyon: 'vergiTahakkuk' },
   { id: 'tanim-komisyon', ad: 'Kart Komisyon Oranları', ikon: 'kart', alt: 'Kampanyalı / Kampanyasız / Multinet…', grup: 'Muhasebe', sadeceAdmin: true },
   { id: 'tanim-gider', ad: 'Gider Kalemleri', ikon: 'gider', alt: 'Kategoriler + gruplar (Kâr Dağıtımı dahil)', grup: 'Muhasebe', izin: 'veri_ekle' },
-  { id: 'ayar-acilis', ad: 'Hesap Açılış Bakiyeleri', ikon: 'banka', alt: 'Banka / Kasa / Kart başlangıç bakiyesi', grup: 'Muhasebe', sadeceAdmin: true },
-  // Görünüm
-  { id: 'ayar-tema', ad: 'Görünüm', ikon: 'ayarlar', alt: 'Tema seçimi (Açık / Koyu / Neon)', grup: 'Görünüm' },
+  { id: 'ayar-acilis', ad: 'Hesap Açılış Bakiyeleri', ikon: 'banka', alt: 'Banka / Kasa / Kart başlangıç bakiyesi', grup: 'Muhasebe', izin: 'gor_hesaplar' },
+  // Görünüm — tamamen kapalı (tema seçimi gizlendi)
   // Veri
   { id: 'ayar-yedek', ad: 'Yedekleme & Geri Yükleme', ikon: 'indir', alt: 'Tüm veriyi dışa aktar / geri yükle', grup: 'Veri', sadeceAdmin: true },
   { id: 'ayar-hareket', ad: 'Hareket Kaydı', ikon: 'sure', alt: 'Kim ne yaptı · geri al', grup: 'Veri', sadeceAdmin: true },
-  { id: 'ayar-arsiv', ad: 'İçe Aktarma Arşivi', ikon: 'belge', alt: 'Geçmiş toplu aktarımlar', grup: 'Veri', izin: 'gor_hesaplar' },
+  { id: 'ayar-arsiv', ad: 'İçe Aktarma Arşivi', ikon: 'belge', alt: 'Geçmiş toplu aktarımlar', grup: 'Veri', sadeceAdmin: true },
   { id: 'ayar-surum', ad: 'Uygulama & Sürüm', ikon: 'guncel', alt: 'Sürüm, güncelle, yardım', grup: 'Veri' },
   // Yardım
   { id: 'ayar-rehber', ad: 'Kullanım Rehberi', ikon: 'belge', alt: 'Baştan sona nasıl kullanılır 📖', grup: 'Yardım' },
@@ -6564,7 +6560,7 @@ SAYFALAR['ayar-rehber'] = function () {
 };
 /* -------- Hesap Açılış Bakiyeleri -------- */
 SAYFALAR['ayar-acilis'] = function () {
-  if (!adminMi()) { git('dashboard'); return; }
+  if (!yetki('gor_hesaplar')) { git('dashboard'); return; }
   const TIP_AD = { banka: 'Banka', nakit: 'Kasa', kasa: 'Kasa', krediKarti: 'Kredi Kartı' };
   const list = (State.hesaplar || []).filter(h => h.aktif !== false);
   ic().innerHTML = `
