@@ -656,7 +656,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '311';
+const APP_SURUM = '312';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -694,20 +694,49 @@ function benId() { return aktifOrtakId(); }                    // giriş yapan o
 function ortakGosterBtnHTML() { return ''; }
 function ortakGosterBtnBagla() {}
 
-/* Varsayılan gider kalemleri/grupları — yalnız bir kez, liste tamamen boşsa (kayıp/eksik gider adlarını getirir) */
+/* Standart gider kalemleri (kullanıcının verdiği liste) — güzelce gruplu */
+const GIDER_STANDART = {
+  'Sabit Giderler': ['Kira', 'Aidat'],
+  'Faturalar': ['Elektrik', 'Su', 'Sıcak su', 'Doğalgaz'],
+  'Personel (Hocalar)': ['Hocaların maaş ödemeleri', 'Hocaların resmi maaşları', 'Hocaların SGK ödemeleri'],
+  'Vergi & Resmi': ['Kurumlar vergisi', 'Kurum geçici vergi', 'Muhtasar (stopaj) ve prim hizmet beyanı', 'KDV', 'Açılış resmi işlemleri'],
+  '': ['Reklam', 'Muhasebe hizmetleri', 'Alışveriş'],   // grupsuz → Genel Gider
+};
+const GIDER_ESKI_GENERIK = ['İnternet', 'Maaş', 'SGK', 'Temizlik', 'Kırtasiye', 'Bakım-Onarım', 'Müşavir'];   // önceki otomatik seed'in kaldırılabilir kalemleri
+/* Standart gider kalemleri/grupları — liste boş veya yalnız otomatik-seed ise kur; gerçek kendi listesine dokunmaz. Bir kez (v2). */
 async function varsayilanGiderSeed() {
   try {
-    if (localStorage.getItem('yt_giderSeed') === '1') return;
-    const kendi = (State.giderler || []).filter(g => adNorm(g.ad) !== adNorm(KAR_DAGITIM_KAT));
-    if (kendi.length > 0) { localStorage.setItem('yt_giderSeed', '1'); return; }   // kullanıcının kendi listesi var → dokunma
-    const set = { 'Sabit Giderler': ['Kira', 'Aidat'], 'Faturalar': ['Elektrik', 'Su', 'Doğalgaz', 'İnternet'], 'Personel': ['Maaş', 'SGK'], '': ['Temizlik', 'Kırtasiye', 'Bakım-Onarım', 'Reklam', 'Müşavir'] };
-    for (const gAd in set) {
-      let grupId = null;
-      if (gAd) { let g = (State.giderGruplari || []).find(x => adNorm(x.ad) === adNorm(gAd)); if (!g) { g = await DB.ekle('giderGruplari', { ad: gAd }); State.giderGruplari.push(g); } grupId = g.id; }
-      for (const ad of set[gAd]) { if (!(State.giderler || []).some(x => adNorm(x.ad) === adNorm(ad))) { await DB.ekle('giderler', { ad, grupId }); } }
+    if (localStorage.getItem('yt_giderSeed') === '2') return;
+    const stdAdlar = new Set(Object.values(GIDER_STANDART).flat().map(adNorm));
+    const bilinen = new Set([...stdAdlar, adNorm(KAR_DAGITIM_KAT), ...GIDER_ESKI_GENERIK.map(adNorm)]);
+    const kendi = (State.giderler || []).filter(g => !bilinen.has(adNorm(g.ad)));
+    if (kendi.length > 0) { localStorage.setItem('yt_giderSeed', '2'); return; }   // kullanıcının kendi kalemleri var → dokunma
+    // Kayıtlarda kullanılan gider adları (silinmesin)
+    const referansli = new Set();
+    [...(State.giderKayitlari || []), ...(State.nakitGiderleri || [])].forEach(r => { if (r.giderAd) referansli.add(adNorm(r.giderAd)); });
+    (State.bankaHareketleri || []).forEach(b => { if (b.giderKategori) referansli.add(adNorm(b.giderKategori)); });
+    // 1) Önceki generic seed'in, standart listede olmayan ve kullanılmayan kalemlerini kaldır
+    for (const g of (State.giderler || []).slice()) {
+      const n = adNorm(g.ad);
+      if (n === adNorm(KAR_DAGITIM_KAT) || stdAdlar.has(n) || referansli.has(n)) continue;
+      await DB.sil('giderler', g.id);
     }
+    State.giderler = DB._oku('giderler');
+    // 2) Standart seti kur (yoksa ekle, varsa doğru gruba taşı)
+    for (const gAd in GIDER_STANDART) {
+      let grupId = null;
+      if (gAd) { let gr = (State.giderGruplari || []).find(x => adNorm(x.ad) === adNorm(gAd)); if (!gr) { gr = await DB.ekle('giderGruplari', { ad: gAd }); State.giderGruplari.push(gr); } grupId = gr.id; }
+      for (const ad of GIDER_STANDART[gAd]) {
+        const g = (State.giderler || []).find(x => adNorm(x.ad) === adNorm(ad));
+        if (!g) { const y = await DB.ekle('giderler', { ad, grupId }); State.giderler.push(y); }
+        else if (g.grupId !== grupId) { await DB.guncelle('giderler', g.id, { grupId }); g.grupId = grupId; }
+      }
+    }
+    // 3) İçinde kalem kalmayan grupları temizle (eski boş gruplar)
+    const kullanilanGrup = new Set((State.giderler || []).map(g => g.grupId).filter(Boolean));
+    for (const gr of (State.giderGruplari || []).slice()) { if (!kullanilanGrup.has(gr.id)) await DB.sil('giderGruplari', gr.id); }
     State.giderGruplari = DB._oku('giderGruplari'); State.giderler = DB._oku('giderler');
-    localStorage.setItem('yt_giderSeed', '1');
+    localStorage.setItem('yt_giderSeed', '2');
   } catch (e) { /* seed başarısızsa uygulama açılmaya devam etsin */ }
 }
 /* Tüm koleksiyonları State'e yükle */
