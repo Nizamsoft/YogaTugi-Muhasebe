@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '303';
+const APP_SURUM = '304';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -6394,59 +6394,59 @@ SAYFALAR['ayar-surum'] = function () {
 };
 /* -------- Kullanım Rehberi (baştan sona ay akışı) -------- */
 const REHBER_BOLUM = [
-  { em: '📊', emc: '', nk: 'Ay başı', t: 'Panel — güne buradan bak', img: 'panel',
-    hikaye: '<span class="who">💬 Ayın ilk günü.</span> Sabah stüdyoya geldin, kahveni aldın ☕ ve “bu ay ne durumdayız?” diyorsun. Açılışta seni <b>Panel</b> karşılar — ayın özeti, hızlı kısayollar ve bugünkü tahsilatlar hep burada.',
-    el: { l: 50, t: 20, e: '👇' }, etiket: 'Bu ayın özeti 📅', etL: 50, etT: 13,
-    adimlar: ['Üstteki <span class="tus">Ay · Özet</span> barından ayı değiştirebilir, geçmişe bakabilirsin. 🗓️', 'Kısayol kartlarına dokun: <b>Gelirler, Giderler, Hesaplar, Ortaklar</b> tek dokunuş uzağında.', 'Aşağıda “Bugünkü Tahsilatlar” o gün girilen ödemeleri gösterir.'],
-    ipuc: 'Ortak veya Kullanıcı olarak girdiysen Panel’de yalnızca <b>kendi</b> rakamlarını görürsün. 🌱' },
+  { em: '📊', emc: '', nk: 'Ay başı ☀️', t: 'Panel — güne şöyle bir bak', img: 'panel',
+    hikaye: '<span class="who">💬 Ayın ilk sabahı ☀️</span> Kapıyı açtın, ışıkları yaktın, kahveni koydun ☕. İçinden “eee, bu ay nasıl gidiyoruz bakalım? 🤔” diyorsun. İşte tam o an <b>Panel</b> seni gülümseyerek karşılıyor 😊 — ayın özeti, hızlı kısayollar ve bugün gelen ödemeler, hepsi ilk ekranda. 🎯',
+    el: { l: 50, t: 14, e: '👇' }, etiket: 'Ayın özeti 📅', etL: 50, etT: 6.5,
+    adimlar: ['Üstteki 📅 <span class="tus">Ay · Özet</span> barından ayları gezersin — geçen aya da şöyle bir göz atabilirsin 👀', 'Renkli kısayol kartlarına dokun: Gelirler 💚, Giderler 💸, Hesaplar 📒, Ortaklar 👥 hepsi bir dokunuş uzağında ✨', 'En altta “Bugünkü Tahsilatlar” → o gün cebe gireni anında görürsün 💵'],
+    ipuc: 'Ortak ya da Kullanıcı olarak girersen Panel yalnızca <b>seninle ilgili</b> rakamları gösterir — kimse kimsenin bahçesini sulamaz 🌱😉' },
 
-  { em: '➕', emc: 'b2', nk: 'Gün içi', t: 'Tahsilat Ekle — ödeme geldi!', img: 'tahsilat',
-    hikaye: '<span class="who">💬 3 Ağustos.</span> Ayşe öğrencin 8 derslik paket için <b>4.000 ₺ nakit</b> ödedi 💵. Hemen deftere yazalım ki ay sonunda “kim, ne kadar ödedi” net olsun.',
-    el: { l: 50, t: 86, e: '👇' }, etiket: 'Doldur → Kaydet ✅', etL: 50, etT: 79,
-    adimlar: ['Alttaki ortadaki büyük <span class="tus">＋ Tahsilat Ekle</span> düğmesine bas. ⭐', '<b>Tarih</b>, <b>ödeme türü</b> (nakit / havale / kart / multinet), <b>tutar</b>, <b>eğitmen</b> ve <b>öğrenci</b> gir.', '<span class="tus">Kaydet</span> → tahsilat deftere düştü. 🎉'],
-    ipuc: '<b>Nakit</b> anında “tahsil edildi” sayılır. <b>Kart / havale</b> ise para bankaya geçince eşleşecek — sırada o var! 👇' },
+  { em: '➕', emc: 'b2', nk: 'Gün içi 🎉', t: 'Tahsilat Ekle — ilk ödeme geldi!', img: 'tahsilat',
+    hikaye: '<span class="who">💬 3 Ağustos, saat 10:00 ⏰</span> Ayşe öğrencin kapıdan gülümseyerek girdi 😄 ve 8 derslik paketi için <b>4.000 ₺ nakit</b> uzattı 💵. Bu tatlı haberi hemen deftere yazalım ki ay sonunda tek bir kuruş bile unutulmasın! 📝✨',
+    el: { l: 50, t: 85.5, e: '👇' }, etiket: 'Doldur, sonra Kaydet ✅', etL: 50, etT: 78.5,
+    adimlar: ['Ekranın tam ortasındaki kocaman <span class="tus">＋ Tahsilat Ekle</span> düğmesine bas — o senin sihirli düğmen ⭐', 'Tarih 📅, ödeme türü 💳 (nakit / havale / kart / multinet), tutar 💰, eğitmen 🧘 ve öğrenci ✍️ — hepsini seç', '<span class="tus">Kaydet</span>’e dokun ve… oldu bile! 🎉 Tahsilat deftere düştü'],
+    ipuc: '<b>Nakit</b> anında “tahsil edildi” ✅ olur. <b>Kart / havale</b> ise para bankaya düşünce eşleşecek — hiç merak etme, birazdan onu da birlikte yapacağız 😉👇' },
 
-  { em: '📥', emc: 'b3', nk: 'Hafta içi', t: 'Banka dosyasını içe aktar', img: 'iceaktar',
-    hikaye: '<span class="who">💬 Hafta sonu.</span> Bankadan ekstreni indirdin 🏦. Kart ve havale tahsilatların gerçekten hesaba geçti mi? Dosyayı yükleyip uygulamayla eşleştirelim.',
-    el: { l: 50, t: 25, e: '👆' }, etiket: 'Dosyayı yükle 📄', etL: 50, etT: 30,
-    adimlar: ['Menüden <b>İçe Aktar</b> → <span class="tus">Banka Aktarımı</span> kartına dokun, <b>.xlsx / .csv</b> dosyanı seç.', 'Uygulama satırları çıkarır; her banka satırını <b>tarih + tutara</b> göre uygun tahsilatla eşleştirirsin. 🔗', '“Multinet” gibi <b>toplu</b> ödemeleri otomatik toplayıp eşler. 🤝'],
-    ipuc: 'Eşleşen kart/havale tahsilatı artık “gerçekten tahsil edildi” olur ve Gelirler’de görünür. 💚' },
+  { em: '📥', emc: 'b3', nk: 'Cuma akşamı 🌆', t: 'İçe Aktar — banka konuşuyor', img: 'iceaktar',
+    hikaye: '<span class="who">💬 Cuma akşamı 🌆</span> Kahveni yudumlarken bankadan ekstreni indirdin. Aklına takıldı: “Kartla, havaleyle gelen paralar gerçekten hesaba geçmiş mi ki? 🤔” Hadi dosyayı yükleyelim, gerisini uygulama halletsin ✨',
+    el: { l: 50, t: 22, e: '👆' }, etiket: 'Dosyanı buradan yükle 📄', etL: 50, etT: 28,
+    adimlar: ['Menü → İçe Aktar → <span class="tus">Banka Aktarımı</span> kartına dokun, telefonundaki <b>.xlsx / .csv</b> dosyanı seç 📎', 'Uygulama satırları tek tek önüne serer; her birini tarih 📅 + tutar 💰 ile doğru tahsilata eşleştirirsin 🔗', 'Multinet gibi toplu ödemeleri bile akıllıca kendisi toplayıp eşler 🤝✨'],
+    ipuc: 'Eşleşen kart/havale artık gerçekten “tahsil edildi” 💚 olur ve Gelirler’de ışıl ışıl görünür ✨' },
 
-  { em: '📒', emc: '', nk: 'Ara ara', t: 'Hesaplar — kasa & banka defteri', img: 'hesaplar',
-    hikaye: '<span class="who">💬 15 Ağustos.</span> “Bankada, kasada ne kadar var?” Hesaplar sayfası her hesabın <b>yürüyen bakiyesini</b> ve tüm hareketlerini önüne serer.',
-    el: { l: 19, t: 11, e: '👇' }, etiket: 'Banka bakiyen 🏦', etL: 27, etT: 4.5,
-    adimlar: ['Üstteki <b>Banka · Nakit · Kart</b> kartlarından birine dokun.', 'Alttaki defterde her hareket ve sağda <b>kalan bakiye</b> görünür.', 'Bir satıra dokunup detayına bakabilirsin. 🔍'],
-    ipuc: 'Açılış bakiyelerini <b>Ayarlar › Hesap Açılış Bakiyeleri</b>’nden bir kez girersin; defter oradan yürür.' },
+  { em: '📒', emc: '', nk: 'Ay ortası 🗓️', t: 'Hesaplar — küçük bir kasa turu', img: 'hesaplar',
+    hikaye: '<span class="who">💬 15 Ağustos 🗓️</span> “Bankada ne var, kasada ne kaldı acaba? 👀” diye merak ettin. Hesaplar sana minik bir kasa turu attırır 🚶‍♀️ — her kuruşun izini, nereye gidip nereden geldiğini gösterir 🔎',
+    el: { l: 19, t: 10.5, e: '👇' }, etiket: 'Banka bakiyen 🏦', etL: 28, etT: 3.5,
+    adimlar: ['Üstteki <span class="tus">Banka</span> 🏦, <span class="tus">Nakit</span> 💵, <span class="tus">Kart</span> 💳 kartlarından birine dokun', 'Aşağıdaki defterde her hareket ve sağında <b>yürüyen bakiye</b> sırayla akar 📈', 'Merak ettiğin bir satıra dokun, detayına bak 🔍'],
+    ipuc: 'Başlangıç bakiyelerini <b>Ayarlar › Hesap Açılış Bakiyeleri</b>’nden bir kez girersin; defter oradan mutlu mutlu yürür 🎯' },
 
-  { em: '💚', emc: '', nk: 'Sürekli', t: 'Gelirler — tahsil edilenler', img: 'gelirler',
-    hikaye: '<span class="who">💬 Ay ortası.</span> “Bu ay ne kadar tahsilat oldu?” Gelirler, ayın tüm tahsilatlarını tek defterde toplar — nakit, kart, havale hepsi.',
-    el: { l: 82, t: 9, e: '👇' }, etiket: 'Tablo ↔ Rapor', etL: 72, etT: 3.5,
-    adimlar: ['Ay okuyla dönem seç. <span class="tus">Tablo</span> satır satır, <span class="tus">Rapor</span> türlere göre özet verir.', 'Her satırda eğitmen, ödeme türü ve tutar var.', 'Yalnızca <b>gerçekleşen</b> (nakit + bankaya yatmış) tahsilatlar sayılır.'],
-    ipuc: 'Bekleyen (henüz bankaya geçmemiş) kart/havale burada görünmez — tahsil edilince eklenir. ⏳' },
+  { em: '💚', emc: '', nk: 'Sürekli 💚', t: 'Gelirler — kazanç defteri', img: 'gelirler',
+    hikaye: '<span class="who">💬 “Bu ay ne kadar kazandık? 😍”</span> Gelirler, ayın bütün tahsilatlarını tek çatı altında toplar — nakit, kart, havale, hepsi yan yana, tertemiz ve göz alıcı ✨',
+    el: { l: 81, t: 8.5, e: '👇' }, etiket: 'Tablo ↔ Rapor 🔀', etL: 68, etT: 2.5,
+    adimlar: ['Ay okuyla dönemi seç. <span class="tus">Tablo</span> tek tek 📋, <span class="tus">Rapor</span> türlere göre özetler 📊', 'Her satır kimin, hangi yöntemle, ne kadar ödediğini sana fısıldar 🗣️', 'Sadece <b>gerçekleşen</b> tahsilatlar sayılır — söz verilen değil, cebe giren 💰'],
+    ipuc: 'Henüz bankaya düşmemiş kart/havale burada boşuna beklemez, görünmez ⏳ — düştüğü an parlayıverir ✨' },
 
-  { em: '💸', emc: 'b4', nk: 'Gerektikçe', t: 'Giderler — kira, elektrik, kâr dağıtımı', img: 'giderler',
-    hikaye: '<span class="who">💬 Ay boyunca.</span> Kira, elektrik, su… Bir de ortaklara bankadan yaptığın <b>Kâr Dağıtımı</b> ödemeleri. Hepsi Giderler’de toplanır.',
-    el: { l: 50, t: 19, e: '👇' }, etiket: 'Aylık giderler 💸', etL: 50, etT: 12.5,
-    adimlar: ['Nakit gider için <b>Veri Gir → Nakit Harcama</b>; banka gideri <b>İçe Aktar</b>’dan gelir.', '<b>Kâr Dağıtımı</b> özel bir gider: ortağa yaptığın ödeme, o ortağın hakedişinden düşülür.', '<span class="tus">Rapor</span> görünümü giderleri gruplara göre toplar.'],
-    ipuc: 'Genel giderler (kira, elektrik…) tüm ortaklara <b>eşit</b> bölünür. ⚖️' },
+  { em: '💸', emc: 'b4', nk: 'Ay boyunca 🧾', t: 'Giderler — faturalar & paylaşım', img: 'giderler',
+    hikaye: '<span class="who">💬 Ay boyunca kapını çalanlar 🧾</span> Kira, elektrik, su… bir de ortaklara bankadan yaptığın <b>Kâr Dağıtımı</b> ödemeleri. Hepsi burada, tek defterde sıcacık buluşur 🤝',
+    el: { l: 50, t: 18, e: '👇' }, etiket: 'Ayın giderleri 💸', etL: 50, etT: 11,
+    adimlar: ['Nakit gider için <span class="tus">Veri Gir → Nakit Harcama</span> 💵; banka gideri İçe Aktar’dan usulca gelir 🏦', '<b>Kâr Dağıtımı</b> özel bir gider: ortağa yaptığın ödeme, onun hakedişinden düşülür ⚖️', '<span class="tus">Rapor</span> görünümü giderleri gruplara toplayıp gösterir 📊'],
+    ipuc: 'Kira, elektrik gibi genel giderler tüm ortaklara <b>eşit</b> bölünür — herkes payına gönül rahatlığıyla razı ⚖️😊' },
 
-  { em: '🧾', emc: 'b3', nk: 'Ay sonu', t: 'Vergi Tahakkuku — müşavirden gelen', img: 'vergi',
-    hikaye: '<span class="who">💬 Ay sonu geldi.</span> Müşavirin ayın <b>gerçek KDV</b> tutarını gönderdi. Uygulama ay boyunca bir öngörü tutuyordu; şimdi gerçeğini girip farkı ortaklara mahsuplaştıralım.',
-    el: { l: 50, t: 53, e: '👇' }, etiket: 'Gerçek KDV’yi yaz', etL: 50, etT: 46.5,
-    adimlar: ['<b>Ayarlar › Vergi Tahakkuku</b>’nu aç.', 'Müşavirden gelen <b>KDV</b> tutarını yaz, <span class="tus">Kaydet</span>.', 'Gelir vergisi <b>3 ayda bir</b> (çeyrek sonunda) girilir; uygulama hatırlatır.'],
-    ipuc: 'Boş bırakırsan “henüz gelmedi” sayılır ve öngörü kullanılmaya devam eder. ⏳' },
+  { em: '🧾', emc: 'b3', nk: 'Ay sonu ☎️', t: 'Vergi Tahakkuku — müşavir aradı', img: 'vergi',
+    hikaye: '<span class="who">💬 Ay sonu geldi çattı 🌙</span> Müşavirin aradı ☎️ ve ayın <b>gerçek KDV</b>’sini söyledi. Uygulama ay boyunca bir tahmin yürütüyordu; şimdi gerçeğini girip farkı ortaklara kuruşu kuruşuna, adilce paylaştıralım ⚖️',
+    el: { l: 50, t: 56.5, e: '👇' }, etiket: 'Gerçek KDV’yi yaz ✍️', etL: 50, etT: 49.5,
+    adimlar: ['<span class="tus">Ayarlar › Vergi Tahakkuku</span>’nu aç 🧾', 'Müşavirden gelen <b>KDV</b> tutarını yaz ✍️, <span class="tus">Kaydet</span> 💾', 'Gelir vergisi 3 ayda bir gelir; çeyrek sonunda uygulama sana nazikçe hatırlatır 🔔'],
+    ipuc: 'Boş bırakırsan “henüz gelmedi” ⏳ sayılır, tahmin kullanılmaya devam eder — hiç acelesi yok 😌' },
 
-  { em: '👥', emc: '', nk: 'Ay sonu 🎉', t: 'Ortaklar — herkesin hakedişi (kârlar!)', img: 'ortaklar',
-    hikaye: '<span class="who">💬 Ve büyük an!</span> Ay kapandı. Ortaklar sayfası her ortağın <b>hakedişini</b> hikâye gibi anlatır: tahsilat → komisyon → gider payı → vergi → <b>eline geçen</b>. 🎉',
-    el: { l: 50, t: 81, e: '👇' }, etiket: 'Bu ayki hakediş 🎉', etL: 50, etT: 74.5,
-    adimlar: ['Üstte <span class="tus">Özet</span> (hikâye) ve <span class="tus">Detaylı</span> (matematik) arası geçiş yap.', '<span class="tus">DEĞİŞTİR</span> ile başka bir ortağı seçebilirsin.', 'En altta “Bu ayki payın” + “şimdiye kadar verilen” + “sana kalan” görünür.'],
-    ipuc: 'Kâr Dağıtımı olarak önceden ödediklerin “şimdiye kadar aldın”a yazılır; kalan = verilecek. 💚' },
+  { em: '👥', emc: '', nk: 'Büyük gün! 🎉', t: 'Ortaklar — herkesin hakedişi', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Ve işte o an geldi! 🥁</span> Ay kapandı, herkesin gözü burada 👀. Ortaklar sayfası her ortağın hakedişini masal anlatır gibi tek tek açıklar 📖: tahsilat → komisyon → gider payı → vergi → <b>eline geçen</b> 🎉 Emeğinin karşılığı, apaçık ortada 💚',
+    el: { l: 50, t: 80.5, e: '👇' }, etiket: 'İşte hakedişin! 🎉', etL: 50, etT: 73.5,
+    adimlar: ['Üstten <span class="tus">Özet</span> (masal gibi 📖) ile <span class="tus">Detaylı</span> (matematikli 🧮) arasında gidip gel', '<span class="tus">DEĞİŞTİR</span>’e dokun, başka ortağın hakedişine bak 👥', 'En altta “bu ayki payın” + “şimdiye kadar verilen” + “sana kalan” 💚'],
+    ipuc: 'Ay içinde Kâr Dağıtımı olarak verdiklerin “şimdiye kadar aldın”a yazılır; kalan = elden verilecek 🤝💚' },
 
-  { em: '⚙️', emc: 'b4', nk: 'Kurulum', t: 'Ayarlar — kullanıcılar, vergi, tema', img: 'ayarlar',
-    hikaye: '<span class="who">💬 Bir kez ayarla.</span> Firma bilgisi, kullanıcılar & roller, vergi oranı, kart komisyonları, gider kalemleri, açılış bakiyeleri, yedekleme ve tema — hepsi Ayarlar’da.',
-    el: { l: 26, t: 24, e: '👇' }, etiket: 'Kişiler & roller 👥', etL: 35, etT: 17.5,
-    adimlar: ['<b>Kullanıcılar</b>: kişi ekle, rol ver (Admin / Ortak / Kullanıcı), giriş tanımla.', '<b>Roller & Yetkiler</b>: her rolün ne görüp yapabileceğini aç/kapa.', '<b>Yedekleme</b>: verini düzenli dışa aktar — yalnız bu cihazda tutulur. 💾'],
-    ipuc: 'Ayar sayfaları role göre görünür; ör. vergi/kullanıcı yönetimi yalnız yetkili kişilerde. 🔐' },
+  { em: '⚙️', emc: 'b4', nk: 'Kurulum 🛠️', t: 'Ayarlar — bir kez kur, keyfini sür', img: 'ayarlar',
+    hikaye: '<span class="who">💬 En baştan bir kere ayarla 😌</span> Sonrası tereyağından kıl çeker gibi. Firma bilgisi, kullanıcılar & roller 👥, vergi, komisyonlar, gider kalemleri, açılış bakiyeleri, yedek 💾 ve tema 🎨 — hepsi tek çatı altında, elinin altında.',
+    el: { l: 26, t: 25, e: '👇' }, etiket: 'Kişiler & roller 👥', etL: 35, etT: 18,
+    adimlar: ['<span class="tus">Kullanıcılar</span>: kişi ekle, rol ver (Admin / Ortak / Kullanıcı), giriş tanımla 👤', '<span class="tus">Roller & Yetkiler</span>: kim neyi görür, kim ne yapar — kararı sen ver 🔐', '<span class="tus">Yedekleme</span>: verini ara ara dışa aktar — hepsi bu cihazda, güvende 💾'],
+    ipuc: 'Ayar sayfaları role göre görünür; hassas ayarlar yalnızca yetkili ellerde kalır 🔐✨' },
 ];
 SAYFALAR['ayar-rehber'] = function () {
   const img = window.REHBER_IMG || {};
