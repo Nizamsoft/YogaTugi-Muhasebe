@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '299';
+const APP_SURUM = '300';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -767,9 +767,9 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Giderler', 'tanim-egitmen': 'Eğitmen → Ortak Eşleme', 'tanim-kategori': 'Banka Gider Kategorileri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi / KDV Oranı', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
+const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Gider Kalemleri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Ortak Bilgileri', 'ayar-vergi': 'Vergi Oranları', 'ayar-giris-kul': 'Kullanıcı Girişleri', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'ayar-yedek': 'Yedekleme & Geri Yükleme', 'ayar-surum': 'Uygulama & Sürüm', 'ayar-acilis': 'Hesap Açılış Bakiyeleri', 'ayar-tema': 'Görünüm', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
-const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-egitmen', 'tanim-gider', 'tanim-kategori', 'tanim-komisyon', 'ayar-vergi', 'ayar-giris-kul', 'ayar-arsiv'];
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'tanim-gider', 'tanim-komisyon', 'ayar-vergi', 'ayar-giris-kul', 'ayar-arsiv', 'ayar-yedek', 'ayar-surum', 'ayar-acilis', 'ayar-tema'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak'];
@@ -6191,31 +6191,99 @@ SAYFALAR['ortaklar'] = function () {
 
 /* -------- AYARLAR: Tanımlamalar (hub) -------- */
 const TANIMLAR = [
-  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', sadeceAdmin: true },
-  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Eğitmenler ve pay oranları', sadeceAdmin: true },
-  { id: 'tanim-egitmen', ad: 'Eğitmen → Ortak Eşleme', ikon: 'kisi', alt: 'Plan4me eğitmenlerini ortaklara bağla' },
-  { id: 'tanim-gider', ad: 'Giderler', ikon: 'gider', alt: 'Gider kalemleri ve grupları' },
-  { id: 'tanim-kategori', ad: 'Banka Gider Kategorileri', ikon: 'tanimlar', alt: 'Açıklama → kategori kuralları' },
-  { id: 'tanim-komisyon', ad: 'Kart Komisyon Oranları', ikon: 'kart', alt: 'Debit / Kredi / Yurt dışı' },
-  { id: 'ayar-vergi', ad: 'Vergi / KDV Oranı', ikon: 'belge', alt: 'Havale + kart tahsilatına uygulanan oran', sadeceAdmin: true },
-  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı adı + şifre)', sadeceAdmin: true },
-  { id: 'ayar-arsiv', ad: 'İçe Aktarma Arşivi', ikon: 'belge', alt: 'İçe aktarılan Plan4me / Banka kayıtları', sadeceAdmin: true },
+  // İşletme
+  { id: 'ayar-firma', ad: 'Firma Bilgileri', ikon: 'firma', alt: 'Ad, logo, slogan', grup: 'İşletme', sadeceAdmin: true },
+  { id: 'ayar-ortak', ad: 'Ortak Bilgileri', ikon: 'ortaklar', alt: 'Ortaklar, katılım/ayrılış ayı', grup: 'İşletme', sadeceAdmin: true },
+  { id: 'ayar-giris-kul', ad: 'Kullanıcı Girişleri', ikon: 'kullanici', alt: 'Ortaklara giriş (kullanıcı + şifre)', grup: 'İşletme', sadeceAdmin: true },
+  // Muhasebe
+  { id: 'ayar-vergi', ad: 'Vergi Oranları', ikon: 'belge', alt: 'KDV + Gelir Vergisi oranı', grup: 'Muhasebe', sadeceAdmin: true },
+  { id: 'ayar-vergi-tahakkuk', ad: 'Vergi Tahakkuku', ikon: 'kaydet', alt: 'Müşavirden gelen gerçek KDV / Gelir Vergisi', grup: 'Muhasebe', sadeceAdmin: true, aksiyon: 'vergiTahakkuk' },
+  { id: 'tanim-komisyon', ad: 'Kart Komisyon Oranları', ikon: 'kart', alt: 'Kampanyalı / Kampanyasız / Multinet…', grup: 'Muhasebe', sadeceAdmin: true },
+  { id: 'tanim-gider', ad: 'Gider Kalemleri', ikon: 'gider', alt: 'Kategoriler + gruplar (Kâr Dağıtımı dahil)', grup: 'Muhasebe' },
+  { id: 'ayar-acilis', ad: 'Hesap Açılış Bakiyeleri', ikon: 'banka', alt: 'Banka / Kasa / Kart başlangıç bakiyesi', grup: 'Muhasebe', sadeceAdmin: true },
+  // Görünüm
+  { id: 'ayar-tema', ad: 'Görünüm', ikon: 'ayarlar', alt: 'Tema seçimi (Açık / Koyu / Neon)', grup: 'Görünüm' },
+  // Veri
+  { id: 'ayar-yedek', ad: 'Yedekleme & Geri Yükleme', ikon: 'indir', alt: 'Tüm veriyi dışa aktar / geri yükle', grup: 'Veri', sadeceAdmin: true },
+  { id: 'ayar-arsiv', ad: 'İçe Aktarma Arşivi', ikon: 'belge', alt: 'Geçmiş banka dosyaları', grup: 'Veri', sadeceAdmin: true },
+  { id: 'ayar-surum', ad: 'Uygulama & Sürüm', ikon: 'guncel', alt: 'Sürüm, güncelle, yardım', grup: 'Veri' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
-  const gorunur = TANIMLAR.filter(t => !t.sadeceAdmin || adminMi());   // ortak: yalnız Üyelikler + Giderler
-  ic().innerHTML = `
-    <div class="tnm-hub">
-      <div class="tnm-menu">
-        ${gorunur.map(t => `<button type="button" class="tnm-row2" data-tanim="${t.id}">
+  const gorunur = TANIMLAR.filter(t => !t.sadeceAdmin || adminMi());   // ortak yalnız yetkisiz olmayanları görür
+  const gruplar = [...new Set(gorunur.map(t => t.grup || 'Diğer'))];
+  const satir = (t) => `<button type="button" class="tnm-row2" data-tanim="${t.id}"${t.aksiyon ? ` data-aksiyon="${t.aksiyon}"` : ''}>
           <span class="tnm-ik">${ik(t.ikon)}</span>
           <span class="tnm-metin"><span class="tnm-ad">${kacar(t.ad)}</span><span class="tnm-alt">${kacar(t.alt || '')}</span></span>
           <span class="tnm-ok">›</span>
-        </button>`).join('')}
-      </div>
+        </button>`;
+  ic().innerHTML = `
+    <div class="tnm-hub">
+      ${gruplar.map(g => `<div class="tnm-grup">
+        <div class="tnm-grup-bas">${kacar(g)}</div>
+        <div class="tnm-menu">${gorunur.filter(t => (t.grup || 'Diğer') === g).map(satir).join('')}</div>
+      </div>`).join('')}
     </div>`;
-  $$('[data-tanim]').forEach(b => b.onclick = () => git(b.dataset.tanim));   // anında geç (renklenme/gecikme yok)
+  $$('[data-tanim]').forEach(b => b.onclick = () => {
+    const aks = b.dataset.aksiyon;
+    if (aks === 'vergiTahakkuk') { vergiTahakkukModal(buAy()); return; }   // sayfa değil, modal
+    git(b.dataset.tanim);
+  });
 };
 
+/* -------- Uygulama & Sürüm -------- */
+SAYFALAR['ayar-surum'] = function () {
+  const fad = (State.ayarlar && State.ayarlar.firmaAd) || 'Green Village Pilates';
+  ic().innerHTML = `
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="svGeri">‹ Tanımlamalar</button></div>
+    <div class="kart sv-kart">
+      <div class="sv-ad">${kacar(fad)}</div>
+      <div class="sv-alt">Ön Muhasebe</div>
+      <div class="sv-ver">Sürüm <b>v${APP_SURUM}</b></div>
+      <button type="button" class="btn btn-ana" id="svGuncelle">${ik('guncel')} Güncelle</button>
+      <div class="sv-yardim">
+        <div class="sv-y"><b>Ana ekrana ekle:</b> Tarayıcıda “Paylaş → Ana Ekrana Ekle” ile uygulama gibi çalışır.</div>
+        <div class="sv-y"><b>Yedek:</b> Verileriniz yalnız bu cihazda tutulur — düzenli olarak <b>Yedekleme</b>’den dışa aktarın.</div>
+      </div>
+    </div>`;
+  $('#svGeri').onclick = () => git('ayar-tanimlama');
+  $('#svGuncelle').onclick = () => { try { location.reload(true); } catch (e) { location.reload(); } };
+};
+/* -------- Hesap Açılış Bakiyeleri -------- */
+SAYFALAR['ayar-acilis'] = function () {
+  if (!adminMi()) { git('dashboard'); return; }
+  const TIP_AD = { banka: 'Banka', nakit: 'Kasa', kasa: 'Kasa', krediKarti: 'Kredi Kartı' };
+  const list = (State.hesaplar || []).filter(h => h.aktif !== false);
+  ic().innerHTML = `
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="acGeri">‹ Tanımlamalar</button></div>
+    <p class="tk-not">Her hesabın <b>başlangıç (açılış) bakiyesini</b> girin — ekstre yürüyen bakiyesi buradan başlar.</p>
+    ${list.length ? `<div class="ac-liste">${list.map(h => `
+      <div class="ac-row">
+        <div class="ac-t"><div class="ac-ad">${kacar(h.ad)}</div><div class="ac-tip">${TIP_AD[h.tip] || h.tip || ''}</div></div>
+        <input type="number" step="0.01" inputmode="decimal" class="gp-inp ac-inp" data-hes="${h.id}" value="${Number(h.acilisBakiye) || 0}">
+      </div>`).join('')}</div>
+      <button type="button" class="btn btn-ana ac-kaydet" id="acKaydet">${ik('kaydet')} Kaydet</button>`
+    : `<div class="gp-bos">Henüz hesap yok. Hesaplar sayfasından ekleyin.</div>`}`;
+  $('#acGeri').onclick = () => git('ayar-tanimlama');
+  { const b = $('#acKaydet'); if (b) b.onclick = async () => {
+    for (const el of $$('.ac-inp')) { const h = State.hesaplar.find(x => x.id === el.dataset.hes); if (h) { const v = parseFloat(el.value) || 0; await DB.guncelle('hesaplar', h.id, { acilisBakiye: v }); h.acilisBakiye = v; } }
+    bildir('Açılış bakiyeleri kaydedildi.', 'basari');
+  }; }
+};
+/* -------- Görünüm / Tema -------- */
+SAYFALAR['ayar-tema'] = function () {
+  const cur = aktifTema();
+  const opt = [{ id: 'neon', ad: 'Neon', alt: 'Koyu + neon vurgu (varsayılan)' }, { id: 'koyu', ad: 'Koyu', alt: 'Sade koyu' }, { id: 'acik', ad: 'Açık', alt: 'Aydınlık' }];
+  ic().innerHTML = `
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="tmGeri">‹ Tanımlamalar</button></div>
+    <p class="tk-not">Uygulama görünümünü seçin.</p>
+    <div class="tema-liste">${opt.map(o => `<button type="button" class="tema-secim ${o.id === cur ? 'sec' : ''}" data-tema="${o.id}">
+      <span class="tema-onizle t-${o.id}"><i></i><i></i><i></i></span>
+      <span class="tema-t"><span class="tema-ad">${o.ad}</span><span class="tema-alt">${o.alt}</span></span>
+      <span class="tema-tik">${o.id === cur ? '✓' : ''}</span>
+    </button>`).join('')}</div>`;
+  $('#tmGeri').onclick = () => git('ayar-tanimlama');
+  $$('[data-tema]').forEach(b => b.onclick = () => { temaUygula(b.dataset.tema, true); SAYFALAR['ayar-tema'](); });
+};
 /* -------- Tanımlamalar: Kullanıcı Girişleri (ortaklara giriş) — yalnızca admin -------- */
 SAYFALAR['ayar-giris-kul'] = function () {
   if (!adminMi()) { git('dashboard'); return; }
@@ -8603,7 +8671,7 @@ function cikisYap() {
   girisGovdeCiz();
 }
 const TEMALAR = ['acik', 'koyu', 'neon'];
-function aktifTema() { return 'neon'; }   // Neon tek/varsayılan tema (diğerleri gizli)
+function aktifTema() { const t = localStorage.getItem('yt_tema'); return TEMALAR.includes(t) ? t : 'neon'; }   // kayıtlı tema (varsayılan neon)
 function temaUygula(ad, yenile) {
   if (!TEMALAR.includes(ad)) ad = 'acik';
   document.body.classList.remove('tema-koyu', 'tema-neon');
