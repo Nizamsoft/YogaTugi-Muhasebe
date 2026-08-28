@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '302';
+const APP_SURUM = '303';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -791,9 +791,9 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Gider Kalemleri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Kullanıcılar', 'ayar-yetki': 'Roller & Yetkiler', 'ayar-vergi': 'Vergi Oranları', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'ayar-yedek': 'Yedekleme & Geri Yükleme', 'ayar-surum': 'Uygulama & Sürüm', 'ayar-acilis': 'Hesap Açılış Bakiyeleri', 'ayar-tema': 'Görünüm', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
+const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Gider Kalemleri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Kullanıcılar', 'ayar-yetki': 'Roller & Yetkiler', 'ayar-vergi': 'Vergi Oranları', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'ayar-yedek': 'Yedekleme & Geri Yükleme', 'ayar-surum': 'Uygulama & Sürüm', 'ayar-acilis': 'Hesap Açılış Bakiyeleri', 'ayar-tema': 'Görünüm', 'ayar-rehber': 'Kullanım Rehberi', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
-const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'ayar-yetki', 'tanim-gider', 'tanim-komisyon', 'ayar-vergi', 'ayar-arsiv', 'ayar-yedek', 'ayar-surum', 'ayar-acilis', 'ayar-tema'];
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'ayar-yetki', 'tanim-gider', 'tanim-komisyon', 'ayar-vergi', 'ayar-arsiv', 'ayar-yedek', 'ayar-surum', 'ayar-acilis', 'ayar-tema', 'ayar-rehber'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak'];
@@ -6349,6 +6349,8 @@ const TANIMLAR = [
   { id: 'ayar-yedek', ad: 'Yedekleme & Geri Yükleme', ikon: 'indir', alt: 'Tüm veriyi dışa aktar / geri yükle', grup: 'Veri', sadeceAdmin: true },
   { id: 'ayar-arsiv', ad: 'İçe Aktarma Arşivi', ikon: 'belge', alt: 'Geçmiş toplu aktarımlar', grup: 'Veri', izin: 'gor_hesaplar' },
   { id: 'ayar-surum', ad: 'Uygulama & Sürüm', ikon: 'guncel', alt: 'Sürüm, güncelle, yardım', grup: 'Veri' },
+  // Yardım
+  { id: 'ayar-rehber', ad: 'Kullanım Rehberi', ikon: 'belge', alt: 'Baştan sona nasıl kullanılır 📖', grup: 'Yardım' },
 ];
 SAYFALAR['ayar-tanimlama'] = function () {
   const gorunur = TANIMLAR.filter(t => (t.sadeceAdmin ? adminMi() : true) && (t.izin ? yetki(t.izin) : true));   // rol/yetkiye göre süz
@@ -6389,6 +6391,88 @@ SAYFALAR['ayar-surum'] = function () {
     </div>`;
   $('#svGeri').onclick = () => git('ayar-tanimlama');
   $('#svGuncelle').onclick = () => { try { location.reload(true); } catch (e) { location.reload(); } };
+};
+/* -------- Kullanım Rehberi (baştan sona ay akışı) -------- */
+const REHBER_BOLUM = [
+  { em: '📊', emc: '', nk: 'Ay başı', t: 'Panel — güne buradan bak', img: 'panel',
+    hikaye: '<span class="who">💬 Ayın ilk günü.</span> Sabah stüdyoya geldin, kahveni aldın ☕ ve “bu ay ne durumdayız?” diyorsun. Açılışta seni <b>Panel</b> karşılar — ayın özeti, hızlı kısayollar ve bugünkü tahsilatlar hep burada.',
+    el: { l: 50, t: 20, e: '👇' }, etiket: 'Bu ayın özeti 📅', etL: 50, etT: 13,
+    adimlar: ['Üstteki <span class="tus">Ay · Özet</span> barından ayı değiştirebilir, geçmişe bakabilirsin. 🗓️', 'Kısayol kartlarına dokun: <b>Gelirler, Giderler, Hesaplar, Ortaklar</b> tek dokunuş uzağında.', 'Aşağıda “Bugünkü Tahsilatlar” o gün girilen ödemeleri gösterir.'],
+    ipuc: 'Ortak veya Kullanıcı olarak girdiysen Panel’de yalnızca <b>kendi</b> rakamlarını görürsün. 🌱' },
+
+  { em: '➕', emc: 'b2', nk: 'Gün içi', t: 'Tahsilat Ekle — ödeme geldi!', img: 'tahsilat',
+    hikaye: '<span class="who">💬 3 Ağustos.</span> Ayşe öğrencin 8 derslik paket için <b>4.000 ₺ nakit</b> ödedi 💵. Hemen deftere yazalım ki ay sonunda “kim, ne kadar ödedi” net olsun.',
+    el: { l: 50, t: 86, e: '👇' }, etiket: 'Doldur → Kaydet ✅', etL: 50, etT: 79,
+    adimlar: ['Alttaki ortadaki büyük <span class="tus">＋ Tahsilat Ekle</span> düğmesine bas. ⭐', '<b>Tarih</b>, <b>ödeme türü</b> (nakit / havale / kart / multinet), <b>tutar</b>, <b>eğitmen</b> ve <b>öğrenci</b> gir.', '<span class="tus">Kaydet</span> → tahsilat deftere düştü. 🎉'],
+    ipuc: '<b>Nakit</b> anında “tahsil edildi” sayılır. <b>Kart / havale</b> ise para bankaya geçince eşleşecek — sırada o var! 👇' },
+
+  { em: '📥', emc: 'b3', nk: 'Hafta içi', t: 'Banka dosyasını içe aktar', img: 'iceaktar',
+    hikaye: '<span class="who">💬 Hafta sonu.</span> Bankadan ekstreni indirdin 🏦. Kart ve havale tahsilatların gerçekten hesaba geçti mi? Dosyayı yükleyip uygulamayla eşleştirelim.',
+    el: { l: 50, t: 25, e: '👆' }, etiket: 'Dosyayı yükle 📄', etL: 50, etT: 30,
+    adimlar: ['Menüden <b>İçe Aktar</b> → <span class="tus">Banka Aktarımı</span> kartına dokun, <b>.xlsx / .csv</b> dosyanı seç.', 'Uygulama satırları çıkarır; her banka satırını <b>tarih + tutara</b> göre uygun tahsilatla eşleştirirsin. 🔗', '“Multinet” gibi <b>toplu</b> ödemeleri otomatik toplayıp eşler. 🤝'],
+    ipuc: 'Eşleşen kart/havale tahsilatı artık “gerçekten tahsil edildi” olur ve Gelirler’de görünür. 💚' },
+
+  { em: '📒', emc: '', nk: 'Ara ara', t: 'Hesaplar — kasa & banka defteri', img: 'hesaplar',
+    hikaye: '<span class="who">💬 15 Ağustos.</span> “Bankada, kasada ne kadar var?” Hesaplar sayfası her hesabın <b>yürüyen bakiyesini</b> ve tüm hareketlerini önüne serer.',
+    el: { l: 19, t: 11, e: '👇' }, etiket: 'Banka bakiyen 🏦', etL: 27, etT: 4.5,
+    adimlar: ['Üstteki <b>Banka · Nakit · Kart</b> kartlarından birine dokun.', 'Alttaki defterde her hareket ve sağda <b>kalan bakiye</b> görünür.', 'Bir satıra dokunup detayına bakabilirsin. 🔍'],
+    ipuc: 'Açılış bakiyelerini <b>Ayarlar › Hesap Açılış Bakiyeleri</b>’nden bir kez girersin; defter oradan yürür.' },
+
+  { em: '💚', emc: '', nk: 'Sürekli', t: 'Gelirler — tahsil edilenler', img: 'gelirler',
+    hikaye: '<span class="who">💬 Ay ortası.</span> “Bu ay ne kadar tahsilat oldu?” Gelirler, ayın tüm tahsilatlarını tek defterde toplar — nakit, kart, havale hepsi.',
+    el: { l: 82, t: 9, e: '👇' }, etiket: 'Tablo ↔ Rapor', etL: 72, etT: 3.5,
+    adimlar: ['Ay okuyla dönem seç. <span class="tus">Tablo</span> satır satır, <span class="tus">Rapor</span> türlere göre özet verir.', 'Her satırda eğitmen, ödeme türü ve tutar var.', 'Yalnızca <b>gerçekleşen</b> (nakit + bankaya yatmış) tahsilatlar sayılır.'],
+    ipuc: 'Bekleyen (henüz bankaya geçmemiş) kart/havale burada görünmez — tahsil edilince eklenir. ⏳' },
+
+  { em: '💸', emc: 'b4', nk: 'Gerektikçe', t: 'Giderler — kira, elektrik, kâr dağıtımı', img: 'giderler',
+    hikaye: '<span class="who">💬 Ay boyunca.</span> Kira, elektrik, su… Bir de ortaklara bankadan yaptığın <b>Kâr Dağıtımı</b> ödemeleri. Hepsi Giderler’de toplanır.',
+    el: { l: 50, t: 19, e: '👇' }, etiket: 'Aylık giderler 💸', etL: 50, etT: 12.5,
+    adimlar: ['Nakit gider için <b>Veri Gir → Nakit Harcama</b>; banka gideri <b>İçe Aktar</b>’dan gelir.', '<b>Kâr Dağıtımı</b> özel bir gider: ortağa yaptığın ödeme, o ortağın hakedişinden düşülür.', '<span class="tus">Rapor</span> görünümü giderleri gruplara göre toplar.'],
+    ipuc: 'Genel giderler (kira, elektrik…) tüm ortaklara <b>eşit</b> bölünür. ⚖️' },
+
+  { em: '🧾', emc: 'b3', nk: 'Ay sonu', t: 'Vergi Tahakkuku — müşavirden gelen', img: 'vergi',
+    hikaye: '<span class="who">💬 Ay sonu geldi.</span> Müşavirin ayın <b>gerçek KDV</b> tutarını gönderdi. Uygulama ay boyunca bir öngörü tutuyordu; şimdi gerçeğini girip farkı ortaklara mahsuplaştıralım.',
+    el: { l: 50, t: 53, e: '👇' }, etiket: 'Gerçek KDV’yi yaz', etL: 50, etT: 46.5,
+    adimlar: ['<b>Ayarlar › Vergi Tahakkuku</b>’nu aç.', 'Müşavirden gelen <b>KDV</b> tutarını yaz, <span class="tus">Kaydet</span>.', 'Gelir vergisi <b>3 ayda bir</b> (çeyrek sonunda) girilir; uygulama hatırlatır.'],
+    ipuc: 'Boş bırakırsan “henüz gelmedi” sayılır ve öngörü kullanılmaya devam eder. ⏳' },
+
+  { em: '👥', emc: '', nk: 'Ay sonu 🎉', t: 'Ortaklar — herkesin hakedişi (kârlar!)', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Ve büyük an!</span> Ay kapandı. Ortaklar sayfası her ortağın <b>hakedişini</b> hikâye gibi anlatır: tahsilat → komisyon → gider payı → vergi → <b>eline geçen</b>. 🎉',
+    el: { l: 50, t: 81, e: '👇' }, etiket: 'Bu ayki hakediş 🎉', etL: 50, etT: 74.5,
+    adimlar: ['Üstte <span class="tus">Özet</span> (hikâye) ve <span class="tus">Detaylı</span> (matematik) arası geçiş yap.', '<span class="tus">DEĞİŞTİR</span> ile başka bir ortağı seçebilirsin.', 'En altta “Bu ayki payın” + “şimdiye kadar verilen” + “sana kalan” görünür.'],
+    ipuc: 'Kâr Dağıtımı olarak önceden ödediklerin “şimdiye kadar aldın”a yazılır; kalan = verilecek. 💚' },
+
+  { em: '⚙️', emc: 'b4', nk: 'Kurulum', t: 'Ayarlar — kullanıcılar, vergi, tema', img: 'ayarlar',
+    hikaye: '<span class="who">💬 Bir kez ayarla.</span> Firma bilgisi, kullanıcılar & roller, vergi oranı, kart komisyonları, gider kalemleri, açılış bakiyeleri, yedekleme ve tema — hepsi Ayarlar’da.',
+    el: { l: 26, t: 24, e: '👇' }, etiket: 'Kişiler & roller 👥', etL: 35, etT: 17.5,
+    adimlar: ['<b>Kullanıcılar</b>: kişi ekle, rol ver (Admin / Ortak / Kullanıcı), giriş tanımla.', '<b>Roller & Yetkiler</b>: her rolün ne görüp yapabileceğini aç/kapa.', '<b>Yedekleme</b>: verini düzenli dışa aktar — yalnız bu cihazda tutulur. 💾'],
+    ipuc: 'Ayar sayfaları role göre görünür; ör. vergi/kullanıcı yönetimi yalnız yetkili kişilerde. 🔐' },
+];
+SAYFALAR['ayar-rehber'] = function () {
+  const img = window.REHBER_IMG || {};
+  const bol = (s, i) => `
+    <div class="reh-bol">
+      <div class="reh-bas"><div class="reh-em ${s.emc || ''}">${s.em}</div>
+        <div class="reh-bt"><div class="reh-nk">${kacar(s.nk || ('Adım ' + (i + 1)))}</div><h3>${kacar(s.t)}</h3></div></div>
+      <div class="reh-hik">${s.hikaye}</div>
+      ${img[s.img] ? `<div class="reh-fig"><div class="reh-tel"><img src="${img[s.img]}" alt="${kacar(s.t)}">
+        <div class="reh-ov">
+          ${s.etiket ? `<div class="reh-etk ${s.etkc || ''}" style="left:${s.etL}%;top:${s.etT}%">${kacar(s.etiket)}</div>` : ''}
+          ${s.el ? `<div class="reh-el" style="left:${s.el.l}%;top:${s.el.t}%">${s.el.e || '👇'}</div>` : ''}
+        </div></div></div>` : ''}
+      ${s.adimlar && s.adimlar.length ? `<div class="reh-adimlar">${s.adimlar.map((a, j) => `<div class="reh-adim"><span class="no">${j + 1}</span><span class="tx">${a}</span></div>`).join('')}</div>` : ''}
+      ${s.ipuc ? `<div class="reh-ipuc"><span class="ik">💡</span><div>${s.ipuc}</div></div>` : ''}
+    </div>`;
+  ic().innerHTML = `
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="rhGeri">‹ Ayarlar</button></div>
+    <div class="reh-kapak">
+      <div class="reh-kck">📖 Kullanım Rehberi</div>
+      <h2>Bir ay, baştan sona 📅</h2>
+      <p>Merhaba! 👋 Ağustos ayını birlikte yönetelim — ilk tahsilattan ay sonu <b>kâr paylaşımına</b> kadar, adım adım. Hazırsan başlayalım! 🚀</p>
+    </div>
+    ${REHBER_BOLUM.map(bol).join('')}
+    <div class="reh-son">Hepsi bu! 🎉 Artık ay başından ay sonuna akışın tamamını biliyorsun.<br>Takıldığın yerde <b>Ayarlar › 📖 Kullanım Rehberi</b>’nden buraya dön.</div>`;
+  $('#rhGeri').onclick = () => git('ayar-tanimlama');
 };
 /* -------- Hesap Açılış Bakiyeleri -------- */
 SAYFALAR['ayar-acilis'] = function () {
