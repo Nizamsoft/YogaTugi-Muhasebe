@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '300';
+const APP_SURUM = '301';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -761,7 +761,7 @@ const MENU = [
     { id: 'giderler', ad: 'Giderler', ikon: 'gider', baslik: 'Giderler' },
   ] },
   { grup: 'Ayarlar', ikon: 'ayarlar', ogeler: [
-    { id: 'ayar-tanimlama', ad: 'Tanımlamalar', ikon: 'tanimlar', baslik: 'Tanımlamalar' },
+    { id: 'ayar-tanimlama', ad: 'Ayarlar', ikon: 'tanimlar', baslik: 'Ayarlar' },
   ] },
   // Operasyonel (Plan4me'de yönetiliyor) — menüde gizli, kod dursun:
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
@@ -2305,7 +2305,7 @@ let arsivSekme = 'planformi';
 SAYFALAR['ayar-arsiv'] = function () {
   const pfN = (State.planformiTahsilat || []).length, bhN = (State.bankaHareketleri || []).length;
   ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="arsGeri">‹ Tanımlamalar</button></div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="arsGeri">‹ Ayarlar</button></div>
     <div class="ia-sayfa">
       <div class="ia-ust"><div class="ia-seg">
         <button type="button" class="ia-oge ${arsivSekme === 'planformi' ? 'sec' : ''}" data-ars="planformi">Plan4me${pfN ? ` <span class="ia-rk">${pfN}</span>` : ''}</button>
@@ -5780,7 +5780,7 @@ SAYFALAR['ayar-vergi'] = function () {
   if (!adminMi()) { git('dashboard'); return; }
   const oran = vergiOrani();
   ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="vgGeri">‹ Tanımlamalar</button></div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="vgGeri">‹ Ayarlar</button></div>
     <div class="bilgi-kutu" style="max-width:560px;margin:0 0 14px"><span class="ikon">${ik('belge')}</span><div><b>Havale</b> ve <b>kredi kartı</b> (bankaya giren) tahsilatların üzerine bu oranda vergi hesaplanır — <b>nakit hariç</b>. Kârlılık ekranında ayrı satır olarak net’ten düşülür; <b>bankaya/gidere yansımaz</b>. Örn. %20 ile 10.000 ₺ havale/kart → 2.000 ₺ vergi.</div></div>
     <div class="kart" style="max-width:560px">
       <div class="kart-baslik"><h3>Vergi / KDV Oranı</h3><span class="rozet-etk rz-banka">Havale + Kart</span></div>
@@ -6047,7 +6047,7 @@ SAYFALAR['ayar-firma'] = function () {
   const logoVar = !!a.logoData;
   ic().innerHTML = `
     <div class="tnm-kol">
-      <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="fbGeri">‹ Tanımlamalar</button></div>
+      <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="fbGeri">‹ Ayarlar</button></div>
       <div class="gp-kart gp-anim"><div class="gp-ic">
         <div class="gp-head"><div class="kk">Firma</div><h2>Firma Bilgileri</h2></div>
         <div class="gp-logo-alan">
@@ -6101,7 +6101,7 @@ SAYFALAR['ayar-ortak'] = function () {
   }).join('');
   ic().innerHTML = `
     <div class="tnm-scr-ust">
-      <button type="button" class="tnm-geri" id="obGeri">‹ Tanımlamalar</button>
+      <button type="button" class="tnm-geri" id="obGeri">‹ Ayarlar</button>
       <button type="button" class="gp-ekle" id="ortEkle">＋ Ortak Ekle</button>
     </div>
     ${list.length === 0
@@ -6234,7 +6234,7 @@ SAYFALAR['ayar-tanimlama'] = function () {
 SAYFALAR['ayar-surum'] = function () {
   const fad = (State.ayarlar && State.ayarlar.firmaAd) || 'Green Village Pilates';
   ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="svGeri">‹ Tanımlamalar</button></div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="svGeri">‹ Ayarlar</button></div>
     <div class="kart sv-kart">
       <div class="sv-ad">${kacar(fad)}</div>
       <div class="sv-alt">Ön Muhasebe</div>
@@ -6254,7 +6254,7 @@ SAYFALAR['ayar-acilis'] = function () {
   const TIP_AD = { banka: 'Banka', nakit: 'Kasa', kasa: 'Kasa', krediKarti: 'Kredi Kartı' };
   const list = (State.hesaplar || []).filter(h => h.aktif !== false);
   ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="acGeri">‹ Tanımlamalar</button></div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="acGeri">‹ Ayarlar</button></div>
     <p class="tk-not">Her hesabın <b>başlangıç (açılış) bakiyesini</b> girin — ekstre yürüyen bakiyesi buradan başlar.</p>
     ${list.length ? `<div class="ac-liste">${list.map(h => `
       <div class="ac-row">
@@ -6274,7 +6274,7 @@ SAYFALAR['ayar-tema'] = function () {
   const cur = aktifTema();
   const opt = [{ id: 'neon', ad: 'Neon', alt: 'Koyu + neon vurgu (varsayılan)' }, { id: 'koyu', ad: 'Koyu', alt: 'Sade koyu' }, { id: 'acik', ad: 'Açık', alt: 'Aydınlık' }];
   ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="tmGeri">‹ Tanımlamalar</button></div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="tmGeri">‹ Ayarlar</button></div>
     <p class="tk-not">Uygulama görünümünü seçin.</p>
     <div class="tema-liste">${opt.map(o => `<button type="button" class="tema-secim ${o.id === cur ? 'sec' : ''}" data-tema="${o.id}">
       <span class="tema-onizle t-${o.id}"><i></i><i></i><i></i></span>
@@ -6306,7 +6306,7 @@ SAYFALAR['ayar-giris-kul'] = function () {
     </div>`;
   };
   ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="gkGeri">‹ Tanımlamalar</button></div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="gkGeri">‹ Ayarlar</button></div>
     <div class="kul-list">
       <div class="kul-kart kadmin">
         <div class="kul-av f2">A</div>
@@ -6374,7 +6374,7 @@ SAYFALAR['tanim-gider'] = function () {
   ic().innerHTML = `
     <div class="tnm-kol">
       <div class="tnm-scr-ust">
-        <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
+        <button type="button" class="tnm-geri" id="tnmGeri">‹ Ayarlar</button>
         <button type="button" class="gp-ekle" id="gdEkle">＋ Gider Ekle</button>
       </div>
       ${giderler.length === 0
@@ -6471,7 +6471,7 @@ SAYFALAR['tanim-uyelik'] = function () {
   ic().innerHTML = `
     <div class="uk-sayfa">
       <div class="tnm-scr-ust">
-        <button type="button" class="tnm-geri" id="tnmGeri">‹ Tanımlamalar</button>
+        <button type="button" class="tnm-geri" id="tnmGeri">‹ Ayarlar</button>
         <button type="button" class="gp-ekle" id="uyEkle">＋ Üyelik Ekle</button>
       </div>
       ${uyelikler.length === 0
@@ -8395,7 +8395,7 @@ const TALEP_SAYFALAR = [
   { id: 'hesap-defter', ad: 'Hesaplar', ik: 'muhasebe' },
   { id: 'ice-aktar', ad: 'İçe Aktar', ik: 'indir' },
   { id: 'karlilik', ad: 'Ortaklar', ik: 'ortaklar' },
-  { id: 'ayar-tanimlama', ad: 'Tanımlar', ik: 'tanimlar' },
+  { id: 'ayar-tanimlama', ad: 'Ayarlar', ik: 'tanimlar' },
   { id: 'diger', ad: 'Diğer', ik: 'grup' },
 ];
 function talepSayfaAd(id) { const s = TALEP_SAYFALAR.find(x => x.id === id); return s ? s.ad : 'Diğer'; }
@@ -8792,7 +8792,7 @@ const ALT_MENU = [
   { tip: 'sayfa', id: 'hesap-defter', ad: 'Hesaplar', ikon: 'muhasebe' },
   { tip: 'aksiyon', id: 'tahsilat-yeni', ad: 'Tahsilat Ekle', ikon: 'arti', merkez: true },
   { tip: 'sayfa', id: 'karlilik', ad: 'Ortaklar', ikon: 'ortaklar' },
-  { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Tanımlar', ikon: 'tanimlar' },
+  { tip: 'sayfa', id: 'ayar-tanimlama', ad: 'Ayarlar', ikon: 'tanimlar' },
 ];
 // Bir sayfanın hangi alt-menü sekmesine ait olduğunu bul
 function altMenuAktifId(sayfa) {
