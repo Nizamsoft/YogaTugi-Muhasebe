@@ -432,27 +432,40 @@ const DB = {
 
   async listele(kol) { return this._oku(kol); },
 
+  _sessiz: false,   // topluEkle sırasında tek tek log tutma
+
   async ekle(kol, veri) {
     veri = { ...veri, olusturma: new Date().toISOString() };
     const dizi = this._oku(kol);
     const kayit = { id: yeniId(), ...veri };
     dizi.push(kayit); this._yaz(kol, dizi);
+    if (!this._sessiz) hareketYaz('ekle', kol, kayit.id, null, kayit);
     return kayit;
   },
 
   async guncelle(kol, id, veri) {
     const dizi = this._oku(kol);
     const i = dizi.findIndex(x => x.id === id);
-    if (i >= 0) { dizi[i] = { ...dizi[i], ...veri }; this._yaz(kol, dizi); }
+    if (i >= 0) {
+      const oncesi = { ...dizi[i] };
+      dizi[i] = { ...dizi[i], ...veri }; this._yaz(kol, dizi);
+      const anahtar = Object.keys(veri || {});
+      const sessizGuncelle = anahtar.length && anahtar.every(a => HAREKET_SESSIZ_ALAN.has(a));   // yalnız eşleşme alanları → loglama
+      if (!this._sessiz && !sessizGuncelle) hareketYaz('guncelle', kol, id, oncesi, dizi[i]);
+    }
   },
 
   async sil(kol, id) {
-    this._yaz(kol, this._oku(kol).filter(x => x.id !== id));
+    const dizi = this._oku(kol); const kayit = dizi.find(x => x.id === id);
+    this._yaz(kol, dizi.filter(x => x.id !== id));
+    if (!this._sessiz && kayit) hareketYaz('sil', kol, id, kayit, null);
   },
 
   async topluEkle(kol, kayitlar) {
+    const onceki = this._sessiz; this._sessiz = true;
     const sonuc = [];
-    for (const k of kayitlar) sonuc.push(await this.ekle(kol, k));
+    try { for (const k of kayitlar) sonuc.push(await this.ekle(kol, k)); } finally { this._sessiz = onceki; }
+    if (!this._sessiz && sonuc.length) hareketYaz('iceAktar', kol, null, null, null, { kayitIds: sonuc.map(x => x.id), adet: sonuc.length });
     return sonuc;
   },
 
@@ -460,6 +473,42 @@ const DB = {
   ayarOku() { try { return JSON.parse(localStorage.getItem('yt_ayarlar')) || {}; } catch { return {}; } },
   ayarYaz(obj) { State.ayarlar = obj; localStorage.setItem('yt_ayarlar', JSON.stringify(obj)); if (window._Bulut) window._Bulut.itPlanla(); },
 };
+
+/* ==========================================================
+   HAREKET KAYDI (denetim günlüğü) — kim, ne zaman, ne yaptı + geri al
+   ========================================================== */
+let hareketKaydiAktif = false;                    // açılış bitince true — boot yazımları loglanmaz
+const HAREKET_MAX = 500;                           // en fazla bu kadar kayıt tutulur
+const HAREKET_ATLA_KOL = new Set(['hareketler', 'eslesmeler', 'kategoriKurallari', 'talepler']);   // loglanmayan koleksiyonlar
+const HAREKET_SESSIZ_ALAN = new Set(['eslesenIds', 'eslesmeId']);   // yalnız bu alanlar değişince loglanmaz (eşleştirme gürültüsü)
+const HAREKET_KOL_AD = { tahsilatTanimlari: 'Tahsilat', bankaHareketleri: 'Banka hareketi', giderKayitlari: 'Gider', nakitGiderleri: 'Nakit gider', ortaklar: 'Kişi', giderler: 'Gider kalemi', giderGruplari: 'Gider grubu', hakedisOdemeleri: 'Hakediş ödemesi', ogrenciler: 'Öğrenci', uyelikler: 'Üyelik', dersler: 'Ders', odemeler: 'Ödeme', vergiTahakkuk: 'Vergi tahakkuku', planformiTahsilat: 'Plan4me kaydı' };
+/* Bir kaydın kısa özeti (başlık + detay) */
+function hareketOzet(kol, k) {
+  k = k || {};
+  const ad = HAREKET_KOL_AD[kol] || kol;
+  const paraVar = (v) => (v != null && v !== '' && !isNaN(Number(v)));
+  let detay = '';
+  if (kol === 'tahsilatTanimlari') detay = `${k.ogrenciAd || '—'}${paraVar(k.tutar) ? ' · ' + TL(k.tutar) : ''}${k.odemeTuru ? ' · ' + k.odemeTuru : ''}`;
+  else if (kol === 'giderKayitlari' || kol === 'nakitGiderleri') detay = `${k.giderAd || k.kategori || k.aciklama || '—'}${paraVar(k.tutar) ? ' · ' + TL(k.tutar) : ''}`;
+  else if (kol === 'bankaHareketleri') detay = `${k.giderKategori || k.islem || '—'}${paraVar(k.tutar) ? ' · ' + TL(k.tutar) : ''}`;
+  else if (kol === 'hakedisOdemeleri') detay = `${paraVar(k.tutar) ? TL(k.tutar) : ''}${k.donem ? ' · ' + k.donem : ''}`;
+  else detay = k.ad || k.adSoyad || k.ogrenciAd || k.aciklama || '—';
+  return { baslik: ad, detay };
+}
+/* Günlüğe kayıt yaz (boot bitmeden ve atlanan koleksiyonlarda yazmaz) */
+function hareketYaz(tur, kol, kayitId, oncesi, sonrasi, ekstra) {
+  try {
+    if (!hareketKaydiAktif || HAREKET_ATLA_KOL.has(kol)) return;
+    const list = DB._oku('hareketler');
+    const oz = hareketOzet(kol, sonrasi || oncesi || {});
+    const ku = State.kullanici || {};
+    const ortak = ku.ortakId ? (State.ortaklar || []).find(o => o.id === ku.ortakId) : null;
+    const kisi = (ortak && ortak.ad) || ku.ad || 'Yönetici';
+    list.push({ id: yeniId(), tarih: new Date().toISOString(), kisi, tur, kol, kayitId: kayitId || null, baslik: oz.baslik, detay: oz.detay, oncesi: oncesi || null, sonrasi: sonrasi || null, alindi: false, ...(ekstra || {}) });
+    if (list.length > HAREKET_MAX) list.splice(0, list.length - HAREKET_MAX);
+    localStorage.setItem('yt_hareketler', JSON.stringify(list));
+  } catch (e) { /* log yazımı asıl işlemi engellememeli */ }
+}
 
 /* ==========================================================
    2b) BULUT SENKRON (Supabase) — tüm veri tek JSON satırında paylaşılır
@@ -607,7 +656,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '308';
+const APP_SURUM = '309';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -791,9 +840,9 @@ const MENU = [
   { id: 'ders-takibi', ad: 'Ders Takibi', ikon: 'hedef', baslik: 'Ders Takibi', gizli: true },
 ];
 // Menüde olmayan alt sayfaların üst başlıkları
-const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Gider Kalemleri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Kullanıcılar', 'ayar-yetki': 'Roller & Yetkiler', 'ayar-vergi': 'Vergi Oranları', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'ayar-yedek': 'Yedekleme & Geri Yükleme', 'ayar-surum': 'Uygulama & Sürüm', 'ayar-acilis': 'Hesap Açılış Bakiyeleri', 'ayar-tema': 'Görünüm', 'ayar-rehber': 'Kullanım Rehberi', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
+const SAYFA_BASLIK = { 'gelirler': 'Gelirler', 'tanim-gider': 'Gider Kalemleri', 'tanim-komisyon': 'Kart Komisyon Oranları', 'ayar-firma': 'Firma Bilgileri', 'ayar-ortak': 'Kullanıcılar', 'ayar-yetki': 'Roller & Yetkiler', 'ayar-vergi': 'Vergi Oranları', 'ayar-hareket': 'Hareket Kaydı', 'ayar-arsiv': 'İçe Aktarma Arşivi', 'ayar-yedek': 'Yedekleme & Geri Yükleme', 'ayar-surum': 'Uygulama & Sürüm', 'ayar-acilis': 'Hesap Açılış Bakiyeleri', 'ayar-tema': 'Görünüm', 'ayar-rehber': 'Kullanım Rehberi', 'giderler': 'Giderler', 'ortaklar': 'Ortaklar', 'bekleyen': 'Bekleyen Tahsilatlar' };
 // Tanımlamalar hub'ından açılan alt sayfalar (menüde 'Tanımlamalar' vurgulu kalsın)
-const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'ayar-yetki', 'tanim-gider', 'tanim-komisyon', 'ayar-vergi', 'ayar-arsiv', 'ayar-yedek', 'ayar-surum', 'ayar-acilis', 'ayar-tema', 'ayar-rehber'];
+const TANIM_ALT = ['ayar-firma', 'ayar-ortak', 'ayar-yetki', 'tanim-gider', 'tanim-komisyon', 'ayar-vergi', 'ayar-hareket', 'ayar-arsiv', 'ayar-yedek', 'ayar-surum', 'ayar-acilis', 'ayar-tema', 'ayar-rehber'];
 
 // Hesaplar kart sayfası — "Hesaplar"a basınca açılan 6 kart
 const HESAP_GRUP_SIRA = ['Para Hesapları', 'Gelir · Gider · Ortak'];
@@ -6347,6 +6396,7 @@ const TANIMLAR = [
   { id: 'ayar-tema', ad: 'Görünüm', ikon: 'ayarlar', alt: 'Tema seçimi (Açık / Koyu / Neon)', grup: 'Görünüm' },
   // Veri
   { id: 'ayar-yedek', ad: 'Yedekleme & Geri Yükleme', ikon: 'indir', alt: 'Tüm veriyi dışa aktar / geri yükle', grup: 'Veri', sadeceAdmin: true },
+  { id: 'ayar-hareket', ad: 'Hareket Kaydı', ikon: 'sure', alt: 'Kim ne yaptı · geri al', grup: 'Veri', sadeceAdmin: true },
   { id: 'ayar-arsiv', ad: 'İçe Aktarma Arşivi', ikon: 'belge', alt: 'Geçmiş toplu aktarımlar', grup: 'Veri', izin: 'gor_hesaplar' },
   { id: 'ayar-surum', ad: 'Uygulama & Sürüm', ikon: 'guncel', alt: 'Sürüm, güncelle, yardım', grup: 'Veri' },
   // Yardım
@@ -8761,6 +8811,7 @@ async function uygulamayiBaslat() {
   const t0 = simdi();
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
+  hareketKaydiAktif = true;   // artık kullanıcı işlemleri hareket kaydına yazılsın (boot yazımları hariç)
   menuCiz();
   altMenuCiz();          // alt sayfa çubuğunu giriş yapan kullanıcıya göre yeniden çiz (admin → tüm sekmeler)
   kullaniciBilgiCiz();   // tepe paneli: görsel + ad soyad (ortaklar yüklendikten sonra)
@@ -9119,6 +9170,86 @@ SAYFALAR['ayar-yedek'] = function () {
     'Bu işlem geri alınamaz. Önce yedek almanız önerilir.', verileriSifirla);
 };
 
+/* ==========================================================
+   Ayarlar > Hareket Kaydı (denetim günlüğü) — kim ne yaptı + geri al/düzenle
+   ========================================================== */
+// Log'dan doğrudan düzenlenebilen koleksiyonlar → ilgili düzenleme ekranı
+const HAREKET_DUZENLE = {
+  tahsilatTanimlari: (r) => tahsilatTanimModal(r),
+  ortaklar: (r) => ortakFormu(r),
+  giderler: (r) => giderFormu(r),
+  nakitGiderleri: (r) => nakitGiderModal(r, () => SAYFALAR['ayar-hareket']()),
+};
+async function hareketGeriAl(id) {
+  const list = DB._oku('hareketler'); const h = list.find(x => x.id === id);
+  if (!h || h.alindi) return;
+  const kol = h.tur === 'iceAktar' ? h.kol : h.kol;
+  try {
+    if (h.tur === 'sil' && h.oncesi) {
+      const dizi = DB._oku(kol); if (!dizi.some(x => x.id === h.oncesi.id)) dizi.push(h.oncesi); DB._yaz(kol, dizi);
+    } else if (h.tur === 'ekle') {
+      DB._yaz(kol, DB._oku(kol).filter(x => x.id !== h.kayitId));
+    } else if (h.tur === 'guncelle' && h.oncesi) {
+      const dizi = DB._oku(kol); const i = dizi.findIndex(x => x.id === h.kayitId); if (i >= 0) { dizi[i] = h.oncesi; DB._yaz(kol, dizi); }
+    } else if (h.tur === 'iceAktar') {
+      const ids = new Set(h.kayitIds || []); DB._yaz(kol, DB._oku(kol).filter(x => !ids.has(x.id)));
+    }
+  } catch (e) { return bildir('Geri alınamadı.', 'hata'); }
+  h.alindi = true; h.alindiTarih = new Date().toISOString();
+  localStorage.setItem('yt_hareketler', JSON.stringify(list));   // geri alma işlemi loglanmaz
+  if (window._Bulut) { try { window._Bulut.itPlanla(); } catch { } }
+  await veriYukle();
+  bildir('Geri alındı. ↩', 'basari');
+  SAYFALAR['ayar-hareket']();
+}
+let hareketFiltre = 'tumu';
+SAYFALAR['ayar-hareket'] = function () {
+  if (!adminMi()) { git('dashboard'); return; }
+  const hepsi = DB._oku('hareketler').slice().reverse();   // en yeni üstte
+  const uygun = (h) => hareketFiltre === 'tumu' ? true
+    : hareketFiltre === 'sil' ? h.tur === 'sil'
+      : hareketFiltre === 'guncelle' ? h.tur === 'guncelle'
+        : hareketFiltre === 'ekle' ? (h.tur === 'ekle' || h.tur === 'iceAktar') : true;
+  const suz = hepsi.filter(uygun);
+  const IK = { sil: '🗑', ekle: '➕', guncelle: '✎', iceAktar: '📥' };
+  const IKC = { sil: 'i-sil', ekle: 'i-ekle', guncelle: 'i-duz', iceAktar: 'i-aktar' };
+  const RZ = { sil: ['rz-sil', 'Silme'], ekle: ['rz-ekle', 'Ekleme'], guncelle: ['rz-duz', 'Düzenleme'], iceAktar: ['rz-ekle', 'İçe aktarım'] };
+  const fiil = { sil: 'silindi', ekle: 'eklendi', guncelle: 'düzenlendi', iceAktar: 'aktarıldı' };
+  const bugun = bugunISO();
+  const gunAd = (iso) => { const g = (iso || '').slice(0, 10); if (g === bugun) return 'Bugün'; const d = new Date(bugun); d.setDate(d.getDate() - 1); if (g === d.toISOString().slice(0, 10)) return 'Dün'; return g ? `${g.slice(8, 10)}.${g.slice(5, 7)}.${g.slice(0, 4)}` : ''; };
+  const saat = (iso) => { try { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } catch { return ''; } };
+  const kart = (h) => {
+    const duzlenebilir = !h.alindi && h.tur !== 'sil' && h.tur !== 'iceAktar' && HAREKET_DUZENLE[h.kol] && DB._oku(h.kol).some(x => x.id === h.kayitId);
+    const detay = h.tur === 'iceAktar' ? `${h.adet || (h.kayitIds || []).length} kayıt` : (h.detay || '');
+    return `<div class="hk ${h.alindi ? 'alindi' : ''}">
+      <div class="hk-ik ${IKC[h.tur] || 'i-duz'}">${IK[h.tur] || '•'}</div>
+      <div class="hk-t">
+        <div class="hk-bas">${kacar(h.baslik)} ${kacar(fiil[h.tur] || '')} <span class="rz ${h.alindi ? 'rz-alindi' : (RZ[h.tur] || ['rz-duz', ''])[0]}">${h.alindi ? 'Geri alındı' : (RZ[h.tur] || ['', ''])[1]}</span></div>
+        ${detay ? `<div class="hk-det">${kacar(detay)}</div>` : ''}
+        <div class="hk-meta"><span class="kisi">${kacar(h.kisi || '—')}</span>·<span>${saat(h.tarih)}</span></div>
+      </div>
+      <div class="hk-arac">
+        ${h.alindi ? `<span class="hk-alindi-not">✓ geri alındı</span>`
+        : `${duzlenebilir ? `<button type="button" class="hk-duz" data-hduz="${h.id}">✎ Düzenle</button>` : ''}<button type="button" class="hk-geri" data-hgeri="${h.id}">↩ Geri Al</button>`}
+      </div>
+    </div>`;
+  };
+  // Güne göre grupla
+  let govde = '';
+  if (!suz.length) govde = `<div class="gp-bos">Henüz kayıtlı hareket yok.</div>`;
+  else { let sonGun = null; suz.forEach(h => { const g = gunAd(h.tarih); if (g !== sonGun) { govde += `<div class="gun-bas">${kacar(g)}</div>`; sonGun = g; } govde += kart(h); }); }
+  const cip = (id, ad) => `<button type="button" class="hk-flt ${hareketFiltre === id ? 'sec' : ''}" data-hflt="${id}">${ad}</button>`;
+  ic().innerHTML = `
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="hkGeri">‹ Ayarlar</button></div>
+    <p class="tk-not">Kimin ne yaptığını gör, yanlışları <b>↩ Geri Al</b> ile düzelt. Son ${HAREKET_MAX} hareket tutulur.</p>
+    <div class="hk-seg">${cip('tumu', 'Tümü')}${cip('sil', '🗑 Silinenler')}${cip('guncelle', '✎ Düzenlemeler')}${cip('ekle', '➕ Eklemeler')}</div>
+    ${govde}`;
+  $('#hkGeri').onclick = () => git('ayar-tanimlama');
+  $$('[data-hflt]').forEach(b => b.onclick = () => { hareketFiltre = b.dataset.hflt; SAYFALAR['ayar-hareket'](); });
+  $$('[data-hgeri]').forEach(b => b.onclick = () => { const h = DB._oku('hareketler').find(x => x.id === b.dataset.hgeri); if (!h) return; onayModal('Geri alınsın mı?', 'Bu hareket geri alınacak.', () => hareketGeriAl(b.dataset.hgeri), { evet: '↩ Geri Al', evetIk: '', basIk: 'uyari', tehlike: false }); });
+  $$('[data-hduz]').forEach(b => b.onclick = () => { const h = DB._oku('hareketler').find(x => x.id === b.dataset.hduz); if (!h) return; const rec = DB._oku(h.kol).find(x => x.id === h.kayitId); const fn = HAREKET_DUZENLE[h.kol]; if (rec && fn) fn(rec); else bildir('Bu kayıt düzenlenemiyor.', 'uyari'); });
+};
+
 /* Ayarlar > Bulut Senkron (Supabase) */
 SAYFALAR['ayar-bulut'] = function () {
   const cfg = Bulut.ayarOku() || {};
@@ -9237,7 +9368,7 @@ function yedekModal() {
 }
 
 // Yedeğe girmeyen yerel/oturum anahtarları (kayıt değildir)
-const YEDEK_ATLA = new Set(['yt_oturum', 'yt_girisYapildi', 'yt_notlar', 'yt_baslangic', 'yt_kontrol', 'yt_kontrol_yeni', 'yt_kontrol_goster']);
+const YEDEK_ATLA = new Set(['yt_oturum', 'yt_girisYapildi', 'yt_notlar', 'yt_baslangic', 'yt_kontrol', 'yt_kontrol_yeni', 'yt_kontrol_goster', 'yt_hareketler']);
 function yedekIndir() {
   // Tüm yt_* verilerini dök (kayıtlar + ayarlar) — oturum/yerel tercihler hariç
   const veri = { _uygulama: 'YogaTugi-Muhasebe', _surum: 2, _tarih: new Date().toISOString() };
