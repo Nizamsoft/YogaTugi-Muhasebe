@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '305';
+const APP_SURUM = '306';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -8599,14 +8599,19 @@ SAYFALAR['ayar-guvenlik'] = function () {
 };
 
 /* Onay modalı */
-function onayModal(baslik, mesaj, onaylandi) {
+function onayModal(baslik, mesaj, onaylandi, opts) {
+  opts = opts || {};
+  const evet = opts.evet || 'Sil';                       // onay düğmesi metni (varsayılan Sil)
+  const basIk = ('basIk' in opts) ? opts.basIk : 'cop';  // üst ikon
+  const evetIk = ('evetIk' in opts) ? opts.evetIk : 'cop'; // düğme ikonu ('' → ikon yok)
+  const kirmizi = opts.tehlike !== false;                // varsayılan kırmızı (silme). false → nötr/neon
   const govde = `<div class="onay-ic">
-      <div class="onay-ik">${ik('cop')}</div>
+      ${basIk ? `<div class="onay-ik">${ik(basIk)}</div>` : ''}
       <h4 class="onay-bas">${kacar(baslik)}</h4>
       <p class="onay-mesaj">${mesaj || 'Emin misiniz?'}</p>
     </div>`;
   modalAc('', govde,
-    `<button class="btn" id="onIptal" style="flex:1">Vazgeç</button><button class="btn btn-kirmizi" id="onEvet" style="flex:1">${ik('cop')} Sil</button>`);
+    `<button class="btn" id="onIptal" style="flex:1">Vazgeç</button><button class="btn ${kirmizi ? 'btn-kirmizi' : 'btn-ana'}" id="onEvet" style="flex:1">${evetIk ? ik(evetIk) + ' ' : ''}${kacar(evet)}</button>`);
   const m = $('#modalKap .modal'); if (m) m.classList.add('modal-kucuk', 'modal-onay');   // onay kutuları küçük + başlıksız
   $('#onIptal').onclick = modalKapat;
   $('#onEvet').onclick = () => { modalKapat(); onaylandi(); };
@@ -8937,7 +8942,7 @@ function kullaniciBilgiCiz() {
 /* Admin dışı kullanıcılara "Program Güncelleme Aşamasında" ekranı (geçici) */
 function bakimGuncelle() {
   const el = $('#bakimEkrani'); if (!el) return;
-  const goster = !!(State.kullanici && !adminMi());
+  const goster = false;   // artık ortak/kullanıcı da giriş yapıp uygulamayı kullanabilir (bakım kilidi kaldırıldı)
   el.classList.toggle('gizli', !goster);
   if (goster) {
     const ik0 = $('#bakimIkon'); if (ik0 && !ik0.innerHTML) ik0.innerHTML = ik('guncel');
@@ -9003,7 +9008,7 @@ function ustCubukKur() {
         });
       };
   } }
-  $('#kmCikis').onclick = () => { kulMenuKapat(); onayModal('Çıkış Yap', 'Oturumu kapatmak istediğinize emin misiniz?', () => cikisYap()); };
+  $('#kmCikis').onclick = () => { kulMenuKapat(); onayModal('Çıkış Yap', 'Oturumu kapatmak istediğinize emin misiniz?', () => cikisYap(), { evet: 'Çıkış Yap', evetIk: '', basIk: 'uyari', tehlike: false }); };
   document.addEventListener('click', (e) => {
     if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
   });
