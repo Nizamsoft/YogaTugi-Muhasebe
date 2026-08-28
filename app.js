@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '304';
+const APP_SURUM = '305';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -6404,12 +6404,14 @@ const REHBER_BOLUM = [
     hikaye: '<span class="who">💬 3 Ağustos, saat 10:00 ⏰</span> Ayşe öğrencin kapıdan gülümseyerek girdi 😄 ve 8 derslik paketi için <b>4.000 ₺ nakit</b> uzattı 💵. Bu tatlı haberi hemen deftere yazalım ki ay sonunda tek bir kuruş bile unutulmasın! 📝✨',
     el: { l: 50, t: 85.5, e: '👇' }, etiket: 'Doldur, sonra Kaydet ✅', etL: 50, etT: 78.5,
     adimlar: ['Ekranın tam ortasındaki kocaman <span class="tus">＋ Tahsilat Ekle</span> düğmesine bas — o senin sihirli düğmen ⭐', 'Tarih 📅, ödeme türü 💳 (nakit / havale / kart / multinet), tutar 💰, eğitmen 🧘 ve öğrenci ✍️ — hepsini seç', '<span class="tus">Kaydet</span>’e dokun ve… oldu bile! 🎉 Tahsilat deftere düştü'],
+    perde: { bas: 'nakit mi, banka mı?', p: ['<b>Nakit</b> anında “tahsil edildi” ✅ olur ve <b>vergiye hiç girmez</b> — cebe girdi, bitti 💵', '<b>Kart / havale / multinet</b> önce “bekliyor” 🕓; para bankaya düşüp <b>eşleşince</b> gerçek gelir sayılır.'], kural: 'Vergi yalnız <b>bankaya giren</b> paradan hesaplanır; nakit hiçbir vergiye tabi değildir.' },
     ipuc: '<b>Nakit</b> anında “tahsil edildi” ✅ olur. <b>Kart / havale</b> ise para bankaya düşünce eşleşecek — hiç merak etme, birazdan onu da birlikte yapacağız 😉👇' },
 
   { em: '📥', emc: 'b3', nk: 'Cuma akşamı 🌆', t: 'İçe Aktar — banka konuşuyor', img: 'iceaktar',
     hikaye: '<span class="who">💬 Cuma akşamı 🌆</span> Kahveni yudumlarken bankadan ekstreni indirdin. Aklına takıldı: “Kartla, havaleyle gelen paralar gerçekten hesaba geçmiş mi ki? 🤔” Hadi dosyayı yükleyelim, gerisini uygulama halletsin ✨',
     el: { l: 50, t: 22, e: '👆' }, etiket: 'Dosyanı buradan yükle 📄', etL: 50, etT: 28,
     adimlar: ['Menü → İçe Aktar → <span class="tus">Banka Aktarımı</span> kartına dokun, telefonundaki <b>.xlsx / .csv</b> dosyanı seç 📎', 'Uygulama satırları tek tek önüne serer; her birini tarih 📅 + tutar 💰 ile doğru tahsilata eşleştirirsin 🔗', 'Multinet gibi toplu ödemeleri bile akıllıca kendisi toplayıp eşler 🤝✨'],
+    perde: { bas: 'eşleşince ne oluyor?', p: ['Uygulama banka satırını <b>tarih + tutar</b> yakınlığıyla defterdeki tahsilata bağlar 🔗', '<b>POS komisyonu</b> o geliri kazanan eğitmenin <b>komisyon gideri</b> olur — bölünmez, sadece ona ait.', '<b>Multinet</b> toplu ödemede tek satır birçok kişinin ücretidir; uygulama toplayıp otomatik eşler 🤝'], kural: 'Kart/havale ancak <b>eşleşince</b> gerçek gelir olur ve ortak kârına girer.' },
     ipuc: 'Eşleşen kart/havale artık gerçekten “tahsil edildi” 💚 olur ve Gelirler’de ışıl ışıl görünür ✨' },
 
   { em: '📒', emc: '', nk: 'Ay ortası 🗓️', t: 'Hesaplar — küçük bir kasa turu', img: 'hesaplar',
@@ -6428,19 +6430,40 @@ const REHBER_BOLUM = [
     hikaye: '<span class="who">💬 Ay boyunca kapını çalanlar 🧾</span> Kira, elektrik, su… bir de ortaklara bankadan yaptığın <b>Kâr Dağıtımı</b> ödemeleri. Hepsi burada, tek defterde sıcacık buluşur 🤝',
     el: { l: 50, t: 18, e: '👇' }, etiket: 'Ayın giderleri 💸', etL: 50, etT: 11,
     adimlar: ['Nakit gider için <span class="tus">Veri Gir → Nakit Harcama</span> 💵; banka gideri İçe Aktar’dan usulca gelir 🏦', '<b>Kâr Dağıtımı</b> özel bir gider: ortağa yaptığın ödeme, onun hakedişinden düşülür ⚖️', '<span class="tus">Rapor</span> görünümü giderleri gruplara toplayıp gösterir 📊'],
+    perde: { bas: 'gider kime yazılır?', p: ['Kira, elektrik, su gibi <b>genel giderler</b> tüm ortaklara <b>eşit</b> bölünür ⚖️ (kim kazandırdı diye ayrım yok).', '<b>Kâr Dağıtımı</b> masraf değildir: ilgili ortağa <b>verilen hakediştir</b>, ay sonunda onun payından düşülür.'], kural: 'Genel giderler herkese eşit paylaşılır; Kâr Dağıtımı yalnız seçtiğin ortağa işlenir.' },
     ipuc: 'Kira, elektrik gibi genel giderler tüm ortaklara <b>eşit</b> bölünür — herkes payına gönül rahatlığıyla razı ⚖️😊' },
 
   { em: '🧾', emc: 'b3', nk: 'Ay sonu ☎️', t: 'Vergi Tahakkuku — müşavir aradı', img: 'vergi',
     hikaye: '<span class="who">💬 Ay sonu geldi çattı 🌙</span> Müşavirin aradı ☎️ ve ayın <b>gerçek KDV</b>’sini söyledi. Uygulama ay boyunca bir tahmin yürütüyordu; şimdi gerçeğini girip farkı ortaklara kuruşu kuruşuna, adilce paylaştıralım ⚖️',
     el: { l: 50, t: 56.5, e: '👇' }, etiket: 'Gerçek KDV’yi yaz ✍️', etL: 50, etT: 49.5,
     adimlar: ['<span class="tus">Ayarlar › Vergi Tahakkuku</span>’nu aç 🧾', 'Müşavirden gelen <b>KDV</b> tutarını yaz ✍️, <span class="tus">Kaydet</span> 💾', 'Gelir vergisi 3 ayda bir gelir; çeyrek sonunda uygulama sana nazikçe hatırlatır 🔔'],
+    perde: { bas: 'öngörü → tahakkuk', p: ['Uygulama ay boyu bankaya giren (havale+kart) üzerinden <b>tahmini</b> KDV/Gelir Vergisi ayırdı — nakit hariç.', 'Şimdi müşavirden gelen <b>gerçeği</b> giriyorsun; aradaki fark ortaklara mahsuplaşacak (sıradaki bölüm) ⚖️'], kural: '<b>KDV</b> her ay, <b>Gelir Vergisi</b> 3 ayda bir (çeyrek sonunda) tahakkuk eder.' },
     ipuc: 'Boş bırakırsan “henüz gelmedi” ⏳ sayılır, tahmin kullanılmaya devam eder — hiç acelesi yok 😌' },
 
-  { em: '👥', emc: '', nk: 'Büyük gün! 🎉', t: 'Ortaklar — herkesin hakedişi', img: 'ortaklar',
-    hikaye: '<span class="who">💬 Ve işte o an geldi! 🥁</span> Ay kapandı, herkesin gözü burada 👀. Ortaklar sayfası her ortağın hakedişini masal anlatır gibi tek tek açıklar 📖: tahsilat → komisyon → gider payı → vergi → <b>eline geçen</b> 🎉 Emeğinin karşılığı, apaçık ortada 💚',
+  { em: '👥', emc: '', nk: 'Büyük gün! 🥁 · adım 1', t: 'Ortaklar — gelirden kesintilere', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Ve işte o an geldi! 🥁</span> Ay kapandı, herkesin gözü hakediş kartında 👀. Kart yukarıdan aşağı bir <b>masal</b> gibi akar 📖. Önce güzel haber: brüt tahsilatın 💰. Sonra sırayla küçük kesintiler başlar…',
+    el: { l: 50, t: 41, e: '👇' }, etiket: 'Önce kesintiler ✂️', etL: 50, etT: 33.5,
+    adimlar: ['<b>💰 Brüt tahsilat</b> → bu ay gerçekleşen tahsilatların (nakit + eşleşmiş kart/havale).', '<b>🏦 − POS komisyonu</b> → yalnız <b>kendi</b> kart tahsilatının komisyonu.', '<b>🏢 − Genel gider payı</b> → toplam genel giderin <b>eşit</b> payı.'],
+    perde: { bas: 'komisyon & gider kime ait?', p: ['Komisyon, o geliri kazanan eğitmene aittir — <b>bölünmez</b>.', 'Genel giderler (kira, elektrik…) tüm ortaklara <b>eşit</b> dağılır.'], kural: 'Kesintiler sırayla iner; her satır brütten biraz düşer.' } },
+
+  { em: '🧾', emc: 'b3', nk: 'Büyük gün! 🥁 · adım 2', t: 'Ortaklar — devlet payı (tahmini vergi)', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Sıra devlette 🏛️</span> Bankaya giren paradan tahmini KDV ve Gelir Vergisi ayrılır. Sakin ol, bu bir <b>öngörü</b> ⏳ — gerçeği ay sonu netleşince güncellenecek.',
+    el: { l: 50, t: 51, e: '👇' }, etiket: 'Tahmini vergi 🧾', etL: 50, etT: 43.5,
+    adimlar: ['<b>− Tahmini KDV</b> → bankaya giren tutardan öngörü.', '<b>− Tahmini Gelir Vergisi</b> → (banka matrahı − KDV − komisyon − bankadan yapılan gider payı) × oran.', 'Nakit bu hesaba <b>hiç girmez</b> 🙌'],
+    perde: { bas: 'vergi neyden hesaplanır?', p: ['Yalnız <b>bankaya giren</b> havale+kart vergiye tabidir; nakit hariç 💵', 'Bankadan yaptığın <b>harcamalar</b> gelir vergisi matrahından düşülür — vergi biraz azalır.'], kural: 'Bu satır <b>tahmindir</b>; ay sonu tahakkukla kesinleşir.' } },
+
+  { em: '⚖️', emc: '', nk: 'Büyük gün! 🥁 · adım 3', t: 'Ortaklar — devir & vergi mahsubu', img: 'ortaklar',
+    hikaye: '<span class="who">💬 İki güzel düzeltme 🤝</span> Geçen aydan alacağın kaldıysa 📅 bu aya <b>devreder</b>. Bir de: ay sonu gerçek vergi girilince, fazla ayrılan <b>iade</b> 💚 / eksik ayrılan <b>ek kesinti</b> 🔻 olarak buraya düşer.',
+    el: { l: 50, t: 71, e: '👇' }, etiket: 'Vergi düzeltmesi ⚖️', etL: 50, etT: 63.5,
+    adimlar: ['<b>📅 + Geçen aydan devir</b> → önceki aylardan ödenmemiş hakediş.', '<b>⚖️ ± Vergi düzeltmesi (mahsup)</b> → gerçek vergi ile öngörünün farkı, payına göre.', 'Fazla ayrıldıysa <b>+ iade</b> 💚, eksikse <b>− ek kesinti</b> 🔻'],
+    perde: { bas: 'nasıl mahsuplaşır?', p: ['<b>KDV</b> her ay, <b>Gelir Vergisi</b> çeyrekte mahsuplaşır 📅', 'Gelir vergisinde çeyreğin <b>3 ay öngörüsü toplanır</b>, gerçeğiyle kıyaslanır; fark ortaklara öngörü paylarına göre dağılır.'], kural: 'Tahakkuk farkından kimse <b>ekstra pay almaz</b> — mahsup yalnız fazla/eksik ayrılan vergiyi düzeltir.' },
+    ipuc: 'Devir ≠ mahsup: 📅 <b>devir</b> = geçen aydan alacağın, ⚖️ <b>mahsup</b> = verginin düzeltmesi. Ayrı satırlar 😉' },
+
+  { em: '🎉', emc: 'b4', nk: 'Büyük gün! 🥁 · sonuç', t: 'Ortaklar — sonuç: hakedişin!', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Ve sonuç! 🎉</span> Tüm adımlar toplanınca bu ayki <b>hakedişin</b> çıkar. Ay içinde sana Kâr Dağıtımı olarak ödenenler düşülür; kalan da elden verilecek olan 💚',
     el: { l: 50, t: 80.5, e: '👇' }, etiket: 'İşte hakedişin! 🎉', etL: 50, etT: 73.5,
-    adimlar: ['Üstten <span class="tus">Özet</span> (masal gibi 📖) ile <span class="tus">Detaylı</span> (matematikli 🧮) arasında gidip gel', '<span class="tus">DEĞİŞTİR</span>’e dokun, başka ortağın hakedişine bak 👥', 'En altta “bu ayki payın” + “şimdiye kadar verilen” + “sana kalan” 💚'],
-    ipuc: 'Ay içinde Kâr Dağıtımı olarak verdiklerin “şimdiye kadar aldın”a yazılır; kalan = elden verilecek 🤝💚' },
+    adimlar: ['<b>= Bu ayki hakediş</b> → tüm adımların toplamı.', '<b>− Şimdiye kadar verilen</b> → sana Kâr Dağıtımı olarak ödenenler.', '<b>= Sana kalan</b> → ödenmezse gelecek aya <b>devreder</b> 🔁'],
+    ipuc: 'Üstten <span class="tus">Özet</span> ↔ <span class="tus">Detaylı</span> geçebilir, <span class="tus">DEĞİŞTİR</span> ile başka ortağa bakabilirsin. Ortak yalnız <b>kendini</b> görür; Kullanıcı rolü buraya <b>hiç girmez</b> 🔐' },
 
   { em: '⚙️', emc: 'b4', nk: 'Kurulum 🛠️', t: 'Ayarlar — bir kez kur, keyfini sür', img: 'ayarlar',
     hikaye: '<span class="who">💬 En baştan bir kere ayarla 😌</span> Sonrası tereyağından kıl çeker gibi. Firma bilgisi, kullanıcılar & roller 👥, vergi, komisyonlar, gider kalemleri, açılış bakiyeleri, yedek 💾 ve tema 🎨 — hepsi tek çatı altında, elinin altında.',
@@ -6461,6 +6484,7 @@ SAYFALAR['ayar-rehber'] = function () {
           ${s.el ? `<div class="reh-el" style="left:${s.el.l}%;top:${s.el.t}%">${s.el.e || '👇'}</div>` : ''}
         </div></div></div>` : ''}
       ${s.adimlar && s.adimlar.length ? `<div class="reh-adimlar">${s.adimlar.map((a, j) => `<div class="reh-adim"><span class="no">${j + 1}</span><span class="tx">${a}</span></div>`).join('')}</div>` : ''}
+      ${s.perde ? `<div class="reh-perde"><div class="reh-perde-bas">🧠 Perde arkası${s.perde.bas ? ' — ' + kacar(s.perde.bas) : ''}</div>${(s.perde.p || []).map(x => `<p>${x}</p>`).join('')}${s.perde.kural ? `<div class="reh-kural"><span class="k">⚑ Kural:</span><span>${s.perde.kural}</span></div>` : ''}</div>` : ''}
       ${s.ipuc ? `<div class="reh-ipuc"><span class="ik">💡</span><div>${s.ipuc}</div></div>` : ''}
     </div>`;
   ic().innerHTML = `
@@ -6471,7 +6495,11 @@ SAYFALAR['ayar-rehber'] = function () {
       <p>Merhaba! 👋 Ağustos ayını birlikte yönetelim — ilk tahsilattan ay sonu <b>kâr paylaşımına</b> kadar, adım adım. Hazırsan başlayalım! 🚀</p>
     </div>
     ${REHBER_BOLUM.map(bol).join('')}
-    <div class="reh-son">Hepsi bu! 🎉 Artık ay başından ay sonuna akışın tamamını biliyorsun.<br>Takıldığın yerde <b>Ayarlar › 📖 Kullanım Rehberi</b>’nden buraya dön.</div>`;
+    <div class="reh-perde reh-ozet">
+      <div class="reh-perde-bas">🧠 Tek bakışta muhasebe mantığı</div>
+      <p>Tahsilatı yaz → bankayla eşleştirip <b>gerçekleştir</b> → giderleri (Kâr Dağıtımı dahil) gir → raporlarda gör → ay sonu gerçek vergiyi (KDV aylık, Gelir Vergisi çeyrekte) <b>tahakkuk et</b> → uygulama öngörü ile gerçeği kıyaslayıp farkı ortaklara <b>mahsuplaştırsın</b> → her ortak kendi hakedişini, devrini ve vergi düzeltmesini kartında görsün → kalanı öde, ödenmeyen devretsin. 🔁</p>
+    </div>
+    <div class="reh-son">Hepsi bu! 🎉 Artık ay başından ay sonuna hem <b>nasıl</b> hem <b>neden</b>i biliyorsun.<br>Takıldığın yerde <b>Ayarlar › 📖 Kullanım Rehberi</b>’nden buraya dön.</div>`;
   $('#rhGeri').onclick = () => git('ayar-tanimlama');
 };
 /* -------- Hesap Açılış Bakiyeleri -------- */

@@ -3970,3 +3970,15 @@ body:not(.tema-neon) .reh-kapak{background:linear-gradient(180deg,#f3f6ef,#eef2e
 .reh-ipuc .ik{font-size:17px;flex:none}.reh-ipuc b{color:var(--metin)}
 .reh-son{text-align:center;color:var(--metin-soluk);font-size:12.5px;line-height:1.7;padding:18px 12px 8px;border-top:1px dashed var(--cizgi);margin-top:8px}
 .reh-son b{color:var(--neon)}
+
+/* Rehber — 🧠 Perde arkası kutusu (v305) */
+.reh-perde{background:linear-gradient(135deg,rgba(201,166,245,.10),rgba(201,166,245,.03));border:1px solid rgba(201,166,245,.34);border-radius:14px;padding:12px 14px;margin-bottom:13px}
+.reh-perde-bas{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--mor,#c9a6f5);margin-bottom:8px}
+.reh-perde p{margin:0 0 7px;font-size:12.8px;line-height:1.6;color:var(--metin)}
+.reh-perde p:last-child{margin:0}
+.reh-perde b{color:#e4d3fb}
+body:not(.tema-neon) .reh-perde b{color:#6b3fa0}
+body:not(.tema-neon) .reh-perde-bas{color:#7f4fb0}
+.reh-kural{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;margin-top:8px;color:var(--metin-soluk)}
+.reh-kural .k{color:var(--mor,#c9a6f5);font-weight:800;flex:none}
+.reh-ozet{margin-top:6px}
