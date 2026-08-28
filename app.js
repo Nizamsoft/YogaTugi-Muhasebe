@@ -656,7 +656,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '310';
+const APP_SURUM = '311';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -694,6 +694,22 @@ function benId() { return aktifOrtakId(); }                    // giriş yapan o
 function ortakGosterBtnHTML() { return ''; }
 function ortakGosterBtnBagla() {}
 
+/* Varsayılan gider kalemleri/grupları — yalnız bir kez, liste tamamen boşsa (kayıp/eksik gider adlarını getirir) */
+async function varsayilanGiderSeed() {
+  try {
+    if (localStorage.getItem('yt_giderSeed') === '1') return;
+    const kendi = (State.giderler || []).filter(g => adNorm(g.ad) !== adNorm(KAR_DAGITIM_KAT));
+    if (kendi.length > 0) { localStorage.setItem('yt_giderSeed', '1'); return; }   // kullanıcının kendi listesi var → dokunma
+    const set = { 'Sabit Giderler': ['Kira', 'Aidat'], 'Faturalar': ['Elektrik', 'Su', 'Doğalgaz', 'İnternet'], 'Personel': ['Maaş', 'SGK'], '': ['Temizlik', 'Kırtasiye', 'Bakım-Onarım', 'Reklam', 'Müşavir'] };
+    for (const gAd in set) {
+      let grupId = null;
+      if (gAd) { let g = (State.giderGruplari || []).find(x => adNorm(x.ad) === adNorm(gAd)); if (!g) { g = await DB.ekle('giderGruplari', { ad: gAd }); State.giderGruplari.push(g); } grupId = g.id; }
+      for (const ad of set[gAd]) { if (!(State.giderler || []).some(x => adNorm(x.ad) === adNorm(ad))) { await DB.ekle('giderler', { ad, grupId }); } }
+    }
+    State.giderGruplari = DB._oku('giderGruplari'); State.giderler = DB._oku('giderler');
+    localStorage.setItem('yt_giderSeed', '1');
+  } catch (e) { /* seed başarısızsa uygulama açılmaya devam etsin */ }
+}
 /* Tüm koleksiyonları State'e yükle */
 async function veriYukle() {
   // Eski koleksiyonları temizle — yalnızca ortak adı + fotoğrafı kalsın
@@ -707,8 +723,9 @@ async function veriYukle() {
   else if (temizlik && window._Bulut) window._Bulut.itPlanla();
   State.ortaklar = temiz;
   State.giderler = DB._oku('giderler');
-  if (!State.giderler.some(g => adNorm(g.ad) === adNorm(KAR_DAGITIM_KAT))) { const y = await DB.ekle('giderler', { ad: KAR_DAGITIM_KAT, grupId: null }); State.giderler = DB._oku('giderler'); }   // ortağa pay ödemesi kategorisi hazır olsun
   State.giderGruplari = DB._oku('giderGruplari');
+  if (!State.giderler.some(g => adNorm(g.ad) === adNorm(KAR_DAGITIM_KAT))) { await DB.ekle('giderler', { ad: KAR_DAGITIM_KAT, grupId: null }); State.giderler = DB._oku('giderler'); }   // ortağa pay ödemesi kategorisi hazır olsun
+  await varsayilanGiderSeed();   // liste boşsa yaygın gider kalemleri/gruplarını bir kez getir
   State.giderKayitlari = DB._oku('giderKayitlari');
   State.uyelikler = DB._oku('uyelikler');
   State.ogrenciler = DB._oku('ogrenciler');
@@ -1156,10 +1173,12 @@ function egitmenKarlilik(donem) {
   // Verilmiş hakediş: bu döneme işlenmiş ortak ödemeleri (Hakediş Ver kaydı) + bankadan "Kâr Dağıtımı" gideri (İlgili Ortağa)
   const odemeD = (State.hakedisOdemeleri || []).filter(o => o.donem === donem);
   const karDagitimD = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem && isKarDagitim(b.giderKategori));
+  const nakitKarDagitimD = (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem && isKarDagitim(g.giderAd || g.kategori));   // KASADAN yapılan Kâr Dağıtımı da verilen hakediştir
   const odenen = {}; ortaklar.forEach(o => {
     const eski = odemeD.filter(x => x.ortakId === o.id).reduce((s, x) => s + Math.abs(Number(x.tutar) || 0), 0);
     const kd = karDagitimD.filter(b => String(b.egitmenId) === String(o.id)).reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0);
-    odenen[o.id] = eski + kd;
+    const kdn = nakitKarDagitimD.filter(g => String(g.egitmenId) === String(o.id)).reduce((s, g) => s + Math.abs(Number(g.tutar) || 0), 0);
+    odenen[o.id] = eski + kd + kdn;
   });
   // Maaşlı eğitmen netleri + dağıtım
   const maasliList = Object.values(mMap).map(m => {
