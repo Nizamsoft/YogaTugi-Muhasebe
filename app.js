@@ -607,7 +607,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '307';
+const APP_SURUM = '308';
 const APP_SURUM_TARIH = '26 Ağu 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9105,6 +9105,7 @@ function sheetKapat() { document.body.classList.remove('sheet-acik'); }
 /* Ayarlar > Yedekleme sayfası — sade, sadece butonlar */
 SAYFALAR['ayar-yedek'] = function () {
   ic().innerHTML = `
+    <p class="tk-not">Yedek <b>tüm kayıtlarını</b> (tahsilat, gider, banka, ortaklar…) içerir. Geri yüklerken <b>ayarların korunur</b> — yalnızca kayıtlar geri gelir. 💾</p>
     <div class="kart yedek-kart">
       <button class="btn btn-ana" id="yedIndir">⤓ Yedeği İndir</button>
       <button class="btn" id="yedYukle">⤒ Yedekten Geri Yükle</button>
@@ -9235,13 +9236,19 @@ function yedekModal() {
     'Bu işlem geri alınamaz. Önce yedek almanız önerilir.', verileriSifirla);
 }
 
+// Yedeğe girmeyen yerel/oturum anahtarları (kayıt değildir)
+const YEDEK_ATLA = new Set(['yt_oturum', 'yt_girisYapildi', 'yt_notlar', 'yt_baslangic', 'yt_kontrol', 'yt_kontrol_yeni', 'yt_kontrol_goster']);
 function yedekIndir() {
-  const veri = {
-    _uygulama: 'YogaTugi-Muhasebe', _surum: 1, _tarih: new Date().toISOString(),
-    hesaplar: State.hesaplar, islemler: State.islemler, ortaklar: State.ortaklar,
-    komisyonlar: State.komisyonlar, karPayi: State.karPayi, kullanicilar: State.kullanicilar,
-    potansiyel: State.potansiyel, musteriler: State.musteriler, dersler: State.dersler, odemeler: State.odemeler,
-  };
+  // Tüm yt_* verilerini dök (kayıtlar + ayarlar) — oturum/yerel tercihler hariç
+  const veri = { _uygulama: 'YogaTugi-Muhasebe', _surum: 2, _tarih: new Date().toISOString() };
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || k.indexOf('yt_') !== 0 || YEDEK_ATLA.has(k)) continue;
+      const ham = localStorage.getItem(k);
+      try { veri[k.slice(3)] = JSON.parse(ham); } catch { veri[k.slice(3)] = ham; }
+    }
+  } catch (e) { /* localStorage erişilemezse en azından State'ten yaz */ }
   const blob = new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -9256,14 +9263,22 @@ function yedekGeriYukle(dosya) {
   fr.onload = async () => {
     let veri;
     try { veri = JSON.parse(fr.result); } catch { return bildir('Geçersiz dosya (JSON okunamadı).', 'hata'); }
-    if (!veri || typeof veri !== 'object' || !Array.isArray(veri.hesaplar)) {
-      return bildir('Bu bir Yoga Tugi yedek dosyası değil.', 'hata');
-    }
-    KOLEKSIYONLAR.forEach(k => { if (Array.isArray(veri[k])) DB._yaz(k, veri[k]); });
+    const gecerli = veri && typeof veri === 'object' && (veri._uygulama === 'YogaTugi-Muhasebe' || Array.isArray(veri.ortaklar) || Array.isArray(veri.hesaplar));
+    if (!gecerli) return bildir('Bu bir Yoga Tugi yedek dosyası değil.', 'hata');
+    // AYARLAR + cihaz tercihleri KORUNUR — yalnız kayıtlar geri yüklenir
+    const koru = new Set(['ayarlar', 'tema', 'oturum', 'girisYapildi', 'notlar', 'baslangic', 'kontrol', 'kontrol_yeni', 'kontrol_goster']);
+    let n = 0;
+    Object.keys(veri).forEach(kisa => {
+      if (!kisa || kisa.indexOf('_') === 0 || koru.has(kisa)) return;   // _meta ve korunanları atla
+      const val = veri[kisa];
+      if (val == null) return;
+      try { localStorage.setItem('yt_' + kisa, typeof val === 'string' ? val : JSON.stringify(val)); if (Array.isArray(val)) n += val.length; } catch { }
+    });
     localStorage.setItem('yt_baslangic', 'yedek');
+    if (window._Bulut) { try { window._Bulut.itPlanla(); } catch { } }
     await veriYukle();
     modalKapat(); git('dashboard');
-    bildir('Yedek geri yüklendi.', 'basari');
+    bildir(n ? `Yedek geri yüklendi — ${n} kayıt geldi, ayarların korundu. ✅` : 'Yedek okundu ama içinde kayıt yok.', n ? 'basari' : 'uyari');
   };
   fr.readAsText(dosya);
 }
