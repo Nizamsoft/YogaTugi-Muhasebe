@@ -3982,3 +3982,34 @@ body:not(.tema-neon) .reh-perde-bas{color:#7f4fb0}
 .reh-kural{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;margin-top:8px;color:var(--metin-soluk)}
 .reh-kural .k{color:var(--mor,#c9a6f5);font-weight:800;flex:none}
 .reh-ozet{margin-top:6px}
+
+/* Rehber v2 — ⚠️ Kural kutusu + Önsöz karşılama (v307) */
+.reh-kural2{display:flex;gap:10px;align-items:flex-start;background:rgba(240,133,122,.09);border:1px solid rgba(240,133,122,.4);border-left:4px solid var(--kirmizi);border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.reh-kural2 .ik{font-size:18px;flex:none}
+.reh-kural2 .kx{font-size:12.8px;line-height:1.55}
+.reh-kural2 .kx b{color:#ffd7d1}
+body:not(.tema-neon) .reh-kural2 .kx b{color:#a8382e}
+.reh-kural2 .kb{display:block;font-weight:800;color:var(--kirmizi);font-size:11px;letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px}
+/* Önsöz */
+.reh-onsoz{margin-bottom:22px}
+.ro-hero{padding:20px 16px;border-radius:18px;position:relative;overflow:hidden;text-align:center;margin-bottom:14px;
+  background:radial-gradient(120% 100% at 50% 0%,rgba(180,232,58,.18),transparent 62%),linear-gradient(180deg,#20262e,#191e25);border:1px solid var(--kenar)}
+body:not(.tema-neon) .ro-hero{background:linear-gradient(180deg,#f3f6ef,#eef2e6)}
+.ro-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--neon),var(--amber))}
+.ro-hero .ro-em{font-size:34px;line-height:1}
+.ro-hero h2{margin:6px 0 6px;font-size:20px;font-weight:800}
+.ro-hero p{margin:0;font-size:13px;line-height:1.6;color:var(--metin-soluk)}.ro-hero p b{color:var(--metin)}
+.ro-basla{width:100%;justify-content:center;margin-bottom:16px}
+.ro-lbl{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--metin-soluk);margin:0 2px 9px}
+.ro-liste{display:flex;flex-direction:column;gap:8px}
+.ro-row{display:flex;align-items:center;gap:12px;width:100%;background:var(--gri);border:1px solid var(--kenar);border-radius:13px;padding:11px 12px;font:inherit;color:var(--metin);text-align:left;cursor:pointer}
+.ro-row:active{transform:scale(.99)}
+.ro-no{font-size:11px;font-weight:800;color:var(--metin-soluk);width:16px;text-align:center;flex:none}
+.ro-em2{width:38px;height:38px;border-radius:11px;flex:none;display:grid;place-items:center;font-size:18px;background:rgba(180,232,58,.12);border:1px solid rgba(180,232,58,.3)}
+.ro-em2.b2{background:rgba(245,169,31,.12);border-color:rgba(245,169,31,.3)}
+.ro-em2.b3{background:rgba(143,184,245,.12);border-color:rgba(143,184,245,.3)}
+.ro-em2.b4{background:rgba(201,166,245,.12);border-color:rgba(201,166,245,.3)}
+.ro-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.ro-ad{font-weight:800;font-size:14px}
+.ro-alt{font-size:11px;color:var(--metin-soluk);margin-top:2px}
+.ro-ok{color:var(--metin-soluk);font-size:16px;flex:none}
