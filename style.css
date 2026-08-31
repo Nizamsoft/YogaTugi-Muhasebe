@@ -3593,9 +3593,12 @@ body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;heig
   display:flex;flex-direction:column;overflow:hidden;animation:tamGir .3s cubic-bezier(.22,.9,.3,1.05)}
 .modal.modal-tam::before{display:none}
 @keyframes tamGir{from{transform:translateY(26px);opacity:.4}to{transform:none;opacity:1}}
-.modal-tam .modal-ust{padding:18px 16px 8px;border-bottom:0;justify-content:center;position:relative}
-.modal-tam .modal-ust h3{flex:0 1 auto;text-align:center;font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-size:19px;font-weight:700}
-.modal-tam .modal-kapat{position:absolute;left:12px;top:14px;background:transparent;border:0;color:var(--metin);font-size:22px}
+.modal-tam .modal-ust{padding:calc(14px + env(safe-area-inset-top,0px)) 16px 8px;border-bottom:0;justify-content:center;position:relative;min-height:calc(52px + env(safe-area-inset-top,0px))}
+.modal-tam .modal-ust h3{flex:0 1 auto;text-align:center;font-family:'Quicksand','Segoe UI',system-ui,sans-serif;font-size:19px;font-weight:700;padding:0 48px}
+/* Kapatma ✕: güvenli alanı (çentik/durum çubuğu) hesaba kat + büyük dokunma hedefi (her telefonda erişilebilir) */
+.modal-tam .modal-kapat{position:absolute;left:10px;top:calc(9px + env(safe-area-inset-top,0px));width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--gri);border:1px solid var(--kenar);color:var(--metin);font-size:22px;line-height:1}
+.modal-tam .modal-kapat:active{transform:scale(.92)}
+body.tema-neon .modal-tam .modal-kapat{background:var(--gri);border-color:var(--kenar);color:var(--metin)}
 .modal-tam .modal-govde{flex:1;max-height:none;overflow-y:auto;padding:6px 20px 16px;-webkit-overflow-scrolling:touch}
 .modal-tam .modal-alt{border-top:0;padding:12px 20px calc(20px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;justify-content:stretch}
 .modal-tam .modal-alt .btn-ana{flex:1}
