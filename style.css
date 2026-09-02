@@ -25,6 +25,7 @@
   --yesil-para:#2f8f5b;
   --mavi:#4a72a8;
   --sari:#c99a2e;
+  --turkuaz:#2f9d97;
   --golge:0 2px 12px rgba(96,78,42,.09);
   --golge-buyuk:0 16px 44px rgba(74,58,28,.20);
   --radius:16px;
@@ -61,6 +62,7 @@ body.tema-neon{
   --antrasit-acik:#e6ecf0;
   --neon:#b4e83a;           /* birincil neon lime */
   --neon-koyu:#9cd21f;
+  --turkuaz:#5ec7c2;        /* hoca / stüdyo kârı vurgusu */
   --amber:#f5a91f;          /* ikincil amber */
   --neon-metin:#14181c;     /* neon/amber üstü koyu metin */
   --golge:0 4px 16px rgba(0,0,0,.35);
@@ -4044,3 +4046,41 @@ body:not(.tema-neon) .ro-hero{background:linear-gradient(180deg,#f3f6ef,#eef2e6)
 .hk.alindi{opacity:.6}
 .hk.alindi .hk-bas{text-decoration:line-through}
 .hk-alindi-not{font-size:11px;color:var(--metin-soluk);font-weight:700;white-space:nowrap}
+
+/* ================= HOCA (komisyonlu eğitmen) ================= */
+/* Ortaklar↔Hocalar segmenti */
+.seg2.kar-seg{display:flex;background:var(--gri);border:1px solid var(--kenar);border-radius:12px;padding:3px;margin:0 0 14px}
+.seg2.kar-seg button{flex:1;border:0;background:none;color:var(--metin-soluk);font:inherit;font-size:13px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer}
+.seg2.kar-seg button.sec{background:var(--neon);color:var(--neon-metin)}
+.hoca-not{font-size:11.5px;color:var(--metin-soluk);line-height:1.5;margin:2px 2px 12px}
+.hoca-not b{color:var(--metin)}
+.aynav-sar{display:flex;justify-content:center;margin:0 0 14px}
+/* Hoca kartı */
+.hoca{background:var(--kart);border:1px solid var(--kenar);border-radius:16px;padding:13px 14px;margin-bottom:12px;box-shadow:var(--golge)}
+.hoca-bas{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.hoca .hav{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#5ec7c2,#3f8a86);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none;overflow:hidden}
+.hoca .hav.hav-foto{background:none}
+.hoca .hav img{width:100%;height:100%;object-fit:cover}
+.hoca-t{display:flex;flex-direction:column;min-width:0}
+.hoca-ad{font-weight:800;font-size:15px}
+.hoca-alt{font-size:11px;color:var(--metin-soluk);margin-top:1px}
+.oran-rz{margin-left:auto;font-size:11px;font-weight:800;color:var(--turkuaz);background:rgba(94,199,194,.14);border:1px solid rgba(94,199,194,.34);border-radius:8px;padding:4px 9px;white-space:nowrap}
+.hoca .satir{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--kenar)}
+.hoca .satir .l{color:var(--metin-soluk)}
+.hoca .satir .v{font-weight:700}
+.hoca .satir .v.neg{color:var(--kirmizi)}
+.hoca .satir .v.tk{color:var(--turkuaz)}
+.hoca .sonuc{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(180,232,58,.08);border:1px solid rgba(180,232,58,.28);border-radius:11px;padding:10px 12px;margin-top:10px}
+.hoca .sonuc .l{font-size:12px;color:var(--metin-soluk)}
+.hoca .sonuc .l b{color:var(--metin)}
+.hoca .sonuc .v{font-weight:800;font-size:15px;color:var(--neon);white-space:nowrap}
+.esles-not{display:flex;align-items:flex-start;gap:6px;font-size:10.5px;color:var(--metin-soluk);margin-top:9px;line-height:1.45}
+.esles-not b{color:var(--metin)}
+.esles-not b.kirmizi{color:var(--kirmizi)}
+/* Kişi formu — Hoca ayarları bloğu */
+.kf-blok.kf-hoca{background:rgba(94,199,194,.07);border:1px solid rgba(94,199,194,.28)}
+.kf-blok.kf-hoca .kf-blok-bas{color:var(--turkuaz)}
+.kf-ipucu{display:block;font-size:10.5px;color:var(--turkuaz);margin-top:6px;line-height:1.45}
+.kf-rol[data-rol="hoca"].sec{background:rgba(94,199,194,.16);border-color:var(--turkuaz);color:var(--turkuaz)}
+/* Kullanıcılar listesi — Hoca rozeti */
+.rz.rz-hoca{color:var(--turkuaz);background:rgba(94,199,194,.14)}
