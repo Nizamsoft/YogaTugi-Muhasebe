@@ -656,7 +656,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '314';
+const APP_SURUM = '315';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -6662,10 +6662,17 @@ const REHBER_BOLUM = [
     adimlar: ['<b>= Bu ayki hakediş</b> → tüm adımların toplamı.', '<b>− Şimdiye kadar verilen</b> → sana Kâr Dağıtımı olarak ödenenler.', '<b>= Sana kalan</b> → ödenmezse gelecek aya <b>devreder</b> 🔁'],
     ipuc: 'Üstten <span class="tus">Özet</span> ↔ <span class="tus">Detaylı</span> geçebilir, <span class="tus">DEĞİŞTİR</span> ile başka ortağa bakabilirsin. Ortak yalnız <b>kendini</b> görür; Kullanıcı rolü buraya <b>hiç girmez</b> 🔐' },
 
+  { em: '🧘', emc: 'b2', nk: 'Yeni oyuncu 🤝', t: 'Hocalar — komisyonla çalışan eğitmen', img: 'hocalar', toc: 'Hocalar', tocAlt: 'Komisyonlu eğitmenler',
+    hikaye: '<span class="who">💬 Stüdyona taze bir soluk geldi 🌿</span> Ali Hoca ortak değil ama dersleri tıklım tıklım 🧘‍♂️. Anlaşmanız net: kazandığının bir kısmı ona, kalanı stüdyoya kâr olarak. İşte bunun için <b>Hoca</b> rolü var — ortak gibi kâra girmez, <b>komisyonla</b> çalışır 🤝',
+    adimlar: ['<span class="tus">Ayarlar › Kullanıcılar › ＋ Ekle</span> → rolü <b>Hoca</b> seç 🧘 ve <b>Hakediş Oranı %</b>’sini bir kez yaz (örn. %70) — bir daha sormaz ✨', 'İstersen hocaya <b>giriş</b> tanımla; girdiğinde <b>yalnız Tahsilat Ekle</b> görür, kendi tahsilatlarını listeler 🔐', '<span class="tus">Ortaklar</span> sayfasında üstteki <b>🧘 Hocalar</b> sekmesine geç → her şey <b>otomatik</b> önünde 📊'],
+    kural: { bas: 'Dikkat — ödemeyi eşleştir', p: 'Hocaya para öderken (banka/nakit) gider kategorisini <b>“Hoca Ödemesi”</b> seç ✅. Seçmezsen ödeme hocanın <b>kalanından düşmez</b> ve normal masrafa karışır — tıpkı ortaktaki <b>Kâr Dağıtımı</b> gibi çalışır 🔗' },
+    perde: { bas: 'komisyon nasıl bölünür?', p: ['<b>Stüdyo kârı (Hoca kârı)</b> = brüt × (1 − hakediş oranı). Bu, hocanın stüdyoya bıraktığı kârdır ve <b>tüm ortaklara eşit</b> dağılır ⚖️ — ortak kartında “Hoca kârı” satırı olarak görünür.', '<b>Hocaya ödenecek</b> = brüt × oran − POS komisyonu 💳. Yani kart komisyonu hocanın payından düşülür.', 'Hocalardan <b>genel gider alınmaz</b> — onlar kirayı, elektriği paylaşmaz; yalnız komisyon mantığı işler.'], kural: 'Hoca kâra ortak olmaz; stüdyoya bıraktığı kâr ortaklara eşit gider, kalan pay hocaya ödenir.' },
+    ipuc: 'Örnek: Ali %70, bu ay <b>10.000 ₺</b> topladı (POS 374 ₺) → stüdyo kârı <b>3.000 ₺</b> (ortaklara), Ali’ye <b>6.626 ₺</b>. 5.000 ₺ ödediysen kalan <b>1.626 ₺</b> 💚 — hepsi kendiliğinden 🪄' },
+
   { em: '⚙️', emc: 'b4', nk: 'Kurulum 🛠️', t: 'Ayarlar — bir kez kur, keyfini sür', img: 'ayarlar', toc: 'Ayarlar', tocAlt: 'Kullanıcılar, vergi, tema',
     hikaye: '<span class="who">💬 En baştan bir kere ayarla 😌</span> Sonrası tereyağından kıl çeker gibi. Firma bilgisi, kullanıcılar & roller 👥, vergi, komisyonlar, gider kalemleri, açılış bakiyeleri, yedek 💾 ve tema 🎨 — hepsi tek çatı altında, elinin altında.',
     el: { l: 26, t: 25, e: '👇' }, etiket: 'Kişiler & roller 👥', etL: 35, etT: 18,
-    adimlar: ['<span class="tus">Kullanıcılar</span>: kişi ekle, rol ver (Admin / Ortak / Kullanıcı), giriş tanımla 👤', '<span class="tus">Roller & Yetkiler</span>: kim neyi görür, kim ne yapar — kararı sen ver 🔐', '<span class="tus">Yedekleme</span>: verini ara ara dışa aktar — hepsi bu cihazda, güvende 💾'],
+    adimlar: ['<span class="tus">Kullanıcılar</span>: kişi ekle, rol ver (<b>Ortak</b> 👥 ya da <b>Hoca</b> 🧘), giriş tanımla 👤', '<span class="tus">Roller & Yetkiler</span>: kim neyi görür, kim ne yapar — kararı sen ver 🔐', '<span class="tus">Yedekleme</span>: verini ara ara dışa aktar — hepsi bu cihazda, güvende 💾'],
     ipuc: 'Ayar sayfaları role göre görünür; hassas ayarlar yalnızca yetkili ellerde kalır 🔐✨' },
 ];
 SAYFALAR['ayar-rehber'] = function () {
