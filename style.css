@@ -4084,3 +4084,58 @@ body:not(.tema-neon) .ro-hero{background:linear-gradient(180deg,#f3f6ef,#eef2e6)
 .kf-rol[data-rol="hoca"].sec{background:rgba(94,199,194,.16);border-color:var(--turkuaz);color:var(--turkuaz)}
 /* Kullanıcılar listesi — Hoca rozeti */
 .rz.rz-hoca{color:var(--turkuaz);background:rgba(94,199,194,.14)}
+
+/* ================= GELİRLER — arama + filtre + Tüm Ortaklar ================= */
+.gl-arasat{display:flex;align-items:center;gap:9px;margin:2px 0 10px}
+.gl-arakutu{flex:1;display:flex;align-items:center;gap:9px;background:var(--gri);border:1px solid var(--kenar);border-radius:11px;padding:9px 12px}
+.gl-arakutu .gl-ara-ik{color:var(--metin-soluk);display:flex}.gl-arakutu .gl-ara-ik .uik{width:17px;height:17px}
+.gl-arakutu input{flex:1;background:none;border:0;outline:0;color:var(--metin);font:inherit;font-size:14px;min-width:0}
+.gl-arakutu .gl-ara-x{background:none;border:0;color:var(--metin-soluk);font-size:15px;font-weight:700;padding:0 2px;cursor:pointer}
+.gl-arakutu.dolu{border-color:var(--neon);box-shadow:0 0 0 2px rgba(180,232,58,.14)}
+.gl-fbtn{position:relative;width:44px;height:44px;flex:none;border-radius:12px;background:var(--gri);border:1px solid var(--kenar);display:grid;place-items:center;color:var(--metin);cursor:pointer}
+.gl-fbtn svg{width:21px;height:21px}
+.gl-fbtn.on{background:rgba(180,232,58,.14);border-color:var(--neon);color:var(--neon)}
+.gl-frozet{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:99px;background:var(--neon);color:var(--neon-metin);font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid var(--krem)}
+.gl-sonuc{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--metin-soluk);margin:0 3px 11px}
+.gl-sonuc .gl-sn-sol b{color:var(--metin)}.gl-sonuc .gl-suz{color:var(--neon);font-weight:700}
+.gl-sonuc .gl-sn-tut{color:var(--neon);font-weight:800}
+/* Tablo: Tüm Ortaklar satırı */
+.ogr-tablo tr.gl-tumrow td{background:rgba(180,232,58,.05)}
+.gl-tumrz{display:inline-flex;align-items:center;gap:4px;background:rgba(180,232,58,.13);border:1px solid rgba(180,232,58,.34);color:var(--neon);border-radius:7px;padding:2px 7px;font-size:11.5px;font-weight:800}
+.rozet-etk.rz-bekl{color:var(--amber);background:rgba(245,169,31,.16)}
+mark{background:rgba(180,232,58,.34);color:#fff;border-radius:3px;padding:0 1px}
+/* Rapor: Tüm Ortaklar grubu */
+.gr-grp.gr-tum{border-color:rgba(180,232,58,.4);background:rgba(180,232,58,.05)}
+.gr-grp.gr-tum .gr-grpbas .ik{background:linear-gradient(135deg,#c7f24a,#a4d92f);border:none}
+.gr-tumcap{display:block;font-size:10px;font-weight:700;color:var(--turkuaz);margin-top:2px}
+/* Filtre paneli */
+.gl-fg{margin-bottom:15px}
+.gl-fgb{font-size:12px;font-weight:800;color:var(--metin);margin:0 2px 9px}
+.gl-selrow{width:100%;display:flex;align-items:center;gap:10px;background:var(--gri);border:1px solid var(--kenar);border-radius:11px;padding:11px 12px;color:var(--metin);font:inherit;cursor:pointer}
+.gl-selrow .v{flex:1;text-align:left;font-weight:700;font-size:14px}.gl-selrow .ok{color:var(--metin-soluk)}
+.gl-mchips{display:flex;flex-wrap:wrap;gap:7px}
+.gl-mchip{background:var(--gri);border:1px solid var(--kenar);border-radius:999px;color:var(--metin-soluk);font:inherit;font-size:12.5px;font-weight:700;padding:8px 14px;cursor:pointer}
+.gl-mchip.sec{background:var(--neon);border-color:var(--neon);color:var(--neon-metin)}
+.gl-tarih2{display:flex;align-items:center;gap:9px}
+.gl-tarih2 .gp-inp{flex:1;min-width:0}.gl-tarih2 .gl-t2ok{color:var(--metin-soluk)}
+.gl-fdip{display:flex;gap:9px;margin-top:6px}
+.gl-fdip .btn{flex:1;justify-content:center}
+.gl-fdip .gl-ftemizle{color:var(--kirmizi);border-color:rgba(240,133,122,.4)}
+.gl-fdip .gl-fuygula{flex:1.5}
+/* altSecici vurgulu (Tüm Ortaklar) seçenek */
+.altsec-oge.as-vurgu{background:rgba(180,232,58,.09);border:1px solid rgba(180,232,58,.34);border-radius:11px;margin-bottom:4px}
+.altsec-oge.as-vurgu .ad{color:var(--neon)}
+/* Ortak gelir payı — kârlılık kartı (Özet) */
+.oz-opay{display:flex;align-items:center;gap:10px;background:rgba(180,232,58,.08);border:1px solid rgba(180,232,58,.32);border-radius:11px;padding:10px 12px;margin:0 0 12px 46px}
+.oz-opem{font-size:15px;flex:none}
+.oz-opct{flex:1;min-width:0}
+.oz-opb{font-size:12.5px;font-weight:800;color:var(--neon);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.oz-oprz{font-size:9px;font-weight:800;color:var(--neon-metin);background:var(--neon);border-radius:5px;padding:1px 6px}
+.oz-opc{font-size:11px;color:var(--metin-soluk);margin-top:4px;line-height:1.45}
+.oz-opam{font-weight:800;color:var(--neon);font-size:13px;white-space:nowrap}
+/* Ortak gelir payı — kârlılık kartı (Detaylı) */
+.dt-opay{display:flex;align-items:center;gap:10px;background:rgba(180,232,58,.06);border:1px solid rgba(180,232,58,.28);border-radius:10px;padding:9px 11px;margin:0 0 12px 42px}
+.dt-opem{font-size:14px;flex:none}.dt-opct{flex:1;min-width:0}
+.dt-opb{font-size:12.5px;font-weight:800;color:var(--neon)}
+.dt-opc{font-size:11px;color:var(--metin-soluk);margin-top:2px;line-height:1.4}
+.dt-opam{font-weight:800;color:var(--neon);font-size:12.5px;white-space:nowrap}
