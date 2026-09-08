@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '316';
+const APP_SURUM = '317';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2047,14 +2047,26 @@ function ttListeBagla(kok) {
 /* Bekleyen Tahsilatlar — defter girişleri; banka/nakit ile "hesaba yansıyınca" üstü çizilir */
 let bekDonem = buAy();
 let bankaEsCtx = null;   // banka hareketini tahsilatla eşleştirme modu: {k, wiz, secili:Set, onOnay, onVazgec}
+let bekArama = '';       // bekleyen sayfası araması (tüm alanlar)
+let bekFiltre = { egitmen: '', odeme: '', durum: '', bas: '', bit: '' };   // durum: '' tümü | 'bekleyen' | 'tahsil'
+function bekFiltreSayi() { const f = bekFiltre; return (f.egitmen ? 1 : 0) + (f.odeme ? 1 : 0) + (f.durum ? 1 : 0) + ((f.bas || f.bit) ? 1 : 0); }
 SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
   if (bankaEsCtx) return bekleyenEslesModu();
-  const liste = ttSirali().filter(t => donemStr(t.tarih) === bekDonem);
-  const bekleyen = liste.filter(t => !tahsilatUyum(t));
-  const yansiyan = liste.filter(t => tahsilatUyum(t));
-  const sirali = [...bekleyen, ...yansiyan];   // bekleyenler üstte
-  const bekTop = bekleyen.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
-  const yanTop = yansiyan.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+  const base = ttSirali().filter(t => donemStr(t.tarih) === bekDonem);
+  const turAd = (t) => GELIR_TUR[t] || t || '—';
+  let q = '';
+  const vur = (s) => { s = String(s == null ? '' : s); if (!q) return kacar(s); const i = s.toLocaleLowerCase('tr').indexOf(q); if (i < 0) return kacar(s); return kacar(s.slice(0, i)) + '<mark>' + kacar(s.slice(i, i + q.length)) + '</mark>' + kacar(s.slice(i + q.length)); };
+  const uygula = () => { const f = bekFiltre; return base.filter(t => {
+    const yans = tahsilatUyum(t);
+    if (f.durum === 'bekleyen' && yans) return false;
+    if (f.durum === 'tahsil' && !yans) return false;
+    if (f.egitmen) { if (f.egitmen === TUM_ORTAKLAR_ET) { if (!t.ortakGenel) return false; } else if (t.ortakGenel || adNorm(t.egitmenAd || '') !== adNorm(f.egitmen)) return false; }
+    if (f.odeme && (t.odemeTuru || '') !== f.odeme) return false;
+    if (f.bas && (t.tarih || '') < f.bas) return false;
+    if (f.bit && (t.tarih || '') > f.bit) return false;
+    if (q) { const hay = [kisaTarih(t.tarih), t.egitmenAd, t.ogrenciAd, t.dersPaketi, turAd(t.odemeTuru), String(t.tutar), binlik(t.tutar)].filter(Boolean).join(' ').toLocaleLowerCase('tr'); if (!hay.includes(q)) return false; }
+    return true;
+  }); };
   const satir = (t) => {
     const yansidi = tahsilatUyum(t);
     const dn = donemStr(t.tarih); const dp = dn.split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
@@ -2062,30 +2074,75 @@ SAYFALAR['bekleyen'] = function bekleyenTahsilatSayfasi() {
     const durum = yansidi
       ? `<span class="bt-yans">${ik('onay')} ${kacar(tur + ' · Tahsil edildi')}</span>`
       : `<span class="bt-bek">${kacar(tur + ' · Bekliyor')}</span>`;
-    return `<tr data-ttduz="${t.id}" class="${yansidi ? 'bt-ger' : 'bt-bek-r'}">
-        <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
-        <td data-l="Eğitmen" class="a2-hcr"><span class="a2-us">${kacar(t.egitmenAd || '—')}</span>${t.ogrenciAd ? `<span class="a2-dn">${kacar(t.ogrenciAd)}</span>` : ''}</td>
-        <td data-l="Ders">${kacar(t.dersPaketi || '—')}</td>
+    const egHc = t.ortakGenel ? `<span class="gl-tumrz">👥 ${vur(TUM_ORTAKLAR_ET)}</span>` : `<span class="a2-us">${vur(t.egitmenAd || '—')}</span>`;
+    return `<tr data-ttduz="${t.id}" class="${yansidi ? 'bt-ger' : 'bt-bek-r'} ${t.ortakGenel ? 'gl-tumrow' : ''}">
+        <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${vur(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
+        <td data-l="Eğitmen" class="a2-hcr">${egHc}${t.ogrenciAd ? `<span class="a2-dn">${vur(t.ogrenciAd)}</span>` : ''}</td>
+        <td data-l="Ders">${vur(t.dersPaketi || '—')}</td>
         <td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(t.tutar)}</span>${durum}</td>
       </tr>`;
   };
+  const fSay = bekFiltreSayi();
   ic().innerHTML = `<div class="kar-sayfa">
     <div class="gg-tekbar"><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
-    <div class="bt-aybar">${ayNavHTML(bekDonem)}<span class="say">${liste.length} tahsilat</span></div>
-    <div class="bt-ozet">
-      <div class="bt-oz bek"><span class="l">Bekleyen</span><span class="v">${TL(bekTop)} <small>· ${bekleyen.length}</small></span></div>
-      <div class="bt-oz ger"><span class="l">Tahsil Edilen</span><span class="v">${TL(yanTop)} <small>· ${yansiyan.length}</small></span></div>
+    <div class="bt-aybar">${ayNavHTML(bekDonem)}<span class="say">${base.length} tahsilat</span></div>
+    <div class="gl-arasat">
+      <div class="gl-arakutu ${bekArama ? 'dolu' : ''}"><span class="gl-ara-ik">${ik('ara')}</span><input type="text" id="btAra" placeholder="Tahsilat ara…" value="${kacar(bekArama)}" autocomplete="off" autocorrect="off" spellcheck="false"><button type="button" class="gl-ara-x" id="btAraX" aria-label="Aramayı temizle" ${bekArama ? '' : 'hidden'}>✕</button></div>
+      <button type="button" class="gl-fbtn ${fSay ? 'on' : ''}" id="btFiltreBtn" aria-label="Filtrele"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z" fill="currentColor" opacity=".2"/><path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>${fSay ? `<span class="gl-frozet">${fSay}</span>` : ''}</button>
     </div>
-    ${liste.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo">
-        <colgroup><col style="width:16%"><col style="width:31%"><col style="width:22%"><col style="width:31%"></colgroup>
-        <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
-        <tbody>${sirali.map(satir).join('')}</tbody></table></div></div>`
-      : `<div class="gp-bos">${donemAdi(bekDonem)} için tahsilat girişi yok. “Yeni” ile ekleyin; banka/nakitle yansıyınca üstü çizilir.</div>`}
+    <div id="btGovde"></div>
   </div>`;
+  const iceriCiz = () => {
+    q = (bekArama || '').trim().toLocaleLowerCase('tr');
+    const gos = uygula();
+    const bekleyen = gos.filter(t => !tahsilatUyum(t));
+    const yansiyan = gos.filter(t => tahsilatUyum(t));
+    const sirali = [...bekleyen, ...yansiyan];
+    const bekTop = bekleyen.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+    const yanTop = yansiyan.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+    const suzuk = q || bekFiltreSayi();
+    $('#btGovde').innerHTML = `
+      <div class="bt-ozet">
+        <div class="bt-oz bek"><span class="l">Bekleyen</span><span class="v">${TL(bekTop)} <small>· ${bekleyen.length}</small></span></div>
+        <div class="bt-oz ger"><span class="l">Tahsil Edilen</span><span class="v">${TL(yanTop)} <small>· ${yansiyan.length}</small></span></div>
+      </div>
+      ${sirali.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo">
+          <colgroup><col style="width:16%"><col style="width:31%"><col style="width:22%"><col style="width:31%"></colgroup>
+          <thead><tr><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
+          <tbody>${sirali.map(satir).join('')}</tbody></table></div></div>`
+        : `<div class="gp-bos">${suzuk ? 'Eşleşen kayıt yok.' : donemAdi(bekDonem) + ' için tahsilat girişi yok. “Yeni” ile ekleyin; banka/nakitle yansıyınca üstü çizilir.'}</div>`}`;
+    $$('#btGovde tr[data-ttduz]').forEach(tr => tr.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === tr.dataset.ttduz), () => git('bekleyen')));
+  };
+  iceriCiz();
   $$('#icerik .bt-aybar [data-ay]').forEach(b => b.onclick = () => { bekDonem = donemKaydir(bekDonem, Number(b.dataset.ay)); SAYFALAR['bekleyen'](); });
   { const y = $('#btYeni'); if (y) y.onclick = () => tahsilatTanimModal(null, () => git('bekleyen')); }
-  $$('#icerik tr[data-ttduz]').forEach(tr => tr.onclick = () => tahsilatTanimModal((State.tahsilatTanimlari || []).find(x => x.id === tr.dataset.ttduz), () => git('bekleyen')));
+  { const ai = $('#btAra'); if (ai) ai.oninput = () => { bekArama = ai.value; const x = $('#btAraX'); if (x) x.hidden = !ai.value; $('.gl-arakutu').classList.toggle('dolu', !!ai.value); iceriCiz(); }; }
+  { const ax = $('#btAraX'); if (ax) ax.onclick = () => { bekArama = ''; const ai = $('#btAra'); if (ai) { ai.value = ''; ai.focus(); } ax.hidden = true; $('.gl-arakutu').classList.remove('dolu'); iceriCiz(); }; }
+  { const fb = $('#btFiltreBtn'); if (fb) fb.onclick = () => bekFiltreModal(() => git('bekleyen')); }
 };
+/* Bekleyen Tahsilatlar filtre paneli */
+function bekFiltreModal(sonra) {
+  const f = { ...bekFiltre };
+  const egAd = (v) => v ? (v === TUM_ORTAKLAR_ET ? '👥 ' + v : v) : 'Hepsi';
+  const chip = (g, v, ad) => `<button type="button" class="gl-mchip ${f[g] === v ? 'sec' : ''}" data-fg="${g}" data-fv="${kacar(v)}">${kacar(ad)}</button>`;
+  const govde = `
+    <div class="gl-fg"><div class="gl-fgb">👤 Eğitmen / Ortak</div>
+      <button type="button" class="gl-selrow" id="bfEg"><span class="v" id="bfEgV">${kacar(egAd(f.egitmen))}</span><span class="ok">⌄</span></button></div>
+    <div class="gl-fg"><div class="gl-fgb">💳 Ödeme Türü</div><div class="gl-mchips">${chip('odeme', '', 'Tümü')}${chip('odeme', 'nakit', 'Nakit')}${chip('odeme', 'havale', 'Havale')}${chip('odeme', 'kart', 'Kart')}${chip('odeme', 'multinet', 'Multinet')}</div></div>
+    <div class="gl-fg"><div class="gl-fgb">✅ Durum</div><div class="gl-mchips">${chip('durum', '', 'Tümü')}${chip('durum', 'bekleyen', 'Bekleyen')}${chip('durum', 'tahsil', 'Tahsil Edilen')}</div></div>
+    <div class="gl-fg"><div class="gl-fgb">📅 Tarih Aralığı</div><div class="gl-tarih2"><input type="date" class="gp-inp" id="bfBas" value="${f.bas || ''}"><span class="gl-t2ok">→</span><input type="date" class="gp-inp" id="bfBit" value="${f.bit || ''}"></div></div>
+    <div class="gl-fdip"><button type="button" class="btn gl-ftemizle" id="bfTemizle">Temizle</button><button type="button" class="btn btn-ana gl-fuygula" id="bfUygula">Uygula</button></div>`;
+  const sh = altSheet('Filtrele', govde);
+  sh.qq('[data-fg]').forEach(c => c.onclick = () => { const g = c.dataset.fg, v = c.dataset.fv; f[g] = v; sh.qq(`[data-fg="${g}"]`).forEach(x => x.classList.toggle('sec', x.dataset.fv === v)); });
+  sh.q('#bfEg').onclick = () => altSecici({
+    baslik: 'Eğitmen / Ortak', arama: true, placeholder: 'Ara…', secili: f.egitmen,
+    secenekler: [{ deger: '', ad: 'Hepsi' }, { deger: TUM_ORTAKLAR_ET, ad: '👥 ' + TUM_ORTAKLAR_ET, vurgu: true },
+      ...(State.ortaklar || []).filter(o => o.aktif !== false && egitmenMi(o)).sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.ad, ad: o.ad, alt: o.rol === 'hoca' ? 'Hoca' : 'Ortak' }))],
+    onSec: (v) => { f.egitmen = v; sh.q('#bfEgV').innerHTML = kacar(egAd(v)); },
+  });
+  sh.q('#bfTemizle').onclick = () => { bekFiltre = { egitmen: '', odeme: '', durum: '', bas: '', bit: '' }; sh.kapat(); if (sonra) sonra(); };
+  sh.q('#bfUygula').onclick = () => { f.bas = (sh.q('#bfBas').value || ''); f.bit = (sh.q('#bfBit').value || ''); bekFiltre = f; sh.kapat(); if (sonra) sonra(); };
+}
 /* Bekleyen Tahsilatlar — banka hareketini tahsilatlarla eşleştirme modu */
 function bekleyenEslesModu() {
   const ctx = bankaEsCtx, k = ctx.k;
