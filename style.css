@@ -4139,3 +4139,19 @@ mark{background:rgba(180,232,58,.34);color:#fff;border-radius:3px;padding:0 1px}
 .dt-opb{font-size:12.5px;font-weight:800;color:var(--neon)}
 .dt-opc{font-size:11px;color:var(--metin-soluk);margin-top:2px;line-height:1.4}
 .dt-opam{font-weight:800;color:var(--neon);font-size:12.5px;white-space:nowrap}
+
+/* ================= MOBİL KLAVYE UYUMU ================= */
+/* visualViewport'tan gelen --kb (klavye yüksekliği) ve --vvh (görünür yükseklik) ile
+   alttan sheet'ler ve tam-ekran form klavyenin üstünde kalır. */
+:root{ --kb:0px; --vvh:100vh; }
+/* Alttan açılan seçici (altSecici) klavyenin üstüne çıksın, liste kaydırılabilir kalsın */
+.altsec-perde{ transition:padding-bottom .2s ease }
+body.kb-acik .altsec-perde{ padding-bottom:var(--kb,0px) }
+body.kb-acik .altsec{ max-height:calc(var(--vvh,82vh) - 14px) }
+/* Tam-ekran form (Tahsilat Ekle vb.): görünür alana otursun, Kaydet düğmesi klavyenin üstünde kalsın */
+body.kb-acik .modal-perde:has(.modal-tam){ align-items:flex-start; padding-top:0 }
+body.kb-acik .modal.modal-tam{ height:var(--vvh); max-height:var(--vvh) }
+/* Ortalanmış modaller: klavye açılınca üste yaslanıp görünür alana sığsın */
+body.kb-acik .modal-perde{ align-items:flex-start; padding-top:10px }
+body.kb-acik .modal:not(.modal-tam){ max-height:calc(var(--vvh,90vh) - 18px) }
+body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:calc(var(--vvh,74vh) - 132px) }

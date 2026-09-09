@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '318';
+const APP_SURUM = '319';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9106,6 +9106,32 @@ function talepDetayModal(t) {
 /* ==========================================================
    10) KİMLİK DOĞRULAMA & BAŞLATMA
    ========================================================== */
+/* Mobil klavye uyumu: visualViewport ile klavye yüksekliğini (--kb) ve görünür yüksekliği (--vvh)
+   CSS'e aktarır; body.kb-acik ile alttan sheet'ler ve tam-ekran form klavyenin üstünde kalır.
+   Ayrıca odaklanan giriş alanını görünür bölgeye kaydırır. Bir kez kurulur. */
+let _klavyeKuruldu = false;
+function klavyeUyumKur() {
+  if (_klavyeKuruldu) return; _klavyeKuruldu = true;
+  const vv = window.visualViewport;
+  const kok = document.documentElement;
+  if (vv) {
+    const uygula = () => {
+      const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      kok.style.setProperty('--kb', kb + 'px');
+      kok.style.setProperty('--vvh', Math.round(vv.height) + 'px');
+      document.body.classList.toggle('kb-acik', kb > 90);
+    };
+    vv.addEventListener('resize', uygula);
+    vv.addEventListener('scroll', uygula);
+    uygula();
+  }
+  // Odaklanan alanı (modal / alttan sheet içinde) görünür bölgeye getir — klavye animasyonu bitince
+  document.addEventListener('focusin', (e) => {
+    const t = e.target; if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    const kap = t.closest('.modal, .altsec'); if (!kap) return;
+    setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { } }, 280);
+  });
+}
 async function uygulamayiBaslat() {
   // Giriş ekranında premium yükleme göster; veriler yüklenince uygulamaya geç
   const gg = $('#girisGovde'), gy = $('#girisYuk');
@@ -9116,6 +9142,7 @@ async function uygulamayiBaslat() {
   await Bulut.baslangicSenkron();   // bulut bağlıysa verileri buluttan çek (hata olsa da engel olmaz)
   await veriYukle();
   hareketKaydiAktif = true;   // artık kullanıcı işlemleri hareket kaydına yazılsın (boot yazımları hariç)
+  klavyeUyumKur();       // mobil klavye açılınca form/sheet klavyenin üstünde kalsın
   menuCiz();
   altMenuCiz();          // alt sayfa çubuğunu giriş yapan kullanıcıya göre yeniden çiz (admin → tüm sekmeler)
   kullaniciBilgiCiz();   // tepe paneli: görsel + ad soyad (ortaklar yüklendikten sonra)
