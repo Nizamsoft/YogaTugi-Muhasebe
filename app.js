@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '317';
+const APP_SURUM = '318';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2251,6 +2251,22 @@ function tahsilatSecModal(baslik, ikon, secenekler, mevcut, onSec) {
 }
 
 let ttForm = null;
+/* Öğrenci öneri kaynağı — sistemde hatırlanan öğrenciler:
+   tahsilat kayıtları (en güncel eğitmeniyle) + Plan4me üyeleri + öğrenci listesi; adNorm ile tekilleştirilir.
+   Dönüş: [{ad, eg, sayi}] alfabetik. Bir tahsilat kaydedildiğinde adı burada otomatik hatırlanır. */
+function ogrenciOnerileri() {
+  const harita = new Map();
+  const ekle = (adRaw, eg) => {
+    const ad = String(adRaw == null ? '' : adRaw).trim(); if (!ad) return;
+    const k = adNorm(ad); if (!k) return;
+    let r = harita.get(k); if (!r) { r = { ad, eg: eg || '', sayi: 0 }; harita.set(k, r); }
+    r.sayi++; if (eg && !r.eg) r.eg = eg;   // ilk (en güncel) eğitmen tutulur
+  };
+  [...(State.tahsilatTanimlari || [])].sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).forEach(t => ekle(t.ogrenciAd, t.ortakGenel ? '' : t.egitmenAd));
+  (State.planformiTahsilat || []).forEach(p => ekle(p.uyeAd, p.egitmenAd));
+  (State.ogrenciler || []).forEach(o => ekle([o.ad, o.soyad].filter(Boolean).join(' '), ''));
+  return Array.from(harita.values()).sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+}
 /* mevcut: düzenlenecek kayıt (id'li) VEYA yeni kayıt için ön-dolgu (id'siz). sonrasi: kaydet/sil sonrası geri çağrı (önizleme tazeleme). */
 function tahsilatTanimModal(mevcut, sonrasi) {
   if (!yetki('veri_ekle')) { bildir('Bu işlem için yetkiniz yok.', 'hata'); return; }
@@ -2289,13 +2305,12 @@ function tahsilatTanimModal(mevcut, sonrasi) {
       onSec: (v) => { ttForm.egitmenAd = v; ffTrigGuncelle('ttEgTrig', v); } }); }
   // Öğrenci (Plan4me kayıtlarından, serbest yazım da olur)
   $('#ttOgrTrig').onclick = () => {
-    const pf = State.planformiTahsilat || []; const harita = new Map();
-    pf.forEach(p => { const ad = String(p.uyeAd || '').trim(); if (!ad) return; const k = adNorm(ad); if (!harita.has(k)) harita.set(k, { ad, eg: p.egitmenAd || '', sayi: 0 }); harita.get(k).sayi++; });
-    const adlar = Array.from(harita.values()).sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
+    const adlar = ogrenciOnerileri();   // sistemde hatırlanan öğrenciler (tahsilat + Plan4me + liste)
     const secAd = (ad) => { ad = String(ad).trim(); if (!ad) return; ttForm.ogrenciAd = ad; ffTrigGuncelle('ttOgrTrig', ad);
-      if (!ttForm.egitmenAd) { const p = pf.find(x => adNorm(x.uyeAd) === adNorm(ad) && x.egitmenAd); const o = p && ortaklar.find(k => adNorm(k.ad) === adNorm(p.egitmenAd)); if (o) { ttForm.egitmenAd = o.ad; ffTrigGuncelle('ttEgTrig', o.ad); } } };
+      // Öğrenci seçilince eğitmen boşsa, o öğrencinin bilinen eğitmenini otomatik doldur (hoca girişinde kendine sabit)
+      if (!ttForm.egitmenAd && !hocaGiris()) { const r = adlar.find(x => adNorm(x.ad) === adNorm(ad) && x.eg); const o = r && ortaklar.find(k => adNorm(k.ad) === adNorm(r.eg)); if (o) { ttForm.egitmenAd = o.ad; ffTrigGuncelle('ttEgTrig', o.ad); } } };
     altSecici({ baslik: 'Öğrenci Seç', arama: true, placeholder: 'Öğrenci ara veya yaz…', harf: true, secili: ttForm.ogrenciAd,
-      secenekler: adlar.map(r => ({ deger: r.ad, ad: r.ad, alt: (r.eg || 'Plan4me') + ' · ' + r.sayi + ' kayıt' })),
+      secenekler: adlar.map(r => ({ deger: r.ad, ad: r.ad, alt: (r.eg ? r.eg + ' · ' : '') + r.sayi + ' kayıt' })),
       onSec: secAd, onEkle: secAd });
   };
   if ($('#ttSil')) $('#ttSil').onclick = () => onayModal('Sil', 'Bu tahsilat tanımı silinsin mi?', async () => {
