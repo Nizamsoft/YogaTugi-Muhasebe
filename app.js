@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '319';
+const APP_SURUM = '320';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9125,11 +9125,17 @@ function klavyeUyumKur() {
     vv.addEventListener('scroll', uygula);
     uygula();
   }
-  // Odaklanan alanı (modal / alttan sheet içinde) görünür bölgeye getir — klavye animasyonu bitince
+  // Odaklanan alan klavyenin altında kalıyorsa, yalnız gerektiği kadar (yumuşak) yukarı kaydır.
+  // Sayfa içi alanlar da dahil her yerde çalışır; zaten görünürse hiç kaydırmaz (zıplama olmaz).
   document.addEventListener('focusin', (e) => {
-    const t = e.target; if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-    const kap = t.closest('.modal, .altsec'); if (!kap) return;
-    setTimeout(() => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { } }, 280);
+    const t = e.target; if (!t || !/^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+    setTimeout(() => {
+      try {
+        const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+        const r = t.getBoundingClientRect();
+        if (r.bottom > vh - 10 || r.top < 6) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' });   // yalnız gizliyse, en az mesafe
+      } catch (_) { }
+    }, 320);   // klavye + panel yerleşmesi bitince tek ve yumuşak hareket
   });
 }
 async function uygulamayiBaslat() {
@@ -9845,6 +9851,7 @@ document.addEventListener('DOMContentLoaded', () => {
   State.ayarlar = DB.ayarOku();
   firmaBilgileriUygula();
   ustCubukKur();
+  klavyeUyumKur();   // klavye uyumu ilk açılıştan itibaren (giriş ekranı dahil) her yerde aktif
   girisKur();
   yakinlastirmaKapat();
   autofillKapatKur();

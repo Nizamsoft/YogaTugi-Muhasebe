@@ -3629,7 +3629,7 @@ body.tema-neon .modal-tam .modal-kapat{background:var(--gri);border-color:var(--
 .altsec-perde{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .25s}
 .altsec-perde.acik{opacity:1}
 .altsec{width:100%;max-width:560px;background:#333b45;border-radius:22px 22px 0 0;max-height:82vh;display:flex;flex-direction:column;
-  transform:translateY(110%);transition:transform .32s cubic-bezier(.22,.9,.3,1.04);padding-bottom:env(safe-area-inset-bottom,0px)}
+  transform:translateY(110%);transition:transform .32s cubic-bezier(.22,.9,.3,1.04),max-height .26s cubic-bezier(.33,.05,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
 .altsec-perde.acik .altsec{transform:none}
 .altsec-tut{width:44px;height:5px;border-radius:99px;background:#5a636e;margin:11px auto 3px;flex:none}
 .altsec-bas{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;flex:none}
@@ -4145,10 +4145,11 @@ mark{background:rgba(180,232,58,.34);color:#fff;border-radius:3px;padding:0 1px}
    alttan sheet'ler ve tam-ekran form klavyenin üstünde kalır. */
 :root{ --kb:0px; --vvh:100vh; }
 /* Alttan açılan seçici (altSecici) klavyenin üstüne çıksın, liste kaydırılabilir kalsın */
-.altsec-perde{ transition:padding-bottom .2s ease }
+.altsec-perde{ transition:padding-bottom .26s cubic-bezier(.33,.05,.2,1) }
 body.kb-acik .altsec-perde{ padding-bottom:var(--kb,0px) }
 body.kb-acik .altsec{ max-height:calc(var(--vvh,82vh) - 14px) }
 /* Tam-ekran form (Tahsilat Ekle vb.): görünür alana otursun, Kaydet düğmesi klavyenin üstünde kalsın */
+.modal.modal-tam{ transition:height .26s cubic-bezier(.33,.05,.2,1) }
 body.kb-acik .modal-perde:has(.modal-tam){ align-items:flex-start; padding-top:0 }
 body.kb-acik .modal.modal-tam{ height:var(--vvh); max-height:var(--vvh) }
 /* Ortalanmış modaller: klavye açılınca üste yaslanıp görünür alana sığsın */
