@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '321';
+const APP_SURUM = '322';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2500,9 +2500,27 @@ let iaArsivAcik = false;
 let iaSonKayitlar = null, iaSonDosya = '', iaSonSekme = '';   // önizlemeyi tazelemek + gezinince tutmak için
 let iaOnFiltre = 'yok';   // Plan4me önizleme filtresi: 'yok'=eşleşmeyen (varsayılan) | 'ok'=eşleşen
 let iaOnLimit = 12;       // gösterilen satır sayısı; "Daha fazla" arttırır
+let iaTaslakGeri = false; // yarım kalan aktarım cihazdan geri yüklendi mi (uyarı barı için)
+/* Yarım kalan içe aktarma taslağı — uygulama kapansa/yenilense bile önizleme + sınıflandırmalar kaybolmasın.
+   Cihaza (localStorage) yazılır; içe aktarınca ya da silince temizlenir. Bulut'a gitmez (yerel WIP). */
+const IA_TASLAK_KEY = 'yt_iaTaslak';
+function iaTaslakYaz() {
+  try {
+    if (iaSonKayitlar && iaSonKayitlar.length && iaSonSekme && iaSonSekme !== 'planformi') {
+      localStorage.setItem(IA_TASLAK_KEY, JSON.stringify({ sekme: iaSonSekme, dosya: iaSonDosya || '', kayitlar: iaSonKayitlar, ts: Date.now() }));
+    } else { localStorage.removeItem(IA_TASLAK_KEY); }
+  } catch (_) { }
+}
+function iaTaslakOku() {
+  try { const s = localStorage.getItem(IA_TASLAK_KEY); if (!s) return null; const d = JSON.parse(s); if (d && Array.isArray(d.kayitlar) && d.kayitlar.length) return d; } catch (_) { }
+  return null;
+}
+function iaTaslakSil() { try { localStorage.removeItem(IA_TASLAK_KEY); } catch (_) { } }
 SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   if (!yetki('veri_iceAktar')) { git('dashboard'); return; }
   if (iaSekme === 'nakit') iaSekme = 'planformi';   // Nakit sekmesi kaldırıldı → Kasa hesabında görünür
+  // Yarım kalan banka aktarımı taslağı (uygulama kapanmış olsa bile) — bellek boşsa cihazdan geri yükle
+  if (!iaSonKayitlar) { const t = iaTaslakOku(); if (t && t.sekme && t.sekme !== 'planformi') { iaSekme = t.sekme; iaSonKayitlar = t.kayitlar; iaSonDosya = t.dosya || ''; iaSonSekme = t.sekme; iaTaslakGeri = true; } }
   const isPf = iaSekme === 'planformi';
   if (isPf) {   // Plan4me aktarımı pasif — yükleme yerine bilgi kartı
     ic().innerHTML = `<div class="ia-sayfa"><div class="ia-pasif">
@@ -2516,6 +2534,7 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   // Tek ince kart: başlık + "dosya yüklemek için dokunun". Sekme geçişi yok — ilgili sayfa doğrudan.
   ic().innerHTML = `
     <div class="ia-sayfa">
+      ${iaTaslakGeri ? `<div class="ia-taslak-bar" id="iaTaslakBar"><span class="iatb-ik">${ik('sure')}</span><span class="iatb-m"><b>Yarım kalan aktarım geri yüklendi.</b> Kaldığın yerden devam edebilirsin.</span><button type="button" class="iatb-sil" id="iaTaslakSilBtn">Sil</button></div>` : ''}
       <label class="ia-kart" id="iaKart">
         <input type="file" id="iaFile" accept=".xlsx,.xls,.csv" hidden>
         <span class="ia-kart-ik" id="iaKartIk">${ik('indir')}</span>
@@ -2524,6 +2543,9 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
       </label>
       <div id="iaGovde"></div>
     </div>`;
+  { const ts = $('#iaTaslakSilBtn'); if (ts) ts.onclick = () => onayModal('Taslağı sil?', 'Yarım kalan bu banka aktarımı ve yaptığın sınıflandırmalar silinecek. Bu işlem geri alınamaz.', () => {
+    iaTaslakSil(); iaSonKayitlar = null; iaSonSekme = ''; iaSonDosya = ''; iaTaslakGeri = false; SAYFALAR['ice-aktar']();
+  }, { evet: 'Sil' }); }
   iaArsivAcik = false;   // arşiv artık Ayarlar > İçe Aktarma Arşivi'nde
   const kart = $('#iaKart'), inp = $('#iaFile');
   kart.addEventListener('dragover', e => { e.preventDefault(); kart.classList.add('uzeri'); });
@@ -2717,6 +2739,7 @@ SAYFALAR['ayar-arsiv'] = function () {
   iaArsivCiz($('#arsGovde'), arsivSekme === 'planformi', () => SAYFALAR['ayar-arsiv']());
 };
 function iaIsle(file) {
+  iaTaslakGeri = false;   // yeni dosya → "geri yüklendi" barını kaldır (yeni önizleme taslağı iaOnizleCiz'de yazılır)
   const on = $('#iaOnizle'); on.innerHTML = '<div class="ia-yukleniyor">Okunuyor…</div>';
   iaDosyaOku(file, (data, err) => {
     if (err) { on.innerHTML = `<div class="ia-hata">${ik('uyari')} ${kacar(err)}</div>`; return; }
@@ -2857,6 +2880,7 @@ function bankaTahsilatEslesme(k) {
 }
 function iaOnizleCiz(kayitlar, dosyaAd) {
   iaSonKayitlar = kayitlar; iaSonDosya = dosyaAd; iaSonSekme = iaSekme;
+  iaTaslakYaz();   // her önizleme/sınıflandırma değişikliğinde taslağı cihaza kaydet
   const on = $('#iaOnizle'); const isPf = iaSekme === 'planformi';
   // Üst kart: dosya yüklendi → başlık dosya adı, alt yazı "değiştirmek için dokunun"
   { const bas = $('#iaKartBas'), alt = $('#iaKartAlt'), kart = $('#iaKart');
@@ -3019,7 +3043,7 @@ function iaOnizleCiz(kayitlar, dosyaAd) {
     await DB.topluEkle(kol, yeni);
     State[kol] = DB._oku(kol);
     bildir(`${yeni.length} kayıt içe aktarıldı.`, 'basari');
-    iaSonKayitlar = null; iaSonSekme = '';
+    iaSonKayitlar = null; iaSonSekme = ''; iaTaslakGeri = false; iaTaslakSil();   // taslak temizle (kalıcı kayıt oluştu)
     if (isPf) SAYFALAR['ice-aktar']();   // Plan4me → içe aktar sayfasında kal
     else { hesapAktif = 'banka'; git('hesap-defter'); }   // banka aktarımı → Hesaplar defterinin Banka sekmesi (içe aktarılan hareketler)
   };
