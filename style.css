@@ -3799,6 +3799,8 @@ body.tema-neon .bt-aybar .ay-nav button:hover,.bt-aybar .ay-nav button:hover{bac
 .bd-dg-row.tot .ad{color:var(--metin-soluk);font-weight:700}
 /* Kayıt işleme sihirbazı — üst ilerleme barı */
 .modal.modal-wiz .modal-ust{display:none}
+/* Sihirbaz modunda standart başlık gizli → sihirbaz başlığı iOS durum çubuğu/çentik boşluğunu (safe-area) hesaba katsın; ✕ saatin altında kalsın */
+.modal.modal-wiz .modal-govde{padding-top:calc(6px + env(safe-area-inset-top,0px))}
 .bd-wiz{padding:12px 2px 11px;border-bottom:1px solid var(--kenar);margin:0 0 4px}
 .bd-wiz-top{display:flex;align-items:center;gap:10px}
 .bd-wiz-x{width:32px;height:32px;border-radius:50%;background:var(--gri);border:0;color:var(--metin);font-size:17px;flex:none;cursor:pointer}
