@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '322';
+const APP_SURUM = '323';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2758,7 +2758,7 @@ function ttEslesme(p) {
     Math.abs((Number(t.tutar) || 0) - (Number(p.tutar) || 0)) < 1 &&
     Math.abs(gunFark(t.tarih, p.tarih)) <= 1);
 }
-function iaOnizleTazele() { if (iaSonKayitlar) iaOnizleCiz(iaSonKayitlar, iaSonDosya); }
+function iaOnizleTazele() { try { if (iaSonKayitlar && $('#iaOnizle')) iaOnizleCiz(iaSonKayitlar, iaSonDosya); else if (iaSonKayitlar) iaTaslakYaz(); } catch (_) { try { iaTaslakYaz(); } catch (__) { } } }
 /* Banka açıklamasının ANLAMLI/kısa kısmı — teknik gürültü (referans, term id, pos, IBAN, uzun kod) atılır; anlamlı bir şey kalmazsa boş döner (satırda gizlenir) */
 function bankaAciklamaKisa(a) {
   let s = String(a || '').replace(/\s+/g, ' ').trim();
@@ -9138,21 +9138,24 @@ function klavyeUyumKur() {
   if (_klavyeKuruldu) return; _klavyeKuruldu = true;
   const vv = window.visualViewport;
   const kok = document.documentElement;
-  if (vv) {
-    const uygula = () => {
-      const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-      kok.style.setProperty('--kb', kb + 'px');
-      kok.style.setProperty('--vvh', Math.round(vv.height) + 'px');
-      document.body.classList.toggle('kb-acik', kb > 90);
-    };
-    vv.addEventListener('resize', uygula);
-    vv.addEventListener('scroll', uygula);
-    uygula();
-  }
+  // kb-acik yalnızca gerçekten bir yazı alanı ODAKTAYKEN aktif olsun — böylece klavye kapanınca
+  // (iOS'ta viewport ölçüsü geç güncellese bile) takılı kalıp tam-ekran formu kısaltmaz.
+  const editOdak = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox' && a.type !== 'radio' && a.type !== 'button'); };
+  const uygula = () => {
+    const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+    const acik = kb > 90 && editOdak();
+    kok.style.setProperty('--kb', acik ? kb + 'px' : '0px');
+    kok.style.setProperty('--vvh', (acik && vv) ? Math.round(vv.height) + 'px' : '100vh');
+    document.body.classList.toggle('kb-acik', acik);
+  };
+  if (vv) { vv.addEventListener('resize', uygula); vv.addEventListener('scroll', uygula); uygula(); }
+  // Odak bir yazı alanından ayrılınca kb-acik'i temizle (klavye kapandı) — modal tekrar tam boy olur
+  document.addEventListener('focusout', () => setTimeout(uygula, 60));
   // Odaklanan alan klavyenin altında kalıyorsa, yalnız gerektiği kadar (yumuşak) yukarı kaydır.
   // Sayfa içi alanlar da dahil her yerde çalışır; zaten görünürse hiç kaydırmaz (zıplama olmaz).
   document.addEventListener('focusin', (e) => {
     const t = e.target; if (!t || !/^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+    setTimeout(uygula, 60);   // odak gelince kb durumunu hemen tazele
     setTimeout(() => {
       try {
         const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
