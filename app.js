@@ -657,7 +657,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '323';
+const APP_SURUM = '324';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -3330,12 +3330,13 @@ function bankaDetayModal(k, wiz) {
     const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? (f.egitmenId || null) : null, kullaniciAciklama: (f.kullaniciAciklama || '').trim(), eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
-    iaOnizleTazele();
     if (wiz) {   // sihirbaz: kaydet → otomatik sonraki kayda geç (son kayıtta bitir)
-      if (wiz.i >= wiz.liste.length - 1) { modalKapat(); bildir('Tüm kayıtlar işlendi.', 'basari'); }
+      iaTaslakYaz();   // her adımda YALNIZ taslağı kaydet (hafif) — arkadaki büyük önizleme tablosunu yeniden çizme → kasma/kilitlenme olmaz
+      if (wiz.i >= wiz.liste.length - 1) { modalKapat(); iaOnizleTazele(); bildir('Tüm kayıtlar işlendi.', 'basari'); }   // bitişte bir kez tazele
       else bankaDetayModal(wiz.liste[wiz.i + 1], { liste: wiz.liste, i: wiz.i + 1 });
       return;
     }
+    iaOnizleTazele();   // tekil düzenleme (sihirbaz değil) → önizlemeyi tazele
     modalKapat(); bildir('Hareket güncellendi.', 'basari');
   };
 }
@@ -9141,9 +9142,12 @@ function klavyeUyumKur() {
   // kb-acik yalnızca gerçekten bir yazı alanı ODAKTAYKEN aktif olsun — böylece klavye kapanınca
   // (iOS'ta viewport ölçüsü geç güncellese bile) takılı kalıp tam-ekran formu kısaltmaz.
   const editOdak = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox' && a.type !== 'radio' && a.type !== 'button'); };
+  let _kbSon = -1, _acikSon = null;
   const uygula = () => {
     const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
     const acik = kb > 90 && editOdak();
+    if (acik === _acikSon && (!acik || kb === _kbSon)) return;   // değer değişmediyse hiç dokunma → kaydırma/resize spam'ında style recalc yok (kasma önlenir)
+    _kbSon = kb; _acikSon = acik;
     kok.style.setProperty('--kb', acik ? kb + 'px' : '0px');
     kok.style.setProperty('--vvh', (acik && vv) ? Math.round(vv.height) + 'px' : '100vh');
     document.body.classList.toggle('kb-acik', acik);
