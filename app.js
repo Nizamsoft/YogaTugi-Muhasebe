@@ -336,17 +336,21 @@ function altSecici(o) {
     return `<div class="altsec-oge ${s ? 'sec' : ''} ${x.vurgu ? 'as-vurgu' : ''}" data-deger="${kacar(String(x.deger))}">${x.ik ? `<span class="as-ik">${x.ik}</span>` : ''}<span class="as-bil"><span class="ad">${kacar(x.ad)}</span>${x.alt ? `<span class="alt">${kacar(x.alt)}</span>` : ''}</span>${s ? '<span class="tik">✓</span>' : ''}</div>`;
   };
   const listeEl = kap.querySelector('#asListe');
+  const CIZ_LIMIT = 60;   // çok öğede (ör. 500 gider) tümünü çizmek yerine ilk N; gerisi aramayla daralt → sheet akıcı kalır
   const ciz = (liste, ham) => {
-    let html = ''; let sonG = null;
-    liste.forEach(x => {
-      if (x.vurgu) { html += ogeHTML(x); return; }   // sabit (Tüm Ortaklar) — grup başlığı almadan en üstte
+    let html = ''; let sonG = null; let n = 0; const tam = liste.length;
+    for (const x of liste) {
+      if (x.vurgu) { html += ogeHTML(x); continue; }   // sabit (Tüm Ortaklar) — grup başlığı almadan en üstte
+      if (n >= CIZ_LIMIT) break;   // render sınırı (yalnız görünen kısım; arama tüm listede çalışır)
+      n++;
       let g = null;
       if (o.grup) g = x.grup || 'Diğer';
       else if (o.harf) g = (String(x.ad).trim()[0] || '#').toLocaleUpperCase('tr');
       if (g != null && g !== sonG) { html += `<div class="altsec-grp">${kacar(g)}</div>`; sonG = g; }
       html += ogeHTML(x);
-    });
-    if (o.onEkle && ham) { const q = adNorm(ham); const tam = o.secenekler.some(x => adNorm(x.ad) === q); if (!tam) html = `<div class="altsec-oge altsec-ekle" data-ekle="1"><span class="as-bil"><span class="ad">＋ “${kacar(ham)}” ekle</span></span></div>` + html; }
+    }
+    if (tam > CIZ_LIMIT) html += `<div class="altsec-daha">+${tam - CIZ_LIMIT} kayıt daha · yazarak daraltın</div>`;
+    if (o.onEkle && ham) { const q = adNorm(ham); const tam2 = o.secenekler.some(x => adNorm(x.ad) === q); if (!tam2) html = `<div class="altsec-oge altsec-ekle" data-ekle="1"><span class="as-bil"><span class="ad">＋ “${kacar(ham)}” ekle</span></span></div>` + html; }
     if (!html) html = `<div class="altsec-bos">Eşleşen yok.</div>`;
     listeEl.innerHTML = html;
     listeEl.querySelectorAll('[data-deger]').forEach(el => el.onclick = () => sec(el.dataset.deger));
@@ -657,7 +661,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '324';
+const APP_SURUM = '325';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2516,6 +2520,9 @@ function iaTaslakOku() {
   return null;
 }
 function iaTaslakSil() { try { localStorage.removeItem(IA_TASLAK_KEY); } catch (_) { } }
+let _iaTaslakZ = null;
+/* Çok kayıtta (ör. 1000) her adımda büyük JSON yazmak takılmaya yol açar — geciktirilmiş yazım (son değişiklikten ~500ms sonra tek yazım). */
+function iaTaslakYazGecikmeli() { clearTimeout(_iaTaslakZ); _iaTaslakZ = setTimeout(() => { _iaTaslakZ = null; iaTaslakYaz(); }, 500); }
 SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
   if (!yetki('veri_iceAktar')) { git('dashboard'); return; }
   if (iaSekme === 'nakit') iaSekme = 'planformi';   // Nakit sekmesi kaldırıldı → Kasa hesabında görünür
@@ -3059,6 +3066,7 @@ function giderTanimlaModal(k) {
   const an = giderAnahtar(k.aciklama);
   const giderler = () => (State.giderler || []).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
   const item = (g) => `<div class="ds-osat" data-gid="${g.id}" data-ad="${kacar(g.ad)}"><span class="oav-mini">${kacar((g.ad[0] || '?').toLocaleUpperCase('tr'))}</span><span class="ds-obil"><span class="ad">${kacar(g.ad)}</span></span></div>`;
+  const giderCiz = (arr) => { const kesit = arr.slice(0, 60); let h = kesit.map(item).join(''); if (arr.length > 60) h += `<div class="altsec-daha">+${arr.length - 60} kayıt daha · yazarak daraltın</div>`; return h; };   // 500+ kalemde tümünü çizme → akıcı
   const sec = async (ad, gid) => {
     ad = String(ad).trim(); if (!ad) return;
     if (!gid) { const y = await DB.ekle('giderler', { ad, grupId: null }); State.giderler = DB._oku('giderler'); gid = y.id; }   // yeni gider kalemi ekle
@@ -3070,14 +3078,14 @@ function giderTanimlaModal(k) {
     <div class="tt-esl-bilg" style="margin-bottom:10px"><b>${kacar(bankaAciklamaKisa(k.aciklama) || k.islem)}</b> · ${TL(k.tutar)}</div>
     <div class="uys-ara"><span class="ara-ik">${ik('ara')}</span><input type="text" id="gtAra" placeholder="Gider kalemi ara / yeni ekle…" autocomplete="off" autocorrect="off" spellcheck="false"></div>
     <div class="to-ekle gizli" id="gtEkle"></div>
-    <div class="ds-oliste sec-liste-kaydir" id="gtListe">${giderler().map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Tanımlı gider yok. Adı yazıp ekleyin.</div>'}</div>`;
+    <div class="ds-oliste sec-liste-kaydir" id="gtListe">${giderCiz(giderler()) || '<div class="gp-bos" style="margin:8px 6px">Tanımlı gider yok. Adı yazıp ekleyin.</div>'}</div>`;
   const m = ustKatModal('Gider Eşleştir', `<span class="hr-rz-ik">${ik('gider')}</span>Gider`, govde, `<button class="btn" type="button" data-geri style="flex:1">‹ Geri</button>`);
   const bind = () => m.qq('#gtListe [data-gid]').forEach(el => el.onclick = () => sec(el.dataset.ad, el.dataset.gid));
   bind();
   m.q('#gtAra').addEventListener('input', () => {
     const ham = (m.q('#gtAra').value || '').trim(); const q = adNorm(ham);
     const suz = giderler().filter(g => adNorm(g.ad).includes(q));
-    m.q('#gtListe').innerHTML = suz.map(item).join('') || '<div class="gp-bos" style="margin:8px 6px">Eşleşen yok.</div>';
+    m.q('#gtListe').innerHTML = giderCiz(suz) || '<div class="gp-bos" style="margin:8px 6px">Eşleşen yok.</div>';
     bind();
     const ek = m.q('#gtEkle'); const tam = (State.giderler || []).some(g => adNorm(g.ad) === q);
     if (ham && !tam) { ek.classList.remove('gizli'); ek.innerHTML = `<button type="button" class="to-ekbtn">${ik('arti')} “<b>${kacar(ham)}</b>” yeni gider kalemi ekle</button>`; ek.querySelector('.to-ekbtn').onclick = () => sec(ham, null); }
@@ -3331,8 +3339,8 @@ function bankaDetayModal(k, wiz) {
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
     if (wiz) {   // sihirbaz: kaydet → otomatik sonraki kayda geç (son kayıtta bitir)
-      iaTaslakYaz();   // her adımda YALNIZ taslağı kaydet (hafif) — arkadaki büyük önizleme tablosunu yeniden çizme → kasma/kilitlenme olmaz
-      if (wiz.i >= wiz.liste.length - 1) { modalKapat(); iaOnizleTazele(); bildir('Tüm kayıtlar işlendi.', 'basari'); }   // bitişte bir kez tazele
+      iaTaslakYazGecikmeli();   // taslağı geciktirmeli kaydet (çok kayıtta her adımda büyük JSON yazma → takılma olmaz)
+      if (wiz.i >= wiz.liste.length - 1) { modalKapat(); iaOnizleTazele(); bildir('Tüm kayıtlar işlendi.', 'basari'); }   // bitişte bir kez tazele (taslağı da anında yazar)
       else bankaDetayModal(wiz.liste[wiz.i + 1], { liste: wiz.liste, i: wiz.i + 1 });
       return;
     }
