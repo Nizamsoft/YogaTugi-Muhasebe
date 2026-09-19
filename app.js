@@ -661,7 +661,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '326';
+const APP_SURUM = '327';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9150,14 +9150,15 @@ function klavyeUyumKur() {
   // kb-acik yalnızca gerçekten bir yazı alanı ODAKTAYKEN aktif olsun — böylece klavye kapanınca
   // (iOS'ta viewport ölçüsü geç güncellese bile) takılı kalıp tam-ekran formu kısaltmaz.
   const editOdak = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox' && a.type !== 'radio' && a.type !== 'button'); };
-  let _kbSon = -1, _acikSon = null;
+  let _kbSon = -1, _acikSon = null, _vvhSon = -1;
   const uygula = () => {
+    const vh = vv ? Math.round(vv.height) : Math.round(window.innerHeight || 0);   // gerçek GÖRÜNÜR yükseklik (klavye/çubuk hariç)
     const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
     const acik = kb > 90 && editOdak();
-    if (acik === _acikSon && (!acik || kb === _kbSon)) return;   // değer değişmediyse hiç dokunma → kaydırma/resize spam'ında style recalc yok (kasma önlenir)
-    _kbSon = kb; _acikSon = acik;
+    if (acik === _acikSon && kb === _kbSon && vh === _vvhSon) return;   // hiçbir değer değişmediyse dokunma → kaydırma sırasında style recalc yok (kasma önlenir)
+    _kbSon = kb; _acikSon = acik; _vvhSon = vh;
+    if (vh > 0) kok.style.setProperty('--vvh', vh + 'px');   // tam-ekran modal her zaman bu yüksekliğe oturur → altta boşluk yok, footer gizlenmez
     kok.style.setProperty('--kb', acik ? kb + 'px' : '0px');
-    kok.style.setProperty('--vvh', (acik && vv) ? Math.round(vv.height) + 'px' : '100vh');
     document.body.classList.toggle('kb-acik', acik);
   };
   if (vv) { vv.addEventListener('resize', uygula); vv.addEventListener('scroll', uygula); uygula(); }
