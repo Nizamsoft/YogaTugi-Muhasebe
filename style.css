@@ -92,12 +92,14 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 /* Premium arka plan A — sıcak degrade + üstte yumuşak altın halo (sabit) */
-.uygulama{background:radial-gradient(125% 78% at 50% -8%, rgba(246,230,173,.5), rgba(236,227,209,0) 52%), linear-gradient(180deg,#f3ebd8,#e7ddc5);background-attachment:fixed}
-body.tema-koyu .uygulama{background:radial-gradient(125% 78% at 50% -8%, rgba(198,154,76,.12), transparent 52%), linear-gradient(180deg,#1d1b14,#161410);background-attachment:fixed}
+/* not: background-attachment:fixed kaldırıldı — mobilde .ana kayarken .uygulama'nın büyük gradyanı/deseni
+   her karede yeniden boyanıp kasmaya yol açıyordu; .uygulama zaten kaymadığı için görünüm aynı, boyama tek sefer. */
+.uygulama{background:radial-gradient(125% 78% at 50% -8%, rgba(246,230,173,.5), rgba(236,227,209,0) 52%), linear-gradient(180deg,#f3ebd8,#e7ddc5)}
+body.tema-koyu .uygulama{background:radial-gradient(125% 78% at 50% -8%, rgba(198,154,76,.12), transparent 52%), linear-gradient(180deg,#1d1b14,#161410)}
 body.tema-neon .uygulama{background:
   repeating-linear-gradient(118deg, rgba(255,255,255,.016) 0 1px, transparent 1px 28px),
   radial-gradient(130% 70% at 50% -8%, rgba(180,232,58,.10), transparent 55%),
-  linear-gradient(180deg,#1f242c,#171b21);background-attachment:fixed}
+  linear-gradient(180deg,#1f242c,#171b21)}
 /* Elle çizilmiş SVG ikon — varsayılan boyut (bağlama göre ezilebilir) */
 .uik{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.16em;flex:0 0 auto;color:inherit}
 .icerik{overflow-x:hidden}
@@ -345,7 +347,7 @@ body.tema-koyu .ust-arac{background:#2c2a20;color:#e7d9a6}
 body.tema-neon .km-tema-sec button.sec{border-color:var(--neon);background:var(--neon);color:var(--neon-metin)}
 /* Neon: üst panel + alt menü vurguları koyu/neon */
 body.tema-neon .ust-cubuk::after{background:linear-gradient(90deg,var(--neon),var(--amber))}
-body.tema-neon .alt-menu{background:rgba(24,29,36,.68);border-color:rgba(180,232,58,.14)}
+body.tema-neon .alt-menu{background:rgba(26,31,38,.975);border-color:rgba(180,232,58,.14)}
 body.tema-neon .alt-menu::before{background:linear-gradient(90deg,transparent,rgba(180,232,58,.55),transparent)}
 body.tema-neon .alt-oge.aktif{color:var(--neon)}
 /* ===== Neon ana ekran (pilot) ===== */
@@ -1400,12 +1402,13 @@ body.tema-koyu .modal-kapat{background:#2c2a20}
 
   /* Alt menü çubuğu — akışta, kolon dibinde */
   /* Yüzen buzlu-cam (ice glass) oval çubuk — akıştan çıkar, ekranın dibinde havada durur */
+  /* not: backdrop-filter:blur kaldırıldı — sabit alt çubuk, arkasından içerik kayarken
+     her karede 18px blur'u yeniden hesaplayıp ciddi kasmaya yol açıyordu. Yerine opak zemin. */
   .alt-menu{display:flex;position:fixed;left:50%;transform:translateX(-50%);
     bottom:calc(env(safe-area-inset-bottom, 0px) + 2px);
     width:min(400px, calc(100% - 56px));z-index:41;gap:2px;overflow:visible;
     padding:5px 10px;border-radius:26px;
-    background:rgba(255,253,247,.72);border:1px solid rgba(255,255,255,.16);
-    backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35);
+    background:rgba(250,247,239,.97);border:1px solid rgba(255,255,255,.16);
     box-shadow:0 18px 44px -14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.14)}
   .alt-menu::before{content:none}
   .alt-oge{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 2px;border:none;background:none;font-family:inherit;cursor:pointer}
@@ -4168,3 +4171,8 @@ body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:c
 
 /* Seçici (altSecici / gider tanımla) — çok öğede render limiti notu */
 .altsec-daha{font-size:11.5px;color:var(--metin-soluk);text-align:center;padding:11px 12px;font-weight:600;opacity:.85}
+
+/* Performans: hareket azaltma tercihi olan cihazlarda süregelen dekoratif animasyonları durdur */
+@media (prefers-reduced-motion: reduce){
+  .hkart .visual, .blogo.sec .banka-tile, .kart-serit .klogo.sec .kart-tile{ animation:none !important }
+}
