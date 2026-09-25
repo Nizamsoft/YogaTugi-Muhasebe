@@ -286,6 +286,8 @@ function modalKapat() { $('#modalKap').innerHTML = ''; document.body.classList.r
 /* Tam ekran modal aç YA DA (zaten açıksa) içeriğini yerinde güncelle — geçişte
    kapı-aç animasyonu (flicker) olmasın diye. */
 function modalTamAcVeyaGuncelle(baslik, govdeHTML, altHTML) {
+  // Arka planda gizli bırakılmış eski pencereyi (display:none) güncelleme — yeni aç, yoksa görünmez kalır
+  { const p = $('#modalPerde'); if (p && p.style.display === 'none') modalKapat(); }
   const mdl = $('#modalKap .modal.modal-tam');
   if (mdl) {
     const h = mdl.querySelector('.modal-ust h3'); if (h) h.textContent = baslik;
@@ -661,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '332';
+const APP_SURUM = '333';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1078,7 +1080,12 @@ function git(sayfa, geri) {
   if (hocaGiris() && sayfa !== 'gelirler') sayfa = 'gelirler';
   // Dersler / Öğrenciler / Stüdyolar → tek "Ders Takibi" ekranında ilgili sekme
   if (sayfa === 'dersler' || sayfa === 'ogrenciler' || sayfa === 'studyolar') { dtSekme = sayfa; sayfa = 'ders-takibi'; }
-  if (sayfa !== 'bekleyen') bankaEsCtx = null;   // eşleştirme modundan çıkıldıysa iptal et
+  if (sayfa !== 'bekleyen' && bankaEsCtx) {   // eşleştirme modundan (Vazgeç/Onayla dışında) çıkıldıysa iptal et
+    bankaEsCtx = null;
+    // Banka detayı eşleştirme sırasında arka planda GİZLİ tutuluyordu; başka sayfaya geçilince gizli kalıp sonraki
+    // pencereleri (Gider/Tahsilat Seç) görünmez yapıyordu → kapat, önizleme kilitlenmesin.
+    const p = $('#modalPerde'); if (p && p.style.display === 'none') modalKapat();
+  }
   State.aktifSayfa = sayfa;
   const m = menuBul(sayfa) || { baslik: '—' };
   $('#sayfaBaslik').textContent = m.baslik;
