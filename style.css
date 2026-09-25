@@ -4152,7 +4152,7 @@ mark{background:rgba(180,232,58,.34);color:#fff;border-radius:3px;padding:0 1px}
 /* ================= MOBİL KLAVYE UYUMU ================= */
 /* visualViewport'tan gelen --kb (klavye yüksekliği) ve --vvh (görünür yükseklik) ile
    alttan sheet'ler ve tam-ekran form klavyenin üstünde kalır. */
-:root{ --kb:0px; --vvh:100dvh; }
+:root{ --kb:0px; --vvh:100dvh; --vvt:0px; }
 /* Alttan açılan seçici (altSecici) klavyenin üstüne çıksın, liste kaydırılabilir kalsın */
 .altsec-perde{ transition:padding-bottom .26s cubic-bezier(.33,.05,.2,1) }
 body.kb-acik .altsec-perde{ padding-bottom:var(--kb,0px) }
@@ -4161,6 +4161,8 @@ body.kb-acik .altsec{ max-height:calc(var(--vvh,82vh) - 14px) }
    klavye açılınca --vvh küçülür → form kısalır, Kaydet düğmesi klavyenin üstünde kalır. Ayrı kurala gerek yok. */
 /* Ortalanmış modaller: klavye açılınca üste yaslanıp görünür alana sığsın */
 body.kb-acik .modal-perde{ align-items:flex-start; padding-top:10px }
+/* Tam-ekran form: iOS görünür alanı kaydırsa bile (--vvt) form tam görünür alana oturur, fazladan yukarı kaymaz */
+body .modal-perde:has(.modal-tam){ padding:var(--vvt,0px) 0 0 }
 body.kb-acik .modal:not(.modal-tam){ max-height:calc(var(--vvh,90vh) - 18px) }
 body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:calc(var(--vvh,74vh) - 132px) }
 
