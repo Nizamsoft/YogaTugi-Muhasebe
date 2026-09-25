@@ -661,7 +661,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '327';
+const APP_SURUM = '328';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9447,6 +9447,8 @@ function ustCubukKur() {
         });
       };
   } }
+  // Sayfayı Yenile — uygulama takılırsa sayfayı baştan yükler (önbelleği atlamak için ?g= ekler)
+  { const ky = $('#kmYenile'); if (ky) ky.onclick = () => { kulMenuKapat(); location.replace(location.pathname + '?g=' + Date.now() + location.hash); }; }
   $('#kmCikis').onclick = () => { kulMenuKapat(); onayModal('Çıkış Yap', 'Oturumu kapatmak istediğinize emin misiniz?', () => cikisYap(), { evet: 'Çıkış Yap', evetIk: '', basIk: 'uyari', tehlike: false }); };
   document.addEventListener('click', (e) => {
     if (!km.classList.contains('gizli') && !e.target.closest('#kulMenu') && !e.target.closest('#kullaniciBlok')) kulMenuKapat();
