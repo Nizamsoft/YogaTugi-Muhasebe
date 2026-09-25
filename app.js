@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '340';
+const APP_SURUM = '341';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -762,7 +762,7 @@ async function veriYukle() {
   ESKI_KOLEKSIYONLAR.forEach(k => { if (localStorage.getItem('yt_' + k) !== null) { localStorage.removeItem('yt_' + k); temizlik = true; } });
   // Ortakları sadeleştir (id + ad + foto)
   const ham = DB._oku('ortaklar');
-  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false, rol: o.rol || 'ortak', girisAd: o.girisAd || null, sifreHash: o.sifreHash || null, girisAktif: o.girisAktif !== false, katilimAy: o.katilimAy || null, ayrilisAy: o.ayrilisAy || null, hakedisOran: (o.hakedisOran != null ? o.hakedisOran : null) }));
+  const temiz = ham.map(o => ({ id: o.id, ad: o.ad, foto: o.foto || null, aktif: o.aktif !== false, rol: o.rol || 'ortak', girisAd: o.girisAd || null, sifreHash: o.sifreHash || null, girisAktif: o.girisAktif !== false, katilimAy: o.katilimAy || null, ayrilisAy: o.ayrilisAy || null, hakedisOran: (o.hakedisOran != null ? o.hakedisOran : null) , acilisDevir: (o.acilisDevir && o.acilisDevir.ay && Number(o.acilisDevir.tutar)) ? { tutar: Number(o.acilisDevir.tutar), ay: o.acilisDevir.ay } : null}));
   const degisti = JSON.stringify(ham) !== JSON.stringify(temiz);
   if (degisti) DB._yaz('ortaklar', temiz);   // bu aynı zamanda buluta temiz veriyi gönderir
   else if (temizlik && window._Bulut) window._Bulut.itPlanla();
@@ -1193,15 +1193,21 @@ function hakedisAylar() {
   (State.hakedisOdemeleri || []).forEach(o => s.add(o.donem));
   return [...s].filter(Boolean).sort();
 }
-// donem'den ÖNCEKİ aylardan devreden (ödenmemiş) hakediş — {ortakId: tutar}
+// donem'den ÖNCEKİ aylardan devreden (ödenmemiş) hakediş — {kişiId: tutar} (ortaklar + hocalar)
+// Açılış Devri (kişi kartında, admin girer): "ay sonu itibarıyla" bakiye — o ay ve öncesinin hesabının YERİNE geçer,
+// sonraki aylar bunun üstüne zincirlenir. + alacaklı (ona borçluyuz) · − borçlu.
+function acilisDevir(o) { const a = o && o.acilisDevir; return (a && a.ay && Number(a.tutar)) ? { ay: a.ay, tutar: Number(a.tutar) } : null; }
 function ortakDevir(donem) {
-  const dev = {};
+  const dev = {}, acilis = {};
+  State.ortaklar.forEach(o => { const a = acilisDevir(o); if (a && a.ay < donem) { acilis[o.id] = a; dev[o.id] = a.tutar; } });
+  const ekle = (id, n) => { const a = acilis[id]; if (a && m0 <= a.ay) return; dev[id] = (dev[id] || 0) + n; };
+  let m0 = '';
   for (const m of hakedisAylar()) {
     if (m >= donem) break;
-    egitmenKarlilik(m).ortaklar.forEach(e => {
-      const hg = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
-      dev[e.id] = (dev[e.id] || 0) + hg - (e.odenen || 0);
-    });
+    m0 = m;
+    const r = egitmenKarlilik(m);
+    r.ortaklar.forEach(e => ekle(e.id, (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis) - (e.odenen || 0)));
+    r.hocalar.forEach(h => { if (h.id != null) ekle(h.id, h.kalan || 0); });   // hocaya ödenmemiş pay (+) / fazla ödenen (−)
   }
   return dev;
 }
@@ -1533,13 +1539,14 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
       <div class="satir"><span class="l">− POS komisyonu (kart)</span><span class="v neg mono">−${TL(h.komisyon)}</span></div>
       <div class="satir"><span class="l">Stüdyo kârı (%${100 - oran} → Hoca kârı)</span><span class="v mono tk">${TL(h.studyoKar)}</span></div>
       <div class="sonuc"><span class="l"><b>${ilkAd}'e ödenecek</b> · hakediş %${oran}</span><span class="v mono">${TL(h.payi)}</span></div>
-      <div class="esles-not">🔗 Oran karttan <b>otomatik</b> · ödeme banka/nakitten çıkınca eşleşir (Kâr Dağıtımı gibi).${h.odenen ? ` Verilen <b>${TL(h.odenen)}</b> ·` : ''} Kalan: <b class="${h.kalan < 0 ? 'kirmizi' : ''}">${TL(h.kalan)}</b></div>
+      <div class="esles-not">🔗 Oran karttan <b>otomatik</b> · ödeme banka/nakitten çıkınca eşleşir (Kâr Dağıtımı gibi).${h.devir ? ` Devreden <b class="${h.devir < 0 ? 'kirmizi' : ''}">${h.devir < 0 ? '−' : '+'}${TL(Math.abs(h.devir))}</b> ·` : ''}${h.odenen ? ` Verilen <b>${TL(h.odenen)}</b> ·` : ''} Kalan: <b class="${(h.kalan + (h.devir || 0)) < 0 ? 'kirmizi' : ''}">${TL(h.kalan + (h.devir || 0))}</b></div>
     </div>`;
   };
   // hMap yalnız bu ay tahsilatı olanları içerir; tahsilatsız aktif hocaları da sıfırla göster
   const hMap2 = {}; (r.hocalar || []).forEach(h => { hMap2[String(h.id)] = h; });
   const hocaGoster = aktifHocalar.map(o => hMap2[String(o.id)] || { id: o.id, ad: o.ad, foto: o.foto, oran: Number(o.hakedisOran) || 0, brut: 0, komisyon: 0, adet: 0, studyoKar: 0, payi: 0, odenen: 0, kalan: 0 })
     .sort((a, b) => b.brut - a.brut);
+  { const dv = ortakDevir(donem); hocaGoster.forEach(h => { h.devir = dv[h.id] || 0; }); }   // önceki aylardan / açılış devrinden devreden
   const hocaGovde = `
     <div class="not hoca-not">Her hocanın hakediş oranı <b>kartında bir kez</b> tanımlıdır; tahsilat, <b>stüdyo kârı (Hoca kârı)</b> ve <b>hocaya ödenecek pay</b> burada otomatik çıkar.</div>
     <div class="aynav-sar">${ayNavHTML(donem)}</div>
@@ -6139,6 +6146,13 @@ function ortakFormu(mevcut) {
       <div class="kf-blok-bas">◆ Hoca bilgileri (komisyon paylaşımı)</div>
       <div class="gp-alan" style="margin:0"><label>Hakediş Oranı (hocanın payı) %</label><input type="number" class="gp-inp" id="oHak" min="0" max="100" step="1" value="${mevcut && mevcut.hakedisOran != null ? kacar(String(mevcut.hakedisOran)) : ''}" placeholder="Örn. 70"><small class="kf-ipucu">Brütün bu kadarı hocaya, kalanı stüdyoya (Hoca kârı) yazılır.</small></div>
     </div>
+    ${adminMi() ? (() => { const a = acilisDevir(mevcut); return `<div class="kf-blok kf-devir" id="oDevirBlok" ${rol === 'kullanici' ? 'style="display:none"' : ''}>
+      <div class="kf-blok-bas">◆ Açılış Devri (bir seferlik)</div>
+      <div class="gp-alan" style="margin:0 0 10px"><label>Tutar (boş = devir yok)</label><input type="text" class="gp-inp" id="oDevTut" inputmode="decimal" placeholder="Örn. 50.000"></div>
+      <div class="kf-dev-yon"><button type="button" class="kf-rol ${!a || a.tutar >= 0 ? 'sec' : ''}" data-devyon="alacak">Alacaklı<small>ona borçluyuz</small></button><button type="button" class="kf-rol ${a && a.tutar < 0 ? 'sec' : ''}" data-devyon="borc">Borçlu<small>bize borçlu</small></button></div>
+      <div class="gp-alan" style="margin:10px 0 0"><label>Hangi ay sonu itibarıyla</label><input type="month" class="gp-inp" id="oDevAy" value="${kacar((a && a.ay) || '2026-08')}"></div>
+      <div class="kf-dev-not">Bir sonraki ay bu bakiyeyle başlar; o aya kadarki aylar devre katılmaz.</div>
+    </div>`; })() : ''}
     <div class="kf-blok kf-giris">
       <div class="kf-blok-bas kf-giris-bas">▸ Giriş bilgileri (uygulamaya giriş)</div>
       <div class="gp-alan" style="margin:0 0 12px"><label>Kullanıcı Adı (boş = giriş yok)</label><input type="text" class="gp-inp" id="oKul" value="${mevcut ? kacar(mevcut.girisAd || '') : ''}" placeholder="Örn. elif" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
@@ -6160,7 +6174,14 @@ function ortakFormu(mevcut) {
     $$('[data-rol]').forEach(x => x.classList.toggle('sec', x.dataset.rol === rol));
     $('#oOrtakBlok').style.display = (rol === 'ortak' || rol === 'admin') ? '' : 'none';
     $('#oHocaBlok').style.display = rol === 'hoca' ? '' : 'none';
+    if ($('#oDevirBlok')) $('#oDevirBlok').style.display = rol === 'kullanici' ? 'none' : '';
   });
+  let devYon = (() => { const a = acilisDevir(mevcut); return a && a.tutar < 0 ? 'borc' : 'alacak'; })();
+  if ($('#oDevTut')) {
+    const a = acilisDevir(mevcut);
+    tutarKutusuBagla($('#oDevTut'), a ? Math.abs(a.tutar) : '');
+    $$('[data-devyon]').forEach(b => b.onclick = () => { devYon = b.dataset.devyon; $$('[data-devyon]').forEach(x => x.classList.toggle('sec', x === b)); });
+  }
   $('#oiIptal').onclick = modalKapat;
   $('#oiKaydet').onclick = async () => {
     const ad = $('#oAd').value.trim();
@@ -6174,6 +6195,11 @@ function ortakFormu(mevcut) {
       ayrilisAy: ortakGibi ? ((($('#oAyr') && $('#oAyr').value) || '') || null) : null,
       hakedisOran: rol === 'hoca' ? (($('#oHak') && $('#oHak').value !== '') ? Math.max(0, Math.min(100, Number($('#oHak').value) || 0)) : null) : null,
     };
+    if ($('#oDevTut') && adminMi()) {   // Açılış Devri — yalnız admin; boş tutar = kaldır
+      const t = Math.round(tutarSayi($('#oDevTut').value) * 100) / 100, ay = ($('#oDevAy') && $('#oDevAy').value) || '';
+      if (t && !ay) return bildir('Açılış devri için ay seçin.', 'hata');
+      veri.acilisDevir = (t && rol !== 'kullanici') ? { tutar: devYon === 'borc' ? -t : t, ay } : null;
+    }
     // Giriş bilgileri
     if (kul) {
       const kulLc = kul.toLocaleLowerCase('tr');
