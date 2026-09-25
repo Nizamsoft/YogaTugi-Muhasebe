@@ -163,8 +163,9 @@ h1,h2,h3,h4{line-height:1.25}
 .giris-hata{color:#f0a08f;font-size:12.5px;margin:10px 2px 0;min-height:16px}
 .btn-giris{position:relative;overflow:hidden;width:100%;margin-top:26px;border:none;border-radius:14px;padding:15px;font-weight:800;font-size:15.5px;color:#14181c;cursor:pointer;font-family:inherit;
   background:linear-gradient(135deg,#c7f24a,#a4d92f 55%,#8bc31d);box-shadow:0 12px 26px -10px rgba(140,195,29,.75),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .12s}
-.btn-giris::after{content:"";position:absolute;top:0;left:-45%;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);animation:girisSh 3.4s ease-in-out infinite}
-@keyframes girisSh{0%,62%{left:-45%}100%{left:130%}}
+.btn-giris::after{content:"";position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-128.57%) skewX(-18deg);animation:girisSh 3.4s ease-in-out infinite;will-change:transform}
+/* left:-45%→130% (düğme genişliği) = kendi genişliğinin (35%) -128.57%→371.43%'ü — aynı hareket, yalnız transform */
+@keyframes girisSh{0%,62%{transform:translateX(-128.57%) skewX(-18deg)}100%{transform:translateX(371.43%) skewX(-18deg)}}
 .btn-giris:active{transform:translateY(1px)}
 .giris-guv{margin-top:16px;font-size:11px;color:#8a95a0;text-align:center}
 .giris-yuk{display:flex;flex-direction:column;align-items:center;padding-top:4px;animation:girisGir .3s ease both}
@@ -1248,7 +1249,7 @@ table.tablo td.sag,table.tablo th.sag{text-align:right;font-variant-numeric:tabu
 }
 .modal::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;z-index:5;
   background:linear-gradient(90deg,transparent,rgba(246,230,173,.95),rgba(198,154,76,.75),rgba(246,230,173,.95),transparent)}
-@keyframes perdeGir{from{opacity:0;backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0)}to{opacity:1}}
+@keyframes perdeGir{from{opacity:0}to{opacity:1}}
 /* Yumuşak yükselerek açılış (blur yok; arka plan buğusu perde'de) */
 @keyframes modalGir{0%{opacity:0;transform:translateY(18px) scale(.94)}60%{transform:translateY(-2px) scale(1.006)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.modal-perde,.modal{animation:none}}
@@ -2745,7 +2746,7 @@ body.tema-koyu .hgrup-baslik{color:#8fbf93}
   display:grid;place-items:center;font-size:29px;line-height:1;
   background:linear-gradient(145deg,#7ba97e,#4f7452);
   box-shadow:0 11px 18px -5px rgba(79,116,82,.6), inset 0 1px 0 rgba(255,255,255,.45);
-  transform-style:preserve-3d;animation:hkYuz 3.4s ease-in-out infinite;
+  transform-style:preserve-3d;animation:hkYuz 3.4s ease-in-out infinite;will-change:transform;
 }
 .hkart .visual::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(160deg,rgba(255,255,255,.5),transparent 55%);pointer-events:none}
 .hkart .hk-emoji{position:relative;z-index:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
@@ -2865,7 +2866,7 @@ body.tema-koyu .e-kat{color:#8fbf93}
 .blogo .ad{font-size:12.5px;font-weight:700;color:var(--metin-soluk);transition:color .2s;line-height:1.2}
 .blogo:not(.sec) .banka-tile{filter:saturate(.55) opacity(.7);transform:scale(.9)}
 .blogo:hover .banka-tile{transform:scale(.97) translateY(-2px)}
-.blogo.sec .banka-tile{filter:none;box-shadow:0 16px 26px rgba(0,0,0,.26);animation:banka-suz 3s ease-in-out infinite}
+.blogo.sec .banka-tile{filter:none;box-shadow:0 16px 26px rgba(0,0,0,.26);animation:banka-suz 3s ease-in-out infinite;will-change:transform}
 .blogo.sec .ad{color:var(--metin)}
 .blogo.sec::after{content:"";display:block;width:34px;height:4px;border-radius:3px;background:var(--yesil);margin-top:-2px}
 @keyframes banka-suz{0%,100%{transform:translateY(0) rotateY(-9deg) rotateX(0)}50%{transform:translateY(-6px) rotateY(9deg) rotateX(7deg)}}
@@ -3164,7 +3165,7 @@ body.tema-neon .hr-tarih-satir input[type="date"]{color-scheme:dark}
 .kart-serit .klogo .sd{font-size:10.5px;color:var(--metin-soluk);margin-top:-3px}
 .kart-serit .klogo:not(.sec) .kart-tile{filter:saturate(.6) opacity(.72);transform:scale(.92)}
 .kart-serit .klogo:hover .kart-tile{transform:scale(.97) translateY(-2px)}
-.kart-serit .klogo.sec .kart-tile{filter:none;box-shadow:0 16px 26px rgba(0,0,0,.3);animation:banka-suz 3s ease-in-out infinite}
+.kart-serit .klogo.sec .kart-tile{filter:none;box-shadow:0 16px 26px rgba(0,0,0,.3);animation:banka-suz 3s ease-in-out infinite;will-change:transform}
 .kart-serit .klogo.sec .ad{color:var(--metin)}
 .banka-arac h3 .kart-tile.mini{border-radius:6px}
 
@@ -3270,8 +3271,8 @@ body.kl-acik .kl-fab{opacity:0;pointer-events:none}
 .kl-tgl{display:flex;align-items:center;gap:9px;padding:2px 15px 10px;font-size:12.5px;color:var(--metin-soluk);cursor:pointer;border-bottom:1px solid var(--kenar)}
 .kl-sw{width:34px;height:20px;border-radius:20px;background:var(--kenar-koyu);position:relative;flex:0 0 auto;transition:background .15s}
 .kl-sw.on{background:#7fae83}
-.kl-sw i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
-.kl-sw.on i{left:16px}
+.kl-sw i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.kl-sw.on i{transform:translateX(14px)}
 .kl-yroz{font-size:9.5px;font-weight:800;color:var(--mavi);background:#e6eef7;border:1px solid #cdddef;border-radius:10px;padding:1px 6px;margin-left:6px;vertical-align:middle}
 .kl-bos2{text-align:center;color:var(--metin-soluk);font-size:12.5px;padding:22px 12px;line-height:1.6}
 .kl-yform{padding:2px 2px 4px}
@@ -3597,7 +3598,7 @@ body.tema-koyu .aee-tx{color:var(--metin)}
 body.tema-neon .modal-perde:has(.modal-tam){background:var(--krem)}
 body.tema-neon .modal.modal-tam,.modal.modal-tam{width:100%;max-width:560px;height:var(--vvh,100dvh);max-height:var(--vvh,100dvh);
   border-radius:0;border:0;background:var(--krem);color:var(--metin);box-shadow:none;
-  display:flex;flex-direction:column;overflow:hidden;animation:tamGir .3s cubic-bezier(.22,.9,.3,1.05);transition:height .24s cubic-bezier(.33,.05,.2,1)}
+  display:flex;flex-direction:column;overflow:hidden;animation:tamGir .3s cubic-bezier(.22,.9,.3,1.05)}
 .modal.modal-tam::before{display:none}
 @keyframes tamGir{from{transform:translateY(26px);opacity:.4}to{transform:none;opacity:1}}
 .modal-tam .modal-ust{padding:calc(14px + env(safe-area-inset-top,0px)) 16px 8px;border-bottom:0;justify-content:center;position:relative;min-height:calc(52px + env(safe-area-inset-top,0px))}
@@ -3636,7 +3637,7 @@ body.tema-neon .modal-tam .modal-kapat{background:var(--gri);border-color:var(--
 .altsec-perde{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .25s}
 .altsec-perde.acik{opacity:1}
 .altsec{width:100%;max-width:560px;background:#333b45;border-radius:22px 22px 0 0;max-height:82vh;display:flex;flex-direction:column;
-  transform:translateY(110%);transition:transform .32s cubic-bezier(.22,.9,.3,1.04),max-height .26s cubic-bezier(.33,.05,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+  transform:translateY(110%);transition:transform .32s cubic-bezier(.22,.9,.3,1.04);padding-bottom:env(safe-area-inset-bottom,0px)}
 .altsec-perde.acik .altsec{transform:none}
 .altsec-tut{width:44px;height:5px;border-radius:99px;background:#5a636e;margin:11px auto 3px;flex:none}
 .altsec-bas{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;flex:none}
@@ -4154,7 +4155,6 @@ mark{background:rgba(180,232,58,.34);color:#fff;border-radius:3px;padding:0 1px}
    alttan sheet'ler ve tam-ekran form klavyenin üstünde kalır. */
 :root{ --kb:0px; --vvh:100dvh; }
 /* Alttan açılan seçici (altSecici) klavyenin üstüne çıksın, liste kaydırılabilir kalsın */
-.altsec-perde{ transition:padding-bottom .26s cubic-bezier(.33,.05,.2,1) }
 body.kb-acik .altsec-perde{ padding-bottom:var(--kb,0px) }
 body.kb-acik .altsec{ max-height:calc(var(--vvh,82vh) - 14px) }
 /* Tam-ekran form yüksekliği --vvh ile her zaman görünür alana oturur (yukarıda base kuralda);
@@ -4183,4 +4183,18 @@ body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:c
 /* Performans: hareket azaltma tercihi olan cihazlarda süregelen dekoratif animasyonları durdur */
 @media (prefers-reduced-motion: reduce){
   .hkart .visual, .blogo.sec .banka-tile, .kart-serit .klogo.sec .kart-tile{ animation:none !important }
+}
+
+/* ================= AKICILIK (telefon) ================= */
+/* Buzlu cam (backdrop-filter:blur) iPhone'da her karede arka planı yeniden bulanıklaştırır → pencere açılış/kapanışında
+   takılma. Telefonda kapalı; yerine biraz daha koyu düz yarı saydam perde (görünüm neredeyse aynı). */
+@media (max-width:860px){
+  .modal-perde,.sheet-perde,.picker-perde,.kl-perde{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .modal-perde{background:rgba(28,24,12,.6)}
+  .sheet-perde{background:rgba(22,26,20,.46)}
+  .picker-perde{background:rgba(22,26,20,.54)}
+  .kl-perde{background:rgba(22,26,20,.5)}
+  body.tema-neon .modal-perde{background:rgba(8,11,14,.7)}
+  body.tema-neon .picker-perde{background:rgba(8,11,14,.6)}
+  body.tema-neon .modal-perde:has(.modal-tam){background:var(--krem)}
 }
