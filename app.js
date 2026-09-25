@@ -661,7 +661,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '329';
+const APP_SURUM = '330';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2152,8 +2152,12 @@ function bekleyenEslesModu() {
   const ctx = bankaEsCtx, k = ctx.k;
   const adaylar = bankaAdaylar(k);
   const hedef = Math.abs(Number(k.tutar) || 0);
-  const secTop = adaylar.filter(t => ctx.secili.has(String(t.id))).reduce((s, t) => s + (Number(t.tutar) || 0), 0);
-  const diff = Math.round(secTop) - Math.round(hedef), tam = Math.abs(diff) <= 1, fazla = diff > 0;
+  // Seçim durumu — tik değişince yalnız alttaki onay düğmesi yeniden çizilir (tüm sayfa değil → titreme yok)
+  const secDurum = () => {
+    const secTop = adaylar.filter(t => ctx.secili.has(String(t.id))).reduce((s, t) => s + (Number(t.tutar) || 0), 0);
+    const diff = Math.round(secTop) - Math.round(hedef);
+    return { secTop, diff, tam: Math.abs(diff) <= 1, fazla: diff > 0 };
+  };
   const tPlus = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
   const gunISO = tPlus ? gunKaydir(k.tarih, -1) : k.tarih;
   const dp = donemStr(gunISO).split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
@@ -2167,9 +2171,14 @@ function bekleyenEslesModu() {
         <td data-l="Tutar" class="sag tut2"><span class="tut2-us mono">${TL(t.tutar)}</span><span class="bt-bek">${kacar(tur + ' · Bekliyor')}</span></td>
       </tr>`;
   };
-  const pct = Math.max(4, Math.min(100, Math.round(secTop / Math.max(hedef, 1) * 100)));
-  const btnA = tam ? `${ik('onay')} ${TL(secTop)} — Onayla` : (fazla ? `${TL(Math.abs(diff))} fazla — tahsilat çıkar` : `Seçili ${TL(secTop)} / Hedef ${TL(hedef)}`);
-  const btnB = (!tam && !fazla) ? `<span class="es-onalt">${TL(Math.abs(diff))} açık — tahsilat seç</span>` : '';
+  const onayHTML = () => {
+    const { secTop, diff, tam, fazla } = secDurum();
+    const pct = Math.max(4, Math.min(100, Math.round(secTop / Math.max(hedef, 1) * 100)));
+    const btnA = tam ? `${ik('onay')} ${TL(secTop)} — Onayla` : (fazla ? `${TL(Math.abs(diff))} fazla — tahsilat çıkar` : `Seçili ${TL(secTop)} / Hedef ${TL(hedef)}`);
+    const btnB = (!tam && !fazla) ? `<span class="es-onalt">${TL(Math.abs(diff))} açık — tahsilat seç</span>` : '';
+    return `<button type="button" class="es-onbtn ${tam ? 'tam' : (fazla ? 'fazla' : '')}" id="esOnay" ${tam ? '' : 'disabled'}>${(!tam && !fazla) ? `<span class="es-fill" style="width:${pct}%"></span>` : ''}<span class="es-txt"><span class="a">${btnA}</span>${btnB}</span></button>`;
+  };
+  const onayBagla = () => { const o = $('#esOnay'); if (o && secDurum().tam) o.onclick = () => ctx.onOnay([...ctx.secili]); };
   ic().innerHTML = `<div class="kar-sayfa es-sayfa">
     <div class="gg-tekbar"><button type="button" class="es-vazgec" id="esVazgec">‹</button><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
     <div class="bt-aybar"><span class="es-gun">${kacar(k.islem || 'Banka hareketi')} · ${kacar(kisaTarih(gunISO))} tahsilatları</span></div>
@@ -2178,20 +2187,26 @@ function bekleyenEslesModu() {
         <thead><tr><th></th><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
         <tbody>${adaylar.map(satir).join('')}</tbody></table></div></div>`
       : `<div class="gp-bos">${kacar(kisaTarih(gunISO))} için tanımlı tahsilat yok. “Yeni” ile ekleyip seçin.</div>`}
-    <div class="es-onbar"><button type="button" class="es-onbtn ${tam ? 'tam' : (fazla ? 'fazla' : '')}" id="esOnay" ${tam ? '' : 'disabled'}>${(!tam && !fazla) ? `<span class="es-fill" style="width:${pct}%"></span>` : ''}<span class="es-txt"><span class="a">${btnA}</span>${btnB}</span></button></div>
+    <div class="es-onbar" id="esOnbar">${onayHTML()}</div>
   </div>`;
   $('#esVazgec').onclick = () => ctx.onVazgec();
   { const y = $('#btYeni'); if (y) y.onclick = () => {
       const turu = tPlus ? 'kart' : (/havale/i.test(k.islem || '') ? 'havale' : 'kart');   // Batch → Kart, Havale → Havale
-      const acik = Math.max(0, Math.round((hedef - secTop) * 100) / 100);   // açık kadar (kalan)
+      const acik = Math.max(0, Math.round((hedef - secDurum().secTop) * 100) / 100);   // açık kadar (kalan)
       tahsilatTanimModal({ tarih: gunISO, odemeTuru: turu, tutar: acik || hedef }, () => {
         const yeni = bankaAdaylar(k).filter(t => !ctx.secili.has(String(t.id))).sort((a, b) => String(b.olusturma || '').localeCompare(String(a.olusturma || '')))[0];
         if (yeni) ctx.secili.add(String(yeni.id));   // yeni eklenen tahsilatı otomatik seç
         git('bekleyen');
       });
     } }
-  $$('#icerik tr[data-esrow]').forEach(tr => tr.onclick = () => { const id = tr.dataset.esrow; if (ctx.secili.has(id)) ctx.secili.delete(id); else ctx.secili.add(id); git('bekleyen'); });
-  { const o = $('#esOnay'); if (o && tam) o.onclick = () => ctx.onOnay([...ctx.secili]); }
+  $$('#icerik tr[data-esrow]').forEach(tr => tr.onclick = () => {
+    const id = tr.dataset.esrow; const s = !ctx.secili.has(id);
+    if (s) ctx.secili.add(id); else ctx.secili.delete(id);
+    tr.classList.toggle('es-sec', s);
+    const cb = tr.querySelector('.es-cb'); if (cb) cb.textContent = s ? '✓' : '';
+    const bar = $('#esOnbar'); if (bar) { bar.innerHTML = onayHTML(); onayBagla(); }
+  });
+  onayBagla();
 }
 
 SAYFALAR['mutabakat'] = function tahsilatTanimlaSayfasi() {
