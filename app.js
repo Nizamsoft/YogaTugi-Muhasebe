@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '335';
+const APP_SURUM = '336';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9376,7 +9376,9 @@ function cikisYap() {
   girisGovdeCiz();
 }
 const TEMALAR = ['acik', 'koyu', 'neon'];
-function aktifTema() { const t = localStorage.getItem('yt_tema'); return TEMALAR.includes(t) ? t : 'neon'; }   // kayıtlı tema (varsayılan neon)
+// Tema seçimi kapalı → her cihazda Neon. Eski cihazlarda kayıtlı kalmış Açık/Koyu tema (yt_tema) artık yok sayılır;
+// yoksa o cihazda renkler ve Gösterge Paneli farklı görünüyordu.
+function aktifTema() { return 'neon'; }
 function temaUygula(ad, yenile) {
   if (!TEMALAR.includes(ad)) ad = 'acik';
   document.body.classList.remove('tema-koyu', 'tema-neon');
