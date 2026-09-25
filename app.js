@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '339';
+const APP_SURUM = '340';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -769,6 +769,7 @@ async function veriYukle() {
   State.ortaklar = temiz;
   State.giderler = DB._oku('giderler');
   State.giderGruplari = DB._oku('giderGruplari');
+  if (!State.giderler.some(g => adNorm(g.ad) === adNorm(NAKIT_CEKIM_KAT))) { await DB.ekle('giderler', { ad: NAKIT_CEKIM_KAT, grupId: null }); State.giderler = DB._oku('giderler'); }   // bankadan kasaya aktarım (masraf değil)
   if (!State.giderler.some(g => adNorm(g.ad) === adNorm(KAR_DAGITIM_KAT))) { await DB.ekle('giderler', { ad: KAR_DAGITIM_KAT, grupId: null }); State.giderler = DB._oku('giderler'); }   // ortağa pay ödemesi kategorisi hazır olsun
   if (State.ortaklar.some(o => o.rol === 'hoca') && !State.giderler.some(g => adNorm(g.ad) === adNorm(HOCA_ODEME_KAT))) { await DB.ekle('giderler', { ad: HOCA_ODEME_KAT, grupId: null }); State.giderler = DB._oku('giderler'); }   // hocaya hakediş ödemesi kategorisi
   await varsayilanGiderSeed();   // liste boşsa yaygın gider kalemleri/gruplarını bir kez getir
@@ -1206,6 +1207,9 @@ function ortakDevir(donem) {
 }
 const KAR_DAGITIM_KAT = 'Kâr Dağıtımı';   // ortağa yapılan pay ödemesi kategorisi (genel gidere bölünmez, "verilen" sayılır)
 const HOCA_ODEME_KAT = 'Hoca Ödemesi';    // hocaya yapılan hakediş ödemesi (genel gidere bölünmez, hocaya "verilen" sayılır)
+const NAKIT_CEKIM_KAT = 'Nakit Çekim';   // bankadan kasaya nakit çekim: masraf DEĞİL — bankadan çıkar, kasaya girer
+function nakitCekimMi(kat) { return !!kat && adNorm(kat) === adNorm(NAKIT_CEKIM_KAT); }
+function bankaNakitCekimMi(b) { return !!b && b.yon === 'gider' && nakitCekimMi(b.giderKategori); }
 const TUM_ORTAKLAR_ET = 'Tüm Ortaklar';   // ortak (paylaşımlı) gelir: o ay aktif ortaklara eşit bölünür (hocalar hariç)
 /* Gelir vergisi takvim çeyreği yardımcıları (Oca-Şub-Mar / Nis-May-Haz / Tem-Ağu-Eyl / Eki-Kas-Ara) */
 function ceyrekSonMu(donem) { const mm = Number(String(donem).split('-')[1]) || 0; return mm % 3 === 0; }   // Mart/Haz/Eyl/Ara
@@ -1254,7 +1258,7 @@ function egitmenKarlilik(donem) {
   //  • Kişi yok / "Genel (tüm ortaklar)" → ortaklara eşit bölünen genel gider
   //    (Kâr Dağıtımı / Hoca Ödemesi kişisiz ise hiçbir yere yazılmaz — Kâr-Zarar Kontrolü raporu uyarır)
   const cikislar = [
-    ...(State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem).map(b => ({ kat: b.giderKategori, eg: b.egitmenId, tutar: Math.abs(Number(b.tutar) || 0), banka: true })),
+    ...(State.bankaHareketleri || []).filter(b => b.yon === 'gider' && !bankaNakitCekimMi(b) && giderAitDonem(b) === donem).map(b => ({ kat: b.giderKategori, eg: b.egitmenId, tutar: Math.abs(Number(b.tutar) || 0), banka: true })),
     ...(State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).map(g => ({ kat: g.giderAd || g.kategori, eg: g.egitmenId, tutar: Math.abs(Number(g.tutar) || 0), banka: false })),
   ];
   const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
@@ -2680,7 +2684,7 @@ function nakitGiderModal(mevcut, sonrasi) {
   tarihGostergeBagla('#nkgTarih', '#nkgTarihGos');
   // Gider Adı — aramalı liste + yeni gider ekle
   $('#nkgGiderTrig').onclick = () => {
-    const giderler = (State.giderler || []).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
+    const giderler = (State.giderler || []).filter(g => !nakitCekimMi(g.ad)).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));   // Nakit Çekim yalnız bankadan seçilir
     const secId = (deger) => { const g = (State.giderler || []).find(x => x.id === deger); if (g) { nkGiderForm.giderAd = g.ad; nkGiderForm.giderId = g.id; ffTrigGuncelle('nkgGiderTrig', g.ad); } };
     const ekle = async (ham) => { const ad = ham.trim(); if (!ad) return; let g = (State.giderler || []).find(x => adNorm(x.ad) === adNorm(ad)); if (!g) { g = await DB.ekle('giderler', { ad, grupId: null }); State.giderler.push(g); } nkGiderForm.giderAd = g.ad; nkGiderForm.giderId = g.id; ffTrigGuncelle('nkgGiderTrig', g.ad); };
     altSecici({ baslik: 'Gider Seç', arama: true, placeholder: 'Gider ara veya yaz…', harf: true, secili: nkGiderForm.giderId || '',
@@ -3314,7 +3318,7 @@ function bankaDetayModal(k, wiz) {
     ${ffTrig({ id: 'bdDonem', label: 'Ait Olduğu Dönem', deger: donemAdi(f.donem) })}
     ${ffTrig({ id: 'bdTur', label: 'Tür', deger: yonAd(f.yon) })}
     ${ortaAlan()}
-    ${f.yon === 'gider' ? ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() }) : ''}
+    ${f.yon === 'gider' && !nakitCekimMi(f.giderKategori) ? ffTrig({ id: 'bdEg', label: 'İlgili Eğitmen', deger: egGoster() }) : ''}
     ${dagilimHTML()}
     <div class="ff-grpbas">Banka Açıklaması</div>
     ${bankaAckKart(k)}
@@ -3380,7 +3384,7 @@ function bankaDetayModal(k, wiz) {
     if (f.yon === 'ortakOdeme' && !f.egitmenId) { const el = $('#bdOrtak'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('İlgili ortak zorunlu.', 'uyari'); return; }
     if (f.yon === 'gelir' && !f.eslesenIds.length) { const el = $('#bdOgr'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Önce tahsilatı eşleştirin.', 'uyari'); return; }
     if (f.yon === 'komisyon' && !komTam()) { const el = $('#bdKom'); if (el) { el.classList.add('ff-eksik-flash'); el.scrollIntoView({ block: 'center' }); setTimeout(() => el.classList.remove('ff-eksik-flash'), 600); } bildir('Önce komisyonu ayarlayın.', 'uyari'); return; }
-    const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? (f.egitmenId || null) : null, kullaniciAciklama: (f.kullaniciAciklama || '').trim(), eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
+    const yama = { yon: f.yon, giderKategori: f.yon === 'gider' ? f.giderKategori : (k.giderKategori || ''), donem: f.donem, egitmenId: ((f.yon === 'gider' && !nakitCekimMi(f.giderKategori)) || f.yon === 'ortakOdeme') ? (f.egitmenId || null) : null, kullaniciAciklama: (f.kullaniciAciklama || '').trim(), eslesenIds: (f.yon === 'gider' || f.yon === 'ortakOdeme') ? [] : (f.eslesenIds || []) };
     Object.assign(k, yama);
     if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
     if (wiz) {   // sihirbaz: kaydet → otomatik sonraki kayda geç (son kayıtta bitir)
@@ -3589,7 +3593,7 @@ function neonAnaEkran() {
   const kartT = topla(tt.filter(t => t.odemeTuru === 'kart' || t.odemeTuru === 'multinet'));
   const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem);
   const komisyon = tt.filter(t => t.odemeTuru === 'kart').reduce((s, t) => s + kartKomTutar(t), 0);   // her tahsilatın kendi komisyonu
-  const gider = bh.filter(b => b.yon === 'gider').reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0)
+  const gider = bh.filter(b => b.yon === 'gider' && !bankaNakitCekimMi(b)).reduce((s, b) => s + Math.abs(Number(b.tutar) || 0), 0)
     + (State.nakitGiderleri || []).filter(g => donemStr(g.tarih) === donem).reduce((s, g) => s + Math.abs(Number(g.tutar) || 0), 0);
   const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;
   const vergi = Math.round((havale + kartT) * vOran);   // bankaya giren tahsilatın oranı
@@ -6821,7 +6825,9 @@ function kzHesap(donem) {
   // ÇIKIŞLAR — banka gider satırları + kasa giderleri (ait olduğu döneme göre)
   const bg = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem).map(b => ({ kat: b.giderKategori || 'Sınıflandırılmamış', tutar: Math.abs(Number(b.tutar) || 0), eg: b.egitmenId, kaynak: 'Banka' }));
   const ng = (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).map(g => ({ kat: g.giderAd || g.kategori || 'Sınıflandırılmamış', tutar: Math.abs(Number(g.tutar) || 0), eg: g.egitmenId, kaynak: 'Kasa' }));
-  const cikis = [...bg, ...ng], cikisTop = top(cikis, c => c.tutar);
+  const cekimTop = top(bg.filter(c => nakitCekimMi(c.kat)), c => c.tutar);   // bankadan kasaya aktarım (masraf değil)
+  const cikisTop = top([...bg, ...ng], c => c.tutar);
+  const cikis = [...bg.filter(c => !nakitCekimMi(c.kat)), ...ng];
   // Motorla (egitmenKarlilik) aynı yönlendirme: hoca → hocadan düşer; aktif ortak → Kâr Dağıtımı ise verilen, değilse ona özel; kişisiz → genel
   const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
   const genelKalem = [], ozelKalem = [], hocaKalem = [], kdKalem = [], sahipsiz = [];
@@ -6856,7 +6862,7 @@ function kzHesap(donem) {
   const kalemler = [...katMap.entries()].map(([ad, tutar]) => ({ ad, tutar })).sort((a, b) => b.tutar - a.tutar);
   const ozMap = new Map(); ozelKalem.forEach(c => { const m = ozMap.get(c.kat) || { ad: c.kat, tutar: 0, kisi: {} }; m.tutar += c.tutar; m.kisi[c.ortakId] = (m.kisi[c.ortakId] || 0) + c.tutar; ozMap.set(c.kat, m); });
   const ozelKalemler = [...ozMap.values()].sort((a, b) => b.tutar - a.tutar);
-  return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, ozelKalemler, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan), hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, hvOk, kalemler, uyari, bilgi,
+  return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, cekimTop, ozelKalemler, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan), hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, hvOk, kalemler, uyari, bilgi,
     nakit: top(hepsi, x => x.nakit), havale: top(hepsi, x => x.havale), kart: top(hepsi, x => x.kart) };
 }
 SAYFALAR['rapor-karzarar-kontrol'] = function () {
@@ -6951,7 +6957,8 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
       ${sat('✓ Kişiye özel gider (yalnız o ortaktan)', TL(d.ozelTop), d.ozelTop ? 'g' : '')}
       ${sat('✓ Kâr Dağıtımı (ortağa verilen)', TL(d.kdOk), d.kdOk ? 'g' : '')}
       ${sat('✓ Hocadan düşülen (ödeme / gider)', TL(d.hoOk), d.hoOk ? 'g' : '')}
-      ${(() => { const kacak = Math.round((d.cikisTop - d.genel - d.ozelTop - d.kdOk - d.hoOk) * 100) / 100; return sat('⚠️ Rapora girmeyen', TL(kacak), Math.abs(kacak) > 1 ? 'r' : ''); })()}</div>
+      ${d.cekimTop ? sat('✓ Kasaya aktarıldı (nakit çekim · masraf değil)', TL(d.cekimTop), 'g') : ''}
+      ${(() => { const kacak = Math.round((d.cikisTop - d.genel - d.ozelTop - d.kdOk - d.hoOk - d.cekimTop) * 100) / 100; return sat('⚠️ Rapora girmeyen', TL(kacak), Math.abs(kacak) > 1 ? 'r' : ''); })()}</div>
     ${d.hvOk ? `<div class="kz-pgrup"><div class="kz-pbas">🤝 Hakediş Ver kayıtları</div>${sat('✓ Ortaklara verilen', TL(d.hvOk), 'g')}</div>` : ''}
     ${[...d.uyari, ...d.bilgi].map(u => `<div class="kz-hr ${d.uyari.includes(u) ? 'uy' : ''}"><span class="i">${u.ik}</span><div><b>${kacar(u.baslik)} · ${TL(Math.abs(u.tutar))}</b><br>${kacar(u.aciklama)}</div></div>`).join('')}
   </div>`;
@@ -8544,6 +8551,10 @@ function nakitDefteri() {
     const not = (g.aciklama && adNorm(g.aciklama) !== adNorm(ad)) ? g.aciklama : '';   // 2. satır: açıklama notu (addan farklıysa)
     rows.push({ kind: 'gider', tarih: g.tarih, donem: giderAitDonem(g), aciklama: ad, altYazi: not, ilgiliId: g.egitmenId || null, tutar: -(Number(g.tutar) || 0), ref: g, nakit: true });
   });
+  // Bankadan nakit çekim → kasaya GİRİŞ (bankada çıkış olarak zaten görünür)
+  (State.bankaHareketleri || []).filter(bankaNakitCekimMi).forEach(b => {
+    rows.push({ kind: 'cekim', tarih: b.tarih, donem: donemStr(b.tarih), aciklama: 'Bankadan nakit çekim', altYazi: b.kullaniciAciklama || '', tutar: Math.abs(Number(b.tutar) || 0), ref: b, nakit: true });
+  });
   rows.sort((a, b) => (a.tarih || '').localeCompare(b.tarih || '') || ((a.ref.olusturma || '').localeCompare(b.ref.olusturma || '')));
   let bak = 0; rows.forEach(r => { bak += r.tutar; r.bakiye = bak; r.tip = r.tutar >= 0 ? 'tahsilat' : 'gider'; });
   return rows;
@@ -8558,6 +8569,7 @@ function nakitKart(h) {
 function nakitRowAc(nrow, sonrasi) {
   const i = String(nrow || '').indexOf(':'); const kind = nrow.slice(0, i), id = nrow.slice(i + 1);
   if (kind === 'tahsilat') { const t = (State.tahsilatTanimlari || []).find(x => x.id === id); if (t) tahsilatTanimModal(t, sonrasi); }
+  else if (kind === 'cekim') { const b = (State.bankaHareketleri || []).find(x => x.id === id); if (b) bankaDetayModal(b); }   // banka satırından düzenlenir
   else { const g = (State.nakitGiderleri || []).find(x => x.id === id); if (g) nakitGiderModal(g, sonrasi); }
 }
 /* Bir hesabın hareketleri (kronolojik artan + işleyen bakiye) */
@@ -8728,7 +8740,7 @@ function giderKalemleriDonem(donem) {
   (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).forEach(g => {
     out.push({ tarih: g.tarih, donem: giderAitDonem(g), ad: (g.giderAd || g.kategori || g.aciklama || 'Gider'), tutar: Math.abs(Number(g.tutar) || 0), kaynak: 'nakit', egitmenId: g.egitmenId || null, aciklama: g.aciklama || '', ref: g });
   });
-  (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem).forEach(b => {
+  (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && !bankaNakitCekimMi(b) && giderAitDonem(b) === donem).forEach(b => {   // nakit çekim masraf değil
     const ad = (b.giderKategori || '').trim() || bankaAciklamaKisa(b.islem) || b.islem || 'Gider';
     out.push({ tarih: b.tarih, donem: giderAitDonem(b), ad, tutar: Math.abs(Number(b.tutar) || 0), kaynak: 'banka', egitmenId: b.egitmenId || null, aciklama: bankaGosterAck(b), ref: b });
   });
