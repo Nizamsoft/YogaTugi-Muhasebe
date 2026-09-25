@@ -661,7 +661,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '331';
+const APP_SURUM = '332';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9165,17 +9165,17 @@ function klavyeUyumKur() {
   // kb-acik yalnızca gerçekten bir yazı alanı ODAKTAYKEN aktif olsun — böylece klavye kapanınca
   // (iOS'ta viewport ölçüsü geç güncellese bile) takılı kalıp tam-ekran formu kısaltmaz.
   const editOdak = () => { const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox' && a.type !== 'radio' && a.type !== 'button'); };
-  let _kbSon = -1, _acikSon = null, _vvhSon = -1, _vvtSon = -1;
+  let _kbSon = -1, _acikSon = null, _vvhSon = -1;
   const uygula = () => {
     const vh = vv ? Math.round(vv.height) : Math.round(window.innerHeight || 0);   // gerçek GÖRÜNÜR yükseklik (klavye/çubuk hariç)
     const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
-    // iOS, klavye açılınca alttaki alanı göstermek için görünür alanı aşağı kaydırır (offsetTop) → sabit tam-ekran form
-    // yukarı taşar, altta boşluk kalır. Bu kaymayı --vvt ile telafi edip formu görünür alanın tam üstüne oturtuyoruz.
-    const vt = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+    // iOS klavye açılınca / yazarken sayfayı yukarı kaydırır (offsetTop) → sabit pencereler yukarı taşar ya da
+    // aşağı iner. Uygulamada sayfa kaydırması hiç istenmez (body sabit) → kaydırmayı anında geri al.
+    const vt = vv ? Math.round(vv.offsetTop) : 0;
+    if (vt > 0 && editOdak()) { try { window.scrollTo(0, 0); } catch (_) { } }
     const acik = kb > 90 && editOdak();
-    if (acik === _acikSon && kb === _kbSon && vh === _vvhSon && vt === _vvtSon) return;   // hiçbir değer değişmediyse dokunma → kaydırma sırasında style recalc yok (kasma önlenir)
-    _kbSon = kb; _acikSon = acik; _vvhSon = vh; _vvtSon = vt;
-    kok.style.setProperty('--vvt', vt + 'px');
+    if (acik === _acikSon && kb === _kbSon && vh === _vvhSon) return;   // hiçbir değer değişmediyse dokunma → kaydırma sırasında style recalc yok (kasma önlenir)
+    _kbSon = kb; _acikSon = acik; _vvhSon = vh;
     if (vh > 0) kok.style.setProperty('--vvh', vh + 'px');   // tam-ekran modal her zaman bu yüksekliğe oturur → altta boşluk yok, footer gizlenmez
     kok.style.setProperty('--kb', acik ? kb + 'px' : '0px');
     document.body.classList.toggle('kb-acik', acik);
