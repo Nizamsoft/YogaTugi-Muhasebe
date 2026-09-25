@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '336';
+const APP_SURUM = '337';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -1012,7 +1012,7 @@ function menuCiz() {
       html += `<button class="menu-oge tekil" data-sayfa="${m.id}"><span class="ikon">${ik(m.ikon)}</span>${kacar(m.ad)}</button>`;
     }
   }
-  if (adminMi()) html += `<button class="menu-oge tekil" id="menuKontrol"><span class="ikon">${ik('onay')}</span>Kontrol Listesi</button>`;   // yalnızca admin
+  // Kontrol Listesi menüden kaldırıldı (kod ve kayıtlı maddeler duruyor; geri açmak için bu satırı geri ekleyin)
   nav.innerHTML = html;
   // Akordeon: grup başlığına basınca aç/kapa; biri açılınca diğerleri kapanır
   $$('.grup-baslik', nav).forEach(b => b.onclick = () => {
