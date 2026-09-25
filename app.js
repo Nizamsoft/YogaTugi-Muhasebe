@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '334';
+const APP_SURUM = '335';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -986,7 +986,7 @@ function menuCiz() {
     nav.innerHTML = `<button class="menu-oge tekil" id="menuHocaEkle"><span class="ikon">${ik('arti')}</span>Tahsilat Ekle</button>
       <button class="menu-oge tekil" data-sayfa="gelirler"><span class="ikon">${ik('gelir')}</span>Tahsilatlarım</button>`;
     { const he = $('#menuHocaEkle'); if (he) he.onclick = () => { tahsilatTanimModal(); document.body.classList.remove('menu-acik'); }; }
-    $$('.menu-oge[data-sayfa]', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa));
+    $$('.menu-oge[data-sayfa]', nav).forEach(b => b.onclick = () => git(b.dataset.sayfa, false, true));
     const ks0 = $('#kenarSurum'); if (ks0) ks0.innerHTML = `<div class="ks-bilg"><b>Sürüm ${APP_SURUM}</b><span>${APP_SURUM_TARIH}</span></div>`;
     return;
   }
@@ -1021,7 +1021,7 @@ function menuCiz() {
     $$('.menu-grup', nav).forEach(g => g.classList.remove('acik'));
     if (!acikti) grup.classList.add('acik');
   });
-  $$('.menu-oge', nav).forEach(b => { if (b.dataset.sayfa) b.onclick = () => git(b.dataset.sayfa); });
+  $$('.menu-oge', nav).forEach(b => { if (b.dataset.sayfa) b.onclick = () => git(b.dataset.sayfa, false, true); });
   { const mk = $('#menuKontrol'); if (mk) mk.onclick = () => { kontrolAc(); document.body.classList.remove('menu-acik'); }; }
   const ks = $('#kenarSurum');
   if (ks) {
@@ -1075,7 +1075,10 @@ function ustSayfa(sayfa) {
   if (sayfa === 'potansiyel' || sayfa === 'musteriler' || sayfa === 'plan4me' || sayfa === 'hesaplar') return 'hesap-defter';
   return 'dashboard';   // bölüm kökleri (gelirler, giderler, karlilik, ice-aktar, hesap-defter, ...) → dashboard
 }
-function git(sayfa, geri) {
+function git(sayfa, geri, menu) {
+  // Aynı sayfayı yeniden çizme (kaydet/sil/seç sonrası tazeleme) → giriş animasyonu oynatma, kaydırma yerini koru;
+  // ekranda yalnız değişen veri güncellenmiş görünür (titreme/zıplama yok). Menüden aynı sayfaya basmak eskisi gibi.
+  const yenileme = !geri && !menu && sayfa === State.aktifSayfa;
   // Hoca: yalnız kendi tahsilat listesi (gelirler). Diğer tüm sayfalar kapalı.
   if (hocaGiris() && sayfa !== 'gelirler') sayfa = 'gelirler';
   // Dersler / Öğrenciler / Stüdyolar → tek "Ders Takibi" ekranında ilgili sekme
@@ -1102,12 +1105,18 @@ function git(sayfa, geri) {
   document.body.classList.remove('menu-acik');
   if (typeof altMenuGuncelle === 'function') altMenuGuncelle();
   const render = SAYFALAR[sayfa] || SAYFALAR.dashboard;
+  const el = ic(), ana = document.querySelector('.ana');
+  const kaydirma = yenileme ? [el ? el.scrollTop : 0, ana ? ana.scrollTop : 0] : null;
   render(m);
   tabloSigdir();   // tabloları BOYA ÖNCESİ ölçekle → büyük tablo bir an görünüp küçülmez (titreme yok)
-  // Yumuşak sayfa geçişi (fade + hafif yukarı kayma) — her sayfa değişiminde
-  const el = ic();
-  if (el) { el.classList.remove('sayfa-gir'); void el.offsetWidth; el.classList.add('sayfa-gir'); el.scrollTop = 0; }
-  const ana = document.querySelector('.ana'); if (ana) ana.scrollTop = 0;
+  if (yenileme) {   // tazeleme: animasyon yok, kaldığın yerde kal
+    if (el) { el.classList.remove('sayfa-gir'); el.scrollTop = kaydirma[0]; }
+    if (ana) ana.scrollTop = kaydirma[1];
+  } else {
+    // Yumuşak sayfa geçişi (fade + hafif yukarı kayma) — her sayfa değişiminde
+    if (el) { el.classList.remove('sayfa-gir'); void el.offsetWidth; el.classList.add('sayfa-gir'); el.scrollTop = 0; }
+    if (ana) ana.scrollTop = 0;
+  }
   { const gb = $('#geriBtn'); if (gb) gb.classList.toggle('gizli', !ustSayfa(sayfa)); }
 }
 window.git = git;
@@ -9219,7 +9228,7 @@ async function uygulamayiBaslat() {
   altMenuCiz();          // alt sayfa çubuğunu giriş yapan kullanıcıya göre yeniden çiz (admin → tüm sekmeler)
   kullaniciBilgiCiz();   // tepe paneli: görsel + ad soyad (ortaklar yüklendikten sonra)
   kontrolKur();
-  git('dashboard');
+  git('dashboard', false, true);   // açılış: giriş animasyonuyla (tazeleme sayılmasın)
   const bekle = Math.max(0, 900 - (simdi() - t0));   // en az ~0.9sn göster (premium his)
   await new Promise(r => setTimeout(r, bekle));
   $('#girisEkrani').classList.add('gizli');
@@ -9530,7 +9539,7 @@ function altMenuCiz() {
     const m = gorunur.find(x => (x.tip === 'grup' ? x.grup : x.id) === anahtar);
     if (!m) return;
     if (m.tip === 'aksiyon') { sheetKapat(); if (m.id === 'tahsilat-yeni') tahsilatTanimModal(); }
-    else if (m.tip === 'sayfa') { sheetKapat(); git(m.id); }
+    else if (m.tip === 'sayfa') { sheetKapat(); git(m.id, false, true); }
     else grupSheet(m.grup);
   });
   altMenuGuncelle();
@@ -9553,7 +9562,7 @@ function grupSheet(grupAd) {
         <span class="oi">${ik(o.ikon)}</span><b>${kacar(o.ad)}</b><span class="ok">›</span></button>`).join('')}
     </div>`;
   document.body.classList.add('sheet-acik');
-  $$('#altSheet .sheet-oge').forEach(b => b.onclick = () => { sheetKapat(); git(b.dataset.sayfa); });
+  $$('#altSheet .sheet-oge').forEach(b => b.onclick = () => { sheetKapat(); git(b.dataset.sayfa, false, true); });
 }
 function sheetKapat() { document.body.classList.remove('sheet-acik'); }
 
