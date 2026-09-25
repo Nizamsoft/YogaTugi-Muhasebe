@@ -4161,8 +4161,15 @@ body.kb-acik .altsec{ max-height:calc(var(--vvh,82vh) - 14px) }
    klavye açılınca --vvh küçülür → form kısalır, Kaydet düğmesi klavyenin üstünde kalır. Ayrı kurala gerek yok. */
 /* Ortalanmış modaller: klavye açılınca üste yaslanıp görünür alana sığsın */
 body.kb-acik .modal-perde{ align-items:flex-start; padding-top:10px }
-/* Tam-ekran form: iOS görünür alanı kaydırsa bile (--vvt) form tam görünür alana oturur, fazladan yukarı kaymaz */
-body .modal-perde:has(.modal-tam){ padding:var(--vvt,0px) 0 0 }
+/* iOS klavye açılınca görünür alanı aşağı kaydırır (--vvt = kayma miktarı); sabit katmanlar yerinde kalıp
+   yukarı taşar, altta boşluk kalırdı. Katmanları bu kayma kadar aşağı itip görünür alana oturtuyoruz.
+   Klavye yokken --vvt = 0 → hiçbir şey değişmez. */
+.modal-perde{ top:var(--vvt,0px); bottom:calc(0px - var(--vvt,0px)) }
+body .modal-perde:has(.modal-tam){ padding:0 }
+body.kb-acik #girisEkrani{ top:var(--vvt,0px); bottom:auto; height:var(--vvh,100dvh); align-items:flex-start; padding-top:10px; overflow-y:auto }
+.not-paneli{ top:calc(66px + var(--vvt,0px)) }
+body.kb-acik .not-paneli #notAlan{ max-height:calc(var(--vvh,60vh) - 150px) }
+.kl-panel{ top:var(--vvt,0px); bottom:var(--kb,0px) }
 body.kb-acik .modal:not(.modal-tam){ max-height:calc(var(--vvh,90vh) - 18px) }
 body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:calc(var(--vvh,74vh) - 132px) }
 
