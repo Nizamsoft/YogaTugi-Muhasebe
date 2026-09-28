@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '341';
+const APP_SURUM = '342';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -2668,13 +2668,15 @@ function giderSecModal(mevcutAd, onSec) {
 }
 /* Nakit gider (elle masraf) ekle/düzenle — bir "Gider"e (kategori) atanır, genel gidere yazılır */
 let nkGiderForm = null;
-function nakitGiderModal(mevcut, sonrasi) {
+function nakitGiderModal(mevcut, sonrasi, secenek) {
+  const avans = !!(secenek && secenek.avans);   // Nakit Avans: gider adı Kâr Dağıtımı (sabit), ilgili eğitmen zorunlu
+  if (avans) mevcut = { giderAd: KAR_DAGITIM_KAT, giderId: ((State.giderler || []).find(g => adNorm(g.ad) === adNorm(KAR_DAGITIM_KAT)) || {}).id || null, aciklama: 'Nakit Avans', ...(mevcut || {}) };
   const duzenle = !!(mevcut && mevcut.id);
   nkGiderForm = { tarih: bugunISO(), giderAd: '', giderId: null, tutar: '', aciklama: '', egitmenId: null, ...(mevcut || {}) };
   if (!nkGiderForm.giderAd) nkGiderForm.giderAd = (mevcut && (mevcut.kategori || mevcut.aciklama)) || '';   // eski kayıt uyumu
   if (!nkGiderForm.donem) nkGiderForm.donem = giderAitDonem(nkGiderForm);
   const ortaklar = (State.ortaklar || []).filter(o => o.aktif !== false && egitmenMi(o));
-  const egGoster = () => { const o = ortaklar.find(x => x.id === nkGiderForm.egitmenId); return o ? o.ad : 'Genel (tüm ortaklar)'; };
+  const egGoster = () => { const o = ortaklar.find(x => x.id === nkGiderForm.egitmenId); return o ? o.ad : (avans ? '' : 'Genel (tüm ortaklar)'); };
   const donGoster = () => donemAdi(nkGiderForm.donem || buAy());
   const govde = `
     <div class="ff-alan ff-trig ff-tarih dolu"><span class="ff-val" id="nkgTarihGos"></span><span class="ff-ok">⌄</span><label>Tarih <span class="zor">*</span></label><input type="date" id="nkgTarih" class="ff-tarih-in" value="${(nkGiderForm.tarih || bugunISO()).slice(0, 10)}"></div>
@@ -2685,12 +2687,13 @@ function nakitGiderModal(mevcut, sonrasi) {
     ${ffTrig({ id: 'nkgDonemTrig', label: 'Ait Olduğu Dönem', zorunlu: true, deger: donGoster() })}
     ${ffInput({ id: 'nkgAcik', label: 'Açıklama', zorunlu: false, deger: nkGiderForm.aciklama || '' })}`;
   const alt = `${duzenle ? `<button type="button" class="btn btn-kirmizi" id="nkgSil" style="flex:0 0 auto">${ik('cop')}</button>` : ''}<button type="button" class="btn btn-ana ff-kaydet" id="nkgKaydet">${ik('kaydet')} Kaydet</button>`;
-  modalAc('Nakit Harcama', govde, alt);
+  modalAc(avans ? 'Nakit Avans' : 'Nakit Harcama', govde, alt);
   $('#modalKap .modal').classList.add('modal-tam');
   tutarKutusuBagla($('#nkgTutar'), nkGiderForm.tutar || '');
   tarihGostergeBagla('#nkgTarih', '#nkgTarihGos');
   // Gider Adı — aramalı liste + yeni gider ekle
   $('#nkgGiderTrig').onclick = () => {
+    if (avans) { bildir('Nakit Avans her zaman Kâr Dağıtımı olarak kaydedilir.', 'bilgi'); return; }   // sabit
     const giderler = (State.giderler || []).filter(g => !nakitCekimMi(g.ad)).slice().sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));   // Nakit Çekim yalnız bankadan seçilir
     const secId = (deger) => { const g = (State.giderler || []).find(x => x.id === deger); if (g) { nkGiderForm.giderAd = g.ad; nkGiderForm.giderId = g.id; ffTrigGuncelle('nkgGiderTrig', g.ad); } };
     const ekle = async (ham) => { const ad = ham.trim(); if (!ad) return; let g = (State.giderler || []).find(x => adNorm(x.ad) === adNorm(ad)); if (!g) { g = await DB.ekle('giderler', { ad, grupId: null }); State.giderler.push(g); } nkGiderForm.giderAd = g.ad; nkGiderForm.giderId = g.id; ffTrigGuncelle('nkgGiderTrig', g.ad); };
@@ -2699,7 +2702,7 @@ function nakitGiderModal(mevcut, sonrasi) {
   };
   // İlgili Eğitmen
   $('#nkgEgTrig').onclick = () => altSecici({ baslik: 'İlgili Eğitmen', arama: ortaklar.length > 6, placeholder: 'Eğitmen ara…', secili: nkGiderForm.egitmenId || '',
-    secenekler: [{ deger: '', ad: 'Genel (tüm ortaklar)' }, ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad, alt: o.id === benId() ? 'Sen' : '' }))],
+    secenekler: [...(avans ? [] : [{ deger: '', ad: 'Genel (tüm ortaklar)' }]), ...ortaklar.slice().sort((a, b) => a.ad.localeCompare(b.ad, 'tr')).map(o => ({ deger: o.id, ad: o.ad, alt: o.id === benId() ? 'Sen' : (hocaMi(o) ? 'Hoca' : '') }))],
     onSec: (v) => { nkGiderForm.egitmenId = v || null; ffTrigGuncelle('nkgEgTrig', egGoster()); } });
   // Ait Olduğu Dönem
   $('#nkgDonemTrig').onclick = () => { const aylar = []; for (let i = 0; i < 15; i++) aylar.push(donemKaydir(buAy(), -i));
@@ -2710,10 +2713,11 @@ function nakitGiderModal(mevcut, sonrasi) {
     const tutar = tutarCoz($('#nkgTutar').value);
     if (!nkGiderForm.giderAd) { bildir('Gider seçmelisiniz.', 'uyari'); return; }
     if (!tutar || tutar <= 0) { bildir('Geçerli bir tutar girin.', 'uyari'); return; }
+    if (avans && !nkGiderForm.egitmenId) { bildir('İlgili eğitmeni seçin.', 'uyari'); return; }
     const kayit = { tarih: ($('#nkgTarih').value || bugunISO()).slice(0, 10), donem: nkGiderForm.donem || null, giderAd: nkGiderForm.giderAd, giderId: nkGiderForm.giderId || null, tutar: Math.abs(tutar), egitmenId: nkGiderForm.egitmenId || null, aciklama: $('#nkgAcik').value.trim() };
     if (duzenle) await DB.guncelle('nakitGiderleri', mevcut.id, kayit); else await DB.ekle('nakitGiderleri', kayit);
     State.nakitGiderleri = DB._oku('nakitGiderleri');
-    modalKapat(); bildir('Nakit gider kaydedildi.', 'basari'); if (sonrasi) sonrasi();
+    modalKapat(); bildir(avans ? 'Nakit avans kaydedildi.' : 'Nakit gider kaydedildi.', 'basari'); if (sonrasi) sonrasi();
   };
 }
 let iaArsivDetay = null;   // açık toplu aktarımın id'si (detay görünümü); null → liste
@@ -3635,6 +3639,7 @@ function neonAnaEkran() {
         ${kart('muhasebe', 'Hesaplar', 'hesap-defter')}
         ${kart('ortaklar', 'Ortaklar', 'karlilik')}
       </div>
+      ${yetki('veri_ekle') ? `<button type="button" class="neon-kart neon-avans" id="dashAvans"><span class="nk-ik">${ik('para')}</span><span class="nk-et">Nakit Avans</span><span class="nk-alt">Kasadan ortağa / hocaya</span></button>` : ''}
       ${(() => {
         const bugunku = ttSirali().filter(t => (t.tarih || '') === bugunISO());
         const toplam = bugunku.reduce((s, t) => s + (Number(t.tutar) || 0), 0);
@@ -3647,7 +3652,8 @@ function neonAnaEkran() {
   $$('[data-git]').forEach(c => c.onclick = () => git(c.dataset.git));
   ttListeBagla(ic());
   { const vg = $('#dashVeriGir'); if (vg) vg.onclick = () => veriGirModal(); }   // Veri Gir → Plan4me / Banka / Nakit Harcama
-  { const dt = $('#dashTahsilat'); if (dt) dt.onclick = () => git('bekleyen'); }   // Tahsilat Defteri → Bekleyen Tahsilatlar listesi
+  { const dt = $('#dashTahsilat'); if (dt) dt.onclick = () => git('bekleyen'); }
+  { const na = $('#dashAvans'); if (na) na.onclick = () => nakitGiderModal(null, () => git('dashboard'), { avans: true }); }   // Nakit Avans → Kâr Dağıtımı (kasadan)   // Tahsilat Defteri → Bekleyen Tahsilatlar listesi
   $('#neonOzet').onclick = (e) => { if (e.target.closest('[data-git]')) return; neonOzetAcik = !neonOzetAcik; akordeon($('#neonOzet'), $('#neonOzet .no-govde'), neonOzetAcik); };
 }
 

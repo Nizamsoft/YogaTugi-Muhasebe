@@ -4266,3 +4266,8 @@ body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:c
 .kf-dev-not{font-size:11.5px;color:var(--metin-soluk);margin-top:8px;line-height:1.45}
 .kf-blok.kf-devir{background:rgba(245,169,31,.07);border:1px solid rgba(245,169,31,.3)}
 .kf-blok.kf-devir .kf-blok-bas{color:var(--amber,#f5a91f)}
+
+/* Panel — Nakit Avans (Hesaplar/Ortaklar altında tam genişlik) */
+.neon-kart.neon-avans{width:100%;margin-top:10px;border-color:rgba(245,169,31,.4);background:linear-gradient(135deg,rgba(245,169,31,.12),rgba(245,169,31,.03)),var(--kart)}
+.neon-avans .nk-ik{color:var(--amber,#f5a91f)}
+.neon-avans .nk-alt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--metin-soluk)}
