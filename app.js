@@ -663,7 +663,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '342';
+const APP_SURUM = '343';
 const APP_SURUM_TARIH = '2 Eyl 2026';
 const APP_SURUM_SAAT = '13:30';
 
@@ -9571,11 +9571,32 @@ async function girisDogrula() {
     return girisYap(SABIT_ADMIN.kullanici);
   }
   // Ortak girişi (kullanıcı adı + şifre ortak kaydında saklı)
-  const o = DB._oku('ortaklar').find(x => (x.girisAd || '').toLocaleLowerCase('tr') === kulLc && x.sifreHash);
+  const bul = () => DB._oku('ortaklar').find(x => (x.girisAd || '').toLocaleLowerCase('tr') === kulLc && x.sifreHash);
+  let o = bul();
+  // Yeni cihazda yerel veri boş (ya da şifre başka cihazda değişmiş) → önce buluttan güncel listeyi çek
+  if (!o || o.sifreHash !== h) {
+    const btn = $('#girisBtn'); if (btn) btn.disabled = true;
+    hata.textContent = '';
+    await girisIcinBulutCek();
+    if (btn) btn.disabled = false;
+    o = bul();
+  }
   if (!o) { hata.textContent = 'Kullanıcı adı hatalı.'; return; }
   if (o.girisAktif === false) { hata.textContent = 'Bu giriş kapalı. Yöneticiye başvurun.'; return; }
   if (o.sifreHash !== h) { hata.textContent = 'Şifre hatalı.'; return; }
   girisYapOrtak(o);
+}
+
+/* Giriş öncesi buluttan veriyi çek (yalnız okur; realtime/gönderim kurmaz) — hata olursa sessizce geçer */
+async function girisIcinBulutCek() {
+  const cfg = Bulut.ayarOku();
+  if (!cfg || !cfg.url || !cfg.anonKey) return;
+  try {
+    if (!Bulut.client) await Bulut.baglan(cfg);
+    const row = await Bulut.cek();
+    if (row && row.data) { Bulut.uygula(row.data); Bulut.sonImza = row.guncelleme; Bulut._sonNonce = row.data._nonce || null; }
+  } catch (e) { console.warn('Giriş öncesi bulut çekme hatası:', e.message); }
+  Bulut.aktif = false;   // girişten önce yerel veriyi buluta geri gönderme; asıl senkron girişte kurulur
 }
 
 async function girisYap(ad) {
