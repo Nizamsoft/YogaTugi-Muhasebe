@@ -663,9 +663,9 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '344';
-const APP_SURUM_TARIH = '2 Eyl 2026';
-const APP_SURUM_SAAT = '13:30';
+const APP_SURUM = '346';
+const APP_SURUM_TARIH = '5 Eki 2026';
+const APP_SURUM_SAAT = '12:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
 function adminMi() { return !!(State.kullanici && State.kullanici.rol === 'admin'); }
@@ -2199,10 +2199,13 @@ function bekleyenEslesModu() {
     return { secTop, diff, tam: Math.abs(diff) <= 1, fazla: diff > 0 };
   };
   const tPlus = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
+  const multi = bankaMultinetMi(k);
   const gunISO = tPlus ? gunKaydir(k.tarih, -1) : k.tarih;
-  const dp = donemStr(gunISO).split('-'); const dk = (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2);
+  const ayEt = (iso) => { const dp = donemStr(iso).split('-'); return (AY_KISA[(+dp[1] || 1) - 1] || '') + ' ' + dp[0].slice(2); };
+  const hepsiSecili = () => adaylar.length > 0 && adaylar.every(t => ctx.secili.has(String(t.id)));
+  const tumBtnHTML = () => adaylar.length > 1 ? `<button type="button" class="es-tumbtn" id="esTum">${hepsiSecili() ? 'Seçimi kaldır' : `✓ Tümünü seç (${adaylar.length})`}</button>` : '';
   const satir = (t) => {
-    const s = ctx.secili.has(String(t.id)); const tur = GELIR_TUR[t.odemeTuru] || t.odemeTuru || '';
+    const s = ctx.secili.has(String(t.id)); const tur = GELIR_TUR[t.odemeTuru] || t.odemeTuru || ''; const dk = ayEt(t.tarih || gunISO);
     return `<tr data-esrow="${kacar(String(t.id))}" class="${s ? 'es-sec' : ''}">
         <td class="es-cbcell"><span class="es-cb">${s ? '✓' : ''}</span></td>
         <td data-l="Tarih" class="t2-hcr"><span class="t2-us">${kacar(kisaTarih(t.tarih))}</span><span class="t2-dn">${dk}</span></td>
@@ -2221,19 +2224,19 @@ function bekleyenEslesModu() {
   const onayBagla = () => { const o = $('#esOnay'); if (o && secDurum().tam) o.onclick = () => ctx.onOnay([...ctx.secili]); };
   ic().innerHTML = `<div class="kar-sayfa es-sayfa">
     <div class="gg-tekbar"><button type="button" class="es-vazgec" id="esVazgec">‹</button><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
-    <div class="bt-aybar"><span class="es-gun">${kacar(k.islem || 'Banka hareketi')} · ${kacar(kisaTarih(gunISO))} tahsilatları</span></div>
+    <div class="bt-aybar"><span class="es-gun">${multi ? `Multinet · ${kacar(kisaTarih(gunISO))} tarihine kadar seçilmemiş ${adaylar.length} tahsilat` : `${kacar(k.islem || 'Banka hareketi')} · ${kacar(kisaTarih(gunISO))} tahsilatları`}</span>${tumBtnHTML()}</div>
     ${ctx.onNakit ? `<button type="button" class="es-nakit${k.nakitYatirma ? ' sec' : ''}" id="esNakit"><span class="ic">💵</span><span class="tx"><b>Nakit Yatırma</b><small>Kasadaki parayı bankaya yatırdım · gelir değil</small></span><span class="ok">${k.nakitYatirma ? '✓' : '›'}</span></button>` : ''}
     ${adaylar.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo es-tablo">
         <colgroup><col style="width:34px"><col style="width:15%"><col style="width:29%"><col style="width:18%"><col style="width:28%"></colgroup>
         <thead><tr><th></th><th>Tarih</th><th>Eğitmen</th><th>Ders</th><th class="sag">Tutar</th></tr></thead>
         <tbody>${adaylar.map(satir).join('')}</tbody></table></div></div>`
-      : `<div class="gp-bos">${kacar(kisaTarih(gunISO))} için tanımlı tahsilat yok. “Yeni” ile ekleyip seçin.</div>`}
+      : `<div class="gp-bos">${multi ? 'Seçilmemiş multinet tahsilatı yok.' : kacar(kisaTarih(gunISO)) + ' için tanımlı tahsilat yok.'} “Yeni” ile ekleyip seçin.</div>`}
     <div class="es-onbar" id="esOnbar">${onayHTML()}</div>
   </div>`;
   $('#esVazgec').onclick = () => ctx.onVazgec();
   { const n = $('#esNakit'); if (n) n.onclick = () => ctx.onNakit(); }
   { const y = $('#btYeni'); if (y) y.onclick = () => {
-      const turu = tPlus ? 'kart' : (/havale/i.test(k.islem || '') ? 'havale' : 'kart');   // Batch → Kart, Havale → Havale
+      const turu = multi ? 'multinet' : tPlus ? 'kart' : (/havale/i.test(k.islem || '') ? 'havale' : 'kart');   // Batch → Kart, Havale → Havale
       const acik = Math.max(0, Math.round((hedef - secDurum().secTop) * 100) / 100);   // açık kadar (kalan)
       tahsilatTanimModal({ tarih: gunISO, odemeTuru: turu, tutar: acik || hedef }, () => {
         const yeni = bankaAdaylar(k).filter(t => !ctx.secili.has(String(t.id))).sort((a, b) => String(b.olusturma || '').localeCompare(String(a.olusturma || '')))[0];
@@ -2247,7 +2250,12 @@ function bekleyenEslesModu() {
     tr.classList.toggle('es-sec', s);
     const cb = tr.querySelector('.es-cb'); if (cb) cb.textContent = s ? '✓' : '';
     const bar = $('#esOnbar'); if (bar) { bar.innerHTML = onayHTML(); onayBagla(); }
+    const tb = $('#esTum'); if (tb) tb.innerHTML = hepsiSecili() ? 'Seçimi kaldır' : `✓ Tümünü seç (${adaylar.length})`;
   });
+  { const tb = $('#esTum'); if (tb) tb.onclick = () => {   // hepsini seç / hepsini bırak (ör. 15 günlük birikmiş multinet)
+      if (hepsiSecili()) adaylar.forEach(t => ctx.secili.delete(String(t.id))); else adaylar.forEach(t => ctx.secili.add(String(t.id)));
+      git('bekleyen');
+    } }
   onayBagla();
 }
 
@@ -3197,12 +3205,14 @@ function bankaKullanilanTanimlar(haric) {
   });
   return s;
 }
+const bankaMultinetMi = k => /multinet/i.test(((k && k.islem) || '') + ' ' + ((k && k.aciklama) || ''));
 function bankaAdaylar(k) {
   if (!k) return [];
   const tanim = State.tahsilatTanimlari || [];
   const kullanilan = bankaKullanilanTanimlar(k);   // başka kayda atanmışlar listede çıkmaz
   const uygun = t => !kullanilan.has(String(t.id));
-  if (/multinet/i.test((k.islem || '') + ' ' + (k.aciklama || ''))) return tanim.filter(t => { if (t.odemeTuru !== 'multinet' || !uygun(t)) return false; const d = Math.round(gunFark(k.tarih, t.tarih)); return d >= 0 && d <= 40; });   // Multinet toplu ödeme → aynı ay/40 gün içindeki MULTINET tahsilatlar
+  if (bankaMultinetMi(k)) return tanim.filter(t => t.odemeTuru === 'multinet' && uygun(t) && Math.round(gunFark(k.tarih, t.tarih)) >= 0)
+    .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')));   // Multinet toplu ödeme → banka tarihine kadar seçilmemiş TÜM multinet tahsilatlar (günler birikebilir)
   const toplu = k.yon === 'komisyon' || /batch\s*yatan/i.test(k.islem || '');
   if (toplu) return tanim.filter(t => t.odemeTuru === 'kart' && Math.round(gunFark(k.tarih, t.tarih)) === 1 && uygun(t));   // Batch Yatan/komisyon → D-1 KART
   if (/havale|eft|fast/i.test(k.islem || '')) return tanim.filter(t => t.odemeTuru === 'havale' && Math.round(gunFark(t.tarih, k.tarih)) === 0 && uygun(t));   // Havale/EFT/FAST → aynı gün HAVALE

@@ -3729,6 +3729,7 @@ body.tema-neon .modal-tam .modal-kapat{background:var(--gri);border-color:var(--
 /* Bekleyen — banka eşleştirme modu */
 .es-vazgec{width:30px;height:30px;border-radius:9px;border:1px solid var(--kenar);background:var(--gri);color:var(--neon);font-size:16px;font-weight:800;cursor:pointer;flex:none}
 .bt-aybar .es-gun{font-size:12px;color:var(--metin-soluk);font-weight:700}
+.es-tumbtn{flex:none;margin-left:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--kenar);background:var(--gri);color:inherit;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
 /* Eşleştirme modu — en tepedeki "Nakit Yatırma" seçeneği (kasadan bankaya, gelir değil) */
 .es-nakit{width:100%;display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px dashed var(--kenar);background:var(--gri);color:inherit;font-family:inherit;text-align:left;cursor:pointer}
 .es-nakit .ic{font-size:22px;flex:none}
