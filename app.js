@@ -663,8 +663,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '346';
-const APP_SURUM_TARIH = '5 Eki 2026';
+const APP_SURUM = '347';
+const APP_SURUM_TARIH = '6 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -2225,6 +2225,7 @@ function bekleyenEslesModu() {
   ic().innerHTML = `<div class="kar-sayfa es-sayfa">
     <div class="gg-tekbar"><button type="button" class="es-vazgec" id="esVazgec">‹</button><span class="gg-bas">Bekleyen Tahsilatlar</span><button type="button" class="bt-yeni" id="btYeni">${ik('arti')} Yeni</button></div>
     <div class="bt-aybar"><span class="es-gun">${multi ? `Multinet · ${kacar(kisaTarih(gunISO))} tarihine kadar seçilmemiş ${adaylar.length} tahsilat` : `${kacar(k.islem || 'Banka hareketi')} · ${kacar(kisaTarih(gunISO))} tahsilatları`}</span>${tumBtnHTML()}</div>
+    ${ctx.onMultinet && !tPlus && !bankaMultinetMetin(k) ? `<button type="button" class="es-nakit${multi ? ' sec' : ''}" id="esMulti"><span class="ic">🍽️</span><span class="tx"><b>Bu bir Multinet ödemesi</b><small>${multi ? 'Açıktaki tüm multinet tahsilatları listeleniyor' : 'Seçilmemiş tüm multinet tahsilatlarını göster'}</small></span><span class="ok">${multi ? '✓' : '›'}</span></button>` : ''}
     ${ctx.onNakit ? `<button type="button" class="es-nakit${k.nakitYatirma ? ' sec' : ''}" id="esNakit"><span class="ic">💵</span><span class="tx"><b>Nakit Yatırma</b><small>Kasadaki parayı bankaya yatırdım · gelir değil</small></span><span class="ok">${k.nakitYatirma ? '✓' : '›'}</span></button>` : ''}
     ${adaylar.length ? `<div class="ogr-tkart sade"><div class="ogr-kaydir"><table class="ogr-tablo sade iki-satir bt-tablo es-tablo">
         <colgroup><col style="width:34px"><col style="width:15%"><col style="width:29%"><col style="width:18%"><col style="width:28%"></colgroup>
@@ -2235,6 +2236,7 @@ function bekleyenEslesModu() {
   </div>`;
   $('#esVazgec').onclick = () => ctx.onVazgec();
   { const n = $('#esNakit'); if (n) n.onclick = () => ctx.onNakit(); }
+  { const mb = $('#esMulti'); if (mb) mb.onclick = () => ctx.onMultinet(); }
   { const y = $('#btYeni'); if (y) y.onclick = () => {
       const turu = multi ? 'multinet' : tPlus ? 'kart' : (/havale/i.test(k.islem || '') ? 'havale' : 'kart');   // Batch → Kart, Havale → Havale
       const acik = Math.max(0, Math.round((hedef - secDurum().secTop) * 100) / 100);   // açık kadar (kalan)
@@ -3205,7 +3207,8 @@ function bankaKullanilanTanimlar(haric) {
   });
   return s;
 }
-const bankaMultinetMi = k => /multinet/i.test(((k && k.islem) || '') + ' ' + ((k && k.aciklama) || ''));
+const bankaMultinetMetin = k => /multinet/i.test(((k && k.islem) || '') + ' ' + ((k && k.aciklama) || ''));   // banka açıklamasında 'multinet' geçiyor mu
+const bankaMultinetMi = k => !!k && (k.multinet === true || bankaMultinetMetin(k));   // ya açıklamadan ya da kullanıcı elle 'Multinet ödemesi' dediyse
 function bankaAdaylar(k) {
   if (!k) return [];
   const tanim = State.tahsilatTanimlari || [];
@@ -3401,14 +3404,16 @@ function bankaDetayModal(k, wiz) {
           document.body.classList.add('govde-kilit');
           bankaDetayModal(k, wiz);   // yerinde güncelle
         };
+        const mn0 = k.multinet;   // vazgeçilirse 'Multinet ödemesi' seçimi geri alınır
         bankaEsCtx = { k, wiz, secili: new Set(otoSec.map(String)),
-          onOnay: async (sel) => { k.eslesenIds = sel; k.otoEsles = false; k.nakitYatirma = false; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel, otoEsles: false, nakitYatirma: false }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } doner(); },
+          onOnay: async (sel) => { k.eslesenIds = sel; k.otoEsles = false; k.nakitYatirma = false; if (k.id) { await DB.guncelle('bankaHareketleri', k.id, { eslesenIds: sel, otoEsles: false, nakitYatirma: false, multinet: k.multinet === true }); State.bankaHareketleri = DB._oku('bankaHareketleri'); } doner(); },
+          onMultinet: () => { k.multinet = k.multinet !== true; bankaEsCtx.secili = new Set(); git('bekleyen'); },   // açıklamada geçmese de multinet say (ör. 'Gelen EFT')
           onNakit: (Number(k.tutar) || 0) > 0 ? async () => {   // kasadan bankaya nakit yatırma — gelir değil
             const yama = { yon: 'gelir', eslesenIds: [], otoEsles: false, nakitYatirma: true }; Object.assign(k, yama);
             if (k.id) { await DB.guncelle('bankaHareketleri', k.id, yama); State.bankaHareketleri = DB._oku('bankaHareketleri'); }
             doner();
           } : null,
-          onVazgec: doner };
+          onVazgec: () => { k.multinet = mn0; doner(); } };
         const p = $('#modalPerde'); if (p) p.style.display = 'none';   // detayı arka planda tut
         document.body.classList.remove('govde-kilit');
         git('bekleyen');
