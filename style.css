@@ -4186,6 +4186,27 @@ body.kb-acik .modal:not(.modal-kucuk):not(.modal-tam) .modal-govde{ max-height:c
 .ia-taslak-bar .iatb-m b{color:var(--metin)}
 .ia-taslak-bar .iatb-sil{flex:none;background:rgba(240,133,122,.1);border:1px solid rgba(240,133,122,.4);color:var(--kirmizi);font:inherit;font-weight:800;font-size:12.5px;border-radius:9px;padding:8px 14px;cursor:pointer}
 
+/* İçe Aktar — ortak ön izleme: paylaş barı + kim düzenliyor çubuğu + salt görüntüleme */
+.ia-taslak-bar .iatb-btns{display:flex;flex-direction:column;gap:6px;flex:none}
+.ia-taslak-bar .iatb-ok{background:var(--neon,#c6f432);color:var(--neon-metin,#14200a);border:0;font:inherit;font-weight:800;font-size:12.5px;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.ia-taslak-bar .iatb-ok:disabled{opacity:.6}
+.ia-kilit-bar{display:flex;align-items:center;gap:10px;border-radius:12px;padding:11px 13px;margin:0 0 12px;border:1px solid var(--kenar);background:var(--kart)}
+.ia-kilit-bar .iakb-ik{flex:none;font-size:17px;line-height:1}
+.ia-kilit-bar .iakb-m{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--metin-soluk)}
+.ia-kilit-bar .iakb-m b{color:var(--metin)}
+.ia-kilit-bar .iakb-btns{display:flex;gap:6px;flex:none}
+.ia-kilit-bar .iakb-btn{flex:none;background:transparent;border:1px solid var(--kenar-koyu,var(--kenar));color:var(--metin);font:inherit;font-weight:800;font-size:12.5px;border-radius:9px;padding:8px 13px;cursor:pointer;white-space:nowrap}
+.ia-kilit-bar .iakb-btn.ana{background:var(--neon,#c6f432);color:var(--neon-metin,#14200a);border-color:transparent}
+.ia-kilit-bar .iakb-btn.sil{color:var(--kirmizi);border-color:rgba(240,133,122,.4);background:rgba(240,133,122,.08)}
+.ia-kilit-bar .iakb-btn:disabled{opacity:.6}
+.ia-kilit-bar.ben{background:rgba(126,200,120,.1);border-color:rgba(126,200,120,.45)}
+.ia-kilit-bar.kilitli{background:rgba(245,169,31,.1);border-color:rgba(245,169,31,.4)}
+.ia-kart.ia-kart-kilitli{opacity:.55;cursor:not-allowed}
+.ia-salt-not{margin-top:12px;text-align:center;font-size:12.5px;font-weight:700;color:var(--metin-soluk);background:var(--kart);border:1px dashed var(--kenar);border-radius:12px;padding:12px}
+.modal.bd-salt .ff-trig,.modal.bd-salt .bd-ackin{pointer-events:none}
+.modal.bd-salt .ff-trig .ff-ok{display:none}
+.modal .bd-salt-not{flex:1;align-self:center;font-size:12.5px;font-weight:700;color:var(--metin-soluk)}
+
 /* Seçici (altSecici / gider tanımla) — çok öğede render limiti notu */
 .altsec-daha{font-size:11.5px;color:var(--metin-soluk);text-align:center;padding:11px 12px;font-weight:600;opacity:.85}
 
