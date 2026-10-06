@@ -852,7 +852,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '348';
+const APP_SURUM = '349';
 const APP_SURUM_TARIH = '6 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -2792,12 +2792,14 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
     // Ortak mod: ön izleme buluttan gelir. Düzenleyen bizsek elimizdeki (en güncel) kayıtlar geçerli.
     const yerel = iaTaslakOku();
     if (IaOrtak.taslak) {
-      if (yerel) { try { localStorage.setItem('yt_iaTaslak_yedek', JSON.stringify(yerel)); localStorage.removeItem(IA_TASLAK_KEY); } catch (_) { } }   // ortak ön izleme var → bu telefondakini kenara al (kullanılmaz)
+      if (yerel && !localStorage.getItem('yt_iaTaslak_yedek')) { try { localStorage.setItem('yt_iaTaslak_yedek', JSON.stringify(yerel)); localStorage.removeItem(IA_TASLAK_KEY); } catch (_) { } }   // ortak ön izleme var → bu telefondakini kenara al (kullanılmaz)
       if (!(IaOrtak.benimMi() && iaSonKayitlar)) IaOrtak.taslagiYereAl();
       iaTaslakGeri = false;
     } else {
       if (!(IaOrtak.benimMi() && iaSonKayitlar)) IaOrtak.taslagiYereAl();
-      if (yerel && yerel.sekme && yerel.sekme !== 'planformi') yerelPaylasilmamis = yerel;
+      // Ortak ön izleme varken kenara alınmış taslak da (yt_iaTaslak_yedek) ön izleme silinince yeniden paylaşılabilsin
+      let yd = yerel; if (!yd) { try { const x = JSON.parse(localStorage.getItem('yt_iaTaslak_yedek') || 'null'); if (x && Array.isArray(x.kayitlar) && x.kayitlar.length) yd = x; } catch (_) { } }
+      if (yd && yd.sekme && yd.sekme !== 'planformi') yerelPaylasilmamis = yd;
     }
   } else if (!iaSonKayitlar) {   // Bulut yok: yarım kalan taslağı cihazdan geri yükle (eski davranış)
     const t = iaTaslakOku(); if (t && t.sekme && t.sekme !== 'planformi') { iaSekme = t.sekme; iaSonKayitlar = t.kayitlar; iaSonDosya = t.dosya || ''; iaSonSekme = t.sekme; iaTaslakGeri = true; }
@@ -2839,13 +2841,13 @@ SAYFALAR['ice-aktar'] = function iceAktarSayfasi() {
         iaSekme = y.sekme; iaSonKayitlar = y.kayitlar; iaSonDosya = y.dosya || ''; iaSonSekme = y.sekme;
         await IaOrtak.taslakGonderHemen();
         if (!IaOrtak.taslak) throw new Error('kaydedilemedi');
-        try { localStorage.removeItem(IA_TASLAK_KEY); } catch (_) { }
+        try { localStorage.removeItem(IA_TASLAK_KEY); localStorage.removeItem('yt_iaTaslak_yedek'); } catch (_) { }
         bildir('Ön izleme paylaşıldı — artık tüm ortaklar görüyor.', 'basari');
       } catch (e) { bildir('Paylaşılamadı (internet bağlantısını kontrol et).', 'hata'); }
       SAYFALAR['ice-aktar']();
     }; }
   { const ps = $('#iaPaylasSil'); if (ps) ps.onclick = () => onayModal('Bu telefondaki taslağı sil?', 'Sadece bu telefonda duran yarım aktarım silinecek. Ortak ön izlemeye dokunulmaz.', () => {
-      try { localStorage.removeItem(IA_TASLAK_KEY); } catch (_) { } SAYFALAR['ice-aktar']();
+      try { localStorage.removeItem(IA_TASLAK_KEY); localStorage.removeItem('yt_iaTaslak_yedek'); } catch (_) { } SAYFALAR['ice-aktar']();
     }, { evet: 'Sil' }); }
   iaArsivAcik = false;   // arşiv artık Ayarlar > İçe Aktarma Arşivi'nde
   const kart = $('#iaKart'), inp = $('#iaFile');
