@@ -852,8 +852,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '349';
-const APP_SURUM_TARIH = '6 Eki 2026';
+const APP_SURUM = '350';
+const APP_SURUM_TARIH = '7 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -10408,13 +10408,23 @@ function yedekIndir() {
       try { veri[k.slice(3)] = JSON.parse(ham); } catch { veri[k.slice(3)] = ham; }
     }
   } catch (e) { /* localStorage erişilemezse en azından State'ten yaz */ }
+  // Ortak (bulut) banka ön izlemesi telefonda durmaz → yedeğe ayrıca ekle (düzenleyen bizsek elimizdeki en güncel hâli)
+  let onizSay = 0;
+  try {
+    if (IaOrtak.aktif()) {
+      const bt = (IaOrtak.benimMi() && iaSonKayitlar && iaSonKayitlar.length && iaSonSekme && iaSonSekme !== 'planformi')
+        ? { sekme: iaSonSekme, dosya: iaSonDosya || '', kayitlar: iaSonKayitlar, ts: Date.now() } : IaOrtak.taslak;
+      if (bt && Array.isArray(bt.kayitlar) && bt.kayitlar.length) { const { _nonce, ...temiz } = bt; veri.iaTaslak = temiz; }
+    }
+    onizSay = (veri.iaTaslak && Array.isArray(veri.iaTaslak.kayitlar)) ? veri.iaTaslak.kayitlar.length : 0;
+  } catch (_) { }
   const blob = new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `yogatugi-yedek-${bugunISO()}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(a.href);
-  bildir('Yedek indirildi.', 'basari');
+  bildir(onizSay ? `Yedek indirildi (banka ön izlemesi dahil · ${onizSay} satır).` : 'Yedek indirildi.', 'basari');
 }
 
 function yedekGeriYukle(dosya) {
