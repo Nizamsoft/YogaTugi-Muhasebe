@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '354';
+const APP_SURUM = '355';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1719,6 +1719,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   let ozSel = ozHepsi.find(x => String(x.e.id) === String(karOzetSecili));
   if (!ozSel) ozSel = ozHepsi.find(x => String(x.e.id) === String(benId())) || ozHepsi[0];
   const ozSecId = ozSel ? ozSel.e.id : null;
+  if (karOzetSecili == null && ozSecId != null) karOzetSecili = ozSecId;   // ay değişince aynı kişi kalsın (sıralama aya göre değişiyor)
   // Hem Özet hem Detaylı tek eğitmen gösterir (başlık = seçici). Veri olmasa bile kart açılır.
   const ozGovde = ozSel ? (detayli ? kartCizDetay(ozSel.e, ozSel.rol) : kartCizOzet(ozSel.e, ozSel.rol, true)) : `<div class="gp-bos">Eğitmen yok.</div>`;
   // --- Hocalar sekmesi (komisyonlu eğitmenler) ---
