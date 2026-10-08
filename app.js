@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '369';
+const APP_SURUM = '370';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1673,7 +1673,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     m += st(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', [`${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz']);
     const son = e.maasliMi
       ? `<div class="oz-son"><div class="oz-son-l">Bu ay net payı</div><div class="oz-son-v mono">${TL(hakGuncel)}</div><div class="oz-son-alt">Dağıtım: <b>${dagitimEt(e)}</b></div></div>`
-      : `<div class="oz-son"><div class="oz-son-l">Bu ayki payın (hakediş)</div><div class="oz-son-v mono">${TL(hakTop)}</div><div class="oz-son-alt">Şimdiye kadar <b>${TL(verilen)}</b> aldın · Sana kalan <b class="poz">${TL(kalanTop)}</b></div></div>`;
+      : `<div class="oz-son"><div class="oz-son-l">Sana kalan (devir dahil)</div><div class="oz-son-v mono">${TL(kalanTop)}</div><div class="oz-son-alt">Bu ayki hakediş <b>${TL(hakGuncel)}</b>${devir ? ` · devir <b>${devir < 0 ? '−' : '+'}${TL(Math.abs(devir))}</b>` : ''} · ödenen <b>${TL(verilen)}</b></div></div>`;
     const govde = `<div class="oz-tl">${m}</div>${son}`;
     const dar = `<div class="oz-dar"><span>Bu ayki payın</span><b class="mono">${TL(ledger ? kalanTop : hakGuncel)}</b></div>`;
     const bas = hepAcik
@@ -1755,7 +1755,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(h.komisyon || 0)}`, 'negatif']);
     m += st('kes', '🏢', `Stüdyo payı ayrıldı (%${100 - oran}).`, `Hakediş oranın %${oran}`, [`−${TL(h.studyoKar || 0)}`, 'negatif']);
     m += st(verilen ? 'kes' : 'iyi', '🤝', verilen ? 'Bu ay sana ödeme yapıldı.' : 'Bu ay henüz ödeme yapılmadı.', 'Banka / kasadan sana yapılan ödemeler', [`−${TL(verilen)}`, verilen ? 'negatif' : '']);
-    const son = `<div class="oz-son"><div class="oz-son-l">Bu ayki hakedişin</div><div class="oz-son-v mono">${TL(h.payi || 0)}</div><div class="oz-son-alt">Devir dahil kalan <b class="${kalanTop < 0 ? 'negatif' : 'poz'}">${TL(kalanTop)}</b></div></div>`;
+    const son = `<div class="oz-son"><div class="oz-son-l">Sana kalan (devir dahil)</div><div class="oz-son-v mono">${TL(kalanTop)}</div><div class="oz-son-alt">Bu ayki hakediş <b>${TL(h.payi || 0)}</b>${devir ? ` · devir <b>${devir < 0 ? '−' : '+'}${TL(Math.abs(devir))}</b>` : ''} · ödenen <b>${TL(verilen)}</b></div></div>`;
     return `<div class="kar-kart kk-kart2 oz-kart acik">
       <button type="button" class="kk-bas2 oz-sec-bas" id="hocaSec">${ortAv(h)}<span class="kk-ort"><span class="kk-ad">${kacar(h.ad)}</span><span class="kk-rol">Hoca · hakediş %${oran}</span></span><span class="oz-degtag">DEĞİŞTİR</span><span class="kk-cev">⌄</span></button>
       <div class="kk-govde"><div class="oz-tl">${m}</div>${son}</div>
