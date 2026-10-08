@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '356';
+const APP_SURUM = '357';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1656,8 +1656,8 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     // Devir en üstte: ay, önceki aylardan kalan bakiyeyle başlar
     const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> kalmıştı, bu aya eklendi.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, bu aydan düşüldü.' : 'Geçen aydan devreden bakiye yok.';
     let m = st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz']);
-    m += st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, kanal || 'Nakit 0,00 ₺');
-    if (!e.maasliMi && e.ortakGelirPayi) m += `<div class="oz-opay"><span class="oz-opem">👥</span><div class="oz-opct"><div class="oz-opb">Ortak gelir payın<span class="oz-oprz">brüte dahil</span></div><div class="oz-opc">"Tüm Ortaklar" geliri ${r.ortaklar.length} ortağa eşit bölündü · hocalar hariç</div></div><span class="oz-opam">+${TL(e.ortakGelirPayi)}</span></div>`;
+    const opay = (!e.maasliMi && e.ortakGelirPayi) ? `<br>Ortak gelir payı ${TL(e.ortakGelirPayi)} <small>(dahil · ${r.ortaklar.length} ortağa eşit)</small>` : '';
+    m += st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, (kanal || 'Nakit 0,00 ₺') + opay);
     m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif']);
     if (!e.maasliMi) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', e.ozelGider ? `Ortak giderlerden ${TL(e.genelPay || 0)} + yalnız sana yazılan ${TL(e.ozelGider)}` : '', [`−${TL(e.giderPayi)}`, 'negatif']);
     if (!e.maasliMi && e.hocaKari) m += st('iyi', '🧘', 'Hocaların stüdyoya bıraktığı kârdan payın.', 'Hoca kârı — tüm ortaklara eşit', [`+${TL(e.hocaKari)}`, 'poz']);
@@ -1691,8 +1691,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const step = (cls, ikon, tt, formul, tah, amStr, amCls) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="dt-tt">${tt}</div>${formul ? `<div class="dt-formul">${kacar(formul)}</div>` : ''}${tah ? `<div class="dt-tah">${tah}</div>` : ''}<div class="dt-amrow"><span class="oz-am ${amCls}">${amStr}</span><span class="dt-kalan">Kalan <b>${TL(bak)}</b></span></div></div></div>`;
     const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> vardı, ekledik.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, düştük.' : 'Geçen aydan devir yok.';
     let m = step(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki ayların bakiyesi', '', `${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz');
-    m += step('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> kazandın 👏`, `Nakit ${TL(e.nakit)} + Havale ${TL(e.havale)} + Kart ${TL(e.kart)}`, '', `+${TL(e.brut)}`, 'poz');
-    if (!e.maasliMi && e.ortakGelirPayi) m += `<div class="dt-opay"><span class="dt-opem">👥</span><div class="dt-opct"><div class="dt-opb">Ortak gelir payı</div><div class="dt-opc">Tüm Ortaklar ÷ ${r.ortaklar.length} ortak (eşit) — brütün içinde</div></div><span class="dt-opam">+${TL(e.ortakGelirPayi)}</span></div>`;
+    m += step('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> kazandın 👏`, `Nakit ${TL(e.nakit)} + Havale ${TL(e.havale)} + Kart ${TL(e.kart)}`, (!e.maasliMi && e.ortakGelirPayi) ? `Ortak gelir payı ${TL(e.ortakGelirPayi)} (dahil · ${r.ortaklar.length} ortağa eşit)` : '', `+${TL(e.brut)}`, 'poz');
     bak -= komisyon;
     m += step('kes', '🏦', 'Bankaya kart komisyonu verdik.', e.kart ? `Kart ${TL(e.kart)} × %${(komisyon / e.kart * 100).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}` : 'Kart tahsilatı yok', '', `−${TL(komisyon)}`, 'negatif');
     if (!e.maasliMi) { bak -= giderPayi; m += step('kes', '🏢', 'Stüdyonun ortak giderlerine katkın.', `Toplam gider ${TL(r.genelGider)} ÷ ${r.ortaklar.length} ortak (eşit)${e.ozelGider ? ` + yalnız sana yazılan ${TL(e.ozelGider)}` : ''}`, '', `−${TL(giderPayi)}`, 'negatif'); }
