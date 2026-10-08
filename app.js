@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '372';
+const APP_SURUM = '373';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -3538,9 +3538,13 @@ function bankaOtoEslestir(kayitlar) {
    mükerrer eşleşmeyi engeller. Hem önizleme (iaSonKayitlar) hem işlenmiş kayıtlar. */
 function bankaKullanilanTanimlar(haric) {
   const s = new Set();
-  [...(iaSonKayitlar || []), ...(State.bankaHareketleri || [])].forEach(x => {
+  // ekrandaki ön izleme + buluttaki ortak ön izleme (İçe Aktar hiç açılmamış olsa da) + kayıtlı banka hareketleri
+  const onizOrtak = (IaOrtak.taslak && Array.isArray(IaOrtak.taslak.kayitlar)) ? IaOrtak.taslak.kayitlar : [];
+  const imzaGor = new Set((iaSonKayitlar || []).map(x => x && x.imza).filter(Boolean));
+  [...(iaSonKayitlar || []), ...onizOrtak.filter(x => !(x && x.imza && imzaGor.has(x.imza))), ...(State.bankaHareketleri || [])].forEach(x => {
     if (x === haric) return;
     if (haric && haric.id != null && x.id === haric.id) return;
+    if (haric && haric.imza && !haric.id && x.imza === haric.imza && !x.id) return;   // aynı ön izleme satırının kopyası
     (x.eslesenIds || []).forEach(id => s.add(String(id)));
   });
   return s;
