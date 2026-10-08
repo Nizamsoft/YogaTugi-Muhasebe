@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '375';
+const APP_SURUM = '376';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1749,19 +1749,19 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const vergiTop = (e.kdvOngoru || 0) + (e.gvOngoru || 0);
     const devir = e.devir || 0, mahsup = e.mahsup || 0;
     const kanal = [e.nakit ? `Nakit ${TL(e.nakit)}` : '', e.havale ? `Havale ${TL(e.havale)}` : '', e.kart ? `Kart ${TL(e.kart)}` : ''].filter(Boolean).join(' · ');
-    const st = (cls, ikon, tx, cap, am) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="oz-tx">${tx}</div>${cap ? `<div class="oz-cap">${cap}</div>` : ''}${am ? `<span class="oz-am ${am[1] || ''}">${am[0]}</span>` : ''}</div></div>`;
+    const st = (cls, ikon, tx, cap, am, dok) => `<${dok ? `button type="button" data-dok="${dok}"` : 'div'} class="oz-st ${cls}${dok ? ' oz-tik' : ''}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="oz-tx">${tx}</div>${cap ? `<div class="oz-cap">${cap}</div>` : ''}${am ? `<span class="oz-am ${am[1] || ''}">${am[0]}</span>` : ''}</div>${dok ? '<span class="oz-ok">›</span>' : ''}</${dok ? 'button' : 'div'}>`;
     // ÖZET'te hiçbir adım gizlenmez — sıfır olsa bile hepsi görünür
     // Devir en üstte: ay, önceki aylardan kalan bakiyeyle başlar
     const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> kalmıştı, bu aya eklendi.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, bu aydan düşüldü.' : 'Geçen aydan devreden bakiye yok.';
-    let m = st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz']);
+    let m = st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz'], 'devir');
     const opay = (!e.maasliMi && e.ortakGelirPayi) ? `<br>Ortak gelir payı ${TL(e.ortakGelirPayi)} <small>(dahil · ${r.ortaklar.length} ortağa eşit)</small>` : '';
-    m += st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, (kanal || 'Nakit 0,00 ₺') + opay);
-    m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif']);
-    if (!e.maasliMi) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', e.ozelGider ? `Ortak giderlerden ${TL(e.genelPay || 0)} + yalnız sana yazılan ${TL(e.ozelGider)}` : '', [`−${TL(e.giderPayi)}`, 'negatif']);
-    if (!e.maasliMi && e.hocaKari) m += st('iyi', '🧘', 'Hocaların stüdyoya bıraktığı kârdan payın.', 'Hoca kârı — tüm ortaklara eşit', [`+${TL(e.hocaKari)}`, 'poz']);
-    m += st('kes', '🏛️', 'Devlet için tahmini vergi ayrıldı.', `KDV ${TL(e.kdvOngoru)} + Gelir Vergisi ${TL(e.gvOngoru)} · kesinleşince güncellenir ⏳`, [`−${TL(vergiTop)}`, 'negatif']);
+    m += st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, (kanal || 'Nakit 0,00 ₺') + opay, null, 'tahsilat');
+    m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif'], 'komisyon');
+    if (!e.maasliMi) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', e.ozelGider ? `Ortak giderlerden ${TL(e.genelPay || 0)} + yalnız sana yazılan ${TL(e.ozelGider)}` : '', [`−${TL(e.giderPayi)}`, 'negatif'], 'gider');
+    if (!e.maasliMi && e.hocaKari) m += st('iyi', '🧘', 'Hocaların stüdyoya bıraktığı kârdan payın.', 'Hoca kârı — tüm ortaklara eşit', [`+${TL(e.hocaKari)}`, 'poz'], 'hoca');
+    m += st('kes', '🏛️', 'Devlet için tahmini vergi ayrıldı.', `KDV ${TL(e.kdvOngoru)} + Gelir Vergisi ${TL(e.gvOngoru)} · kesinleşince güncellenir ⏳`, [`−${TL(vergiTop)}`, 'negatif'], 'vergi');
     const mahsupTx = mahsup > 0 ? 'Tahmini vergi <b>fazla</b> ayrılmıştı, bu ay <b>iade edildi</b>.' : mahsup < 0 ? 'Tahmini vergi <b>eksik</b> ayrılmıştı, bu ay <b>tamamlandı</b>.' : 'Vergi tam ayrılmış, düzeltme yok.';
-    m += st(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', [`${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz']);
+    m += st(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', [`${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz'], 'mahsup');
     const son = e.maasliMi
       ? `<div class="oz-son"><div class="oz-son-l">Bu ay net payı</div><div class="oz-son-v mono">${TL(hakGuncel)}</div><div class="oz-son-alt">Dağıtım: <b>${dagitimEt(e)}</b></div></div>`
       : `<div class="oz-son"><div class="oz-son-l">Sana kalan (devir dahil)</div><div class="oz-son-v mono">${TL(kalanTop)}</div><div class="oz-son-alt">Bu ayki hakediş <b>${TL(hakGuncel)}</b>${devir ? ` · devir <b>${devir < 0 ? '−' : '+'}${TL(Math.abs(devir))}</b>` : ''} · ödenen <b>${TL(verilen)}</b></div></div>`;
@@ -1877,6 +1877,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const eb2 = $('#karEsle2'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
   $$('.kk-bas2[data-tog]').forEach(b => b.onclick = () => { const id = b.dataset.tog; if (karAcikSet.has(id)) karAcikSet.delete(id); else karAcikSet.add(id); karlilikSayfasi(); });
   $$('[data-mahsup]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); mahsupDetayModal(donem, b.dataset.mahsup); });
+  $$('#icerik [data-dok]').forEach(b => b.onclick = () => { if (ozSecId != null) ozDokumModal(donem, ozSecId, b.dataset.dok); });
   $$('[data-ode]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); hakedisOdemeModal(donem, b.dataset.ode, () => karlilikSayfasi()); });
 };
 /* Müşavirden gelen gerçek KDV / gelir vergisi tahakkukunu gir (öngörüyle mutabakat) */
@@ -1920,6 +1921,98 @@ function mahsupDetayModal(donem, ortakId) {
     <div class="md-top"><span>Toplam Mahsuplaştırma</span><b class="${(e.mahsup || 0) < 0 ? 'negatif' : 'poz'}">${(e.mahsup || 0) >= 0 ? '+' : '−'}${TL(Math.abs(e.mahsup || 0))}</b></div>`;
   modalAc('Vergi Mahsuplaştırması', govde, '<button type="button" class="btn btn-ana" id="mdKapat" style="flex:1">Kapat</button>');
   $('#mdKapat').onclick = modalKapat;
+}
+/* Ortaklar Özet: bir adıma (ikon/satır) basınca o kalemin gün gün dökümü — tablo olarak */
+function ozDokumModal(donem, ortakId, tur) {
+  if (tur === 'mahsup') return mahsupDetayModal(donem, ortakId);
+  const r = egitmenKarlilik(donem);
+  const e = (r.ortaklar || []).find(x => String(x.id) === String(ortakId)); if (!e) return;
+  const n = r.ortaklar.length || 1;
+  const yontemAd = { nakit: 'Nakit', havale: 'Havale', kart: 'Kart', multinet: 'Multinet' };
+  const sirala = (a, b) => String(a.tarih || '').localeCompare(String(b.tarih || ''));
+  const payTxt = `<small class="dk-alt">ortak · ${n}'de 1</small>`;
+  // Bu ortağa yazılan gerçekleşmiş tahsilatlar (ortak gelirde yalnız payı)
+  const tahs = (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem && tahsilatGercek(t)).map(t => {
+    if (t.ortakGenel) return { t, oran: 1 / n, ortak: true };
+    const c = egitmenCoz(t.egitmenAd);
+    return (c.rol === 'ortak' && String(c.ortakId) === String(e.id)) ? { t, oran: 1, ortak: false } : null;
+  }).filter(Boolean).sort((a, b) => sirala(a.t, b.t));
+  const tablo = (bas, satirlar, alt) => satirlar.length
+    ? `<div class="dk-kap"><table class="dk-tab"><thead><tr>${bas.map((h, i) => `<th${i === 1 ? ' class="sag"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${satirlar.join('')}</tbody>${alt ? `<tfoot><tr>${alt.map((h, i) => `<td${i === 1 ? ' class="sag"' : ''}>${h}</td>`).join('')}</tr></tfoot>` : ''}</table></div>`
+    : `<div class="dk-bos">Bu ay kayıt yok.</div>`;
+  const sat = (h) => `<tr>${h.map((x, i) => `<td${i === 1 ? ' class="sag mono"' : ''}>${x}</td>`).join('')}</tr>`;
+  let baslik = '', govde = '';
+  if (tur === 'tahsilat') {
+    baslik = 'Tahsilatlar';
+    let top = 0;
+    const s2 = tahs.map(({ t, oran, ortak }) => { const tut = (Number(t.tutar) || 0) * oran; top += tut;
+      return sat([fmtTarih(t.tarih), TL(tut), kacar(t.ogrenciAd || '—') + (ortak ? `<br>${payTxt}` : ''), yontemAd[t.odemeTuru] || kacar(t.odemeTuru || '—')]); });
+    govde = tablo(['Tarih', 'Tutar', 'Kim', 'Ödeme'], s2, ['Toplam', TL(top), `${tahs.length} tahsilat`, '']);
+  } else if (tur === 'komisyon') {
+    baslik = 'Kart Komisyonu';
+    let top = 0;
+    const s2 = tahs.filter(x => x.t.odemeTuru === 'kart').map(({ t, oran, ortak }) => { const kom = kartKomTutar(t) * oran; top += kom;
+      return sat([fmtTarih(t.tarih), '−' + TL(kom), kacar(t.ogrenciAd || '—') + (ortak ? `<br>${payTxt}` : ''), TL((Number(t.tutar) || 0) * oran)]); });
+    govde = tablo(['Tarih', 'Komisyon', 'Kim', 'Kart tutarı'], s2, ['Toplam', '−' + TL(top), '', '']);
+  } else if (tur === 'gider') {
+    baslik = 'Gider Payın';
+    const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
+    const aktifId = new Set(r.ortaklar.map(o => String(o.id)));
+    const ad = (kat) => adNorm(kat || '');
+    const liste = [
+      ...(State.bankaHareketleri || []).filter(b => b.yon === 'gider' && !bankaNakitCekimMi(b) && giderAitDonem(b) === donem).map(b => ({ tarih: b.tarih, kat: b.giderKategori, acik: b.kullaniciAciklama || b.aciklama || '', eg: b.egitmenId, tutar: Math.abs(Number(b.tutar) || 0), yer: 'Banka' })),
+      ...(State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).map(g => ({ tarih: g.tarih, kat: g.giderAd || g.kategori, acik: g.aciklama || '', eg: g.egitmenId, tutar: Math.abs(Number(g.tutar) || 0), yer: 'Kasa' })),
+    ];
+    let top = 0; const s2 = [];
+    for (const c of liste.sort(sirala)) {   // egitmenKarlilik'teki yönlendirmeyle aynı kural
+      const kisi = kisiBul(c.eg);
+      if (kisi && hocaMi(kisi)) continue;
+      if (vergiOdemeMi(c.kat)) continue;
+      let pay, not;
+      if (kisi && aktifId.has(String(kisi.id))) {
+        if (String(kisi.id) !== String(e.id) || ad(c.kat) === ad(KAR_DAGITIM_KAT)) continue;
+        pay = c.tutar; not = '<small class="dk-alt">yalnız sana</small>';
+      } else {
+        if (ad(c.kat) === ad(KAR_DAGITIM_KAT) || ad(c.kat) === ad(HOCA_ODEME_KAT)) continue;
+        pay = c.tutar / n; not = `<small class="dk-alt">${TL(c.tutar)} ÷ ${n}</small>`;
+      }
+      top += pay;
+      const baslikTx = kacar(c.kat || c.acik || '—') + (c.kat && c.acik && adNorm(c.acik) !== adNorm(c.kat) ? `<br><small class="dk-alt">${kacar(c.acik)}</small>` : '');
+      s2.push(sat([fmtTarih(c.tarih), '−' + TL(pay), baslikTx, `${c.yer}<br>${not}`]));
+    }
+    govde = tablo(['Tarih', 'Payın', 'Gider', 'Nereden'], s2, ['Toplam', '−' + TL(top), '', '']);
+  } else if (tur === 'hoca') {
+    baslik = 'Hoca Kârı';
+    const s2 = (r.hocalar || []).filter(h => h.studyoKar).map(h => sat([kacar(h.ad), '+' + TL(h.studyoKar / n), `Tahsilat ${TL(h.brut)}`, `Stüdyo %${100 - Math.round(h.oran || 0)} = ${TL(h.studyoKar)}`]));
+    govde = tablo(['Hoca', 'Payın', 'Tahsilat', 'Stüdyoya kalan'], s2, ['Toplam', '+' + TL(e.hocaKari || 0), '', `${n} ortağa eşit`]);
+  } else if (tur === 'vergi') {
+    baslik = 'Tahmini Vergi';
+    const kdvOn = b => (Number(b) || 0) * r.kdvOran / (100 + r.kdvOran);
+    const s2 = tahs.filter(x => x.t.odemeTuru !== 'nakit').map(({ t, oran, ortak }) => { const tut = (Number(t.tutar) || 0) * oran;
+      return sat([fmtTarih(t.tarih), '−' + TL(kdvOn(tut)), kacar(t.ogrenciAd || '—') + (ortak ? `<br>${payTxt}` : ''), `${yontemAd[t.odemeTuru] || ''} ${TL(tut)}`]); });
+    govde = `<div class="dk-not">KDV — bankaya giren her tahsilattan (%${r.kdvOran}, nakit hariç)</div>`
+      + tablo(['Tarih', 'KDV', 'Kim', 'Tahsilat'], s2, ['Toplam', '−' + TL(e.kdvOngoru || 0), '', ''])
+      + `<div class="dk-gv"><span>Gelir Vergisi <small>(ay toplamından, %${Math.round(r.vOran * 100)})</small></span><b>−${TL(e.gvOngoru || 0)}</b></div>`
+      + `<div class="dk-gv top"><span>Toplam vergi</span><b>−${TL((e.kdvOngoru || 0) + (e.gvOngoru || 0))}</b></div>`;
+  } else if (tur === 'devir') {
+    baslik = 'Devreden Bakiye';
+    const o = State.ortaklar.find(x => String(x.id) === String(e.id));
+    const a = acilisDevir(o);
+    const s2 = []; let top = 0;
+    if (a && a.ay < donem) { top += a.tutar; s2.push(sat([donemAdi(a.ay), (a.tutar < 0 ? '−' : '+') + TL(Math.abs(a.tutar)), 'Açılış devri', '—'])); }
+    for (const m of hakedisAylar()) {
+      if (m >= donem) break;
+      if (a && m <= a.ay) continue;
+      const x = egitmenKarlilik(m).ortaklar.find(y => String(y.id) === String(e.id)); if (!x) continue;
+      const hak = (x.hakedisGuncel != null ? x.hakedisGuncel : x.hakedis), od = x.odenen || 0, kal = hak - od;
+      if (!hak && !od) continue;
+      top += kal;
+      s2.push(sat([donemAdi(m), (kal < 0 ? '−' : '+') + TL(Math.abs(kal)), `Hakediş ${TL(hak)}`, `Ödenen ${TL(od)}`]));
+    }
+    govde = tablo(['Ay', 'Kalan', 'Hakediş', 'Ödenen'], s2, ['Toplam', (top < 0 ? '−' : '+') + TL(Math.abs(top)), '', '']);
+  } else return;
+  modalAc(baslik, `<div class="md-kisi">${kacar(e.ad)} · ${donemAdi(donem)}</div>${govde}`, '<button type="button" class="btn btn-ana" id="dkKapat" style="flex:1">Kapat</button>');
+  $('#dkKapat').onclick = modalKapat;
 }
 /* Ortağa hakediş ödemesi gir / geçmiş ödemeleri yönet (Verilmiş Hakediş) */
 function hakedisOdemeModal(donem, ortakId, sonrasi) {
