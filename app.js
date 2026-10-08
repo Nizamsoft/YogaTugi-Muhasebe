@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '360';
+const APP_SURUM = '362';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7407,14 +7407,56 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   ic().innerHTML = `<div class="kz-sayfa">
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}<button type="button" class="tnm-geri kz-pdf" id="kzPdf">📄 PDF</button></div>
     ${rozet}${yolculuk}${mizan}${kontrol}</div>`;
-  $('#kzPdf').onclick = () => {   // tarayıcının yazdır penceresi → "PDF olarak kaydet" / iPhone'da Paylaş → PDF
-    const eski = document.title; document.title = `Kar-Zarar-Kontrolu-${kzDonem}`;
-    setTimeout(() => { window.print(); setTimeout(() => { document.title = eski; }, 500); }, 50);
-  };
+  $('#kzPdf').onclick = () => sayfaPdf(`Kar-Zarar-Kontrolu-${kzDonem}`, $('#kzPdf'), `Kâr-Zarar Kontrolü · ${donemAdi(kzDonem)}`);
   $('#kzGeri').onclick = () => { const g = kzGeri; kzGeri = 'ayar-tanimlama'; if (g === 'karlilik') karDonem = kzDonem; git(g); };
   $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { kzDonem = donemKaydir(kzDonem, Number(b.dataset.ay)); git('rapor-karzarar-kontrol'); });
 };
+
+/* Sayfa içeriğini PDF yap → paylaş (iPhone) / indir. Ana ekrana eklenmiş iPhone uygulamasında window.print çalışmadığı için
+   PDF uygulamanın içinde oluşturulur (html2pdf, yerel dosya — ilk basışta yüklenir). */
+let _h2pYuk = null;
+function html2pdfYukle() {
+  if (window.html2pdf) return Promise.resolve(window.html2pdf);
+  if (!_h2pYuk) _h2pYuk = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'html2pdf.bundle.min.js?v=1';
+    sc.onload = () => window.html2pdf ? res(window.html2pdf) : rej(new Error('yok'));
+    sc.onerror = () => { _h2pYuk = null; rej(new Error('PDF aracı yüklenemedi')); };
+    document.head.appendChild(sc);
+  });
+  return _h2pYuk;
+}
+async function sayfaPdf(ad, btn, baslik) {
+  const kaynak = $('#icerik'); if (!kaynak) return;
+  const eskiTx = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ PDF…'; }
+  try {
+    const h2p = await html2pdfYukle();
+    document.body.classList.add('pdf-cekim');   // gezinme satırını gizle
+    const arka = (getComputedStyle(document.body).getPropertyValue('--krem') || '').trim() || '#14171c';   // tema zemin rengi (gradyan değil düz)
+    const bas = document.createElement('div'); bas.className = 'pdf-baslik'; bas.textContent = baslik || ad;
+    kaynak.prepend(bas);
+    const eskiArka = kaynak.style.background; kaynak.style.background = arka;   // html2pdf kopyası beyaz zemine çizilmesin
+    const blob = await h2p().set({
+      margin: 0, filename: ad + '.pdf',
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, backgroundColor: arka, useCORS: true, windowWidth: kaynak.scrollWidth },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.kz-hr', '.kz-kontrol', '.kz-pgrup'] },
+    }).from(kaynak).outputPdf('blob');
+    bas.remove(); kaynak.style.background = eskiArka; document.body.classList.remove('pdf-cekim');
+    const dosya = new File([blob], ad + '.pdf', { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
+      try { await navigator.share({ files: [dosya], title: ad }); } catch (e) { if (e && e.name !== 'AbortError') throw e; }
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ad + '.pdf';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+  } catch (e) {
+    document.body.classList.remove('pdf-cekim'); $$('#icerik .pdf-baslik').forEach(x => x.remove());
+    bildir('PDF oluşturulamadı: ' + ((e && e.message) || e), 'hata');
+  } finally { if (btn) { btn.disabled = false; btn.textContent = eskiTx; } }
+}
 
 /* -------- Uygulama & Sürüm -------- */
 SAYFALAR['ayar-surum'] = function () {

@@ -4322,3 +4322,7 @@ input.gp-inp[type="month"]::-webkit-date-and-time-value,input.gp-inp[type="date"
   .ana,#icerik{margin:0!important;padding:8px!important;overflow:visible!important;height:auto!important}
   .kz-pgrup,.kz-hr,.kz-kontrol{break-inside:avoid}
 }
+/* PDF çekimi sırasında (sayfaPdf): düğmeler görünmesin */
+body.pdf-cekim #icerik .tnm-scr-ust{display:none}
+.pdf-baslik{font-size:18px;font-weight:800;color:var(--metin);padding:14px 4px 10px}
+body.pdf-cekim #icerik{padding:12px!important}
