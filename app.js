@@ -619,7 +619,7 @@ const Bulut = {
           veriYukle().then(() => {
             this._uzaktan = false;
             const r = SAYFALAR[State.aktifSayfa];  // sadece içerik yenile — menü/akordeon bozulmasın
-            if (r) try { r(); } catch {}
+            if (r) dokunmaBitinceYap(() => { if (SAYFALAR[State.aktifSayfa] === r) r(); });
           }).catch(() => { this._uzaktan = false; });
         }).subscribe();
     } catch (e) { console.warn('Realtime kurulamadı:', e.message); }
@@ -661,12 +661,14 @@ const IaOrtak = {
   taslak: null,                   // {sekme, dosya, kayitlar, ts, yukleyen} | null
   kilit: null,                    // {cihaz, ad, son} | null
   kilitVer: null,                 // kilit satırının son 'guncelleme' değeri (çakışma kontrolü)
-  yuklendi: false, kanal: null, _nonce: null, _gonderZ: null, _kalp: null, _sonDokunma: Date.now(), _uzakDegisti: false,
+  yuklendi: false, kanal: null, _nonce: null, _cihazId: null, sonHata: '', _gonderZ: null, _kalp: null, _sonDokunma: Date.now(), _uzakDegisti: false,
 
   aktif() { return !!(Bulut.aktif && Bulut.client); },
   cihaz() {
+    if (this._cihazId) return this._cihazId;   // kayıt yazılamasa da (hafıza dolu / gizli sekme) oturum boyunca aynı kalsın
     let c = null; try { c = localStorage.getItem('yt_cihazId'); } catch (_) { }
     if (!c) { c = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); try { localStorage.setItem('yt_cihazId', c); } catch (_) { } }
+    this._cihazId = c;
     return c;
   },
   benAd() { const ku = State.kullanici || {}; const o = ku.ortakId ? (State.ortaklar || []).find(x => x.id === ku.ortakId) : null; return (o && o.ad) || ku.ad || 'Yönetici'; },
@@ -702,6 +704,7 @@ const IaOrtak = {
      Çakışma kontrolü: satırın 'guncelleme' değeri okuduğumuzla aynıysa yazılır; değilse başkası önce davranmıştır. */
   async kilitAl(zorla) {
     if (!this.aktif()) return true;
+    this.sonHata = '';
     for (let deneme = 0; deneme < 3; deneme++) {
       const row = await this._satir('iaKilit');
       const mevcut = row && row.data && row.data.cihaz ? row.data : null;
@@ -713,6 +716,7 @@ const IaOrtak = {
       if (row) r = await Bulut.client.from('yt_veri').update({ data: yeni, guncelleme: ver }).eq('id', 'iaKilit').eq('guncelleme', row.guncelleme).select('guncelleme');
       else r = await Bulut.client.from('yt_veri').insert({ id: 'iaKilit', data: yeni, guncelleme: ver }).select('guncelleme');
       if (!r.error && r.data && r.data.length) { this.kilit = yeni; this.kilitVer = r.data[0].guncelleme; this._sonDokunma = Date.now(); this.kalpKur(); return true; }
+      this.sonHata = r.error ? (r.error.message || String(r.error)) : 'kayıt güncellenemedi';
       // çakıştı (başkası arada yazdı) → tekrar oku ve dene
     }
     return false;
@@ -799,7 +803,7 @@ const IaOrtak = {
             const oncekiBen = this.kilit && this.kilit.cihaz === this.cihaz();
             this.kilit = row && row.data && row.data.cihaz ? row.data : null; this.kilitVer = row ? row.guncelleme : null;
             if (oncekiBen && (!this.kilit || this.kilit.cihaz !== this.cihaz())) { this.kilitKaybedildi(); return; }
-            iaKilitBarCiz();
+            dokunmaBitinceYap(() => iaKilitBarCiz());
             return;
           }
           const d = row && row.data;
@@ -807,7 +811,7 @@ const IaOrtak = {
           this._nonce = d && d._nonce || null;
           this.taslak = (d && Array.isArray(d.kayitlar) && d.kayitlar.length) ? d : null;
           if (this.benimMi()) return;   // düzenleyen bizsek kendi elimizdeki geçerli
-          this.taslagiYereAl(); this.ekranTazele();
+          dokunmaBitinceYap(() => { if (this.benimMi()) return; this.taslagiYereAl(); this.ekranTazele(); });
         } catch (e) { console.warn('Ön izleme senkron hatası:', e.message); }
       };
       this.kanal = Bulut.client.channel('yt_ia_rt')
@@ -819,6 +823,15 @@ const IaOrtak = {
 };
 window._IaOrtak = IaOrtak;
 ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { IaOrtak._sonDokunma = Date.now(); }, { passive: true, capture: true }));
+/* Parmak ekrandayken (dokunma sürerken) uzaktan gelen yenileme beklesin — yoksa düğme parmağın altında yeniden çizilir, basış kaybolur */
+let _dokunuyor = false;
+document.addEventListener('pointerdown', () => { _dokunuyor = true; }, { passive: true, capture: true });
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { setTimeout(() => { _dokunuyor = false; }, 350); }, { passive: true, capture: true }));
+function dokunmaBitinceYap(fn, t0) {
+  t0 = t0 || Date.now();
+  if (_dokunuyor && Date.now() - t0 < 4000) { setTimeout(() => dokunmaBitinceYap(fn, t0), 150); return; }
+  try { fn(); } catch (_) { }
+}
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || !IaOrtak.aktif()) return;
   // Telefona geri dönüldü → güncel durumu çek; kilit bizdeyse hemen tazele (süresi dolduysa kaybedildiği bildirilir)
@@ -852,8 +865,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '350';
-const APP_SURUM_TARIH = '7 Eki 2026';
+const APP_SURUM = '351';
+const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -2914,9 +2927,15 @@ function iaKilitBarCiz(sayfaIci) {
     }, { evet: 'Sil' }); }
   { const b = $('#iakbAl'); if (b) b.onclick = async () => {
       b.disabled = true;
-      let ok = false; try { ok = await IaOrtak.kilitAl(); } catch (_) { }
-      if (!ok) bildir(IaOrtak.baskasindaMi() ? `${IaOrtak.kilit.ad} senden önce düzenlemeye başladı.` : 'Bağlantı sorunu — tekrar dene.', 'uyari');
-      else { try { await IaOrtak.yukle(); } catch (_) { } IaOrtak.taslagiYereAl(); bildir('Düzenleme sende.', 'basari'); }
+      let ok = false; try { ok = await IaOrtak.kilitAl(); } catch (e) { IaOrtak.sonHata = (e && e.message) || String(e); }
+      if (!ok) bildir(IaOrtak.baskasindaMi() ? `${IaOrtak.kilit.ad} senden önce düzenlemeye başladı.` : `Düzenleme alınamadı — tekrar dene.${IaOrtak.sonHata ? ' (' + IaOrtak.sonHata + ')' : ''}`, 'uyari');
+      else {
+        try { await IaOrtak.yukle(); } catch (_) { }
+        if (!IaOrtak.benimMi() && !IaOrtak.baskasindaMi()) { try { await IaOrtak.kilitAl(); } catch (_) { } }   // yeniden okurken kaçtıysa bir kez daha
+        IaOrtak.taslagiYereAl();
+        if (IaOrtak.benimMi()) bildir('Düzenleme sende.', 'basari');
+        else bildir(IaOrtak.baskasindaMi() ? `${IaOrtak.kilit.ad} senden önce düzenlemeye başladı.` : 'Düzenleme alınamadı — telefonun saatini kontrol edip tekrar dene.', 'uyari');
+      }
       SAYFALAR['ice-aktar']();
     }; }
   { const b = $('#iakbDevral'); if (b) b.onclick = () => onayModal('Düzenlemeyi devral?', `${kl.ad || 'Diğer kişi'} şu an düzenliyor. Devralırsan onun ekranı sadece görüntülemeye geçer; kaydetmediği son değişiklik kaybolabilir.`, async () => {
