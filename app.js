@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '366';
+const APP_SURUM = '367';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7350,7 +7350,6 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     ${d.odenen || d.kalan ? `<div class="kz-mahsup"><span>Ortaklara verilen (Kâr Dağıtımı + Hakediş Ver)</span><b class="mono">${eksiTL(d.odenen)}</b></div><div class="kz-mahsup son"><span>Ortaklara kalan</span><b class="mono">${TL(d.kalan)}</b></div>` : ''}</div>`;
   // 3) Mizan
   const kol = gorOrtak.map(o => ({ ad: String(o.ad).split(' ')[0], tip: 'o', o }));
-  if (hep && d.H.length) kol.push({ ad: 'Hocalar', tip: 'h' });
   if (hep && d.M.length) kol.push({ ad: 'Personel', tip: 'm' });
   const sH = (f) => d.H.reduce((s, h) => s + (Number(f(h)) || 0), 0), sM = (f) => d.M.reduce((s, m) => s + (Number(f(m)) || 0), 0);
   const n = d.O.length || 1;
@@ -7370,11 +7369,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     ...d.kalemler.map(k => ({ ad: k.ad, rz: 'EŞİT', cls: 'r', o: () => -(d.O.length ? k.tutar / n : 0), h: () => 0, m: () => 0, t: -(d.O.length ? k.tutar : 0) })),
     ...d.ozelKalemler.map(k => ({ ad: k.ad, rz: 'ÖZEL', cls: 'r', o: o => -(k.kisi[String(o.id)] || 0), h: () => 0, m: () => 0, t: -k.tutar })),
     { ad: 'Toplam gider', ara: 1, cls: 'r', o: o => -o.giderPayi, h: () => 0, m: () => 0, t: -(d.genel + d.ozelTop) },
-    ...(d.H.length ? [
-      { grp: 'Hocalar' },
-      { ad: 'Hocaların kendi payı', cls: 'r', o: () => 0, h: () => -d.hocaPay, m: () => 0, t: -d.hocaPay },
-      { ad: 'Stüdyoya kalan → ortaklara eşit', o: o => o.hocaKari, h: () => -sH(h => h.studyoKar), m: () => 0, t: d.O.length ? 0 : -sH(h => h.studyoKar) },
-    ] : []),
+    ...(d.H.length ? [{ ad: 'Hocalardan gelen stüdyo payı (eşit)', cls: 'g', o: o => o.hocaKari, h: () => 0, m: () => 0, t: sH(h => h.studyoKar) }] : []),
     ...(d.M.length ? [{ ad: 'Personel neti → ortaklara eşit', o: o => o.havuzPayi, h: () => 0, m: () => -sM(m => m.net), t: d.O.length ? 0 : -sM(m => m.net) }] : []),
     { grp: 'Sonuç' },
     { ad: 'Bu ayki hakediş', ara: 1, cls: 'g', o: o => o.hakedis, h: () => { const v = sH(h => h.brut - h.komisyon - h.payi - h.studyoKar); return Math.abs(v) < 2 ? 0 : v; }, m: () => 0, t: d.hakedis },
@@ -7387,13 +7382,26 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   const mizanGovde = satirlar.map(s => {
     if (s.grp) return `<tr class="grp"><td>${s.grp}</td><td colspan="${kol.length + 1}"></td></tr>`;   // ad hücresi ayrı → yana kayınca sabit kalır
     const c = s.son ? '' : s.cls;
-    const hucreler = kol.map(k => hucre(k.tip === 'o' ? s.o(k.o) : (k.tip === 'h' ? s.h() : s.m()), c)).join('');
+    const degerler = kol.map(k => k.tip === 'o' ? s.o(k.o) : (k.tip === 'h' ? s.h() : s.m()));
+    const hucreler = degerler.map(v => hucre(v, c)).join('');
+    if (hep && s.t !== undefined && !s.tSabit) s = { ...s, t: degerler.reduce((a, v) => a + (Number(v) || 0), 0) };
     return `<tr class="${s.ara ? 'ara' : ''}${s.son ? 'sonuc' : ''}"><td>${kacar(s.ad)}${s.rz ? `<span class="kz-rz ${s.rz === 'EŞİT' ? 'es' : (s.rz === 'ÖZEL' ? 'oz2' : 'oz')}">${s.rz === 'ÖZEL' ? 'KİŞİYE ÖZEL' : s.rz}</span>` : ''}</td>${hucreler}${hucre(s.t, c).replace('<td class="', '<td class="top ')}</tr>`;
   }).join('');
   const mizan = `<div class="kz-kutu"><h3>📒 Mizan — ${hep ? 'Ortak Bazında' : 'Senin Payın'}</h3><p class="kz-alt">Her satır bir hesap; her sütun o hesabın nasıl dağıldığı. En alttaki satır = verilecek pay.</p>
     <div class="kz-tsar"><table class="kz-tablo mono" style="min-width:${118 + (kol.length + 1) * 70}px"><colgroup><col class="c1">${kol.map(() => '<col>').join('')}<col></colgroup>
       <thead><tr><th>Hesap</th>${kol.map(k => `<th>${kacar(k.ad)}</th>`).join('')}<th>Toplam</th></tr></thead><tbody>${mizanGovde}</tbody></table></div>
     <p class="kz-not"><span class="kz-rz es">EŞİT</span> tüm ortaklara eşit bölünür · <span class="kz-rz oz2">KİŞİYE ÖZEL</span> yalnız seçilen ortaktan düşer. Tutarlar ₺ (kuruşsuz).</p></div>`;
+  // 3b) Hocalar — ayrı sade tablo (tahsilat → hoca payı / stüdyo payı → kalan)
+  const hocaTablo = (hep && d.H.length) ? (() => {
+    const hs = d.H.filter(h => h.brut || h.odenen || h.devir);
+    const sat2 = (h) => { const kalanH = (h.kalan || 0) + (h.devir || 0); return `<tr><td>${kacar(String(h.ad).split(' ')[0])}<span class="kz-rz es">%${Math.round(h.oran || 0)}</span></td><td>${tam(h.brut)}</td><td class="g">${tam(h.studyoKar)}</td><td>${tam(h.payi)}</td>${hucre(h.devir || 0, 'g')}${hucre(-(h.odenen || 0), 'r')}<td class="top ${kalanH < 0 ? 'r' : ''}">${kalanH < 0 ? '−' : ''}${tam(Math.abs(kalanH))}</td></tr>`; };
+    const T = (f) => hs.reduce((a, h) => a + (Number(f(h)) || 0), 0);
+    return `<div class="kz-kutu"><h3>🧘 Hocalar</h3><p class="kz-alt">Hocanın tahsilatı ikiye ayrılır: stüdyo payı ortaklara eşit gider, hoca payı hocaya ödenir.</p>
+      <div class="kz-tsar"><table class="kz-tablo mono" style="min-width:${118 + 6 * 70}px"><colgroup><col class="c1"><col><col><col><col><col><col></colgroup>
+        <thead><tr><th>Hoca</th><th>Tahsilat</th><th>Stüdyoya</th><th>Hoca payı</th><th>Devir</th><th>Ödenen</th><th>Kalan</th></tr></thead>
+        <tbody>${hs.map(sat2).join('')}<tr class="sonuc"><td>Toplam</td><td>${tam(T(h => h.brut))}</td><td>${tam(T(h => h.studyoKar))}</td><td>${tam(T(h => h.payi))}</td><td>${tam(T(h => h.devir))}</td><td>${T(h => h.odenen) ? '−' + tam(T(h => h.odenen)) : '—'}</td><td class="top">${tam(T(h => (h.kalan || 0) + (h.devir || 0)))}</td></tr></tbody></table></div>
+      <p class="kz-not">Tahsilat = stüdyoya + hoca payı + kart komisyonu. Kalan = hoca payı + devir − ödenen.</p></div>`;
+  })() : '';
   // 4) Para kontrolü — girilen her kayıt
   const sat = (ad, v, cls) => `<div class="kz-ps ${cls || ''}"><span>${ad}</span><b class="mono">${v}</b></div>`;
   const kontrol = `<div class="kz-kutu"><h3>🔎 Para Kontrolü</h3><p class="kz-alt">Bu ay programa girilen her giriş ve çıkış nereye gitti</p>
@@ -7415,7 +7423,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   </div>`;
   ic().innerHTML = `<div class="kz-sayfa">
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}<button type="button" class="tnm-geri kz-pdf" id="kzPdf">📄 PDF</button></div>
-    ${rozet}${yolculuk}${mizan}${kontrol}</div>`;
+    ${rozet}${yolculuk}${mizan}${hocaTablo}${kontrol}</div>`;
   $('#kzPdf').onclick = () => sayfaPdf(`Kar-Zarar-Kontrolu-${kzDonem}`, $('#kzPdf'), `Kâr-Zarar Kontrolü · ${donemAdi(kzDonem)}`);
   $('#kzGeri').onclick = () => { const g = kzGeri; kzGeri = 'ayar-tanimlama'; if (g === 'karlilik') karDonem = kzDonem; git(g); };
   $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
