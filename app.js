@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '368';
+const APP_SURUM = '369';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7398,6 +7398,24 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
         <tbody>${hs.map(sat2).join('')}<tr class="sonuc"><td>Toplam</td><td>${tam(T(h => h.brut))}</td><td>${tam(T(h => h.studyoKar))}</td><td>${tam(T(h => h.payi))}</td><td>${tam(T(h => h.devir))}</td><td>${T(h => h.odenen) ? '−' + tam(T(h => h.odenen)) : '—'}</td><td class="top">${tam(T(h => (h.kalan || 0) + (h.devir || 0)))}</td></tr></tbody></table></div>
       <p class="kz-not">Tahsilat = stüdyoya + hoca payı + kart komisyonu. Kalan = hoca payı + devir − ödenen.</p></div>`;
   })() : '';
+  // 3c) Banka ↔ Kasa aktarımları — gelir/gider değil, para hesap değiştirir
+  const aktarimTablo = (() => {
+    const bh = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === kzDonem && (bankaNakitCekimMi(b) || bankaNakitYatirmaMi(b)))
+      .sort((a, b) => String(a.tarih).localeCompare(String(b.tarih)));
+    if (!bh.length) return '';
+    const cek = bh.filter(bankaNakitCekimMi).reduce((a, b) => a + Math.abs(Number(b.tutar) || 0), 0);
+    const yat = bh.filter(bankaNakitYatirmaMi).reduce((a, b) => a + Math.abs(Number(b.tutar) || 0), 0);
+    const satir = (b) => { const ck = bankaNakitCekimMi(b), i = _kzKayit.push({ kol: 'bankaHareketleri', ref: b }) - 1, t = String(b.tarih || '');
+      const acik = b.kullaniciAciklama || b.aciklama || b.islem || '';
+      return `<tr data-kzk="${i}" style="cursor:pointer"><td>${t.slice(8, 10)}.${t.slice(5, 7)} · ${ck ? '🏦→💵 Çekim' : '💵→🏦 Yatırma'}<small class="kz-oz-alt">${kacar(String(acik).slice(0, 60))}</small></td><td class="top ${ck ? 'r' : 'g'}">${tam(Math.abs(Number(b.tutar) || 0))}</td></tr>`; };
+    return `<div class="kz-kutu"><h3>🔁 Banka ↔ Kasa</h3><p class="kz-alt">Nakit çekim ve nakit yatırma · gelir/gider sayılmaz, para hesap değiştirir</p>
+      <table class="kz-tablo kz-oz mono"><colgroup><col><col style="width:110px"></colgroup><tbody>
+        ${bh.map(satir).join('')}
+        ${cek ? `<tr><td>Toplam çekim <small class="kz-oz-alt">Bankadan kasaya</small></td><td class="top r">${tam(cek)}</td></tr>` : ''}
+        ${yat ? `<tr><td>Toplam yatırma <small class="kz-oz-alt">Kasadan bankaya</small></td><td class="top g">${tam(yat)}</td></tr>` : ''}
+        <tr class="sonuc"><td>Kasaya net giren</td><td class="top">${cek - yat < 0 ? '−' : ''}${tam(Math.abs(cek - yat))}</td></tr>
+      </tbody></table></div>`;
+  })();
   // 4) Para kontrolü — girilen her kayıt
   const sat = (ad, v, cls) => `<div class="kz-ps ${cls || ''}"><span>${ad}</span><b class="mono">${v}</b></div>`;
   const kontrol = `<div class="kz-kutu"><h3>🔎 Para Kontrolü</h3><p class="kz-alt">Bu ay programa girilen her giriş ve çıkış nereye gitti</p>
@@ -7419,7 +7437,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   </div>`;
   ic().innerHTML = `<div class="kz-sayfa">
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}<button type="button" class="tnm-geri kz-pdf" id="kzPdf">📄 PDF</button></div>
-    ${rozet}${yolculuk}${mizan}${hocaTablo}${kontrol}</div>`;
+    ${rozet}${yolculuk}${mizan}${hocaTablo}${aktarimTablo}${kontrol}</div>`;
   $('#kzPdf').onclick = () => sayfaPdf(`Kar-Zarar-Kontrolu-${kzDonem}`, $('#kzPdf'), `Kâr-Zarar Kontrolü · ${donemAdi(kzDonem)}`);
   $('#kzGeri').onclick = () => { const g = kzGeri; kzGeri = 'ayar-tanimlama'; if (g === 'karlilik') karDonem = kzDonem; git(g); };
   $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
