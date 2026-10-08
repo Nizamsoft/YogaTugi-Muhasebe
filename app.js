@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '355';
+const APP_SURUM = '356';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1744,7 +1744,10 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
       <div class="satir"><span class="l">− POS komisyonu (kart)</span><span class="v neg mono">−${TL(h.komisyon)}</span></div>
       <div class="satir"><span class="l">Stüdyo kârı (%${100 - oran} → Hoca kârı)</span><span class="v mono tk">${TL(h.studyoKar)}</span></div>
       <div class="sonuc"><span class="l"><b>${ilkAd}'e ödenecek</b> · hakediş %${oran}</span><span class="v mono">${TL(h.payi)}</span></div>
-      <div class="esles-not">🔗 Oran karttan <b>otomatik</b> · ödeme banka/nakitten çıkınca eşleşir (Kâr Dağıtımı gibi).${h.devir ? ` Devreden <b class="${h.devir < 0 ? 'kirmizi' : ''}">${h.devir < 0 ? '−' : '+'}${TL(Math.abs(h.devir))}</b> ·` : ''}${h.odenen ? ` Verilen <b>${TL(h.odenen)}</b> ·` : ''} Kalan: <b class="${(h.kalan + (h.devir || 0)) < 0 ? 'kirmizi' : ''}">${TL(h.kalan + (h.devir || 0))}</b></div>
+      ${h.devir ? `<div class="satir"><span class="l">+ Önceki aylardan devir</span><span class="v mono ${h.devir < 0 ? 'neg' : ''}">${h.devir < 0 ? '−' : '+'}${TL(Math.abs(h.devir))}</span></div>` : ''}
+      ${h.odenen ? `<div class="satir"><span class="l">− Verilen</span><span class="v neg mono">−${TL(h.odenen)}</span></div>` : ''}
+      <div class="satir hoca-kalan"><span class="l"><b>Kalan</b></span><span class="v mono ${(h.kalan + (h.devir || 0)) < 0 ? 'neg' : ''}"><b>${TL(h.kalan + (h.devir || 0))}</b></span></div>
+      <div class="esles-not"><span>🔗 Oran karttan <b>otomatik</b> · ödeme banka/nakitten çıkınca eşleşir (Kâr Dağıtımı gibi).</span></div>
     </div>`;
   };
   // hMap yalnız bu ay tahsilatı olanları içerir; tahsilatsız aktif hocaları da sıfırla göster
