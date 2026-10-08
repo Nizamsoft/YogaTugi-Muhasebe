@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '351';
+const APP_SURUM = '352';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7205,6 +7205,23 @@ SAYFALAR['ayar-tanimlama'] = function () {
    Ortaklar ekranıyla AYNI motordan (egitmenKarlilik) beslenir; ek olarak o ay programa girilen her
    giriş/çıkış kaydını tarar → rapora girmeyen (bekleyen, eşleşmeyen, sahipsiz) tutarları ayrıca gösterir. */
 let kzDonem = null;
+/* Uyarıyı oluşturan kayıtlar — tarih · kaynak · açıklama · tutar; dokununca kayıt düzenlenmek üzere açılır */
+let _kzKayit = [];
+function kzKayitListesi(kayitlar) {
+  if (!kayitlar || !kayitlar.length) return '';
+  const sirali = kayitlar.slice().sort((a, b) => String((a.ref || {}).tarih || '').localeCompare(String((b.ref || {}).tarih || '')));
+  return `<div class="kz-kayitlar">${sirali.map(c => {
+    const r = c.ref || {}, i = _kzKayit.push(c) - 1;
+    const tarih = r.tarih ? String(r.tarih).slice(8, 10) + '.' + String(r.tarih).slice(5, 7) : '';
+    const acik = r.aciklama || r.kullaniciAciklama || r.islem || '';
+    return `<button type="button" class="kz-kayit" data-kzk="${i}"><span class="kzk-ust"><span>${kacar(tarih)} · ${kacar(c.kaynak || '')} · ${kacar(c.kat || '')}</span><b class="mono">${TL(c.tutar)}</b></span>${acik ? `<span class="kzk-alt">${kacar(String(acik).slice(0, 90))}</span>` : ''}<span class="kzk-ok">Düzenle ›</span></button>`;
+  }).join('')}</div>`;
+}
+function kzKayitAc(c) {
+  const geri = () => git('rapor-karzarar-kontrol');
+  if (c.kol === 'nakitGiderleri') { nakitGiderModal(c.ref, geri); return; }
+  if (c.kol === 'bankaHareketleri') { bankaDetayModal(c.ref); return; }
+}
 function kzHesap(donem) {
   const r = egitmenKarlilik(donem);
   const O = r.ortaklar, H = r.hocalar, M = r.egitmenler;
@@ -7228,8 +7245,8 @@ function kzHesap(donem) {
   const girisFark = Math.round((gercekTop - brut) * 100) / 100;
   if (O.length && Math.abs(girisFark) > 1) uyari.push({ ik: '⚠️', baslik: 'Dağıtıma girmeyen tahsilat', tutar: girisFark, aciklama: 'Gerçekleşen tahsilat ile dağıtılan gelir arasında fark var.' });
   // ÇIKIŞLAR — banka gider satırları + kasa giderleri (ait olduğu döneme göre)
-  const bg = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem).map(b => ({ kat: b.giderKategori || 'Sınıflandırılmamış', tutar: Math.abs(Number(b.tutar) || 0), eg: b.egitmenId, kaynak: 'Banka' }));
-  const ng = (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).map(g => ({ kat: g.giderAd || g.kategori || 'Sınıflandırılmamış', tutar: Math.abs(Number(g.tutar) || 0), eg: g.egitmenId, kaynak: 'Kasa' }));
+  const bg = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && giderAitDonem(b) === donem).map(b => ({ kat: b.giderKategori || 'Sınıflandırılmamış', tutar: Math.abs(Number(b.tutar) || 0), eg: b.egitmenId, kaynak: 'Banka', kol: 'bankaHareketleri', ref: b }));
+  const ng = (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).map(g => ({ kat: g.giderAd || g.kategori || 'Sınıflandırılmamış', tutar: Math.abs(Number(g.tutar) || 0), eg: g.egitmenId, kaynak: 'Kasa', kol: 'nakitGiderleri', ref: g }));
   const cekimTop = top(bg.filter(c => nakitCekimMi(c.kat)), c => c.tutar);   // bankadan kasaya aktarım (masraf değil)
   const cikisTop = top([...bg, ...ng], c => c.tutar);
   const cikis = [...bg.filter(c => !nakitCekimMi(c.kat)), ...ng];
@@ -7247,8 +7264,8 @@ function kzHesap(donem) {
   const sKd = top(sahipsiz.filter(c => isKat(c.kat, KAR_DAGITIM_KAT)), c => c.tutar), sHo = top(sahipsiz, c => c.tutar) - sKd;
   const hv = (State.hakedisOdemeleri || []).filter(x => x.donem === donem);
   const hvOk = top(hv.filter(x => ortakIds.has(String(x.ortakId))), x => Math.abs(x.tutar)), hvYok = top(hv, x => Math.abs(x.tutar)) - hvOk;
-  if (sKd) uyari.push({ ik: '⚠️', baslik: 'Kişisiz Kâr Dağıtımı', tutar: sKd, aciklama: 'İlgili kişi seçilmemiş ya da o ay aktif olmayan birine yazılmış; kimsenin payından düşmüyor.' });
-  if (sHo) uyari.push({ ik: '⚠️', baslik: 'Kişisiz Hoca Ödemesi', tutar: sHo, aciklama: 'İlgili hoca seçilmemiş; hiçbir hocadan düşmüyor.' });
+  if (sKd) uyari.push({ ik: '⚠️', baslik: 'Kişisiz Kâr Dağıtımı', tutar: sKd, aciklama: 'İlgili kişi seçilmemiş ya da o ay aktif olmayan birine yazılmış; kimsenin payından düşmüyor. Aşağıdaki satıra dokunup kişiyi seçin.', kayitlar: sahipsiz.filter(c => isKat(c.kat, KAR_DAGITIM_KAT)) });
+  if (sHo) uyari.push({ ik: '⚠️', baslik: 'Kişisiz Hoca Ödemesi', tutar: sHo, aciklama: 'İlgili hoca seçilmemiş; hiçbir hocadan düşmüyor. Aşağıdaki satıra dokunup hocayı seçin.', kayitlar: sahipsiz.filter(c => !isKat(c.kat, KAR_DAGITIM_KAT)) });
   if (hvYok) uyari.push({ ik: '⚠️', baslik: 'Eşleşmeyen Hakediş Ver kaydı', tutar: hvYok, aciklama: 'Bu ay aktif olmayan bir ortağa yazılmış.' });
   if (!O.length && top([...genelKalem, ...ozelKalem], c => c.tutar)) uyari.push({ ik: '⚠️', baslik: 'Dağıtılamayan gider', tutar: top([...genelKalem, ...ozelKalem], c => c.tutar), aciklama: 'Aktif ortak olmadığı için giderler bölünemedi.' });
   // BANKA — raporun hesaba katmadığı diğer satırlar
@@ -7256,7 +7273,7 @@ function kzHesap(donem) {
   const oo = bh.filter(b => b.yon === 'ortakOdeme'), ooTop = top(oo, b => Math.abs(b.tutar));
   if (ooTop) uyari.push({ ik: '⚠️', baslik: 'Eski “Ortak Ödeme” türündeki banka çıkışları', tutar: ooTop, aciklama: 'Bu tür kaldırıldı ve hiçbir yere sayılmıyor. Hesaplar › Banka’da satırı açıp Gider → “Kâr Dağıtımı” (ilgili kişiyle) olarak kaydedin.' });
   const bgEs = bh.filter(b => b.yon === 'gelir' && !b.nakitYatirma && !(Array.isArray(b.eslesenIds) && b.eslesenIds.length)), bgEsTop = top(bgEs, b => Math.abs(b.tutar));
-  if (bgEsTop) uyari.push({ ik: '🏦', baslik: 'Tahsilatla eşleşmemiş banka girişi', tutar: bgEsTop, aciklama: 'Bankaya gelen ama hiçbir tahsilata bağlanmamış para; rapora girmez.' });
+  if (bgEsTop) uyari.push({ ik: '🏦', baslik: 'Tahsilatla eşleşmemiş banka girişi', tutar: bgEsTop, aciklama: 'Bankaya gelen ama hiçbir tahsilata bağlanmamış para; rapora girmez.', kayitlar: bgEs.map(b => ({ kat: b.islem || 'Banka girişi', tutar: Math.abs(Number(b.tutar) || 0), kaynak: 'Banka', kol: 'bankaHareketleri', ref: b })) });
   const bkTop = top(bh.filter(b => b.yon === 'komisyon'), b => Math.abs(b.tutar));
   const bilgi = [];
   if (bekTop) bilgi.push({ ik: '⏳', baslik: 'Bekleyen tahsilat', tutar: bekTop, aciklama: `${bekleyen.length} tahsilat deftere yazılmış ama bankaya henüz yansımamış; yansıyınca rapora girer.` });
@@ -7272,6 +7289,7 @@ function kzHesap(donem) {
 }
 SAYFALAR['rapor-karzarar-kontrol'] = function () {
   if (!(adminMi() || girisRol() === 'ortak')) { git('dashboard'); return; }
+  _kzKayit = [];
   if (!kzDonem) kzDonem = buAy();
   const d = kzHesap(kzDonem), hep = hepsiniGor(), ben = String(benId() || '');
   const tam = (n) => Math.round(Number(n) || 0).toLocaleString('tr-TR');
@@ -7365,12 +7383,13 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
       ${d.cekimTop ? sat('✓ Kasaya aktarıldı (nakit çekim · masraf değil)', TL(d.cekimTop), 'g') : ''}
       ${(() => { const kacak = Math.round((d.cikisTop - d.genel - d.ozelTop - d.kdOk - d.hoOk - d.cekimTop) * 100) / 100; return sat('⚠️ Rapora girmeyen', TL(kacak), Math.abs(kacak) > 1 ? 'r' : ''); })()}</div>
     ${d.hvOk ? `<div class="kz-pgrup"><div class="kz-pbas">🤝 Hakediş Ver kayıtları</div>${sat('✓ Ortaklara verilen', TL(d.hvOk), 'g')}</div>` : ''}
-    ${[...d.uyari, ...d.bilgi].map(u => `<div class="kz-hr ${d.uyari.includes(u) ? 'uy' : ''}"><span class="i">${u.ik}</span><div><b>${kacar(u.baslik)} · ${TL(Math.abs(u.tutar))}</b><br>${kacar(u.aciklama)}</div></div>`).join('')}
+    ${[...d.uyari, ...d.bilgi].map(u => `<div class="kz-hr ${d.uyari.includes(u) ? 'uy' : ''}"><span class="i">${u.ik}</span><div><b>${kacar(u.baslik)} · ${TL(Math.abs(u.tutar))}</b><br>${kacar(u.aciklama)}${kzKayitListesi(u.kayitlar)}</div></div>`).join('')}
   </div>`;
   ic().innerHTML = `<div class="kz-sayfa">
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ Ayarlar</button>${ayNavHTML(kzDonem)}</div>
     ${rozet}${yolculuk}${mizan}${kontrol}</div>`;
   $('#kzGeri').onclick = () => git('ayar-tanimlama');
+  $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { kzDonem = donemKaydir(kzDonem, Number(b.dataset.ay)); git('rapor-karzarar-kontrol'); });
 };
 
