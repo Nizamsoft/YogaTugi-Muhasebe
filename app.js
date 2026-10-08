@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '352';
+const APP_SURUM = '353';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1436,11 +1436,11 @@ function egitmenKarlilik(donem) {
   const vOran = (typeof vergiOrani === 'function' ? vergiOrani() : 20) / 100;   // gelir vergisi öngörü oranı
   const kdvOran = ((State.ayarlar && State.ayarlar.kdvOrani) || 20);            // KDV öngörü oranı (%)
   const kdvOn = b => Math.round((Number(b) || 0) * kdvOran / (100 + kdvOran));  // KDV dahil brütten KDV öngörüsü
-  const pMap = {}; ortaklar.forEach(o => pMap[o.id] = { id: o.id, ad: o.ad, ortakMi: true, brut: 0, nakit: 0, havale: 0, kart: 0, komisyon: 0, havuzPayi: 0, ortakGelirPayi: 0 });
+  const pMap = {}; ortaklar.forEach(o => pMap[o.id] = { id: o.id, ad: o.ad, ortakMi: true, brut: 0, nakit: 0, havale: 0, kart: 0, multinet: 0, komisyon: 0, havuzPayi: 0, ortakGelirPayi: 0 });
   const mMap = {};
-  const maasli = (ad) => { const k = adNorm(ad); if (!mMap[k]) { const c = egitmenCoz(ad); mMap[k] = { ad: baslikHarf(ad || '—'), brut: 0, nakit: 0, havale: 0, kart: 0, komisyon: 0, dagitim: c.dagitim || 'bekliyor', hedefOrtakId: c.hedefOrtakId || null }; } return mMap[k]; };
+  const maasli = (ad) => { const k = adNorm(ad); if (!mMap[k]) { const c = egitmenCoz(ad); mMap[k] = { ad: baslikHarf(ad || '—'), brut: 0, nakit: 0, havale: 0, kart: 0, multinet: 0, komisyon: 0, dagitim: c.dagitim || 'bekliyor', hedefOrtakId: c.hedefOrtakId || null }; } return mMap[k]; };
   const hMap = {};   // hocalar (komisyonlu)
-  const hocaKisi = (ad) => { const k = adNorm(ad); if (!hMap[k]) { const c = egitmenCoz(ad); const o = State.ortaklar.find(x => x.id === c.hocaId); hMap[k] = { id: c.hocaId, ad: (o && o.ad) || baslikHarf(ad || '—'), foto: (o && o.foto) || null, oran: Number(o && o.hakedisOran) || 0, brut: 0, nakit: 0, havale: 0, kart: 0, komisyon: 0, adet: 0 }; } return hMap[k]; };
+  const hocaKisi = (ad) => { const k = adNorm(ad); if (!hMap[k]) { const c = egitmenCoz(ad); const o = State.ortaklar.find(x => x.id === c.hocaId); hMap[k] = { id: c.hocaId, ad: (o && o.ad) || baslikHarf(ad || '—'), foto: (o && o.foto) || null, oran: Number(o && o.hakedisOran) || 0, brut: 0, nakit: 0, havale: 0, kart: 0, multinet: 0, komisyon: 0, adet: 0 }; } return hMap[k]; };
   const hedef = (ad, alan, tutar) => { const c = egitmenCoz(ad); if (c.rol === 'hoca') hocaKisi(ad)[alan] += tutar; else if (c.rol === 'ortak' && pMap[c.ortakId]) pMap[c.ortakId][alan] += tutar; else maasli(ad)[alan] += tutar; };
   // Gelir + komisyon: Tahsilat Tanımla kayıtları (banka mutabakatı kartTipi/komisyonTutar'ı netleştirir)
   for (const t of tt) {
@@ -1450,11 +1450,12 @@ function egitmenKarlilik(donem) {
     if (t.ortakGenel) {   // "Tüm Ortaklar" ortak geliri → o ay aktif ortaklara EŞİT böl (hocalar hariç)
       const n = ortaklar.length;
       if (n) { const pay = tutar / n; const komPay = (t.odemeTuru === 'kart' ? kartKomTutar(t) : 0) / n;
-        ortaklar.forEach(o => { const a = pMap[o.id]; a.brut += pay; a[kova] += pay; a.komisyon += komPay; a.ortakGelirPayi += pay; }); }
+        ortaklar.forEach(o => { const a = pMap[o.id]; a.brut += pay; a[kova] += pay; if (t.odemeTuru === 'multinet') a.multinet += pay; a.komisyon += komPay; a.ortakGelirPayi += pay; }); }
       continue;
     }
     hedef(t.egitmenAd, 'brut', tutar);
     hedef(t.egitmenAd, kova, tutar);
+    if (t.odemeTuru === 'multinet') hedef(t.egitmenAd, 'multinet', tutar);   // kart kovasının içindeki multinet payı (mizanda ayrı satır)
     if (t.odemeTuru === 'kart') hedef(t.egitmenAd, 'komisyon', kartKomTutar(t));
     { const _c = egitmenCoz(t.egitmenAd); if (_c.rol === 'hoca') hocaKisi(t.egitmenAd).adet++; }
   }
@@ -1471,7 +1472,7 @@ function egitmenKarlilik(donem) {
     ...(State.nakitGiderleri || []).filter(g => giderAitDonem(g) === donem).map(g => ({ kat: g.giderAd || g.kategori, eg: g.egitmenId, tutar: Math.abs(Number(g.tutar) || 0), banka: false })),
   ];
   const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
-  const hocaById = (o) => { const k = adNorm(o.ad); if (!hMap[k]) hMap[k] = { id: o.id, ad: o.ad, foto: o.foto || null, oran: Number(o.hakedisOran) || 0, brut: 0, nakit: 0, havale: 0, kart: 0, komisyon: 0, adet: 0 }; return hMap[k]; };
+  const hocaById = (o) => { const k = adNorm(o.ad); if (!hMap[k]) hMap[k] = { id: o.id, ad: o.ad, foto: o.foto || null, oran: Number(o.hakedisOran) || 0, brut: 0, nakit: 0, havale: 0, kart: 0, multinet: 0, komisyon: 0, adet: 0 }; return hMap[k]; };
   let nakitGiderTop = 0, bankaGiderTop = 0;
   const ozelGider = {}, ozelBanka = {}, odenen = {}, hocaOdenen = {};
   ortaklar.forEach(o => { ozelGider[o.id] = 0; ozelBanka[o.id] = 0; odenen[o.id] = 0; });
@@ -7285,7 +7286,7 @@ function kzHesap(donem) {
   const ozMap = new Map(); ozelKalem.forEach(c => { const m = ozMap.get(c.kat) || { ad: c.kat, tutar: 0, kisi: {} }; m.tutar += c.tutar; m.kisi[c.ortakId] = (m.kisi[c.ortakId] || 0) + c.tutar; ozMap.set(c.kat, m); });
   const ozelKalemler = [...ozMap.values()].sort((a, b) => b.tutar - a.tutar);
   return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, cekimTop, ozelKalemler, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan), hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, hvOk, kalemler, uyari, bilgi,
-    nakit: top(hepsi, x => x.nakit), havale: top(hepsi, x => x.havale), kart: top(hepsi, x => x.kart) };
+    nakit: top(hepsi, x => x.nakit), havale: top(hepsi, x => x.havale), kart: top(hepsi, x => x.kart), multinet: top(hepsi, x => x.multinet || 0) };
 }
 SAYFALAR['rapor-karzarar-kontrol'] = function () {
   if (!(adminMi() || girisRol() === 'ortak')) { git('dashboard'); return; }
@@ -7309,7 +7310,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     return `<div class="kz-adim ${tip}"><span class="nk">${nk}</span><span class="ad">${ad}${alt ? `<small>${alt}</small>` : ''}</span><span class="tt mono">${tutar}</span>${bar}</div>`;
   };
   const ok = '<div class="kz-ok"></div>';
-  const adimlar = [adim('gelir', '1', 'Gerçekleşen Tahsilat', `Nakit ${tam(d.nakit)} · Havale ${tam(d.havale)} · Kart/Multinet ${tam(d.kart)}`, TL(d.brut))];
+  const adimlar = [adim('gelir', '1', 'Gerçekleşen Tahsilat', `Nakit ${tam(d.nakit)} · Havale ${tam(d.havale)} · Kart ${tam(d.kart - d.multinet)} · Multinet ${tam(d.multinet)}`, TL(d.brut))];
   const eks = (ad, alt, n) => { if (n) adimlar.push(ok + adim('eksi', '−', ad, alt, eksiTL(n), n)); };
   eks('Banka Komisyonu', 'Kart tahsilatlarından · geliri kazanan eğitmene yazılır', d.kom);
   eks('KDV Öngörüsü', `Havale + kart tahsilatından · %${d.r.kdvOran} (nakit hariç)`, d.kdv);
@@ -7337,7 +7338,8 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     { grp: 'Gelirler' },
     { ad: 'Nakit tahsilat', o: o => o.nakit, h: () => sH(h => h.nakit), m: () => sM(m => m.nakit), t: d.nakit },
     { ad: 'Havale tahsilat', o: o => o.havale, h: () => sH(h => h.havale), m: () => sM(m => m.havale), t: d.havale },
-    { ad: 'Kart / Multinet', o: o => o.kart, h: () => sH(h => h.kart), m: () => sM(m => m.kart), t: d.kart },
+    { ad: 'Kart tahsilat', o: o => o.kart - (o.multinet || 0), h: () => sH(h => h.kart - (h.multinet || 0)), m: () => sM(m => m.kart - (m.multinet || 0)), t: d.kart - d.multinet },
+    { ad: 'Multinet tahsilat', o: o => o.multinet || 0, h: () => sH(h => h.multinet || 0), m: () => sM(m => m.multinet || 0), t: d.multinet },
     { ad: 'Toplam gelir', ara: 1, cls: 'g', o: o => o.brut, h: () => sH(h => h.brut), m: () => sM(m => m.brut), t: d.brut },
     { grp: 'Kesintiler' },
     { ad: 'Banka komisyonu', cls: 'r', o: o => -o.komisyon, h: () => -sH(h => h.komisyon), m: () => -sM(m => m.komisyon), t: -d.kom },
