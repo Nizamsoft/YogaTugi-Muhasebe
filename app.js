@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '365';
+const APP_SURUM = '366';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7370,15 +7370,18 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     ...d.kalemler.map(k => ({ ad: k.ad, rz: 'EŞİT', cls: 'r', o: () => -(d.O.length ? k.tutar / n : 0), h: () => 0, m: () => 0, t: -(d.O.length ? k.tutar : 0) })),
     ...d.ozelKalemler.map(k => ({ ad: k.ad, rz: 'ÖZEL', cls: 'r', o: o => -(k.kisi[String(o.id)] || 0), h: () => 0, m: () => 0, t: -k.tutar })),
     { ad: 'Toplam gider', ara: 1, cls: 'r', o: o => -o.giderPayi, h: () => 0, m: () => 0, t: -(d.genel + d.ozelTop) },
-    { grp: 'Aktarımlar' },
-    { ad: 'Hoca hakedişi', rz: 'HOCAYA', cls: 'r', o: () => 0, h: () => -d.hocaPay, m: () => 0, t: -d.hocaPay },
-    { ad: 'Hoca kârı → ortaklar', o: o => o.hocaKari, h: () => -sH(h => h.studyoKar), m: () => 0, t: d.O.length ? 0 : -sH(h => h.studyoKar) },
-    { ad: 'Personel neti → ortaklar', o: o => o.havuzPayi, h: () => 0, m: () => -sM(m => m.net), t: d.O.length ? 0 : -sM(m => m.net) },
-    { ad: 'Hak ediş', ara: 1, cls: 'g', o: o => o.hakedis, h: () => sH(h => h.brut - h.komisyon - h.payi - h.studyoKar), m: () => 0, t: d.hakedis },
-    ...(Math.abs(d.mahsup) >= 1 ? [{ ad: 'Vergi mahsubu', o: o => o.mahsup || 0, h: () => 0, m: () => 0, t: d.mahsup }] : []),
-    ...(Math.abs(d.devirTop) >= 1 ? [{ ad: 'Önceki aylardan devir', cls: 'g', o: o => o.devir || 0, h: () => 0, m: () => 0, t: d.devirTop }] : []),
-    { ad: 'Verilen', cls: 'r', o: o => -o.odenen, h: () => 0, m: () => 0, t: -d.odenen },
-    { ad: 'Kalan (verilecek)', son: 1, o: o => o.kalanTop, h: () => 0, m: () => 0, t: d.kalan },
+    ...(d.H.length ? [
+      { grp: 'Hocalar' },
+      { ad: 'Hocaların kendi payı', cls: 'r', o: () => 0, h: () => -d.hocaPay, m: () => 0, t: -d.hocaPay },
+      { ad: 'Stüdyoya kalan → ortaklara eşit', o: o => o.hocaKari, h: () => -sH(h => h.studyoKar), m: () => 0, t: d.O.length ? 0 : -sH(h => h.studyoKar) },
+    ] : []),
+    ...(d.M.length ? [{ ad: 'Personel neti → ortaklara eşit', o: o => o.havuzPayi, h: () => 0, m: () => -sM(m => m.net), t: d.O.length ? 0 : -sM(m => m.net) }] : []),
+    { grp: 'Sonuç' },
+    { ad: 'Bu ayki hakediş', ara: 1, cls: 'g', o: o => o.hakedis, h: () => { const v = sH(h => h.brut - h.komisyon - h.payi - h.studyoKar); return Math.abs(v) < 2 ? 0 : v; }, m: () => 0, t: d.hakedis },
+    ...(Math.abs(d.mahsup) >= 1 ? [{ ad: '± Vergi düzeltmesi', o: o => o.mahsup || 0, h: () => 0, m: () => 0, t: d.mahsup }] : []),
+    ...(Math.abs(d.devirTop) >= 1 ? [{ ad: '+ Geçen aydan devir', cls: 'g', o: o => o.devir || 0, h: () => 0, m: () => 0, t: d.devirTop }] : []),
+    { ad: '− Ödenen', cls: 'r', o: o => -o.odenen, h: () => 0, m: () => 0, t: -d.odenen },
+    { ad: '= Ödenecek kalan', son: 1, o: o => o.kalanTop, h: () => 0, m: () => 0, t: d.kalan },
   ];
   const hucre = (v, cls) => { const r0 = Math.round(Number(v) || 0); return `<td class="${r0 ? (cls || '') : 's'}">${r0 ? (r0 < 0 ? '−' : '') + tam(Math.abs(r0)) : '—'}</td>`; };
   const mizanGovde = satirlar.map(s => {
@@ -7390,7 +7393,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   const mizan = `<div class="kz-kutu"><h3>📒 Mizan — ${hep ? 'Ortak Bazında' : 'Senin Payın'}</h3><p class="kz-alt">Her satır bir hesap; her sütun o hesabın nasıl dağıldığı. En alttaki satır = verilecek pay.</p>
     <div class="kz-tsar"><table class="kz-tablo mono" style="min-width:${118 + (kol.length + 1) * 70}px"><colgroup><col class="c1">${kol.map(() => '<col>').join('')}<col></colgroup>
       <thead><tr><th>Hesap</th>${kol.map(k => `<th>${kacar(k.ad)}</th>`).join('')}<th>Toplam</th></tr></thead><tbody>${mizanGovde}</tbody></table></div>
-    <p class="kz-not"><span class="kz-rz es">EŞİT</span> tüm ortaklara eşit bölünür · <span class="kz-rz oz2">KİŞİYE ÖZEL</span> yalnız seçilen ortaktan düşer · <span class="kz-rz oz">HOCAYA</span> hocaya ödenecek pay. Tutarlar ₺ (kuruşsuz).</p></div>`;
+    <p class="kz-not"><span class="kz-rz es">EŞİT</span> tüm ortaklara eşit bölünür · <span class="kz-rz oz2">KİŞİYE ÖZEL</span> yalnız seçilen ortaktan düşer. Tutarlar ₺ (kuruşsuz).</p></div>`;
   // 4) Para kontrolü — girilen her kayıt
   const sat = (ad, v, cls) => `<div class="kz-ps ${cls || ''}"><span>${ad}</span><b class="mono">${v}</b></div>`;
   const kontrol = `<div class="kz-kutu"><h3>🔎 Para Kontrolü</h3><p class="kz-alt">Bu ay programa girilen her giriş ve çıkış nereye gitti</p>
