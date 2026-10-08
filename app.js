@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '371';
+const APP_SURUM = '372';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -3753,8 +3753,9 @@ function bankaDetayModal(k, wiz) {
         // Detayı kapatma; arka planda gizle → Bekleyen'de seç → geri dönünce yerinde güncelle (flicker yok)
         const adaylar = bankaAdaylar(k);
         const otoSec = (f.eslesenIds && f.eslesenIds.length) ? f.eslesenIds : (tahsilatKombinasyonAra(adaylar, Math.abs(Number(k.tutar) || 0)) || []);
+        const geriSayfa = (State.aktifSayfa && State.aktifSayfa !== 'bekleyen') ? State.aktifSayfa : 'ice-aktar';   // nereden açıldıysa oraya dön (Hesaplar / İçe Aktar)
         const doner = () => {
-          bankaEsCtx = null; git('ice-aktar');
+          bankaEsCtx = null; git(geriSayfa);
           const p = $('#modalPerde'); if (p) p.style.display = '';
           document.body.classList.add('govde-kilit');
           bankaDetayModal(k, wiz);   // yerinde güncelle
