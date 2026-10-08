@@ -4326,3 +4326,5 @@ input.gp-inp[type="month"]::-webkit-date-and-time-value,input.gp-inp[type="date"
 body.pdf-cekim #icerik .tnm-scr-ust{display:none}
 .pdf-baslik{font-size:18px;font-weight:800;color:var(--metin);padding:14px 4px 10px}
 body.pdf-cekim #icerik{padding:12px!important}
+/* PDF çekiminde giriş animasyonları kapalı — yoksa kopya yarı saydam (soluk) çiziliyor */
+body.pdf-cekim *,body.pdf-cekim *::before,body.pdf-cekim *::after{animation:none!important;transition:none!important}
