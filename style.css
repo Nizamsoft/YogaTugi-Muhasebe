@@ -4328,3 +4328,8 @@ body.pdf-cekim #icerik .tnm-scr-ust{display:none}
 body.pdf-cekim #icerik{padding:12px!important}
 /* PDF çekiminde giriş animasyonları kapalı — yoksa kopya yarı saydam (soluk) çiziliyor */
 body.pdf-cekim *,body.pdf-cekim *::before,body.pdf-cekim *::after{animation:none!important;transition:none!important}
+/* Kâr-Zarar Kontrolü › Özet tablosu (sade) */
+.kz-oz td:first-child,.kz-oz th:first-child{position:static;box-shadow:none;background:transparent}
+.kz-oz .kz-oz-alt{display:block;font-size:10.5px;color:var(--metin-soluk);font-family:inherit;margin-top:2px}
+.kz-oz td.g{color:var(--neon,#b4e83a)}.kz-oz td.r{color:var(--kirmizi)}
+.kz-oz tr.sonuc td{border-top:2px solid var(--neon,#b4e83a);font-weight:800;color:var(--neon,#b4e83a)}

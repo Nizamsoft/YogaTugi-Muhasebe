@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '367';
+const APP_SURUM = '368';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7322,32 +7322,28 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   const rozet = denge
     ? `<div class="kz-kontrol ok"><div class="kz-tik">✓</div><div class="kz-km"><b>Dengede</b><span>Girilen her kayıt rapora yansıdı; ortaklara dağıtılan toplam, dağıtılabilir kâra eşit.</span></div><div class="kz-fark"><small>Fark</small><strong class="mono">${TL(d.yuvarlama)}</strong></div></div>`
     : `<div class="kz-kontrol dikkat"><div class="kz-tik">!</div><div class="kz-km"><b>Kontrol gerekiyor</b><span>${d.uyari.length ? `${d.uyari.length} kalem · ${TL(uyariTop)} rapora doğru yansımıyor — aşağıda.` : `Yuvarlama farkı: ${TL(d.yuvarlama)}`}</span></div></div>`;
-  // 2) Yolculuk
-  let kalan = 100;
-  const adim = (tip, nk, ad, alt, tutar, dus) => {
-    const once = kalan; if (dus) kalan = Math.max(0, kalan - pct(dus));
-    const bar = tip === 'sonuc' ? '' : `<div class="kz-bar"><i class="k" style="width:${kalan}%"></i>${dus ? `<i class="d" style="width:${once - kalan}%"></i>` : ''}</div>`;
-    return `<div class="kz-adim ${tip}"><span class="nk">${nk}</span><span class="ad">${ad}${alt ? `<small>${alt}</small>` : ''}</span><span class="tt mono">${tutar}</span>${bar}</div>`;
-  };
-  const ok = '<div class="kz-ok"></div>';
-  const adimlar = [adim('gelir', '1', 'Gerçekleşen Tahsilat', `Nakit ${tam(d.nakit)} · Havale ${tam(d.havale)} · Kart ${tam(d.kart - d.multinet)} · Multinet ${tam(d.multinet)}`, TL(d.brut))];
-  const eks = (ad, alt, n) => { if (n) adimlar.push(ok + adim('eksi', '−', ad, alt, eksiTL(n), n)); };
-  eks('Banka Komisyonu', 'Kart tahsilatlarından · geliri kazanan eğitmene yazılır', d.kom);
-  eks('KDV Öngörüsü', `Havale + kart tahsilatından · %${d.r.kdvOran} (nakit hariç)${d.r.hocaKdvTop ? ` · hocaların ${TL(d.r.hocaKdvTop)} KDV'si ortaklardan` : ''}`, d.kdv);
-  eks('Gelir Vergisi Öngörüsü', `(Havale + kart − KDV − komisyon − banka giderleri) × %${Math.round(d.r.vOran * 100)}`, d.gv);
-  eks('Giderler', `Genel ${tam(d.genel)} (${d.O.length} ortağa eşit)${d.ozelTop ? ` · kişiye özel ${tam(d.ozelTop)}` : ''}`, d.genel + d.ozelTop);
-  eks('Hoca Hakedişleri', `${d.H.length} hoca · hakediş oranına göre`, d.hocaPay);
-  adimlar.push(adim('sonuc', '=', 'Ortakların Hak Edişi', '', TL(d.hakedis)));
-  if (Math.abs(d.mahsup) >= 1) adimlar.push(`<div class="kz-mahsup"><span>± Vergi mahsubu (gerçek tahakkuk)</span><b class="mono">${d.mahsup > 0 ? '+' : '−'}${TL(Math.abs(d.mahsup))}</b></div>`);
+  // 2) Özet tablo (sade): tahsilattan ortakların hakedişine adım adım
   const gorOrtak = hep ? d.O : d.O.filter(o => String(o.id) === ben);
-  const renk = ['a1', 'a2', 'a3', 'a4'];
-  const chips = gorOrtak.map((o, i) => `<div class="kz-dg"><div class="kz-av ${renk[i % 4]}">${kacar(basHarf(o.ad))}</div><b>${kacar(String(o.ad).split(' ')[0])}</b><div class="tt mono">${TL(o.hakedisGuncel)}</div><small>${d.guncel ? '%' + (o.hakedisGuncel / d.guncel * 100).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : ''}</small></div>`).join('');
-  const yolculuk = `<div class="kz-kutu"><h3>🧭 Kâr-Zarar Yolculuğu</h3><p class="kz-alt">Gerçekleşen her 1 ₺'nin hangi adımda nereye gittiği</p>
-    ${d.brut ? adimlar.join('') : '<div class="gp-bos">Bu ay gerçekleşen tahsilat yok.</div>'}
-    ${chips ? `<div class="kz-dagit">${chips}</div>` : ''}
-    ${hep && d.H.length && (d.hocaPay || d.hocaOdenen) ? `<div class="kz-mahsup"><span>Hocalara verilen / kalan${d.hocaDevir ? ' <small>(devir dahil)</small>' : ''}</span><b class="mono">${TL(d.hocaOdenen)} / ${TL(d.hocaKalan)}</b></div>` : ''}
-    ${d.devirTop ? `<div class="kz-mahsup"><span>Önceki aylardan devir (ortaklar)</span><b class="mono">${d.devirTop < 0 ? '−' : '+'}${TL(Math.abs(d.devirTop))}</b></div>` : ''}
-    ${d.odenen || d.kalan ? `<div class="kz-mahsup"><span>Ortaklara verilen (Kâr Dağıtımı + Hakediş Ver)</span><b class="mono">${eksiTL(d.odenen)}</b></div><div class="kz-mahsup son"><span>Ortaklara kalan</span><b class="mono">${TL(d.kalan)}</b></div>` : ''}</div>`;
+  const oz = [];   // [ad, alt, tutar, cls]
+  const satO = (ad, alt, n, cls) => oz.push([ad, alt, n, cls]);
+  satO('Gerçekleşen tahsilat', `Nakit ${tam(d.nakit)} · Havale ${tam(d.havale)} · Kart ${tam(d.kart - d.multinet)}${d.multinet ? ' · Multinet ' + tam(d.multinet) : ''}`, d.brut, 'g');
+  if (d.kom) satO('− Banka komisyonu', 'Kart tahsilatlarından', -d.kom, 'r');
+  if (d.kdv) satO('− KDV öngörüsü', `Havale + kart · %${d.r.kdvOran}${d.r.hocaKdvTop ? ' · hoca KDV dahil' : ''}`, -d.kdv, 'r');
+  if (d.gv) satO('− Gelir vergisi öngörüsü', 'Giderler düştükten sonra · %' + Math.round(d.r.vOran * 100), -d.gv, 'r');
+  if (d.genel + d.ozelTop) satO('− Giderler', `Genel ${tam(d.genel)}${d.ozelTop ? ' · kişiye özel ' + tam(d.ozelTop) : ''}`, -(d.genel + d.ozelTop), 'r');
+  if (d.hocaPay) satO('− Hocaların payı', `${d.H.length} hoca`, -d.hocaPay, 'r');
+  const ozSatir = (r, son) => `<tr class="${son ? 'sonuc' : ''}"><td>${r[0]}${r[1] ? `<small class="kz-oz-alt">${kacar(r[1])}</small>` : ''}</td><td class="top ${son ? '' : (r[3] || '')}">${r[2] < 0 ? '−' : ''}${tam(Math.abs(r[2]))}</td></tr>`;
+  const ozTablo = d.brut ? `<table class="kz-tablo kz-oz mono"><colgroup><col><col style="width:120px"></colgroup><tbody>
+      ${oz.map(r => ozSatir(r)).join('')}
+      ${ozSatir(['= Ortakların hakedişi', '', d.hakedis], true)}
+      ${Math.abs(d.mahsup) >= 1 ? ozSatir(['± Vergi düzeltmesi', 'Gerçek tahakkuk farkı', d.mahsup, d.mahsup < 0 ? 'r' : 'g']) : ''}
+    </tbody></table>` : '<div class="gp-bos">Bu ay gerçekleşen tahsilat yok.</div>';
+  const kisiTablo = gorOrtak.length ? `<table class="kz-tablo kz-oz mono" style="margin-top:12px"><colgroup><col><col><col><col><col></colgroup>
+      <thead><tr><th>Ortak</th><th>Hakediş</th><th>Devir</th><th>Ödenen</th><th>Kalan</th></tr></thead><tbody>
+      ${gorOrtak.map(o => `<tr><td>${kacar(String(o.ad).split(' ')[0])}</td><td>${tam(o.hakedisGuncel)}</td><td class="${o.devir < 0 ? 'r' : ''}">${o.devir ? (o.devir < 0 ? '−' : '') + tam(Math.abs(o.devir)) : '—'}</td><td class="r">${o.odenen ? '−' + tam(o.odenen) : '—'}</td><td class="top ${o.kalanTop < 0 ? 'r' : ''}">${o.kalanTop < 0 ? '−' : ''}${tam(Math.abs(o.kalanTop))}</td></tr>`).join('')}
+      ${hep && gorOrtak.length > 1 ? `<tr class="sonuc"><td>Toplam</td><td>${tam(d.guncel)}</td><td>${d.devirTop < 0 ? '−' : ''}${tam(Math.abs(d.devirTop))}</td><td>${d.odenen ? '−' + tam(d.odenen) : '—'}</td><td class="top">${d.kalan < 0 ? '−' : ''}${tam(Math.abs(d.kalan))}</td></tr>` : ''}
+    </tbody></table>` : '';
+  const yolculuk = `<div class="kz-kutu"><h3>🧭 Özet</h3><p class="kz-alt">Tahsilattan ortakların hakedişine</p>${ozTablo}${kisiTablo}</div>`;
   // 3) Mizan
   const kol = gorOrtak.map(o => ({ ad: String(o.ad).split(' ')[0], tip: 'o', o }));
   if (hep && d.M.length) kol.push({ ad: 'Personel', tip: 'm' });
