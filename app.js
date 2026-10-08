@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '364';
+const APP_SURUM = '365';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1562,7 +1562,8 @@ function egitmenKarlilik(donem) {
 let karDonem = null;
 let karAcikSet = new Set();   // açık (genişlemiş) ortak/maaşlı kartları
 let karGorunum = 'ozet';  // 'ozet' (hikâye/sade rapor) | 'detayli' (tam muhasebe kartı)
-let karOzetSecili = null;  // Özet'te seçili eğitmen id (yoksa kendisi/benId)
+let karOzetSecili = null;
+let karHocaSecili = null;  // Hocalar sekmesinde seçili hoca id  // Özet'te seçili eğitmen id (yoksa kendisi/benId)
 let karSekme = 'ortaklar';  // Ortaklar sayfası sekmesi: 'ortaklar' | 'hocalar'
 SAYFALAR['karlilik'] = function karlilikSayfasi() {
   const donem = karDonem || buAy();
@@ -1735,40 +1736,37 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
       <button type="button" data-ksek="ortaklar" class="${!hocalarSekme ? 'sec' : ''}">👥 Ortaklar</button>
       <button type="button" data-ksek="hocalar" class="${hocalarSekme ? 'sec' : ''}">🧘 Hocalar</button>
     </div>` : '';
-  const hocaKart = (h) => {
-    const oran = Math.round(h.oran || 0);
-    const av = h.foto ? `<img src="${h.foto}" alt="">` : kacar(basHarf(h.ad));
-    const ilkAd = kacar((h.ad || '').trim().split(/\s+/)[0] || h.ad);
-    return `<div class="hoca">
-      <div class="hoca-bas">
-        <span class="hav ${h.foto ? 'hav-foto' : ''}">${av}</span>
-        <span class="hoca-t"><span class="hoca-ad">${kacar(h.ad)}</span><span class="hoca-alt">Hoca · ${h.adet || 0} tahsilat</span></span>
-        <span class="oran-rz">Hakediş %${oran}</span>
-      </div>
-      <div class="satir"><span class="l">Bu ay tahsilat (brüt)</span><span class="v mono">${TL(h.brut)}</span></div>
-      <div class="satir"><span class="l">− POS komisyonu (kart)</span><span class="v neg mono">−${TL(h.komisyon)}</span></div>
-      <div class="satir"><span class="l">Stüdyo kârı (%${100 - oran} → Hoca kârı)</span><span class="v mono tk">${TL(h.studyoKar)}</span></div>
-      <div class="sonuc"><span class="l"><b>${ilkAd}'e ödenecek</b> · hakediş %${oran}</span><span class="v mono">${TL(h.payi)}</span></div>
-      ${h.devir ? `<div class="satir"><span class="l">+ Önceki aylardan devir</span><span class="v mono ${h.devir < 0 ? 'neg' : ''}">${h.devir < 0 ? '−' : '+'}${TL(Math.abs(h.devir))}</span></div>` : ''}
-      ${h.odenen ? `<div class="satir"><span class="l">− Verilen</span><span class="v neg mono">−${TL(h.odenen)}</span></div>` : ''}
-      <div class="satir hoca-kalan"><span class="l"><b>Kalan</b></span><span class="v mono ${(h.kalan + (h.devir || 0)) < 0 ? 'neg' : ''}"><b>${TL(h.kalan + (h.devir || 0))}</b></span></div>
-      <div class="esles-not"><span>🔗 Oran karttan <b>otomatik</b> · ödeme banka/nakitten çıkınca eşleşir (Kâr Dağıtımı gibi).</span></div>
-    </div>`;
-  };
   // hMap yalnız bu ay tahsilatı olanları içerir; tahsilatsız aktif hocaları da sıfırla göster
   const hMap2 = {}; (r.hocalar || []).forEach(h => { hMap2[String(h.id)] = h; });
   const hocaGoster = aktifHocalar.map(o => hMap2[String(o.id)] || { id: o.id, ad: o.ad, foto: o.foto, oran: Number(o.hakedisOran) || 0, brut: 0, komisyon: 0, adet: 0, studyoKar: 0, payi: 0, odenen: 0, kalan: 0 })
     .sort((a, b) => b.brut - a.brut);
   { const dv = ortakDevir(donem); hocaGoster.forEach(h => { h.devir = dv[h.id] || 0; }); }   // önceki aylardan / açılış devrinden devreden
-  const hocaGovde = `
-    <div class="not hoca-not">Her hocanın hakediş oranı <b>kartında bir kez</b> tanımlıdır; tahsilat, <b>stüdyo kârı (Hoca kârı)</b> ve <b>hocaya ödenecek pay</b> burada otomatik çıkar.</div>
-    <div class="aynav-sar">${ayNavHTML(donem)}</div>
-    ${hocaGoster.map(hocaKart).join('') || '<div class="gp-bos">Bu ay hoca tahsilatı yok.</div>'}`;
+  // Ortaklar Özet'iyle aynı sade görünüm: seçiciyle tek hoca, adım adım hikâye
+  let hSel = hocaGoster.find(h => String(h.id) === String(karHocaSecili)) || hocaGoster[0] || null;
+  if (karHocaSecili == null && hSel) karHocaSecili = hSel.id;
+  const hocaOzetKart = (h) => {
+    const oran = Math.round(h.oran || 0), devir = h.devir || 0, verilen = h.odenen || 0;
+    const kalanTop = (h.payi || 0) + devir - verilen;
+    const kanal = [h.nakit ? `Nakit ${TL(h.nakit)}` : '', h.havale ? `Havale ${TL(h.havale)}` : '', h.kart ? `Kart ${TL(h.kart)}` : ''].filter(Boolean).join(' · ');
+    const st = (cls, ikon, tx, cap, am) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="oz-tx">${tx}</div>${cap ? `<div class="oz-cap">${cap}</div>` : ''}${am ? `<span class="oz-am ${am[1] || ''}">${am[0]}</span>` : ''}</div></div>`;
+    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> kalmıştı, bu aya eklendi.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, bu aydan düşüldü.' : 'Geçen aydan devreden bakiye yok.';
+    let m = st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz']);
+    m += st('iyi', '💰', `Bu ay toplam <b>${TL(h.brut)}</b> tahsilat yaptın.`, `${h.adet || 0} tahsilat${kanal ? ' · ' + kanal : ''}`);
+    m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(h.komisyon || 0)}`, 'negatif']);
+    m += st('kes', '🏢', `Stüdyo payı ayrıldı (%${100 - oran}).`, `Hakediş oranın %${oran}`, [`−${TL(h.studyoKar || 0)}`, 'negatif']);
+    m += st(verilen ? 'kes' : 'iyi', '🤝', verilen ? 'Bu ay sana ödeme yapıldı.' : 'Bu ay henüz ödeme yapılmadı.', 'Banka / kasadan sana yapılan ödemeler', [`−${TL(verilen)}`, verilen ? 'negatif' : '']);
+    const son = `<div class="oz-son"><div class="oz-son-l">Bu ayki hakedişin</div><div class="oz-son-v mono">${TL(h.payi || 0)}</div><div class="oz-son-alt">Devir dahil kalan <b class="${kalanTop < 0 ? 'negatif' : 'poz'}">${TL(kalanTop)}</b></div></div>`;
+    return `<div class="kar-kart kk-kart2 oz-kart acik">
+      <button type="button" class="kk-bas2 oz-sec-bas" id="hocaSec">${ortAv(h)}<span class="kk-ort"><span class="kk-ad">${kacar(h.ad)}</span><span class="kk-rol">Hoca · hakediş %${oran}</span></span><span class="oz-degtag">DEĞİŞTİR</span><span class="kk-cev">⌄</span></button>
+      <div class="kk-govde"><div class="oz-tl">${m}</div>${son}</div>
+    </div>`;
+  };
+  const hocaGovde = hSel ? hocaOzetKart(hSel) : '<div class="gp-bos">Aktif hoca yok.</div>';
   ic().innerHTML = `
     <div class="kar-sayfa">
       ${segTab}
       ${hocalarSekme
-      ? `<div class="gg-tekbar"><span class="gg-bas">Hocalar</span></div>${hocaGovde}`
+      ? `<div class="gg-tekbar"><span class="gg-bas">Hocalar</span><div class="gg-tekbar-sag">${ayNavHTML(donem)}</div></div>${hocaGovde}`
       : `<div class="gg-tekbar">
         <span class="gg-bas">Ortaklar</span>
         <div class="gg-tekbar-sag">${ayNavHTML(donem)}<div class="ia-seg gr-mini"><button type="button" class="ia-oge ${!detayli ? 'sec' : ''}" data-kg="ozet"><span class="seg-ik">${segIk('rapor')}</span>Özet</button><button type="button" class="ia-oge ${detayli ? 'sec' : ''}" data-kg="detayli"><span class="seg-ik">${segIk('tablo')}</span>Detaylı</button></div></div>
@@ -1783,6 +1781,7 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     karGorunum = b.dataset.kg; karlilikSayfasi();
   });
   { const os = $('#ozSec'); if (os) os.onclick = () => altSecici({ baslik: 'Eğitmen Seç', arama: ozHepsi.length > 6, secili: ozSecId, secenekler: ozHepsi.map(x => ({ deger: x.e.id, ad: x.e.ad, alt: x.rol })), onSec: (v) => { karOzetSecili = v; karlilikSayfasi(); } }); }
+  { const hs = $('#hocaSec'); if (hs) hs.onclick = () => altSecici({ baslik: 'Hoca Seç', arama: hocaGoster.length > 6, secili: hSel && hSel.id, secenekler: hocaGoster.map(h => ({ deger: h.id, ad: h.ad, alt: `Hakediş %${Math.round(h.oran || 0)} · ${TL(h.brut)}` })), onSec: (v) => { karHocaSecili = v; karlilikSayfasi(); } }); }
   const eb2 = $('#karEsle2'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
   $$('.kk-bas2[data-tog]').forEach(b => b.onclick = () => { const id = b.dataset.tog; if (karAcikSet.has(id)) karAcikSet.delete(id); else karAcikSet.add(id); karlilikSayfasi(); });
   $$('[data-mahsup]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); mahsupDetayModal(donem, b.dataset.mahsup); });
