@@ -4313,3 +4313,12 @@ input.gp-inp[type="month"]::-webkit-date-and-time-value,input.gp-inp[type="date"
 .kzk-alt{font-size:11.5px;color:var(--metin-soluk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kzk-ok{font-size:11.5px;color:var(--vurgu, #c6f432);font-weight:600}
 .hoca .satir.hoca-kalan{border-bottom:0;font-size:13.5px}
+/* Yazdır / PDF (Kâr-Zarar Kontrolü › 📄 PDF): yalnız içerik, renkler korunur */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  aside,.kenar,.ust-cubuk,.alt-menu,.alt-sheet,#bildirimler,#modalKap,.tnm-scr-ust button{display:none!important}
+  .tnm-scr-ust{justify-content:center!important}
+  html,body{height:auto!important;overflow:visible!important}
+  .ana,#icerik{margin:0!important;padding:8px!important;overflow:visible!important;height:auto!important}
+  .kz-pgrup,.kz-hr,.kz-kontrol{break-inside:avoid}
+}

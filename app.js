@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '358';
+const APP_SURUM = '359';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7397,8 +7397,12 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     ${[...d.uyari, ...d.bilgi].map(u => `<div class="kz-hr ${d.uyari.includes(u) ? 'uy' : ''}"><span class="i">${u.ik}</span><div><b>${kacar(u.baslik)} · ${TL(Math.abs(u.tutar))}</b><br>${kacar(u.aciklama)}${kzKayitListesi(u.kayitlar)}</div></div>`).join('')}
   </div>`;
   ic().innerHTML = `<div class="kz-sayfa">
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}</div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}<button type="button" class="tnm-geri kz-pdf" id="kzPdf">📄 PDF</button></div>
     ${rozet}${yolculuk}${mizan}${kontrol}</div>`;
+  $('#kzPdf').onclick = () => {   // tarayıcının yazdır penceresi → "PDF olarak kaydet" / iPhone'da Paylaş → PDF
+    const eski = document.title; document.title = `Kar-Zarar-Kontrolu-${kzDonem}`;
+    setTimeout(() => { window.print(); setTimeout(() => { document.title = eski; }, 500); }, 50);
+  };
   $('#kzGeri').onclick = () => { const g = kzGeri; kzGeri = 'ayar-tanimlama'; if (g === 'karlilik') karDonem = kzDonem; git(g); };
   $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { kzDonem = donemKaydir(kzDonem, Number(b.dataset.ay)); git('rapor-karzarar-kontrol'); });
