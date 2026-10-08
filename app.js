@@ -531,6 +531,8 @@ create policy "acik erisim" on public.yt_veri for all
   to anon using (true) with check (true);
 alter publication supabase_realtime add table public.yt_veri;`;
 
+const BULUT_SATIR = 'ana2';      // ana veri satırı (eski sürümler 'ana'ya yazar → yeni veriye dokunamaz)
+const MIN_YAZIM_SURUM = 375;     // buluta yazabilecek en eski sürüm
 const Bulut = {
   client: null, aktif: false, kanal: null, beklet: null, sonImza: null, _sonNonce: null, durum: 'kapali', hataMesaj: '',
 
@@ -584,10 +586,26 @@ const Bulut = {
     if (data.ayarlar) localStorage.setItem('yt_ayarlar', JSON.stringify(data.ayarlar));
   },
 
+  /* ---- Sürüm kilidi ----
+     Ana veri artık 'ana2' satırında. Güncellenmemiş (v374 ve öncesi) cihazlar hâlâ eski 'ana' satırına yazar →
+     yeni veriye dokunamazlar. Ayrıca her yazım minSurum taşır: bulutta kendi sürümünden büyük minSurum gören cihaz
+     YAZMAZ, "uygulamayı yenile" der. İleride bozucu bir değişiklikte MIN_YAZIM_SURUM artırmak yeterli. */
+  eskiSurum: false,
+  _surumKontrol(d) {
+    if (d && Number(d.minSurum) > Number(APP_SURUM)) {
+      if (!this.eskiSurum) bildir('Uygulama eski sürüm — değişiklikler buluta gönderilmiyor. Lütfen sayfayı yenileyin (⟳).', 'hata');
+      this.eskiSurum = true;
+    }
+    return !this.eskiSurum;
+  },
   async cek() {
-    const { data, error } = await this.client.from('yt_veri').select('data,guncelleme').eq('id', 'ana').maybeSingle();
+    const { data, error } = await this.client.from('yt_veri').select('data,guncelleme').eq('id', BULUT_SATIR).maybeSingle();
     if (error) throw error;
-    return data;   // {data, guncelleme} | null
+    if (data) return data;   // {data, guncelleme}
+    // Taşıma: yeni satır henüz yoksa eski 'ana' satırındaki veriyle başla (ilk yazımda 'ana2' oluşur)
+    const eski = await this.client.from('yt_veri').select('data,guncelleme').eq('id', 'ana').maybeSingle();
+    if (eski.error) throw eski.error;
+    return eski.data ? { ...eski.data, _tasima: true } : null;
   },
   /* ---- Çakışma koruması ----
      Eskiden her cihaz tüm veriyi olduğu gibi yazıyordu: güncellemeyi almamış (eski verili) bir telefon küçük bir
@@ -631,8 +649,9 @@ const Bulut = {
     if (!this.client) return;
     for (let deneme = 0; deneme < 4; deneme++) {
       let paket = this.paket();
-      const { data: row, error: e1 } = await this.client.from('yt_veri').select('data,guncelleme').eq('id', 'ana').maybeSingle();
+      const { data: row, error: e1 } = await this.client.from('yt_veri').select('data,guncelleme').eq('id', BULUT_SATIR).maybeSingle();
       if (e1) throw e1;
+      if (row && !this._surumKontrol(row.data)) throw new Error('Eski sürüm — buluta yazılmadı');
       const baskasiYazdi = row && row.data && (!this.sonImza || Date.parse(row.guncelleme) !== Date.parse(this.sonImza)) && row.data._nonce !== this._sonNonce;
       if (baskasiYazdi) {
         const B = this.taban || this.paket();   // taban yoksa (eski oturum) bu cihazı taban say → yalnız buluttaki yenileri korur
@@ -640,10 +659,11 @@ const Bulut = {
         this._birlesikUygula(birlesik);
         paket = { ...birlesik, surum: 1, guncelleme: new Date().toISOString(), _nonce: yeniId() };
       }
+      paket.minSurum = Math.max(MIN_YAZIM_SURUM, Number(row && row.data && row.data.minSurum) || 0);
       this._sonNonce = paket._nonce;     // realtime echo'yu nonce ile ayıkla
       let r;
-      if (row) r = await this.client.from('yt_veri').update({ data: paket, guncelleme: paket.guncelleme }).eq('id', 'ana').eq('guncelleme', row.guncelleme).select('guncelleme');
-      else r = await this.client.from('yt_veri').insert({ id: 'ana', data: paket, guncelleme: paket.guncelleme }).select('guncelleme');
+      if (row) r = await this.client.from('yt_veri').update({ data: paket, guncelleme: paket.guncelleme }).eq('id', BULUT_SATIR).eq('guncelleme', row.guncelleme).select('guncelleme');
+      else r = await this.client.from('yt_veri').insert({ id: BULUT_SATIR, data: paket, guncelleme: paket.guncelleme }).select('guncelleme');
       if (r.error && !row) { await new Promise(z => setTimeout(z, 300)); continue; }   // aynı anda ilk kayıt → tekrar dene
       if (r.error) throw r.error;
       if (r.data && r.data.length) { this.sonImza = r.data[0].guncelleme; this._tabanAl(paket); return; }
@@ -655,6 +675,8 @@ const Bulut = {
   async tazele() {
     if (!this.client || !this.aktif) return;
     const row = await this.cek();
+    if (row && row._tasima) return;
+    if (row && row.data && !this._surumKontrol(row.data)) return;
     if (!row || !row.data || (this.sonImza && Date.parse(row.guncelleme) === Date.parse(this.sonImza)) || row.data._nonce === this._sonNonce) return;
     const B = this.taban || this.paket();
     this._birlesikUygula(this.birlestir(B, this.paket(), row.data));
@@ -664,7 +686,7 @@ const Bulut = {
   itPlanla() {
     if (!this.aktif || this._uzaktan) return;   // uzaktan gelen veriyi geri gönderme (döngü engeli)
     clearTimeout(this.beklet);
-    this.beklet = setTimeout(() => { this.beklet = null; this.gonder().catch(e => { console.warn('Bulut gönderme hatası:', e.message); setTimeout(() => this.itPlanla(), 5000); }); }, 900);
+    this.beklet = setTimeout(() => { this.beklet = null; this.gonder().catch(e => { console.warn('Bulut gönderme hatası:', e.message); if (!this.eskiSurum) setTimeout(() => this.itPlanla(), 5000); }); }, 900);
   },
 
   realtimeKur() {
@@ -672,9 +694,10 @@ const Bulut = {
     try {
       if (this.kanal) this.client.removeChannel(this.kanal);
       this.kanal = this.client.channel('yt_veri_rt')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'yt_veri', filter: 'id=eq.ana' }, (p) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'yt_veri', filter: 'id=eq.' + BULUT_SATIR }, (p) => {
           const d = p.new && p.new.data;
           if (!d) return;
+          this._surumKontrol(d);
           // Kendi yazdığımız değişikliği kesin ayıkla (nonce; timestamp formatı sunucuda farklılaşabiliyor)
           if (d._nonce && d._nonce === this._sonNonce) return;
           this.sonImza = p.new.guncelleme;
@@ -700,7 +723,8 @@ const Bulut = {
     try {
       await this.baglan(cfg);
       const row = await this.cek();
-      if (row && row.data) { this.uygula(row.data); this.sonImza = row.guncelleme; this._sonNonce = row.data._nonce || null; this._tabanAl(row.data); }
+      if (row && row._tasima) { this.uygula(row.data); this._tabanAl(row.data); await this.gonder(); }   // eski satırdan yeni satıra ilk taşıma
+      else if (row && row.data) { this._surumKontrol(row.data); this.uygula(row.data); this.sonImza = row.guncelleme; this._sonNonce = row.data._nonce || null; this._tabanAl(row.data); }
       else { await this.gonder(); }
       try { await IaOrtak.yukle(); } catch (e) { console.warn('Ön izleme yüklenemedi:', e.message); }
       this.realtimeKur();
@@ -932,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '374';
+const APP_SURUM = '375';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
