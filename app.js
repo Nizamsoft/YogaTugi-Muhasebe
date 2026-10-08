@@ -589,18 +589,82 @@ const Bulut = {
     if (error) throw error;
     return data;   // {data, guncelleme} | null
   },
+  /* ---- Çakışma koruması ----
+     Eskiden her cihaz tüm veriyi olduğu gibi yazıyordu: güncellemeyi almamış (eski verili) bir telefon küçük bir
+     değişiklikte buluttakini EZİYORDU (ör. aktarılan banka hareketleri kayboldu). Artık:
+     • taban = bu cihazın buluttan son aldığı/gönderdiği hâl
+     • yazmadan önce buluttaki satır kontrol edilir; arada başkası yazdıysa ÜÇ YÖNLÜ birleştirilir
+       (taban ↔ bu cihaz ↔ bulut): yalnız bu cihazda değişen/eklenen/silinen kayıtlar işlenir, diğerleri buluttaki gibi kalır
+     • yazım koşulludur (satır okunduğundan beri değişmediyse); değiştiyse yeniden okunup birleştirilir */
+  taban: null,
+  _tabanAl(d) { const t = {}; for (const k of KOLEKSIYONLAR) t[k] = Array.isArray(d && d[k]) ? d[k] : []; t.ayarlar = (d && d.ayarlar) || {}; this.taban = JSON.parse(JSON.stringify(t)); },
+  _ayni(a, b) { return JSON.stringify(a) === JSON.stringify(b); },
+  _listeBirlestir(B, L, R) {
+    const key = x => (x && x.id != null) ? 'i' + x.id : 'j' + JSON.stringify(x);
+    const harita = arr => { const m = new Map(); (arr || []).forEach(x => m.set(key(x), x)); return m; };
+    const Bm = harita(B), Lm = harita(L), gor = new Set(), out = [];
+    for (const r of (R || [])) {
+      const k = key(r); gor.add(k);
+      const b = Bm.get(k), l = Lm.get(k);
+      if (b === undefined) out.push(l !== undefined ? l : r);            // bulutta yeni (bu cihazda da varsa bu cihazınki)
+      else if (l === undefined) { if (!this._ayni(r, b)) out.push(r); }   // bu cihaz sildi → bulutta da değişmediyse sil
+      else out.push(this._ayni(l, b) ? r : l);                          // bu cihaz değiştirdiyse onunki, değilse buluttaki
+    }
+    for (const l of (L || [])) {
+      const k = key(l); if (gor.has(k)) continue;
+      if (!Bm.has(k)) out.push(l);                                       // bu cihazda yeni eklenen
+      else if (!this._ayni(l, Bm.get(k))) out.push(l);                   // bulutta silinmiş ama bu cihaz değiştirmiş → koru
+    }
+    return out;
+  },
+  birlestir(B, L, R) {
+    const o = {};
+    for (const k of KOLEKSIYONLAR) o[k] = this._listeBirlestir(B[k], L[k], R[k]);
+    o.ayarlar = this._ayni(L.ayarlar || {}, B.ayarlar || {}) ? (R.ayarlar || {}) : (L.ayarlar || {});
+    return o;
+  },
+  _birlesikUygula(birlesik) {   // birleşen veriyi bu cihaza yaz (push tetiklemeden) ve ekranı tazele
+    this._uzaktan = true; this.uygula(birlesik); this._uzaktan = false;
+    veriYukle().then(() => { const r = SAYFALAR[State.aktifSayfa]; if (r) dokunmaBitinceYap(() => { if (SAYFALAR[State.aktifSayfa] === r) r(); }); }).catch(() => { });
+  },
   async gonder() {
     if (!this.client) return;
-    const paket = this.paket();
-    this.sonImza = paket.guncelleme;   // echo yarışını önle: kendi imzamızı push'tan önce yaz
-    this._sonNonce = paket._nonce;     // realtime echo'yu nonce ile kesin ayıkla
-    const { error } = await this.client.from('yt_veri').upsert({ id: 'ana', data: paket, guncelleme: paket.guncelleme });
-    if (error) throw error;
+    for (let deneme = 0; deneme < 4; deneme++) {
+      let paket = this.paket();
+      const { data: row, error: e1 } = await this.client.from('yt_veri').select('data,guncelleme').eq('id', 'ana').maybeSingle();
+      if (e1) throw e1;
+      const baskasiYazdi = row && row.data && (!this.sonImza || Date.parse(row.guncelleme) !== Date.parse(this.sonImza)) && row.data._nonce !== this._sonNonce;
+      if (baskasiYazdi) {
+        const B = this.taban || this.paket();   // taban yoksa (eski oturum) bu cihazı taban say → yalnız buluttaki yenileri korur
+        const birlesik = this.birlestir(B, paket, row.data);
+        this._birlesikUygula(birlesik);
+        paket = { ...birlesik, surum: 1, guncelleme: new Date().toISOString(), _nonce: yeniId() };
+      }
+      this._sonNonce = paket._nonce;     // realtime echo'yu nonce ile ayıkla
+      let r;
+      if (row) r = await this.client.from('yt_veri').update({ data: paket, guncelleme: paket.guncelleme }).eq('id', 'ana').eq('guncelleme', row.guncelleme).select('guncelleme');
+      else r = await this.client.from('yt_veri').insert({ id: 'ana', data: paket, guncelleme: paket.guncelleme }).select('guncelleme');
+      if (r.error && !row) { await new Promise(z => setTimeout(z, 300)); continue; }   // aynı anda ilk kayıt → tekrar dene
+      if (r.error) throw r.error;
+      if (r.data && r.data.length) { this.sonImza = r.data[0].guncelleme; this._tabanAl(paket); return; }
+      await new Promise(z => setTimeout(z, 250 + deneme * 250));   // arada başkası yazdı → yeniden oku, birleştir
+    }
+    throw new Error('Bulut yoğun — değişiklik birazdan tekrar gönderilecek');
+  },
+  /* Telefona geri dönüldüğünde: bulutta yenisi varsa bu cihazdaki (gönderilmemiş) değişikliklerle birleştirip al */
+  async tazele() {
+    if (!this.client || !this.aktif) return;
+    const row = await this.cek();
+    if (!row || !row.data || (this.sonImza && Date.parse(row.guncelleme) === Date.parse(this.sonImza)) || row.data._nonce === this._sonNonce) return;
+    const B = this.taban || this.paket();
+    this._birlesikUygula(this.birlestir(B, this.paket(), row.data));
+    this.sonImza = row.guncelleme; this._tabanAl(row.data);
+    if (this.beklet) this.itPlanla();   // gönderilmemiş değişiklik varsa birleşik hâliyle gönder
   },
   itPlanla() {
     if (!this.aktif || this._uzaktan) return;   // uzaktan gelen veriyi geri gönderme (döngü engeli)
     clearTimeout(this.beklet);
-    this.beklet = setTimeout(() => { this.gonder().catch(e => console.warn('Bulut gönderme hatası:', e.message)); }, 900);
+    this.beklet = setTimeout(() => { this.beklet = null; this.gonder().catch(e => { console.warn('Bulut gönderme hatası:', e.message); setTimeout(() => this.itPlanla(), 5000); }); }, 900);
   },
 
   realtimeKur() {
@@ -615,7 +679,9 @@ const Bulut = {
           if (d._nonce && d._nonce === this._sonNonce) return;
           this.sonImza = p.new.guncelleme;
           this._uzaktan = true;                    // bu apply push tetiklemesin
-          this.uygula(d);
+          // Gönderilmeyi bekleyen yerel değişiklik varsa ezme → birleştir (sonra birleşik hâl gönderilir)
+          if (this.beklet && this.taban) this.uygula(this.birlestir(this.taban, this.paket(), d)); else this.uygula(d);
+          this._tabanAl(d);
           veriYukle().then(() => {
             this._uzaktan = false;
             const r = SAYFALAR[State.aktifSayfa];  // sadece içerik yenile — menü/akordeon bozulmasın
@@ -634,7 +700,7 @@ const Bulut = {
     try {
       await this.baglan(cfg);
       const row = await this.cek();
-      if (row && row.data) { this.uygula(row.data); this.sonImza = row.guncelleme; this._sonNonce = row.data._nonce || null; }
+      if (row && row.data) { this.uygula(row.data); this.sonImza = row.guncelleme; this._sonNonce = row.data._nonce || null; this._tabanAl(row.data); }
       else { await this.gonder(); }
       try { await IaOrtak.yukle(); } catch (e) { console.warn('Ön izleme yüklenemedi:', e.message); }
       this.realtimeKur();
@@ -833,6 +899,7 @@ function dokunmaBitinceYap(fn, t0) {
   try { fn(); } catch (_) { }
 }
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') Bulut.tazele().catch(e => console.warn('Bulut tazeleme hatası:', e.message));   // arka planda kaçan değişiklikleri al
   if (document.visibilityState !== 'visible' || !IaOrtak.aktif()) return;
   // Telefona geri dönüldü → güncel durumu çek; kilit bizdeyse hemen tazele (süresi dolduysa kaybedildiği bildirilir)
   const benim = IaOrtak.kilit && IaOrtak.kilit.cihaz === IaOrtak.cihaz();
@@ -865,7 +932,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '373';
+const APP_SURUM = '374';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
