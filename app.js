@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '353';
+const APP_SURUM = '354';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1653,14 +1653,15 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const kanal = [e.nakit ? `Nakit ${TL(e.nakit)}` : '', e.havale ? `Havale ${TL(e.havale)}` : '', e.kart ? `Kart ${TL(e.kart)}` : ''].filter(Boolean).join(' · ');
     const st = (cls, ikon, tx, cap, am) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="oz-tx">${tx}</div>${cap ? `<div class="oz-cap">${cap}</div>` : ''}${am ? `<span class="oz-am ${am[1] || ''}">${am[0]}</span>` : ''}</div></div>`;
     // ÖZET'te hiçbir adım gizlenmez — sıfır olsa bile hepsi görünür
-    let m = st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, kanal || 'Nakit 0,00 ₺');
+    // Devir en üstte: ay, önceki aylardan kalan bakiyeyle başlar
+    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> kalmıştı, bu aya eklendi.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, bu aydan düşüldü.' : 'Geçen aydan devreden bakiye yok.';
+    let m = st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz']);
+    m += st('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> tahsilat yaptın.`, kanal || 'Nakit 0,00 ₺');
     if (!e.maasliMi && e.ortakGelirPayi) m += `<div class="oz-opay"><span class="oz-opem">👥</span><div class="oz-opct"><div class="oz-opb">Ortak gelir payın<span class="oz-oprz">brüte dahil</span></div><div class="oz-opc">"Tüm Ortaklar" geliri ${r.ortaklar.length} ortağa eşit bölündü · hocalar hariç</div></div><span class="oz-opam">+${TL(e.ortakGelirPayi)}</span></div>`;
     m += st('kes', '🏦', 'Banka, kart tahsilatından komisyon aldı.', '', [`−${TL(e.komisyon)}`, 'negatif']);
     if (!e.maasliMi) m += st('kes', '🏢', 'Stüdyonun ortak giderlerinden payına düştü.', e.ozelGider ? `Ortak giderlerden ${TL(e.genelPay || 0)} + yalnız sana yazılan ${TL(e.ozelGider)}` : '', [`−${TL(e.giderPayi)}`, 'negatif']);
     if (!e.maasliMi && e.hocaKari) m += st('iyi', '🧘', 'Hocaların stüdyoya bıraktığı kârdan payın.', 'Hoca kârı — tüm ortaklara eşit', [`+${TL(e.hocaKari)}`, 'poz']);
     m += st('kes', '🏛️', 'Devlet için tahmini vergi ayrıldı.', `KDV ${TL(e.kdvOngoru)} + Gelir Vergisi ${TL(e.gvOngoru)} · kesinleşince güncellenir ⏳`, [`−${TL(vergiTop)}`, 'negatif']);
-    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> kalmıştı, bu aya eklendi.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, bu aydan düşüldü.' : 'Geçen aydan devreden bakiye yok.';
-    m += st(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki aylardan devreden bakiye', [`${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz']);
     const mahsupTx = mahsup > 0 ? 'Tahmini vergi <b>fazla</b> ayrılmıştı, bu ay <b>iade edildi</b>.' : mahsup < 0 ? 'Tahmini vergi <b>eksik</b> ayrılmıştı, bu ay <b>tamamlandı</b>.' : 'Vergi tam ayrılmış, düzeltme yok.';
     m += st(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', [`${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz']);
     const son = e.maasliMi
@@ -1686,9 +1687,11 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     const buAyHak = (e.hakedisGuncel != null ? e.hakedisGuncel : e.hakedis);
     const hakTop = (e.hakToplam != null ? e.hakToplam : buAyHak);
     const kalanTop = (e.kalanTop != null ? e.kalanTop : hakTop - verilen);
-    let bak = e.brut || 0;
+    let bak = devir + (e.brut || 0);
     const step = (cls, ikon, tt, formul, tah, amStr, amCls) => `<div class="oz-st ${cls}"><div class="oz-ik">${ikon}</div><div class="oz-ct"><div class="dt-tt">${tt}</div>${formul ? `<div class="dt-formul">${kacar(formul)}</div>` : ''}${tah ? `<div class="dt-tah">${tah}</div>` : ''}<div class="dt-amrow"><span class="oz-am ${amCls}">${amStr}</span><span class="dt-kalan">Kalan <b>${TL(bak)}</b></span></div></div></div>`;
-    let m = step('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> kazandın 👏`, `Nakit ${TL(e.nakit)} + Havale ${TL(e.havale)} + Kart ${TL(e.kart)}`, '', `+${TL(e.brut)}`, 'poz');
+    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> vardı, ekledik.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, düştük.' : 'Geçen aydan devir yok.';
+    let m = step(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki ayların bakiyesi', '', `${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz');
+    m += step('iyi', '💰', `Bu ay toplam <b>${TL(e.brut)}</b> kazandın 👏`, `Nakit ${TL(e.nakit)} + Havale ${TL(e.havale)} + Kart ${TL(e.kart)}`, '', `+${TL(e.brut)}`, 'poz');
     if (!e.maasliMi && e.ortakGelirPayi) m += `<div class="dt-opay"><span class="dt-opem">👥</span><div class="dt-opct"><div class="dt-opb">Ortak gelir payı</div><div class="dt-opc">Tüm Ortaklar ÷ ${r.ortaklar.length} ortak (eşit) — brütün içinde</div></div><span class="dt-opam">+${TL(e.ortakGelirPayi)}</span></div>`;
     bak -= komisyon;
     m += step('kes', '🏦', 'Bankaya kart komisyonu verdik.', e.kart ? `Kart ${TL(e.kart)} × %${(komisyon / e.kart * 100).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}` : 'Kart tahsilatı yok', '', `−${TL(komisyon)}`, 'negatif');
@@ -1699,9 +1702,6 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     m += step('kes', '🏛️', 'Gelir vergisi payını ayırdık (tahmini).', `(${TL(bankaGiren)} − ${TL(kdv)} KDV − ${TL(komisyon)} kom.) × %${Math.round(r.vOran * 100)}`, `Tahakkuk: ${e.gvTahakkukVar ? '✓ ' + TL(e.gvTahakkukPay || 0) : '⏳ 3 ayda bir'}`, `−${TL(gv)}`, 'negatif');
     if (!e.maasliMi && e.havuzPayi) { bak += e.havuzPayi; m += step('iyi', '🧑‍🏫', 'Maaşlı eğitmenlerin bıraktığı pay.', 'Tüm ortaklara eşit dağıtılır', '', `+${TL(e.havuzPayi)}`, 'poz'); }
     if (!e.maasliMi && e.hocaKari) { bak += e.hocaKari; m += step('iyi', '🧘', 'Hocaların stüdyoya bıraktığı kâr.', 'Hoca kârı — tüm ortaklara eşit', '', `+${TL(e.hocaKari)}`, 'poz'); }
-    bak += devir;
-    const devirTx = devir > 0 ? 'Geçen aydan <b>alacağın</b> vardı, ekledik.' : devir < 0 ? 'Geçen aydan <b>borcun</b> vardı, düştük.' : 'Geçen aydan devir yok.';
-    m += step(devir < 0 ? 'kes' : 'iyi', '📅', devirTx, 'Önceki ayların bakiyesi', '', `${devir >= 0 ? '+' : '−'}${TL(Math.abs(devir))}`, devir < 0 ? 'negatif' : 'poz');
     bak += mahsup;
     const mahsupTx = mahsup > 0 ? 'Fazla ayrılan vergiyi <b>iade ettik</b>.' : mahsup < 0 ? 'Eksik ayrılan vergiyi <b>tamamladık</b>.' : 'Vergi düzeltmesi yok.';
     m += step(mahsup < 0 ? 'kes' : 'iyi', '🧾', mahsupTx, 'Tahmini vergi ile gerçek verginin farkı', '', `${mahsup >= 0 ? '+' : '−'}${TL(Math.abs(mahsup))}`, mahsup < 0 ? 'negatif' : 'poz');
