@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '357';
+const APP_SURUM = '358';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1771,7 +1771,11 @@ SAYFALAR['karlilik'] = function karlilikSayfasi() {
     </div>`;
   $$('[data-ksek]').forEach(b => b.onclick = () => { karSekme = b.dataset.ksek; karlilikSayfasi(); });
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { karDonem = donemKaydir(donem, Number(b.dataset.ay)); karlilikSayfasi(); });
-  $$('[data-kg]').forEach(b => b.onclick = () => { karGorunum = b.dataset.kg; karlilikSayfasi(); });
+  $$('[data-kg]').forEach(b => b.onclick = () => {
+    // Detaylı → aynı ayın Kâr-Zarar Kontrolü (yetkisi olan için); yoksa eski detaylı kart
+    if (b.dataset.kg === 'detayli' && (adminMi() || girisRol() === 'ortak')) { kzDonem = donem; kzGeri = 'karlilik'; git('rapor-karzarar-kontrol'); return; }
+    karGorunum = b.dataset.kg; karlilikSayfasi();
+  });
   { const os = $('#ozSec'); if (os) os.onclick = () => altSecici({ baslik: 'Eğitmen Seç', arama: ozHepsi.length > 6, secili: ozSecId, secenekler: ozHepsi.map(x => ({ deger: x.e.id, ad: x.e.ad, alt: x.rol })), onSec: (v) => { karOzetSecili = v; karlilikSayfasi(); } }); }
   const eb2 = $('#karEsle2'); if (eb2) eb2.onclick = () => git('tanim-egitmen');
   $$('.kk-bas2[data-tog]').forEach(b => b.onclick = () => { const id = b.dataset.tog; if (karAcikSet.has(id)) karAcikSet.delete(id); else karAcikSet.add(id); karlilikSayfasi(); });
@@ -7201,6 +7205,7 @@ SAYFALAR['ayar-tanimlama'] = function () {
   $$('[data-tanim]').forEach(b => b.onclick = () => {
     const aks = b.dataset.aksiyon;
     if (aks === 'vergiTahakkuk') { vergiTahakkukModal(buAy()); return; }   // sayfa değil, modal
+    if (b.dataset.tanim === 'rapor-karzarar-kontrol') kzGeri = 'ayar-tanimlama';
     git(b.dataset.tanim);
   });
 };
@@ -7209,6 +7214,7 @@ SAYFALAR['ayar-tanimlama'] = function () {
    Ortaklar ekranıyla AYNI motordan (egitmenKarlilik) beslenir; ek olarak o ay programa girilen her
    giriş/çıkış kaydını tarar → rapora girmeyen (bekleyen, eşleşmeyen, sahipsiz) tutarları ayrıca gösterir. */
 let kzDonem = null;
+let kzGeri = 'ayar-tanimlama';   // geri düğmesi nereye dönsün (Ortaklar › Detaylı'dan gelindiyse Ortaklar)
 /* Uyarıyı oluşturan kayıtlar — tarih · kaynak · açıklama · tutar; dokununca kayıt düzenlenmek üzere açılır */
 let _kzKayit = [];
 function kzKayitListesi(kayitlar) {
@@ -7391,9 +7397,9 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     ${[...d.uyari, ...d.bilgi].map(u => `<div class="kz-hr ${d.uyari.includes(u) ? 'uy' : ''}"><span class="i">${u.ik}</span><div><b>${kacar(u.baslik)} · ${TL(Math.abs(u.tutar))}</b><br>${kacar(u.aciklama)}${kzKayitListesi(u.kayitlar)}</div></div>`).join('')}
   </div>`;
   ic().innerHTML = `<div class="kz-sayfa">
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ Ayarlar</button>${ayNavHTML(kzDonem)}</div>
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}</div>
     ${rozet}${yolculuk}${mizan}${kontrol}</div>`;
-  $('#kzGeri').onclick = () => git('ayar-tanimlama');
+  $('#kzGeri').onclick = () => { const g = kzGeri; kzGeri = 'ayar-tanimlama'; if (g === 'karlilik') karDonem = kzDonem; git(g); };
   $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { kzDonem = donemKaydir(kzDonem, Number(b.dataset.ay)); git('rapor-karzarar-kontrol'); });
 };
