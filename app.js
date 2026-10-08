@@ -865,7 +865,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '363';
+const APP_SURUM = '364';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7247,7 +7247,12 @@ function kzHesap(donem) {
   const kdv = top([...O, ...M], x => x.kdvOngoru), gv = top([...O, ...M], x => x.gvOngoru);
   const genel = O.length ? r.genelGider : 0, ozelTop = top(O, o => o.ozelGider || 0), hocaPay = top(H, h => h.payi);
   const hakedis = top(O, o => o.hakedis), mahsup = top(O, o => o.mahsup || 0);
-  const guncel = top(O, o => o.hakedisGuncel), odenen = top(O, o => o.odenen), kalan = guncel - odenen;
+  // Önceki aylardan devir (açılış devri dahil) — kalan = bu ay hakediş + devir − verilen
+  const dvMap = ortakDevir(donem);
+  O.forEach(o => { o.devir = dvMap[o.id] || 0; o.kalanTop = o.hakedisGuncel + o.devir - o.odenen; });
+  H.forEach(h => { h.devir = (h.id != null && dvMap[h.id]) || 0; });
+  const devirTop = top(O, o => o.devir), hocaDevir = top(H, h => h.devir);
+  const guncel = top(O, o => o.hakedisGuncel), odenen = top(O, o => o.odenen), kalan = guncel + devirTop - odenen;
   const yuvarlama = O.length ? Math.round((hakedis - (brut - kom - kdv - gv - genel - ozelTop - hocaPay)) * 100) / 100 : 0;
   const isKat = (kat, ad) => !!kat && adNorm(kat) === adNorm(ad);
   const ortakIds = new Set(O.map(o => String(o.id))), hocaIds = new Set(H.map(h => String(h.id)));
@@ -7301,7 +7306,7 @@ function kzHesap(donem) {
   const kalemler = [...katMap.entries()].map(([ad, tutar]) => ({ ad, tutar })).sort((a, b) => b.tutar - a.tutar);
   const ozMap = new Map(); ozelKalem.forEach(c => { const m = ozMap.get(c.kat) || { ad: c.kat, tutar: 0, kisi: {} }; m.tutar += c.tutar; m.kisi[c.ortakId] = (m.kisi[c.ortakId] || 0) + c.tutar; ozMap.set(c.kat, m); });
   const ozelKalemler = [...ozMap.values()].sort((a, b) => b.tutar - a.tutar);
-  return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, cekimTop, ozelKalemler, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan), hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, vergiOk, hvOk, kalemler, uyari, bilgi,
+  return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, cekimTop, ozelKalemler, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan) + hocaDevir, hocaDevir, devirTop, hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, vergiOk, hvOk, kalemler, uyari, bilgi,
     nakit: top(hepsi, x => x.nakit), havale: top(hepsi, x => x.havale), kart: top(hepsi, x => x.kart), multinet: top(hepsi, x => x.multinet || 0) };
 }
 SAYFALAR['rapor-karzarar-kontrol'] = function () {
@@ -7341,7 +7346,8 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   const yolculuk = `<div class="kz-kutu"><h3>🧭 Kâr-Zarar Yolculuğu</h3><p class="kz-alt">Gerçekleşen her 1 ₺'nin hangi adımda nereye gittiği</p>
     ${d.brut ? adimlar.join('') : '<div class="gp-bos">Bu ay gerçekleşen tahsilat yok.</div>'}
     ${chips ? `<div class="kz-dagit">${chips}</div>` : ''}
-    ${hep && d.H.length && (d.hocaPay || d.hocaOdenen) ? `<div class="kz-mahsup"><span>Hocalara verilen / kalan</span><b class="mono">${TL(d.hocaOdenen)} / ${TL(d.hocaKalan)}</b></div>` : ''}
+    ${hep && d.H.length && (d.hocaPay || d.hocaOdenen) ? `<div class="kz-mahsup"><span>Hocalara verilen / kalan${d.hocaDevir ? ' <small>(devir dahil)</small>' : ''}</span><b class="mono">${TL(d.hocaOdenen)} / ${TL(d.hocaKalan)}</b></div>` : ''}
+    ${d.devirTop ? `<div class="kz-mahsup"><span>Önceki aylardan devir (ortaklar)</span><b class="mono">${d.devirTop < 0 ? '−' : '+'}${TL(Math.abs(d.devirTop))}</b></div>` : ''}
     ${d.odenen || d.kalan ? `<div class="kz-mahsup"><span>Ortaklara verilen (Kâr Dağıtımı + Hakediş Ver)</span><b class="mono">${eksiTL(d.odenen)}</b></div><div class="kz-mahsup son"><span>Ortaklara kalan</span><b class="mono">${TL(d.kalan)}</b></div>` : ''}</div>`;
   // 3) Mizan
   const kol = gorOrtak.map(o => ({ ad: String(o.ad).split(' ')[0], tip: 'o', o }));
@@ -7371,8 +7377,9 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     { ad: 'Personel neti → ortaklar', o: o => o.havuzPayi, h: () => 0, m: () => -sM(m => m.net), t: d.O.length ? 0 : -sM(m => m.net) },
     { ad: 'Hak ediş', ara: 1, cls: 'g', o: o => o.hakedis, h: () => sH(h => h.brut - h.komisyon - h.payi - h.studyoKar), m: () => 0, t: d.hakedis },
     ...(Math.abs(d.mahsup) >= 1 ? [{ ad: 'Vergi mahsubu', o: o => o.mahsup || 0, h: () => 0, m: () => 0, t: d.mahsup }] : []),
+    ...(Math.abs(d.devirTop) >= 1 ? [{ ad: 'Önceki aylardan devir', cls: 'g', o: o => o.devir || 0, h: () => 0, m: () => 0, t: d.devirTop }] : []),
     { ad: 'Verilen', cls: 'r', o: o => -o.odenen, h: () => 0, m: () => 0, t: -d.odenen },
-    { ad: 'Kalan (verilecek)', son: 1, o: o => o.kalan, h: () => 0, m: () => 0, t: d.kalan },
+    { ad: 'Kalan (verilecek)', son: 1, o: o => o.kalanTop, h: () => 0, m: () => 0, t: d.kalan },
   ];
   const hucre = (v, cls) => { const r0 = Math.round(Number(v) || 0); return `<td class="${r0 ? (cls || '') : 's'}">${r0 ? (r0 < 0 ? '−' : '') + tam(Math.abs(r0)) : '—'}</td>`; };
   const mizanGovde = satirlar.map(s => {
