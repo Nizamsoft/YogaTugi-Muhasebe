@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '379';
+const APP_SURUM = '380';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1991,9 +1991,9 @@ function ozDokumModal(donem, ortakId, tur) {
     baslik = 'Tahmini Vergi';
     const kdvOn = b => (Number(b) || 0) * r.kdvOran / (100 + r.kdvOran);
     const s2 = tahs.filter(x => x.t.odemeTuru !== 'nakit').map(({ t, oran, ortak }) => { const tut = (Number(t.tutar) || 0) * oran;
-      return sat([fmtTarih(t.tarih), '−' + TL(kdvOn(tut)), kacar(t.ogrenciAd || '—') + (ortak ? `<br>${payTxt}` : ''), `${yontemAd[t.odemeTuru] || ''} ${TL(tut)}`]); });
+      return sat([`${TL(tut)}<small class="dk-alt">${yontemAd[t.odemeTuru] || ''} · ${fmtTarih(t.tarih)}</small>`, `−${TL(kdvOn(tut))}<small class="dk-alt">%${r.kdvOran}</small>`, kacar(t.ogrenciAd || '—') + (ortak ? `<br>${payTxt}` : '')]); });
     govde = `<div class="dk-not">KDV — bankaya giren her tahsilattan (%${r.kdvOran}, nakit hariç)</div>`
-      + tablo(['Tarih', 'KDV', 'Kim', 'Tahsilat'], s2, ['Toplam', '−' + TL(e.kdvOngoru || 0), '', ''])
+      + tablo(['Tahsilat', 'KDV', 'Kim'], s2, ['Toplam', '−' + TL(e.kdvOngoru || 0), ''])
       + `<div class="dk-gv"><span>Gelir Vergisi <small>(ay toplamından, %${Math.round(r.vOran * 100)})</small></span><b>−${TL(e.gvOngoru || 0)}</b></div>`
       + `<div class="dk-gv top"><span>Toplam vergi</span><b>−${TL((e.kdvOngoru || 0) + (e.gvOngoru || 0))}</b></div>`;
   } else if (tur === 'devir') {
