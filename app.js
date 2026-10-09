@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '390';
+const APP_SURUM = '391';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7555,55 +7555,6 @@ function kzKanalDevir(donem) {
   }
   return dev;
 }
-/* Kâr-Zarar Kontrolü · Hesap kodlu mizan (Tekdüzen Hesap Planı) — seçili ayın hareketleri, çift taraflı kayıt.
-   Gelir: gerçekleşen tahsilattan (nakit → 100, banka → 102; banka tahsilatında KDV → 391).
-   Diğer banka / kasa satırları gerçek hareketten; gider başlıkları 770 altında. Açılış bakiyeleri dahil değil. */
-function kzHesapMizani(d, donem) {
-  const H = new Map();   // kod → {kod, ad, b, a}
-  const hs = (kod, ad, b, a) => { const x = H.get(kod) || { kod, ad, b: 0, a: 0 }; x.b += b || 0; x.a += a || 0; H.set(kod, x); };
-  const kayit = (bKod, bAd, aKod, aAd, t) => { if (!t) return; hs(bKod, bAd, t, 0); hs(aKod, aAd, 0, t); };
-  const AD = { 100: 'Kasa', 102: 'Bankalar', 331: 'Ortaklara Borçlar', 335: 'Personele Borçlar (Hocalar)', 360: 'Ödenecek Vergi ve Fonlar', 370: 'Dönem Kârı Vergi Karşılıkları', 391: 'Hesaplanan KDV', 600: 'Yurtiçi Satışlar', 622: 'Satılan Hizmet Maliyeti (Hoca payı)', 649: 'Diğer Olağan Gelir', 653: 'Komisyon Giderleri', 691: 'Dönem Kârı Vergi Karşılığı' };
-  const k = (kod) => [String(kod), AD[kod]];
-  const kdvOr = (d.r && d.r.kdvOran) || 20;
-  // 1) Gelir — gerçekleşen tahsilatlar
-  (State.tahsilatTanimlari || []).filter(t => donemStr(t.tarih) === donem && tahsilatGercek(t)).forEach(t => {
-    const tut = Number(t.tutar) || 0;
-    if (t.odemeTuru === 'nakit') { kayit(...k(100), ...k(600), tut); return; }
-    const kdv = tut * kdvOr / (100 + kdvOr);
-    hs(...k(102), tut, 0); hs(...k(600), 0, tut - kdv); hs(...k(391), 0, kdv);
-  });
-  // 2) Gider / ödeme sınıflandırma (motorla aynı yönlendirme)
-  const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
-  const isKat = (kat, ad) => !!kat && adNorm(kat) === adNorm(ad);
-  const katlar = [];   // 770 alt hesapları
-  const giderHesap = (kat, eg) => {
-    const kisi = kisiBul(eg);
-    if (kisi && hocaMi(kisi)) return k(335);
-    if (vergiOdemeMi(kat)) return k(360);
-    if (isKat(kat, KAR_DAGITIM_KAT) || (kisi && ortakMi(kisi) && isKat(kat, KAR_DAGITIM_KAT))) return k(331);
-    if (isKat(kat, HOCA_ODEME_KAT)) return k(335);
-    const ad = kat || 'Sınıflandırılmamış'; let i = katlar.findIndex(x => adNorm(x) === adNorm(ad)); if (i < 0) { katlar.push(ad); i = katlar.length - 1; }
-    return ['770.' + String(i + 1).padStart(2, '0'), baslikHarf(ad)];
-  };
-  // 3) Banka hareketleri (eşleşmiş tahsilat girişleri 1. adımda sayıldı)
-  (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === donem).forEach(b => {
-    const t = Math.abs(Number(b.tutar) || 0);
-    if (b.yon === 'komisyon') kayit(...k(653), ...k(102), t);
-    else if (bankaNakitCekimMi(b)) kayit(...k(100), ...k(102), t);
-    else if (bankaNakitYatirmaMi(b)) kayit(...k(102), ...k(100), t);
-    else if (b.yon === 'gelir') { if (!(Array.isArray(b.eslesenIds) && b.eslesenIds.length)) kayit(...k(102), ...k(649), t); }
-    else if (b.yon === 'ortakOdeme') kayit(...k(331), ...k(102), t);
-    else if (b.yon === 'gider') { const [bk, ba] = giderHesap(b.giderKategori, b.egitmenId); kayit(bk, ba, ...k(102), t); }
-  });
-  // 4) Kasa giderleri
-  (State.nakitGiderleri || []).filter(g => donemStr(g.tarih) === donem).forEach(g => {
-    const [bk, ba] = giderHesap(g.giderAd || g.kategori, g.egitmenId); kayit(bk, ba, ...k(100), Math.abs(Number(g.tutar) || 0));
-  });
-  // 5) Tahakkuklar: hoca payı ve gelir vergisi öngörüsü
-  kayit(...k(622), ...k(335), d.hocaPay || 0);
-  kayit(...k(691), ...k(370), d.gv || 0);
-  return [...H.values()].filter(x => Math.round(x.b) || Math.round(x.a)).sort((x, y) => String(x.kod).localeCompare(String(y.kod), 'tr', { numeric: true }));
-}
 SAYFALAR['rapor-karzarar-kontrol'] = function () {
   if (!(adminMi() || girisRol() === 'ortak')) { git('dashboard'); return; }
   _kzKayit = [];
@@ -7761,24 +7712,47 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
         <tr class="sonuc"><td>Kasaya net giren</td><td class="top">${cek - yat < 0 ? '−' : ''}${tam(Math.abs(cek - yat))}</td></tr>
       </tbody></table></div>`;
   })();
-  // 3d) Hesap kodlu mizan (en altta) — yalnız tüm şirketi görenlere
+  // 3d) Hesap kodlu bakiye mizanı (en altta) — seçili ayın SONU itibarıyla durum; yalnız tüm şirketi görenlere
   const hesapMizan = hep ? (() => {
-    const L = kzHesapMizani(d, kzDonem);
-    const TB = L.reduce((a, x) => a + x.b, 0), TA = L.reduce((a, x) => a + x.a, 0);
-    const grpAd = { 1: 'Dönen Varlıklar', 3: 'Kısa Vadeli Yabancı Kaynaklar', 6: 'Gelir Tablosu Hesapları', 7: 'Maliyet Hesapları' };
+    const aySonu = kzDonem + '-31';
+    const sonBak = (h) => { const x = (h || []).filter(r => String(r.tarih || '').slice(0, 10) <= aySonu); return x.length ? (Number(x[x.length - 1].bakiye) || 0) : 0; };
+    const sonra = (g) => String(g.tarih || '').slice(0, 10) > aySonu && giderAitDonem(g) <= kzDonem;   // sonradan ödenip bu aya yazılan
+    const kasaS = (State.nakitGiderleri || []).filter(sonra).reduce((a, g) => a + Math.abs(Number(g.tutar) || 0), 0);
+    const bankaS = (State.bankaHareketleri || []).filter(b => b.yon === 'gider' && !bankaNakitCekimMi(b) && sonra(b)).reduce((a, b) => a + Math.abs(Number(b.tutar) || 0), 0);
+    const kasa = sonBak(hesapHareketleri('nakit')) - kasaS, banka = sonBak(hesapHareketleri('banka')) - bankaS;
+    // Vergi: açılıştan sonraki aylarda ayrılan (öngörü / gerçek tahakkuk) − bu ay sonuna kadar ödenen
+    const acilisAy = State.ortaklar.map(o => acilisDevir(o)).filter(Boolean).map(a => a.ay).sort()[0] || '';
+    const aylar = hakedisAylar().filter(m => m > acilisAy && m <= kzDonem);
+    let kdvAy = 0, gvAy = 0;
+    aylar.forEach(m => { const r2 = egitmenKarlilik(m); r2.ortaklar.forEach(e => { kdvAy += (e.kdvOngoru || 0) - (e.kdvFark || 0); gvAy += (e.gvOngoru || 0) - (e.gvFark || 0); }); kdvAy += r2.hocaKdvTop || 0; });
+    const ilkAy = aylar[0] || kzDonem;
+    const vOde = [...(State.bankaHareketleri || []).filter(b => b.yon === 'gider' && vergiOdemeMi(b.giderKategori)).map(b => b),
+      ...(State.nakitGiderleri || []).filter(g => vergiOdemeMi(g.giderAd || g.kategori))]
+      .filter(x => { const t = String(x.tarih || '').slice(0, 10); return t <= aySonu && t >= ilkAy + '-01'; }).reduce((a, x) => a + Math.abs(Number(x.tutar) || 0), 0);
+    // Ortaklar ve hocalar — ödenecek kalan (devir dahil)
+    const dv = ortakDevir(kzDonem);
+    const hocaSat = State.ortaklar.filter(o => hocaMi(o)).map(o => {
+      const h = d.H.find(x => String(x.id) === String(o.id));
+      return { ad: o.ad, n: h ? (h.kalan || 0) + (h.devir || 0) : (dv[o.id] || 0) };
+    }).filter(x => Math.round(x.n));
+    const L = [];   // {kod, ad, n}  n>0 → borç bakiye, n<0 → alacak bakiye
+    L.push({ kod: '100', ad: 'Kasa', n: kasa });
+    L.push({ kod: '102', ad: 'Bankalar', n: banka });
+    d.O.forEach((o, i) => L.push({ kod: '331.' + String(i + 1).padStart(2, '0'), ad: 'Ortak · ' + o.ad, n: -(o.kalanTop || 0) }));
+    hocaSat.forEach((h, i) => L.push({ kod: '335.' + String(i + 1).padStart(2, '0'), ad: 'Hoca · ' + h.ad, n: -h.n }));
+    L.push({ kod: '360', ad: 'Ödenecek Vergi (KDV + gelir vergisi − ödenen)', n: -(kdvAy + gvAy - vOde) });
+    const top0 = L.reduce((a, x) => a + x.n, 0);
+    const fark = { kod: '—', ad: top0 < 0 ? 'Açık: borçlar kasa + bankadan fazla' : 'Fazla: kasa + banka borçlardan fazla', n: -top0 };
+    const grpAd = { 1: 'Dönen Varlıklar', 3: 'Kısa Vadeli Yabancı Kaynaklar' };
     let sonG = '';
-    const satirlar2 = L.map(x => {
-      const g = String(x.kod)[0], bak = x.b - x.a;
-      const gb = g !== sonG ? `<tr class="grp"><td>${grpAd[g] || ''}</td><td colspan="4"></td></tr>` : ''; sonG = g;
-      return `${gb}<tr><td><b>${kacar(x.kod)}</b><small class="kz-oz-alt">${kacar(x.ad)}</small></td><td>${x.b ? tam(x.b) : '—'}</td><td>${x.a ? tam(x.a) : '—'}</td><td>${bak > 0.5 ? tam(bak) : '—'}</td><td>${bak < -0.5 ? tam(-bak) : '—'}</td></tr>`;
-    }).join('');
-    const denk = Math.abs(TB - TA) < 1;
-    const TBb = L.reduce((a, x) => a + Math.max(0, x.b - x.a), 0), TAb = L.reduce((a, x) => a + Math.max(0, x.a - x.b), 0);
-    return `<div class="kz-kutu"><h3>📗 Mizan — Hesap Kodlu</h3><p class="kz-alt">${donemAdi(kzDonem)} hareketleri · Tekdüzen Hesap Planı · ${denk ? '✓ Borç = Alacak' : '⚠️ Borç ve alacak eşit değil'}</p>
-      <div class="kz-tsar"><table class="kz-tablo mono" style="min-width:${150 + 4 * 78}px"><colgroup><col style="width:150px"><col><col><col><col></colgroup>
-        <thead><tr><th>Hesap</th><th>Borç</th><th>Alacak</th><th>Borç bak.</th><th>Alacak bak.</th></tr></thead>
-        <tbody>${satirlar2}<tr class="sonuc"><td>Toplam</td><td>${tam(TB)}</td><td>${tam(TA)}</td><td>${tam(TBb)}</td><td class="top">${tam(TAb)}</td></tr></tbody></table></div>
-      <p class="kz-not">Yalnız bu ayın hareketleri (açılış bakiyeleri yok). Nakit tahsilat KDV'siz, banka tahsilatında KDV 391'e ayrılır. 770 alt hesapları gider başlıklarıdır. 622 = hocaların payı, 691/370 = gelir vergisi öngörüsü. Ortakların hakedişi kâr dağıtımı olduğu için ayrı kayıt yok; 331'de yalnız ortaklara yapılan ödemeler görünür. Tutarlar ₺ (kuruşsuz).</p></div>`;
+    const satir = (x, cls) => { const g = String(x.kod)[0]; const gb = (!cls && g !== sonG && grpAd[g]) ? `<tr class="grp"><td>${grpAd[g]}</td><td colspan="2"></td></tr>` : ''; if (!cls) sonG = g;
+      return `${gb}<tr class="${cls || ''}"><td><b>${kacar(x.kod)}</b> ${kacar(x.ad)}</td><td>${x.n > 0.5 ? tam(x.n) : '—'}</td><td>${x.n < -0.5 ? tam(-x.n) : '—'}</td></tr>`; };
+    const TB = [...L, fark].reduce((a, x) => a + Math.max(0, x.n), 0), TA = [...L, fark].reduce((a, x) => a + Math.max(0, -x.n), 0);
+    return `<div class="kz-kutu"><h3>📗 Mizan — Hesap Kodlu</h3><p class="kz-alt">${donemAdi(kzDonem)} sonu itibarıyla durum · Tekdüzen Hesap Planı</p>
+      <table class="kz-tablo kz-oz mono"><colgroup><col><col style="width:92px"><col style="width:92px"></colgroup>
+        <thead><tr><th>Hesap</th><th>Borç</th><th>Alacak</th></tr></thead>
+        <tbody>${L.map(x => satir(x)).join('')}${Math.abs(top0) >= 1 ? satir(fark, 'ara') : ''}<tr class="sonuc"><td>Toplam</td><td>${tam(TB)}</td><td class="top">${tam(TA)}</td></tr></tbody></table>
+      <p class="kz-not">100 / 102: ay sonundaki gerçek kasa ve banka${kasaS + bankaS ? ` (sonradan ödenip bu aya yazılan ${tam(kasaS + bankaS)} düşüldü)` : ''}. 331 / 335: ortaklara ve hocalara ödenecek kalan (devir dahil; eksi kalan borç tarafına geçer). 360: ${aylar.length ? donemAdi(aylar[0]) : donemAdi(kzDonem)} başından beri ayrılan vergi − ödenen vergi. Son satır, kasa + bankanın borçları karşılayıp karşılamadığını gösterir. Tutarlar ₺ (kuruşsuz).</p></div>`;
   })() : '';
   // 4) Para kontrolü — girilen her kayıt
   const sat = (ad, v, cls) => `<div class="kz-ps ${cls || ''}"><span>${ad}</span><b class="mono">${v}</b></div>`;
