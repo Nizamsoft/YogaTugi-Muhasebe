@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '377';
+const APP_SURUM = '378';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1971,14 +1971,15 @@ function ozDokumModal(donem, ortakId, tur) {
       let pay, not;
       if (kisi && aktifId.has(String(kisi.id))) {
         if (String(kisi.id) !== String(e.id) || ad(c.kat) === ad(KAR_DAGITIM_KAT)) continue;
-        pay = c.tutar; not = '<small class="dk-alt">yalnız sana</small>';
+        pay = c.tutar; not = 'yalnız sana';
       } else {
         if (ad(c.kat) === ad(KAR_DAGITIM_KAT) || ad(c.kat) === ad(HOCA_ODEME_KAT)) continue;
-        pay = c.tutar / n; not = `<small class="dk-alt">${TL(c.tutar)} ÷ ${n}</small>`;
+        pay = c.tutar / n; not = `${n} ortağa eşit`;
       }
       top += pay;
-      const baslikTx = kacar(c.kat || c.acik || '—') + (c.kat && c.acik && adNorm(c.acik) !== adNorm(c.kat) ? `<br><small class="dk-alt">${kacar(c.acik)}</small>` : '');
-      s2.push(sat([fmtTarih(c.tarih), '−' + TL(pay), baslikTx, `${c.yer}<br>${not}`]));
+      const baslikTx = kacar(c.kat || c.acik || '—') + (c.kat && c.acik && adNorm(c.acik) !== adNorm(c.kat) ? `<small class="dk-alt dk-kis">${kacar(c.acik)}</small>` : '');
+      const payTx = `<small class="dk-alt">Toplam ödenen</small><span class="dk-top">${TL(c.tutar)}</span><small class="dk-alt">Senin payın</small><b>−${TL(pay)}</b><small class="dk-alt">${not}</small>`;
+      s2.push(sat([fmtTarih(c.tarih), payTx, baslikTx, c.yer]));
     }
     govde = tablo(['Tarih', 'Payın', 'Gider', 'Nereden'], s2, ['Toplam', '−' + TL(top), '', '']);
   } else if (tur === 'hoca') {
