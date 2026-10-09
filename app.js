@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '391';
+const APP_SURUM = '392';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7725,10 +7725,16 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     const aylar = hakedisAylar().filter(m => m > acilisAy && m <= kzDonem);
     let kdvAy = 0, gvAy = 0;
     aylar.forEach(m => { const r2 = egitmenKarlilik(m); r2.ortaklar.forEach(e => { kdvAy += (e.kdvOngoru || 0) - (e.kdvFark || 0); gvAy += (e.gvOngoru || 0) - (e.gvFark || 0); }); kdvAy += r2.hocaKdvTop || 0; });
-    const ilkAy = aylar[0] || kzDonem;
-    const vOde = [...(State.bankaHareketleri || []).filter(b => b.yon === 'gider' && vergiOdemeMi(b.giderKategori)).map(b => b),
+    // Ödemenin ait olduğu vergi dönemi: açıklamadaki "Dönem :07/2026/07/2026" (son ay); yoksa ödeme ayından bir önceki ay.
+    // Açılıştan önceki dönemlere ait ödemeler (açılış devrinde zaten düşülmüş) buraya sayılmaz.
+    const vDonem = (x) => {
+      const m = String(x.aciklama || '').match(/D[öo]nem\s*:?\s*(\d{2})\/(\d{4})(?:\/(\d{2})\/(\d{4}))?/i);
+      if (m) return m[3] ? `${m[4]}-${m[3]}` : `${m[2]}-${m[1]}`;
+      return donemKaydir(donemStr(x.tarih), -1);
+    };
+    const vOde = [...(State.bankaHareketleri || []).filter(b => b.yon === 'gider' && vergiOdemeMi(b.giderKategori)),
       ...(State.nakitGiderleri || []).filter(g => vergiOdemeMi(g.giderAd || g.kategori))]
-      .filter(x => { const t = String(x.tarih || '').slice(0, 10); return t <= aySonu && t >= ilkAy + '-01'; }).reduce((a, x) => a + Math.abs(Number(x.tutar) || 0), 0);
+      .filter(x => String(x.tarih || '').slice(0, 10) <= aySonu && vDonem(x) > acilisAy && vDonem(x) <= kzDonem).reduce((a, x) => a + Math.abs(Number(x.tutar) || 0), 0);
     // Ortaklar ve hocalar — ödenecek kalan (devir dahil)
     const dv = ortakDevir(kzDonem);
     const hocaSat = State.ortaklar.filter(o => hocaMi(o)).map(o => {
@@ -7752,7 +7758,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
       <table class="kz-tablo kz-oz mono"><colgroup><col><col style="width:92px"><col style="width:92px"></colgroup>
         <thead><tr><th>Hesap</th><th>Borç</th><th>Alacak</th></tr></thead>
         <tbody>${L.map(x => satir(x)).join('')}${Math.abs(top0) >= 1 ? satir(fark, 'ara') : ''}<tr class="sonuc"><td>Toplam</td><td>${tam(TB)}</td><td class="top">${tam(TA)}</td></tr></tbody></table>
-      <p class="kz-not">100 / 102: ay sonundaki gerçek kasa ve banka${kasaS + bankaS ? ` (sonradan ödenip bu aya yazılan ${tam(kasaS + bankaS)} düşüldü)` : ''}. 331 / 335: ortaklara ve hocalara ödenecek kalan (devir dahil; eksi kalan borç tarafına geçer). 360: ${aylar.length ? donemAdi(aylar[0]) : donemAdi(kzDonem)} başından beri ayrılan vergi − ödenen vergi. Son satır, kasa + bankanın borçları karşılayıp karşılamadığını gösterir. Tutarlar ₺ (kuruşsuz).</p></div>`;
+      <p class="kz-not">100 / 102: ay sonundaki gerçek kasa ve banka${kasaS + bankaS ? ` (sonradan ödenip bu aya yazılan ${tam(kasaS + bankaS)} düşüldü)` : ''}. 331 / 335: ortaklara ve hocalara ödenecek kalan (devir dahil; eksi kalan borç tarafına geçer). 360: ${aylar.length ? donemAdi(aylar[0]) : donemAdi(kzDonem)} başından beri ayrılan vergi − bu dönemlere ait ödenen vergi (açılıştan önceki dönemlere ait ödemeler sayılmaz; dönem, banka açıklamasından okunur). Son satır, kasa + bankanın borçları karşılayıp karşılamadığını gösterir. Tutarlar ₺ (kuruşsuz).</p></div>`;
   })() : '';
   // 4) Para kontrolü — girilen her kayıt
   const sat = (ad, v, cls) => `<div class="kz-ps ${cls || ''}"><span>${ad}</span><b class="mono">${v}</b></div>`;
