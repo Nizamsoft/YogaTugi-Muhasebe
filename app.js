@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '387';
+const APP_SURUM = '388';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7539,7 +7539,7 @@ function kzKanal(d, donem) {
   const kanalMap = {}; d.O.forEach(o => { kanalMap[String(o.id)] = kanalHesap(o); });
   return kanalMap;
 }
-/* Önceki aylardan devir — kasa / banka bazında (ortakDevir ile aynı zincir; açılış devrinin hesabı belli değil) */
+/* Önceki aylardan devir — kasa / banka bazında (ortakDevir ile aynı zincir; açılış devri yarı kasa · yarı banka sayılır) */
 function kzKanalDevir(donem) {
   const dev = {}, acilis = {};
   State.ortaklar.forEach(o => { const a = acilisDevir(o); if (a && a.ay < donem) { acilis[String(o.id)] = a; dev[String(o.id)] = { k: 0, b: 0, a: a.tutar }; } });
@@ -7641,8 +7641,8 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     const k0 = kanalMap[String(sec.id)], dv = devirKanal[String(sec.id)] || { k: 0, b: 0, a: 0 };
     const D = [];
     if (Math.round(dv.k) || Math.round(dv.b)) D.push(['+ Önceki aylardan devir', 'Geçmiş aylarda kasada / bankada kalan payın', dv.k, dv.b, (dv.k + dv.b) < 0 ? 'r' : 'g']);
-    if (dv.a) D.push(['+ Açılış devri', 'Hesabı belli değil · bankada sayıldı', 0, dv.a, dv.a < 0 ? 'r' : 'g']);
-    const k = { ...k0, T: [...D, ...k0.T], sk: k0.sk + dv.k, sb: k0.sb + dv.b + dv.a };
+    if (dv.a) D.push(['+ Açılış devri', 'Yarısı kasada · yarısı bankada sayıldı', dv.a / 2, dv.a / 2, dv.a < 0 ? 'r' : 'g']);
+    const k = { ...k0, T: [...D, ...k0.T], sk: k0.sk + dv.k + dv.a / 2, sb: k0.sb + dv.b + dv.a / 2 };
     const sayi = (n) => { const v = Math.round(n || 0); return v ? (v < 0 ? '−' : '') + tam(Math.abs(v)) : '—'; };
     const sat4 = (x, cls2) => `<tr class="${cls2 || ''}"><td>${x[0]}${x[1] ? `<small class="kz-oz-alt">${kacar(x[1])}</small>` : ''}</td><td class="${cls2 ? '' : x[4]}">${sayi(x[2])}</td><td class="${cls2 ? '' : x[4]}">${sayi(x[3])}</td><td class="top ${cls2 ? '' : x[4]}">${sayi(x[2] + x[3])}</td></tr>`;
     const tutar = Math.abs(k.hk + k.hb - (sec.hakedisGuncel || 0)) <= 2;
@@ -7661,7 +7661,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     const aySonu = kzDonem + '-31';
     const sonBak = (h) => { const x = (h || []).filter(r => String(r.tarih || '').slice(0, 10) <= aySonu); return x.length ? (Number(x[x.length - 1].bakiye) || 0) : 0; };
     const kasaBak = sonBak(hesapHareketleri('nakit')), bankaBak = sonBak(hesapHareketleri('banka'));
-    let pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), pay = kanalMap[String(o.id)].sk + ((devirKanal[String(o.id)] || {}).k || 0), kasa = Math.max(0, Math.min(k, pay)); return { o, k, pay, kasa }; });
+    let pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), pay = kanalMap[String(o.id)].sk + ((devirKanal[String(o.id)] || {}).k || 0) + ((devirKanal[String(o.id)] || {}).a || 0) / 2, kasa = Math.max(0, Math.min(k, pay)); return { o, k, pay, kasa }; });
     const istenen = pl.reduce((a, x) => a + x.kasa, 0), kasaVar = Math.max(0, kasaBak);
     const oran = (hep && istenen > kasaVar && istenen) ? kasaVar / istenen : 1;   // kasada yeterli para yoksa orantılı küçült
     pl = pl.map(x => { const kasa = Math.round(x.kasa * oran); return { ...x, kasa, banka: x.k - kasa }; });
