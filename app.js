@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '386';
+const APP_SURUM = '387';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7657,7 +7657,9 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   })() : '';
   // 3b) Ödeme planı — her ortağın kalanı: bu ay kasadaki payı kadarı kasadan, gerisi bankadan (toplam kasadaki parayı geçmez)
   const odemeTablo = gorOrtak.length ? (() => {
-    const sonBak = (h) => (h && h.length) ? (Number(h[h.length - 1].bakiye) || 0) : 0;
+    // Seçili ayın SONUNDAKİ bakiye (sonraki ayların ödemeleri bu ayın kalanıyla karıştırılmasın)
+    const aySonu = kzDonem + '-31';
+    const sonBak = (h) => { const x = (h || []).filter(r => String(r.tarih || '').slice(0, 10) <= aySonu); return x.length ? (Number(x[x.length - 1].bakiye) || 0) : 0; };
     const kasaBak = sonBak(hesapHareketleri('nakit')), bankaBak = sonBak(hesapHareketleri('banka'));
     let pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), pay = kanalMap[String(o.id)].sk + ((devirKanal[String(o.id)] || {}).k || 0), kasa = Math.max(0, Math.min(k, pay)); return { o, k, pay, kasa }; });
     const istenen = pl.reduce((a, x) => a + x.kasa, 0), kasaVar = Math.max(0, kasaBak);
@@ -7666,7 +7668,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     const T = (f) => pl.reduce((a, x) => a + f(x), 0);
     const kasaVer = T(x => x.kasa), bankaVer = T(x => x.banka);
     const kutu = (ik2, ad, bak, ver) => { const kal = bak - ver; return `<div class="kz-bak"><span>${ik2} ${ad}</span><b class="mono">${TL(bak)}</b><small>Ödemeden sonra <em class="${kal < 0 ? 'r' : ''}">${kal < 0 ? '−' : ''}${TL(Math.abs(kal))}</em></small></div>`; };
-    const bakiyeler = `<div class="kz-bak2">${kutu('💵', 'Kasada şu an', kasaBak, kasaVer)}${kutu('🏦', 'Bankada şu an', bankaBak, bankaVer)}</div>`;
+    const bakiyeler = `<div class="kz-bak2">${kutu('💵', 'Ay sonu kasa', kasaBak, kasaVer)}${kutu('🏦', 'Ay sonu banka', bankaBak, bankaVer)}</div>`;
     const sat3 = (x) => `<tr><td>${kacar(String(x.o.ad).split(' ')[0])}${x.o.kalanTop < 0 ? '<small class="kz-oz-alt">borçlu — ödeme yok</small>' : ''}</td><td>${x.k ? tam(x.k) : '—'}</td>${hucre(x.kasa, '')}${hucre(x.banka, '')}</tr>`;
     const toplamPara = Math.max(0, kasaBak) + bankaBak, eksik = T(x => x.k) - toplamPara;
     return `<div class="kz-kutu"><h3>💸 Ödeme Planı</h3><p class="kz-alt">Ödenecek kalan kime, nereden verilir · her ortak kasadaki payı kadarını kasadan, gerisini bankadan alır</p>
