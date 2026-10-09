@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '382';
+const APP_SURUM = '383';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7579,22 +7579,47 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     <div class="kz-tsar"><table class="kz-tablo mono" style="min-width:${118 + (kol.length + 1) * 70}px"><colgroup><col class="c1">${kol.map(() => '<col>').join('')}<col></colgroup>
       <thead><tr><th>Hesap</th>${kol.map(k => `<th>${kacar(k.ad)}</th>`).join('')}<th>Toplam</th></tr></thead><tbody>${mizanGovde}</tbody></table></div>
     <p class="kz-not"><span class="kz-rz es">EŞİT</span> tüm ortaklara eşit bölünür · <span class="kz-rz oz2">KİŞİYE ÖZEL</span> yalnız seçilen ortaktan düşer. Tutarlar ₺ (kuruşsuz).</p></div>`;
-  // 3a) Ödeme planı — her ortağın kalanı: kendi topladığı nakit kadarı kasadan, gerisi bankadan
+  // 3a) Ödeme planı — her ortağın kalanı: kasadaki payı kadarı kasadan, gerisi bankadan.
+  //     Kasadaki payı = bu ay topladığı nakit − kasadan ödenen giderdeki payı − kasadan aldığı Kâr Dağıtımı
+  //     − bankaya yatırılan nakitteki payı + bankadan çekilen nakitteki payı (toplam, kasadaki gerçek parayı geçmez)
   const odemeTablo = gorOrtak.length ? (() => {
-    const pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), kasa = Math.min(k, Math.max(0, o.nakit || 0)); return { o, k, kasa, banka: k - kasa }; });
-    const T = (f) => pl.reduce((a, x) => a + f(x), 0);
     const sonBak = (h) => (h && h.length) ? (Number(h[h.length - 1].bakiye) || 0) : 0;
     const kasaBak = sonBak(hesapHareketleri('nakit')), bankaBak = sonBak(hesapHareketleri('banka'));
+    const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
+    const isKat = (kat, ad) => !!kat && adNorm(kat) === adNorm(ad), ortakIds = new Set(d.O.map(o => String(o.id)));
+    const nO = d.O.length || 1, nakitTop = d.O.reduce((a, o) => a + Math.max(0, o.nakit || 0), 0);
+    const dus = {}; d.O.forEach(o => { dus[String(o.id)] = 0; });
+    const herkese = (t) => d.O.forEach(o => { dus[String(o.id)] += t / nO; });
+    (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === kzDonem).forEach(g => {   // motorla aynı yönlendirme
+      const t = Math.abs(Number(g.tutar) || 0), kat = g.giderAd || g.kategori, kisi = kisiBul(g.egitmenId);
+      if (kisi && hocaMi(kisi)) return;                                          // hocanın kendi nakdinden
+      if (kisi && ortakIds.has(String(kisi.id))) { dus[String(kisi.id)] += t; return; }   // özel gider / Kâr Dağıtımı
+      if (isKat(kat, KAR_DAGITIM_KAT) || isKat(kat, HOCA_ODEME_KAT)) return;
+      herkese(t);                                                                // genel gider (vergi ödemesi dahil)
+    });
+    (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === kzDonem).forEach(b => {
+      const t = Math.abs(Number(b.tutar) || 0);
+      if (bankaNakitYatirmaMi(b)) d.O.forEach(o => { dus[String(o.id)] += nakitTop ? t * Math.max(0, o.nakit || 0) / nakitTop : t / nO; });
+      else if (bankaNakitCekimMi(b)) herkese(-t);
+    });
+    let pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), pay = (o.nakit || 0) - (dus[String(o.id)] || 0), kasa = Math.max(0, Math.min(k, pay)); return { o, k, pay, kasa }; });
+    const istenen = pl.reduce((a, x) => a + x.kasa, 0), kasaVar = Math.max(0, kasaBak);
+    const oran = (hep && istenen > kasaVar && istenen) ? kasaVar / istenen : 1;   // kasada yeterli para yoksa orantılı küçült
+    pl = pl.map(x => { const kasa = Math.round(x.kasa * oran); return { ...x, kasa, banka: x.k - kasa }; });
+    const T = (f) => pl.reduce((a, x) => a + f(x), 0);
     const kasaVer = T(x => x.kasa), bankaVer = T(x => x.banka);
     const kutu = (ik2, ad, bak, ver) => { const kal = bak - ver; return `<div class="kz-bak"><span>${ik2} ${ad}</span><b class="mono">${TL(bak)}</b><small>Ödemeden sonra <em class="${kal < 0 ? 'r' : ''}">${kal < 0 ? '−' : ''}${TL(Math.abs(kal))}</em></small></div>`; };
     const bakiyeler = `<div class="kz-bak2">${kutu('💵', 'Kasada şu an', kasaBak, kasaVer)}${kutu('🏦', 'Bankada şu an', bankaBak, bankaVer)}</div>`;
-    const sat3 = (x) => `<tr><td>${kacar(String(x.o.ad).split(' ')[0])}${x.o.kalanTop < 0 ? '<small class="kz-oz-alt">borçlu — ödeme yok</small>' : ''}</td><td>${x.k ? tam(x.k) : '—'}</td>${hucre(x.kasa, '')}${hucre(x.banka, '')}</tr>`;
-    return `<div class="kz-kutu"><h3>💸 Ödeme Planı</h3><p class="kz-alt">Ödenecek kalan kime, nereden verilir · her ortak kendi topladığı nakit kadarını kasadan, gerisini bankadan alır</p>
+    const dusTx = (x) => { const dd = dus[String(x.o.id)] || 0; return `<small class="kz-oz-alt">nakit ${tam(x.o.nakit || 0)}${dd ? ` ${dd < 0 ? '+' : '−'} ${tam(Math.abs(dd))}` : ''}</small>`; };
+    const sat3 = (x) => `<tr><td>${kacar(String(x.o.ad).split(' ')[0])}${x.o.kalanTop < 0 ? '<small class="kz-oz-alt">borçlu — ödeme yok</small>' : ''}</td><td>${x.k ? tam(x.k) : '—'}</td><td>${x.kasa ? tam(x.kasa) : '—'}${dusTx(x)}</td>${hucre(x.banka, '')}</tr>`;
+    const toplamPara = Math.max(0, kasaBak) + bankaBak, eksik = T(x => x.k) - toplamPara;
+    return `<div class="kz-kutu"><h3>💸 Ödeme Planı</h3><p class="kz-alt">Ödenecek kalan kime, nereden verilir · her ortak kasadaki payı kadarını kasadan, gerisini bankadan alır</p>
       ${bakiyeler}
+      ${hep && eksik > 1 ? `<div class="kz-hr uy"><span class="i">⚠️</span><div><b>Para ${TL(eksik)} eksik</b><br>Kasa + banka (${TL(toplamPara)}) ödenecek kalanların toplamından az. Kasaya başlangıç (devir) parası girilmediyse kasa olduğundan az görünür.</div></div>` : ''}
       <table class="kz-tablo kz-oz mono"><colgroup><col><col><col><col></colgroup>
         <thead><tr><th>Ortak</th><th>Kalan</th><th>Kasadan</th><th>Bankadan</th></tr></thead>
         <tbody>${pl.map(sat3).join('')}${pl.length > 1 ? `<tr class="sonuc"><td>Toplam</td><td>${tam(T(x => x.k))}</td><td>${tam(T(x => x.kasa))}</td><td class="top">${tam(T(x => x.banka))}</td></tr>` : ''}</tbody></table>
-      <p class="kz-not">Kasadan verilecek tutar, ortağın bu ay topladığı nakdi geçmez. Tutarlar ₺ (kuruşsuz).</p></div>`;
+      <p class="kz-not">Kasadan sütunundaki küçük yazı: ortağın bu ay topladığı nakit − kasadan ödenen giderdeki payı (eşit / kişiye özel), kasadan aldığı ödeme ve bankaya yatırılan nakitteki payı. ${oran < 1 ? 'Kasada yeterli para olmadığı için kasadan verilecekler orantılı küçültüldü. ' : ''}Tutarlar ₺ (kuruşsuz).</p></div>`;
   })() : '';
   // 3b) Hocalar — ayrı sade tablo (tahsilat → hoca payı / stüdyo payı → kalan)
   const hocaTablo = (hep && d.H.length) ? (() => {
