@@ -757,9 +757,9 @@ button.oz-st.oz-tik .oz-ik{transition:transform .12s;box-shadow:0 0 0 3px rgba(1
 button.oz-st.oz-tik:hover .oz-ok{color:var(--neon);opacity:1}
 .dk-kap{overflow-x:auto;margin:0 -4px;-webkit-overflow-scrolling:touch}
 .dk-tab{width:100%;border-collapse:collapse;font-size:12px}
-.dk-tab th{text-align:center;font-size:10.5px;font-weight:700;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.03em;padding:6px 6px;border-bottom:1px solid var(--kenar);white-space:nowrap}
-.dk-tab td{padding:8px 6px;border-bottom:1px solid var(--kenar);vertical-align:middle;text-align:center;color:var(--metin);line-height:1.35}
-.dk-tab td:first-child{white-space:nowrap;color:var(--metin-soluk)}
+.dk-tab th{text-align:center;font-size:10.5px;font-weight:700;color:var(--metin-soluk);text-transform:uppercase;letter-spacing:.03em;padding:6px 4px;border-bottom:1px solid var(--kenar)}
+.dk-tab td{padding:8px 4px;border-bottom:1px solid var(--kenar);vertical-align:middle;text-align:center;color:var(--metin);line-height:1.35}
+.dk-tab td:first-child{color:var(--metin-soluk);word-break:break-word}
 .dk-tab .sag{text-align:center;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
 .dk-tab tfoot td{font-weight:800;border-bottom:0;padding-top:10px;color:var(--metin)}
 .dk-tab tfoot td.sag{color:var(--neon)}

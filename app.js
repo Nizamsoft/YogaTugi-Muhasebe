@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '378';
+const APP_SURUM = '379';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -1937,10 +1937,11 @@ function ozDokumModal(donem, ortakId, tur) {
     const c = egitmenCoz(t.egitmenAd);
     return (c.rol === 'ortak' && String(c.ortakId) === String(e.id)) ? { t, oran: 1, ortak: false } : null;
   }).filter(Boolean).sort((a, b) => sirala(a.t, b.t));
-  const tablo = (bas, satirlar, alt) => satirlar.length
-    ? `<div class="dk-kap"><table class="dk-tab"><thead><tr>${bas.map((h, i) => `<th${i === 1 ? ' class="sag"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${satirlar.join('')}</tbody>${alt ? `<tfoot><tr>${alt.map((h, i) => `<td${i === 1 ? ' class="sag"' : ''}>${h}</td>`).join('')}</tr></tfoot>` : ''}</table></div>`
+  // ki: vurgulu (tutar) sütunun sırası — varsayılan 2. sütun
+  const tablo = (bas, satirlar, alt, ki = 1) => satirlar.length
+    ? `<div class="dk-kap"><table class="dk-tab"><thead><tr>${bas.map((h, i) => `<th${i === ki ? ' class="sag"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${satirlar.join('')}</tbody>${alt ? `<tfoot><tr>${alt.map((h, i) => `<td${i === ki ? ' class="sag"' : ''}>${h}</td>`).join('')}</tr></tfoot>` : ''}</table></div>`
     : `<div class="dk-bos">Bu ay kayıt yok.</div>`;
-  const sat = (h) => `<tr>${h.map((x, i) => `<td${i === 1 ? ' class="sag mono"' : ''}>${x}</td>`).join('')}</tr>`;
+  const sat = (h, ki = 1) => `<tr>${h.map((x, i) => `<td${i === ki ? ' class="sag mono"' : ''}>${x}</td>`).join('')}</tr>`;
   let baslik = '', govde = '';
   if (tur === 'tahsilat') {
     baslik = 'Tahsilatlar';
@@ -1984,8 +1985,8 @@ function ozDokumModal(donem, ortakId, tur) {
     govde = tablo(['Tarih', 'Payın', 'Gider', 'Nereden'], s2, ['Toplam', '−' + TL(top), '', '']);
   } else if (tur === 'hoca') {
     baslik = 'Hoca Kârı';
-    const s2 = (r.hocalar || []).filter(h => h.studyoKar).map(h => sat([kacar(h.ad), '+' + TL(h.studyoKar / n), `Tahsilat ${TL(h.brut)}`, `Stüdyo %${100 - Math.round(h.oran || 0)} = ${TL(h.studyoKar)}`]));
-    govde = tablo(['Hoca', 'Payın', 'Tahsilat', 'Stüdyoya kalan'], s2, ['Toplam', '+' + TL(e.hocaKari || 0), '', `${n} ortağa eşit`]);
+    const s2 = (r.hocalar || []).filter(h => h.studyoKar).map(h => sat([kacar(h.ad), TL(h.brut), `${TL(h.studyoKar)}<small class="dk-alt">%${100 - Math.round(h.oran || 0)}</small>`, '+' + TL(h.studyoKar / n)], 3));
+    govde = tablo(['Hoca', 'Tahsilat', 'Stüdyoya', 'Payın'], s2, ['Toplam', '', `<small class="dk-alt">${n} ortağa eşit</small>`, '+' + TL(e.hocaKari || 0)], 3);
   } else if (tur === 'vergi') {
     baslik = 'Tahmini Vergi';
     const kdvOn = b => (Number(b) || 0) * r.kdvOran / (100 + r.kdvOran);
