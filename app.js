@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '383';
+const APP_SURUM = '384';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7414,6 +7414,7 @@ let kzDonem = null;
 let kzGeri = 'ayar-tanimlama';   // geri düğmesi nereye dönsün (Ortaklar › Detaylı'dan gelindiyse Ortaklar)
 /* Uyarıyı oluşturan kayıtlar — tarih · kaynak · açıklama · tutar; dokununca kayıt düzenlenmek üzere açılır */
 let _kzKayit = [];
+let kzKanalOrtak = null;   // Paranın Dağılımı tablosunda seçili ortak
 function kzKayitListesi(kayitlar) {
   if (!kayitlar || !kayitlar.length) return '';
   const sirali = kayitlar.slice().sort((a, b) => String((a.ref || {}).tarih || '').localeCompare(String((b.ref || {}).tarih || '')));
@@ -7497,7 +7498,7 @@ function kzHesap(donem) {
   const kalemler = [...katMap.entries()].map(([ad, tutar]) => ({ ad, tutar })).sort((a, b) => b.tutar - a.tutar);
   const ozMap = new Map(); ozelKalem.forEach(c => { const m = ozMap.get(c.kat) || { ad: c.kat, tutar: 0, kisi: {} }; m.tutar += c.tutar; m.kisi[c.ortakId] = (m.kisi[c.ortakId] || 0) + c.tutar; ozMap.set(c.kat, m); });
   const ozelKalemler = [...ozMap.values()].sort((a, b) => b.tutar - a.tutar);
-  return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, cekimTop, ozelKalemler, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan) + hocaDevir, hocaDevir, devirTop, hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, vergiOk, hvOk, kalemler, uyari, bilgi,
+  return { r, O, H, M, brut, kom, kdv, gv, genel, ozelTop, cekimTop, ozelKalemler, genelKalem, ozelKalem, kdKalem, hocaPay, hocaOdenen: top(H, h => h.odenen), hocaKalan: top(H, h => h.kalan) + hocaDevir, hocaDevir, devirTop, hakedis, mahsup, guncel, odenen, kalan, yuvarlama, girisTop, gercekTop, bekTop, cikisTop, kdOk, hoOk, vergiOk, hvOk, kalemler, uyari, bilgi,
     nakit: top(hepsi, x => x.nakit), havale: top(hepsi, x => x.havale), kart: top(hepsi, x => x.kart), multinet: top(hepsi, x => x.multinet || 0) };
 }
 SAYFALAR['rapor-karzarar-kontrol'] = function () {
@@ -7579,30 +7580,58 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     <div class="kz-tsar"><table class="kz-tablo mono" style="min-width:${118 + (kol.length + 1) * 70}px"><colgroup><col class="c1">${kol.map(() => '<col>').join('')}<col></colgroup>
       <thead><tr><th>Hesap</th>${kol.map(k => `<th>${kacar(k.ad)}</th>`).join('')}<th>Toplam</th></tr></thead><tbody>${mizanGovde}</tbody></table></div>
     <p class="kz-not"><span class="kz-rz es">EŞİT</span> tüm ortaklara eşit bölünür · <span class="kz-rz oz2">KİŞİYE ÖZEL</span> yalnız seçilen ortaktan düşer. Tutarlar ₺ (kuruşsuz).</p></div>`;
-  // 3a) Ödeme planı — her ortağın kalanı: kasadaki payı kadarı kasadan, gerisi bankadan.
-  //     Kasadaki payı = bu ay topladığı nakit − kasadan ödenen giderdeki payı − kasadan aldığı Kâr Dağıtımı
-  //     − bankaya yatırılan nakitteki payı + bankadan çekilen nakitteki payı (toplam, kasadaki gerçek parayı geçmez)
+  // 3a) Paranın dağılımı — her ortağın bu ayki hakedişi kasaya ve bankaya göre: giren para → kesintiler → pay
+  const nO = d.O.length || 1;
+  const kaynakTop = (arr, kay, f) => arr.filter(c => c.kaynak === kay && (!f || f(c))).reduce((a, c) => a + c.tutar, 0);
+  const gK = kaynakTop(d.genelKalem, 'Kasa'), gB = kaynakTop(d.genelKalem, 'Banka');
+  const hocaKasaOran = (() => { const t = d.H.reduce((a, h) => a + (h.studyoKar || 0), 0); return t ? d.H.reduce((a, h) => a + (h.studyoKar || 0) * (h.brut ? (h.nakit || 0) / h.brut : 0), 0) / t : 0; })();
+  const persKasaOran = (() => { const t = d.M.reduce((a, m) => a + (m.net || 0), 0); return t ? d.M.reduce((a, m) => a + (m.net || 0) * (m.brut ? (m.nakit || 0) / m.brut : 0), 0) / t : 0; })();
+  const bhAy = (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === kzDonem);
+  const yatTop = bhAy.filter(bankaNakitYatirmaMi).reduce((a, b) => a + Math.abs(Number(b.tutar) || 0), 0);
+  const cekTop = bhAy.filter(bankaNakitCekimMi).reduce((a, b) => a + Math.abs(Number(b.tutar) || 0), 0);
+  const nakitTopO = d.O.reduce((a, o) => a + Math.max(0, o.nakit || 0), 0);
+  const kanalHesap = (o) => {
+    const id = String(o.id), S = [];   // [ad, alt, kasa, banka, cls]
+    S.push(['Giren para', 'Nakit → kasa · havale + kart → banka', o.nakit || 0, (o.havale || 0) + (o.kart || 0), 'g']);
+    if (o.komisyon) S.push(['− Kart komisyonu', 'Banka keser', 0, -o.komisyon, 'r']);
+    if (o.kdvOngoru) S.push(['− KDV öngörüsü', 'Bankaya girenden', 0, -o.kdvOngoru, 'r']);
+    if (o.gvOngoru) S.push(['− Gelir vergisi öngörüsü', 'Bankaya girenden', 0, -o.gvOngoru, 'r']);
+    if (gK || gB) S.push(['− Genel giderler', `Ödendiği yerden · ${nO} ortağa eşit`, -gK / nO, -gB / nO, 'r']);
+    const oK = kaynakTop(d.ozelKalem, 'Kasa', c => c.ortakId === id), oB = kaynakTop(d.ozelKalem, 'Banka', c => c.ortakId === id);
+    if (oK || oB) S.push(['− Sana özel gider', 'Yalnız senden', -oK, -oB, 'r']);
+    if (o.hocaKari) S.push(['+ Hoca kârı payı', 'Hocanın tahsil ettiği yere göre', o.hocaKari * hocaKasaOran, o.hocaKari * (1 - hocaKasaOran), 'g']);
+    if (o.havuzPayi) S.push(['+ Personel payı', 'Maaşlı eğitmen neti', o.havuzPayi * persKasaOran, o.havuzPayi * (1 - persKasaOran), 'g']);
+    if (Math.abs(o.mahsup || 0) >= 1) S.push(['± Vergi düzeltmesi', 'Gerçek tahakkuk farkı', 0, o.mahsup, o.mahsup < 0 ? 'r' : 'g']);
+    const hk = S.reduce((a, x) => a + x[2], 0), hb = S.reduce((a, x) => a + x[3], 0);
+    const T = [];
+    const yat = nakitTopO ? yatTop * Math.max(0, o.nakit || 0) / nakitTopO : yatTop / nO, cek = cekTop / nO;
+    if (yat || cek) T.push(['⇄ Banka ↔ kasa aktarımı', `${yat ? 'Yatırılan nakitteki payın' : ''}${yat && cek ? ' · ' : ''}${cek ? 'çekilen nakitteki payın' : ''}`, cek - yat, yat - cek, '']);
+    const vK = kaynakTop(d.kdKalem, 'Kasa', c => c.ortakId === id), vB = kaynakTop(d.kdKalem, 'Banka', c => c.ortakId === id);
+    if (vK || vB) T.push(['− Bu ay sana verilen', 'Kâr Dağıtımı', -vK, -vB, 'r']);
+    const sk = hk + T.reduce((a, x) => a + x[2], 0), sb = hb + T.reduce((a, x) => a + x[3], 0);
+    return { S, T, hk, hb, sk, sb };
+  };
+  const kanalMap = {}; d.O.forEach(o => { kanalMap[String(o.id)] = kanalHesap(o); });
+  const kanalTablo = gorOrtak.length ? (() => {
+    let sec = gorOrtak.find(o => String(o.id) === String(kzKanalOrtak)) || gorOrtak.find(o => String(o.id) === ben) || gorOrtak[0];
+    const k = kanalMap[String(sec.id)];
+    const sayi = (n) => { const v = Math.round(n || 0); return v ? (v < 0 ? '−' : '') + tam(Math.abs(v)) : '—'; };
+    const sat4 = (x, cls2) => `<tr class="${cls2 || ''}"><td>${x[0]}${x[1] ? `<small class="kz-oz-alt">${kacar(x[1])}</small>` : ''}</td><td class="${cls2 ? '' : x[4]}">${sayi(x[2])}</td><td class="${cls2 ? '' : x[4]}">${sayi(x[3])}</td><td class="top ${cls2 ? '' : x[4]}">${sayi(x[2] + x[3])}</td></tr>`;
+    const tutar = Math.abs(k.hk + k.hb - (sec.hakedisGuncel || 0)) <= 2;
+    const cipler = gorOrtak.length > 1 ? `<div class="kz-cip">${gorOrtak.map(o => `<button type="button" data-kzo="${kacar(String(o.id))}" class="${String(o.id) === String(sec.id) ? 'sec' : ''}">${kacar(String(o.ad).split(' ')[0])}</button>`).join('')}</div>` : '';
+    return `<div class="kz-kutu"><h3>🧮 Paranın Dağılımı</h3><p class="kz-alt">Kasaya ve bankaya giren para ortağa nasıl kalıyor · ${kacar(sec.ad)}</p>${cipler}
+      <table class="kz-tablo kz-oz mono"><colgroup><col><col style="width:64px"><col style="width:66px"><col style="width:70px"></colgroup>
+        <thead><tr><th>Kalem</th><th>💵 Kasa</th><th>🏦 Banka</th><th>Toplam</th></tr></thead>
+        <tbody>${k.S.map(x => sat4(x)).join('')}
+          ${sat4(['= Bu ayki hakediş', tutar ? '✓ Mizanla aynı' : `Mizan: ${tam(sec.hakedisGuncel)}`, k.hk, k.hb, ''], k.T.length ? 'ara' : 'sonuc')}
+          ${k.T.length ? k.T.map(x => sat4(x)).join('') + sat4(['= Bu ay kasada / bankada payın', 'Ödeme planında kasadan verilebilecek tutar', k.sk, k.sb, ''], 'sonuc') : ''}</tbody></table>
+      <p class="kz-not">Vergi ve komisyon yalnız bankaya giren paradan kesilir. Giderler hangi hesaptan ödendiyse oradan düşer. Önceki aylardan devir bu tabloda yok, Ödeme Planı'nda kalana eklenir.</p></div>`;
+  })() : '';
+  // 3b) Ödeme planı — her ortağın kalanı: bu ay kasadaki payı kadarı kasadan, gerisi bankadan (toplam kasadaki parayı geçmez)
   const odemeTablo = gorOrtak.length ? (() => {
     const sonBak = (h) => (h && h.length) ? (Number(h[h.length - 1].bakiye) || 0) : 0;
     const kasaBak = sonBak(hesapHareketleri('nakit')), bankaBak = sonBak(hesapHareketleri('banka'));
-    const kisiBul = (id) => (id != null && id !== '') ? State.ortaklar.find(o => String(o.id) === String(id)) : null;
-    const isKat = (kat, ad) => !!kat && adNorm(kat) === adNorm(ad), ortakIds = new Set(d.O.map(o => String(o.id)));
-    const nO = d.O.length || 1, nakitTop = d.O.reduce((a, o) => a + Math.max(0, o.nakit || 0), 0);
-    const dus = {}; d.O.forEach(o => { dus[String(o.id)] = 0; });
-    const herkese = (t) => d.O.forEach(o => { dus[String(o.id)] += t / nO; });
-    (State.nakitGiderleri || []).filter(g => giderAitDonem(g) === kzDonem).forEach(g => {   // motorla aynı yönlendirme
-      const t = Math.abs(Number(g.tutar) || 0), kat = g.giderAd || g.kategori, kisi = kisiBul(g.egitmenId);
-      if (kisi && hocaMi(kisi)) return;                                          // hocanın kendi nakdinden
-      if (kisi && ortakIds.has(String(kisi.id))) { dus[String(kisi.id)] += t; return; }   // özel gider / Kâr Dağıtımı
-      if (isKat(kat, KAR_DAGITIM_KAT) || isKat(kat, HOCA_ODEME_KAT)) return;
-      herkese(t);                                                                // genel gider (vergi ödemesi dahil)
-    });
-    (State.bankaHareketleri || []).filter(b => donemStr(b.tarih) === kzDonem).forEach(b => {
-      const t = Math.abs(Number(b.tutar) || 0);
-      if (bankaNakitYatirmaMi(b)) d.O.forEach(o => { dus[String(o.id)] += nakitTop ? t * Math.max(0, o.nakit || 0) / nakitTop : t / nO; });
-      else if (bankaNakitCekimMi(b)) herkese(-t);
-    });
-    let pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), pay = (o.nakit || 0) - (dus[String(o.id)] || 0), kasa = Math.max(0, Math.min(k, pay)); return { o, k, pay, kasa }; });
+    let pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), pay = kanalMap[String(o.id)].sk, kasa = Math.max(0, Math.min(k, pay)); return { o, k, pay, kasa }; });
     const istenen = pl.reduce((a, x) => a + x.kasa, 0), kasaVar = Math.max(0, kasaBak);
     const oran = (hep && istenen > kasaVar && istenen) ? kasaVar / istenen : 1;   // kasada yeterli para yoksa orantılı küçült
     pl = pl.map(x => { const kasa = Math.round(x.kasa * oran); return { ...x, kasa, banka: x.k - kasa }; });
@@ -7610,8 +7639,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
     const kasaVer = T(x => x.kasa), bankaVer = T(x => x.banka);
     const kutu = (ik2, ad, bak, ver) => { const kal = bak - ver; return `<div class="kz-bak"><span>${ik2} ${ad}</span><b class="mono">${TL(bak)}</b><small>Ödemeden sonra <em class="${kal < 0 ? 'r' : ''}">${kal < 0 ? '−' : ''}${TL(Math.abs(kal))}</em></small></div>`; };
     const bakiyeler = `<div class="kz-bak2">${kutu('💵', 'Kasada şu an', kasaBak, kasaVer)}${kutu('🏦', 'Bankada şu an', bankaBak, bankaVer)}</div>`;
-    const dusTx = (x) => { const dd = dus[String(x.o.id)] || 0; return `<small class="kz-oz-alt">nakit ${tam(x.o.nakit || 0)}${dd ? ` ${dd < 0 ? '+' : '−'} ${tam(Math.abs(dd))}` : ''}</small>`; };
-    const sat3 = (x) => `<tr><td>${kacar(String(x.o.ad).split(' ')[0])}${x.o.kalanTop < 0 ? '<small class="kz-oz-alt">borçlu — ödeme yok</small>' : ''}</td><td>${x.k ? tam(x.k) : '—'}</td><td>${x.kasa ? tam(x.kasa) : '—'}${dusTx(x)}</td>${hucre(x.banka, '')}</tr>`;
+    const sat3 = (x) => `<tr><td>${kacar(String(x.o.ad).split(' ')[0])}${x.o.kalanTop < 0 ? '<small class="kz-oz-alt">borçlu — ödeme yok</small>' : ''}</td><td>${x.k ? tam(x.k) : '—'}</td>${hucre(x.kasa, '')}${hucre(x.banka, '')}</tr>`;
     const toplamPara = Math.max(0, kasaBak) + bankaBak, eksik = T(x => x.k) - toplamPara;
     return `<div class="kz-kutu"><h3>💸 Ödeme Planı</h3><p class="kz-alt">Ödenecek kalan kime, nereden verilir · her ortak kasadaki payı kadarını kasadan, gerisini bankadan alır</p>
       ${bakiyeler}
@@ -7619,7 +7647,7 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
       <table class="kz-tablo kz-oz mono"><colgroup><col><col><col><col></colgroup>
         <thead><tr><th>Ortak</th><th>Kalan</th><th>Kasadan</th><th>Bankadan</th></tr></thead>
         <tbody>${pl.map(sat3).join('')}${pl.length > 1 ? `<tr class="sonuc"><td>Toplam</td><td>${tam(T(x => x.k))}</td><td>${tam(T(x => x.kasa))}</td><td class="top">${tam(T(x => x.banka))}</td></tr>` : ''}</tbody></table>
-      <p class="kz-not">Kasadan sütunundaki küçük yazı: ortağın bu ay topladığı nakit − kasadan ödenen giderdeki payı (eşit / kişiye özel), kasadan aldığı ödeme ve bankaya yatırılan nakitteki payı. ${oran < 1 ? 'Kasada yeterli para olmadığı için kasadan verilecekler orantılı küçültüldü. ' : ''}Tutarlar ₺ (kuruşsuz).</p></div>`;
+      <p class="kz-not">Kasadan verilecek = Paranın Dağılımı tablosundaki "bu ay kasada payın" (kalanı geçmez). ${oran < 1 ? 'Kasada yeterli para olmadığı için kasadan verilecekler orantılı küçültüldü. ' : ''}Tutarlar ₺ (kuruşsuz).</p></div>`;
   })() : '';
   // 3b) Hocalar — ayrı sade tablo (tahsilat → hoca payı / stüdyo payı → kalan)
   const hocaTablo = (hep && d.H.length) ? (() => {
@@ -7671,9 +7699,10 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   </div>`;
   ic().innerHTML = `<div class="kz-sayfa">
     <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="kzGeri">‹ ${kzGeri === 'karlilik' ? 'Ortaklar' : 'Ayarlar'}</button>${ayNavHTML(kzDonem)}<button type="button" class="tnm-geri kz-pdf" id="kzPdf">📄 PDF</button></div>
-    ${rozet}${yolculuk}${mizan}${odemeTablo}${hocaTablo}${aktarimTablo}${kontrol}</div>`;
+    ${rozet}${yolculuk}${mizan}${kanalTablo}${odemeTablo}${hocaTablo}${aktarimTablo}${kontrol}</div>`;
   $('#kzPdf').onclick = () => sayfaPdf(`Kar-Zarar-Kontrolu-${kzDonem}`, $('#kzPdf'), `Kâr-Zarar Kontrolü · ${donemAdi(kzDonem)}`);
   $('#kzGeri').onclick = () => { const g = kzGeri; kzGeri = 'ayar-tanimlama'; if (g === 'karlilik') karDonem = kzDonem; git(g); };
+  $$('#icerik [data-kzo]').forEach(b => b.onclick = () => { kzKanalOrtak = b.dataset.kzo; const y = window.scrollY; git('rapor-karzarar-kontrol'); window.scrollTo(0, y); });
   $$('#icerik [data-kzk]').forEach(b => b.onclick = () => { const c = _kzKayit[+b.dataset.kzk]; if (c) kzKayitAc(c); });
   $$('#icerik .ay-nav [data-ay]').forEach(b => b.onclick = () => { kzDonem = donemKaydir(kzDonem, Number(b.dataset.ay)); git('rapor-karzarar-kontrol'); });
 };

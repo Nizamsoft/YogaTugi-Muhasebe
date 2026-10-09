@@ -4363,3 +4363,8 @@ body.pdf-cekim *,body.pdf-cekim *::before,body.pdf-cekim *::after{animation:none
 .kz-bak span{font-size:11.5px;color:var(--metin-soluk);font-weight:600}
 .kz-bak b{font-size:16px;font-weight:800;color:var(--metin)}
 .kz-bak small{font-size:10.5px;color:var(--metin-soluk)} .kz-bak em{font-style:normal;font-weight:700;color:var(--metin)} .kz-bak em.r{color:var(--kirmizi)}
+
+/* Paranın Dağılımı — ortak seçici çipler */
+.kz-cip{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
+.kz-cip button{font:inherit;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid var(--kenar);background:none;color:var(--metin-soluk);cursor:pointer}
+.kz-cip button.sec{background:rgba(180,232,58,.14);border-color:rgba(180,232,58,.55);color:var(--neon)}
