@@ -995,6 +995,10 @@ body.tema-neon .btn-ana.iy-d{background:linear-gradient(135deg,#ef8f7f,#d24d3d);
 
 /* Hover / aktif / focus aksanları */
 body.tema-neon .btn:hover{border-color:var(--neon);color:var(--neon)}
+/* Dolu düğmeler: genel .btn:hover rengini almasın (iPhone'da dokununca hover takılı kalır → yazı kayboluyordu) */
+body.tema-neon .btn.btn-ana:hover,body.tema-neon .btn.btn-ana:focus,body.tema-neon .btn.btn-ana:active{color:var(--neon-metin);border-color:transparent}
+body.tema-neon .btn.btn-ana.iy-g:hover,body.tema-neon .btn.btn-ana.iy-d:hover{color:#fff}
+body.tema-neon .btn.btn-kirmizi:hover,body.tema-neon .btn.btn-kirmizi:focus,body.tema-neon .btn.btn-kirmizi:active{color:#fff;border-color:var(--kirmizi)}
 body.tema-neon .sekme.aktif{color:var(--neon);border-bottom-color:var(--neon)}
 body.tema-neon .form-alan input:focus,
 body.tema-neon .form-alan select:focus,
