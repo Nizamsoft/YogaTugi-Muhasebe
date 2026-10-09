@@ -956,7 +956,7 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '381';
+const APP_SURUM = '382';
 const APP_SURUM_TARIH = '8 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
@@ -7583,8 +7583,14 @@ SAYFALAR['rapor-karzarar-kontrol'] = function () {
   const odemeTablo = gorOrtak.length ? (() => {
     const pl = gorOrtak.map(o => { const k = Math.max(0, o.kalanTop || 0), kasa = Math.min(k, Math.max(0, o.nakit || 0)); return { o, k, kasa, banka: k - kasa }; });
     const T = (f) => pl.reduce((a, x) => a + f(x), 0);
+    const sonBak = (h) => (h && h.length) ? (Number(h[h.length - 1].bakiye) || 0) : 0;
+    const kasaBak = sonBak(hesapHareketleri('nakit')), bankaBak = sonBak(hesapHareketleri('banka'));
+    const kasaVer = T(x => x.kasa), bankaVer = T(x => x.banka);
+    const kutu = (ik2, ad, bak, ver) => { const kal = bak - ver; return `<div class="kz-bak"><span>${ik2} ${ad}</span><b class="mono">${TL(bak)}</b><small>Ödemeden sonra <em class="${kal < 0 ? 'r' : ''}">${kal < 0 ? '−' : ''}${TL(Math.abs(kal))}</em></small></div>`; };
+    const bakiyeler = `<div class="kz-bak2">${kutu('💵', 'Kasada şu an', kasaBak, kasaVer)}${kutu('🏦', 'Bankada şu an', bankaBak, bankaVer)}</div>`;
     const sat3 = (x) => `<tr><td>${kacar(String(x.o.ad).split(' ')[0])}${x.o.kalanTop < 0 ? '<small class="kz-oz-alt">borçlu — ödeme yok</small>' : ''}</td><td>${x.k ? tam(x.k) : '—'}</td>${hucre(x.kasa, '')}${hucre(x.banka, '')}</tr>`;
     return `<div class="kz-kutu"><h3>💸 Ödeme Planı</h3><p class="kz-alt">Ödenecek kalan kime, nereden verilir · her ortak kendi topladığı nakit kadarını kasadan, gerisini bankadan alır</p>
+      ${bakiyeler}
       <table class="kz-tablo kz-oz mono"><colgroup><col><col><col><col></colgroup>
         <thead><tr><th>Ortak</th><th>Kalan</th><th>Kasadan</th><th>Bankadan</th></tr></thead>
         <tbody>${pl.map(sat3).join('')}${pl.length > 1 ? `<tr class="sonuc"><td>Toplam</td><td>${tam(T(x => x.k))}</td><td>${tam(T(x => x.kasa))}</td><td class="top">${tam(T(x => x.banka))}</td></tr>` : ''}</tbody></table>
