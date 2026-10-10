@@ -956,8 +956,8 @@ const SABIT_ADMIN = {
 };
 
 /* Uygulama sürümü — index.html'deki ?v=NN ile aynı tutulur */
-const APP_SURUM = '393';
-const APP_SURUM_TARIH = '8 Eki 2026';
+const APP_SURUM = '394';
+const APP_SURUM_TARIH = '10 Eki 2026';
 const APP_SURUM_SAAT = '12:00';
 
 /* Giriş yapan kullanıcı yönetici (admin) mi? */
@@ -1414,7 +1414,10 @@ function git(sayfa, geri, menu) {
   { const gb = $('#geriBtn'); if (gb) gb.classList.toggle('gizli', !ustSayfa(sayfa)); }
 }
 window.git = git;
-function geriGit() { const u = ustSayfa(State.aktifSayfa); if (u) git(u, true); }
+function geriGit() {
+  if (State.aktifSayfa === 'ayar-rehber' && rehberKonu != null) { rehberKonu = null; git('ayar-rehber', true); return; }   // rehber konusundan → konu listesine
+  const u = ustSayfa(State.aktifSayfa); if (u) git(u, true);
+}
 window.geriGit = geriGit;
 
 /* Mobilde geniş tabloları PC boyutundan ekrana ORANTILI küçült (transform scale) — kırpma/yatay kaydırma yok */
@@ -7854,10 +7857,15 @@ SAYFALAR['ayar-surum'] = function () {
 };
 /* -------- Kullanım Rehberi (baştan sona ay akışı) -------- */
 const REHBER_BOLUM = [
-  { em: '📊', emc: '', nk: 'Ay başı ☀️', t: 'Panel — güne şöyle bir bak', img: 'panel', toc: 'Panel', tocAlt: 'Güne bakış, ayın özeti',
-    hikaye: '<span class="who">💬 Ayın ilk sabahı ☀️</span> Kapıyı açtın, ışıkları yaktın, kahveni koydun ☕. İçinden “eee, bu ay nasıl gidiyoruz bakalım? 🤔” diyorsun. İşte tam o an <b>Panel</b> seni gülümseyerek karşılıyor 😊 — ayın özeti, hızlı kısayollar ve bugün gelen ödemeler, hepsi ilk ekranda. 🎯',
-    el: { l: 50, t: 14, e: '👇' }, etiket: 'Ayın özeti 📅', etL: 50, etT: 6.5,
-    adimlar: ['Üstteki 📅 <span class="tus">Ay · Özet</span> barından ayları gezersin — geçen aya da şöyle bir göz atabilirsin 👀', 'Renkli kısayol kartlarına dokun: Gelirler 💚, Giderler 💸, Hesaplar 📒, Ortaklar 👥 hepsi bir dokunuş uzağında ✨', 'En altta “Bugünkü Tahsilatlar” → o gün cebe gireni anında görürsün 💵'],
+  { em: '🚀', emc: 'b3', nk: 'Başlamadan önce 🧭', t: 'İlk kurulum — 3 adımda hazır', toc: 'Başlamadan önce', tocAlt: 'İlk gün yapılacaklar, roller',
+    hikaye: '<span class="who">💬 Programı ilk kez açtın 👋</span> Defteri tutmaya başlamadan önce programın <b>kimlerle</b> çalıştığını bilmesi gerekiyor. Bunu bir kez yaparsın, sonra her ay aynı akış döner 🔁',
+    adimlar: ['<span class="tus">Ayarlar › Kullanıcılar › ＋ Ekle</span> → ortakları <b>Ortak</b>, komisyonla çalışan eğitmenleri <b>Hoca</b> olarak ekle 👥', 'Programa ay başında geçtiysen herkesin eski alacağını <b>◆ Açılış Devri</b>’ne yaz (konusu aşağıda) 🚪', '<span class="tus">Ayarlar › Kart Komisyon Oranları</span> ve <span class="tus">Vergi Oranları</span>’nı kontrol et 💳🧾', 'Hazırsın! Bundan sonra her ay: <b>tahsilat yaz → banka dosyasını yükle → giderleri gir → ay sonu vergi → Ortaklar’a bak</b> ✨'],
+    perde: { bas: 'kim neyi görür?', p: ['<b>Admin</b> → her şeyi görür ve düzenler 👑', '<b>Ortak</b> → kârdan pay alır; yalnız <b>kendi</b> hakedişini görür 👥', '<b>Hoca</b> → komisyonla çalışır; girişte yalnız <b>Tahsilat Ekle</b> ve kendi tahsilatlarını görür 🧘', '<b>Kullanıcı</b> → kâra girmez; ne göreceğini <span class="tus">Roller & Yetkiler</span>’den sen seçersin 🔐'], kural: 'Ortak kâra ortak olur; hoca kâra girmez, komisyon alır.' },
+    ipuc: 'Rehberde her konu ayrı sayfadır. Okuduktan sonra üstteki <span class="tus">‹ Konular</span> ile listeye dön ya da alttan <b>sonraki konuya</b> geç 👉' },
+
+  { em: '📊', emc: '', nk: 'Ay başı ☀️', t: 'Panel — güne şöyle bir bak', img: 'panel', toc: 'Panel', tocAlt: 'Ayın özeti, kısayollar',
+    hikaye: '<span class="who">💬 Ayın ilk sabahı ☀️</span> Kapıyı açtın, ışıkları yaktın, kahveni koydun ☕. İçinden “eee, bu ay nasıl gidiyoruz bakalım? 🤔” diyorsun. İşte tam o an <b>Panel</b> seni karşılıyor 😊 — ayın özeti, hızlı kısayollar ve bugün gelen ödemeler, hepsi ilk ekranda 🎯',
+    adimlar: ['En üstteki <span class="tus">Ay · Özet</span> şeridine dokun → açılır: brüt tahsilat, nakit / havale / kart, komisyon, vergi, gider ve <b>net</b> 📅', '<span class="tus">Veri Gir</span> → banka dosyası yükleme, <b>Nakit Harcama</b> ve <b>Vergi Tahakkuku</b> buradan girilir 📥', '<span class="tus">Tahsilat Defteri</span> → ayın bütün tahsilatları; bankaya henüz düşmemiş olanlar “bekliyor” ⏳ diye görünür', 'Kısayol kartları: Gelirler 💚, Giderler 💸, Hesaplar 📒, Ortaklar 👥. <span class="tus">Nakit Avans</span> → kasadan ortağa / hocaya para verirsin 💵', 'En altta “Bugünkü Tahsilatlar” → o gün gireni anında görürsün; <span class="tus">Tümü ›</span> Gelirler’i açar'],
     ipuc: 'Ortak ya da Kullanıcı olarak girersen Panel yalnızca <b>seninle ilgili</b> rakamları gösterir — kimse kimsenin bahçesini sulamaz 🌱😉' },
 
   { em: '➕', emc: 'b2', nk: 'Gün içi 🎉', t: 'Tahsilat Ekle — ilk ödeme geldi!', img: 'tahsilat', toc: 'Tahsilat Ekle', tocAlt: 'Ödeme geldikçe deftere yaz',
@@ -7871,7 +7879,7 @@ const REHBER_BOLUM = [
   { em: '📥', emc: 'b3', nk: 'Cuma akşamı 🌆', t: 'İçe Aktar — banka konuşuyor', img: 'iceaktar', toc: 'İçe Aktar & eşleştir', tocAlt: 'Banka dosyasını yükle',
     hikaye: '<span class="who">💬 Cuma akşamı 🌆</span> Kahveni yudumlarken bankadan ekstreni indirdin. Aklına takıldı: “Kartla, havaleyle gelen paralar gerçekten hesaba geçmiş mi ki? 🤔” Hadi dosyayı yükleyelim, gerisini uygulama halletsin ✨',
     el: { l: 50, t: 22, e: '👆' }, etiket: 'Dosyanı buradan yükle 📄', etL: 50, etT: 28,
-    adimlar: ['Panelde <span class="tus">Veri Gir → Banka</span>’ya dokun, telefonundaki <b>.xlsx / .csv</b> dosyanı seç 📎', 'Uygulama satırları tek tek önüne serer; her birini tarih 📅 + tutar 💰 ile doğru tahsilata eşleştirirsin 🔗 Gider satırlarına <b>gider adı</b> ve gerekiyorsa <b>İlgili Kişi</b> seçersin', 'Multinet toplu ödemelerini kendisi toplar; açıklamada “multinet” geçmeyen EFT için <span class="tus">Bu bir Multinet ödemesi</span> düğmesi var 🤝', 'Ön izleme <b>herkesle paylaşılır</b>: diğerleri canlı izler, aynı anda <b>tek kişi</b> düzenler 🔒 Yarım bırakırsan kaldığın yerden devam edersin', 'Henüz bankaya düşmemiş kart / havale tahsilatları <span class="tus">Bekleyen Tahsilatlar</span>’da durur ⏳ — banka satırı gelince oradan da eşleştirebilirsin'],
+    adimlar: ['Panelde <span class="tus">Veri Gir → Banka</span>’ya dokun, telefonundaki <b>.xlsx / .csv</b> dosyanı seç 📎', 'Uygulama satırları tek tek önüne serer; her birini tarih 📅 + tutar 💰 ile doğru tahsilata eşleştirirsin 🔗 Gider satırlarına <b>gider adı</b> ve gerekiyorsa <b>İlgili Kişi</b> seçersin', 'Multinet toplu ödemelerini kendisi toplar; açıklamada “multinet” geçmeyen EFT için <span class="tus">Bu bir Multinet ödemesi</span> düğmesi var 🤝', 'Ön izleme <b>herkesle paylaşılır</b>: diğerleri canlı izler, aynı anda <b>tek kişi</b> düzenler 🔒 Yarım bırakırsan kaldığın yerden devam edersin', 'Henüz bankaya düşmemiş kart / havale tahsilatları Panel › <span class="tus">Tahsilat Defteri</span>’nde “bekliyor” olarak durur ⏳ — banka satırı gelince oradan da eşleştirebilirsin'],
     kural: { bas: 'Dikkat', p: 'Yanlış eşleştirirsen gelir <b>başka</b> öğrenci/eğitmene yazılır — eşlemeden önce <b>tarih ve tutarı</b> kontrol et 🔍' },
     perde: { bas: 'eşleşince ne oluyor?', p: ['Uygulama banka satırını <b>tarih + tutar</b> yakınlığıyla defterdeki tahsilata bağlar 🔗', '<b>POS komisyonu</b> o geliri kazanan eğitmenin <b>komisyon gideri</b> olur — bölünmez, sadece ona ait.', '<b>Multinet</b> toplu ödemede tek satır birçok kişinin ücretidir; uygulama toplayıp otomatik eşler 🤝'], kural: 'Kart/havale ancak <b>eşleşince</b> gerçek gelir olur ve ortak kârına girer.' },
     ipuc: 'Eşleşen kart/havale artık gerçekten “tahsil edildi” 💚 olur ve Gelirler’de ışıl ışıl görünür ✨' },
@@ -7916,45 +7924,37 @@ const REHBER_BOLUM = [
     el: { l: 50, t: 56.5, e: '👇' }, etiket: 'Gerçek KDV’yi yaz ✍️', etL: 50, etT: 49.5,
     adimlar: ['<span class="tus">Veri Gir → Vergi Tahakkuku İşle</span>’ye (ya da <span class="tus">Ayarlar › Vergi Tahakkuku</span>’na) dokun 🧾', 'Müşavirden gelen <b>KDV</b> tutarını yaz ✍️, <span class="tus">Kaydet</span> 💾', 'Gelir vergisi 3 ayda bir gelir; çeyrek sonunda uygulama sana nazikçe hatırlatır 🔔'],
     kural: { bas: 'Dikkat', p: '<b>Gelir Vergisi</b>’ni her ay değil, yalnız <b>çeyrek sonunda</b> (Mart / Haziran / Eylül / Aralık) gir — diğer aylarda boş bırak ⏳' },
-    perde: { bas: 'öngörü → tahakkuk', p: ['Uygulama ay boyu bankaya giren (havale+kart) üzerinden <b>tahmini</b> KDV/Gelir Vergisi ayırdı — nakit hariç.', 'Şimdi müşavirden gelen <b>gerçeği</b> giriyorsun; aradaki fark ortaklara mahsuplaşacak (sıradaki bölüm) ⚖️'], kural: '<b>KDV</b> her ay, <b>Gelir Vergisi</b> 3 ayda bir (çeyrek sonunda) tahakkuk eder.' },
+    perde: { bas: 'öngörü → tahakkuk', p: ['Uygulama ay boyu bankaya giren (havale+kart) üzerinden <b>tahmini</b> KDV/Gelir Vergisi ayırdı — nakit hariç.', 'Şimdi müşavirden gelen <b>gerçeği</b> giriyorsun; aradaki fark ortakların kartına “vergi düzeltmesi” olarak düşer (Ortaklar konusu) ⚖️'], kural: '<b>KDV</b> her ay, <b>Gelir Vergisi</b> 3 ayda bir (çeyrek sonunda) tahakkuk eder.' },
     ipuc: 'Boş bırakırsan “henüz gelmedi” ⏳ sayılır, tahmin kullanılmaya devam eder — hiç acelesi yok 😌' },
 
-  { em: '👥', emc: '', nk: 'Büyük gün! 🥁 · adım 1', t: 'Ortaklar — gelirden kesintilere', img: 'ortaklar', toc: 'Ortaklar & hakediş', tocAlt: 'Kâr paylaşımı, mahsup',
-    hikaye: '<span class="who">💬 Ve işte o an geldi! 🥁</span> Ay kapandı, herkesin gözü hakediş kartında 👀. Kart yukarıdan aşağı bir <b>masal</b> gibi akar 📖. Önce güzel haber: brüt tahsilatın 💰. Sonra sırayla küçük kesintiler başlar…',
-    el: { l: 50, t: 41, e: '👇' }, etiket: 'Önce kesintiler ✂️', etL: 50, etT: 33.5,
-    adimlar: ['<b>💰 Brüt tahsilat</b> → bu ay gerçekleşen tahsilatların (nakit + eşleşmiş kart/havale).', '<b>🏦 − POS komisyonu</b> → yalnız <b>kendi</b> kart tahsilatının komisyonu.', '<b>🏢 − Genel gider payı</b> → toplam genel giderin <b>eşit</b> payı.'],
-    perde: { bas: 'komisyon & gider kime ait?', p: ['Komisyon, o geliri kazanan eğitmene aittir — <b>bölünmez</b>.', 'Genel giderler (kira, elektrik…) tüm ortaklara <b>eşit</b> dağılır.'], kural: 'Kesintiler sırayla iner; her satır brütten biraz düşer.' } },
+  { em: '👥', emc: '', nk: 'Büyük gün! 🥁 · adım 1', t: 'Ortaklar — kart nasıl okunur?', img: 'ortaklar', toc: 'Ortaklar & hakediş', tocAlt: 'Kâr paylaşımı, vergi, kalan',
+    hikaye: '<span class="who">💬 Ve işte o an geldi! 🥁</span> Ay kapandı, herkesin gözü hakediş kartında 👀. Alttaki <span class="tus">Ortaklar</span>’a bas. Kart yukarıdan aşağı bir <b>masal</b> gibi akar 📖: önce eklenenler, sonra küçük kesintiler…',
+    adimlar: ['En üstte iki sekme var: <b>👥 Ortaklar</b> ve <b>🧘 Hocalar</b>. Yanında ay okları ‹ › ve <span class="tus">Özet</span> / <span class="tus">Detaylı</span> 📅', 'İsmin yanındaki <span class="tus">DEĞİŞTİR</span> ile başka ortağa geçersin 👤', '<b>📅 Geçen aydan devir</b> → önceki aylardan kalan alacağın (ya da borcun) en üstte başlar', '<b>💰 Tahsilat</b> → bu ay gerçekleşen tahsilatların (nakit + bankayla eşleşmiş kart/havale)', '<b>🏦 − POS komisyonu</b> → yalnız <b>kendi</b> kart tahsilatının komisyonu', '<b>🏢 − Gider payı</b> → genel giderin <b>eşit</b> payı + yalnız sana yazılan giderler', '<b>🧘 + Hoca kârı</b> → hocaların stüdyoya bıraktığı kârdan payın (hoca varsa)'],
+    perde: { bas: 'komisyon & gider kime ait?', p: ['Komisyon, o geliri kazanan eğitmene aittir — <b>bölünmez</b>.', 'Genel giderler (kira, elektrik…) tüm ortaklara <b>eşit</b> dağılır.'], kural: 'Her satır bir öncekinin üstüne eklenir ya da ondan düşer.' } },
 
-  { em: '🧾', emc: 'b3', nk: 'Büyük gün! 🥁 · adım 2', t: 'Ortaklar — devlet payı (tahmini vergi)', img: 'ortaklar',
-    hikaye: '<span class="who">💬 Sıra devlette 🏛️</span> Bankaya giren paradan tahmini KDV ve Gelir Vergisi ayrılır. Sakin ol, bu bir <b>öngörü</b> ⏳ — gerçeği ay sonu netleşince güncellenecek.',
-    el: { l: 50, t: 51, e: '👇' }, etiket: 'Tahmini vergi 🧾', etL: 50, etT: 43.5,
-    adimlar: ['<b>− Tahmini KDV</b> → bankaya giren tutardan öngörü.', '<b>− Tahmini Gelir Vergisi</b> → (banka matrahı − KDV − komisyon − bankadan yapılan gider payı) × oran.', 'Nakit bu hesaba <b>hiç girmez</b> 🙌'],
-    perde: { bas: 'vergi neyden hesaplanır?', p: ['Yalnız <b>bankaya giren</b> havale+kart vergiye tabidir; nakit hariç 💵', 'Bankadan yaptığın <b>harcamalar</b> gelir vergisi matrahından düşülür — vergi biraz azalır.'], kural: 'Bu satır <b>tahmindir</b>; ay sonu tahakkukla kesinleşir.' } },
+  { em: '🧾', emc: 'b3', nk: 'Büyük gün! 🥁 · adım 2', t: 'Ortaklar — vergi ve vergi düzeltmesi', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Sıra devlette 🏛️</span> Bankaya giren paradan tahmini KDV ve Gelir Vergisi ayrılır. Sakin ol, bu bir <b>tahmin</b> ⏳ — ay sonu müşavirden gerçeği gelince düzeltilir.',
+    adimlar: ['<b>🏛️ − Tahmini vergi</b> → KDV + Gelir Vergisi; yalnız bankaya giren tahsilattan, nakit <b>hiç girmez</b> 🙌', '<b>🧾 ± Vergi düzeltmesi</b> → gerçek vergi girilince fark buraya düşer: fazla ayrıldıysa <b>+ iade</b> 💚, eksikse <b>− ek kesinti</b> 🔻', 'Düzeltme satırına dokununca tahmin ↔ gerçek ↔ fark ayrı ayrı açılır 🔍'],
+    perde: { bas: 'vergi neyden hesaplanır?', p: ['Yalnız <b>bankaya giren</b> havale+kart vergiye tabidir; nakit hariç 💵', 'Gelir Vergisi = (banka matrahı − KDV − komisyon − bankadan yapılan gider payı) × oran.', '<b>KDV</b> her ay, <b>Gelir Vergisi</b> çeyrekte düzeltilir 📅'], kural: 'Düzeltmeden kimse ekstra pay almaz — yalnız fazla/eksik ayrılan vergi geri döner.' },
+    ipuc: 'Devir ≠ düzeltme: 📅 <b>devir</b> = geçen aydan alacağın, 🧾 <b>düzeltme</b> = verginin farkı. Ayrı satırlar 😉' },
 
-  { em: '⚖️', emc: '', nk: 'Büyük gün! 🥁 · adım 3', t: 'Ortaklar — devir & vergi mahsubu', img: 'ortaklar',
-    hikaye: '<span class="who">💬 İki güzel düzeltme 🤝</span> Geçen aydan alacağın kaldıysa 📅 bu aya <b>devreder</b>. Bir de: ay sonu gerçek vergi girilince, fazla ayrılan <b>iade</b> 💚 / eksik ayrılan <b>ek kesinti</b> 🔻 olarak buraya düşer.',
-    el: { l: 50, t: 71, e: '👇' }, etiket: 'Vergi düzeltmesi ⚖️', etL: 50, etT: 63.5,
-    adimlar: ['<b>📅 + Geçen aydan devir</b> → önceki aylardan ödenmemiş hakediş.', '<b>⚖️ ± Vergi düzeltmesi (mahsup)</b> → gerçek vergi ile öngörünün farkı, payına göre.', 'Fazla ayrıldıysa <b>+ iade</b> 💚, eksikse <b>− ek kesinti</b> 🔻'],
-    perde: { bas: 'nasıl mahsuplaşır?', p: ['<b>KDV</b> her ay, <b>Gelir Vergisi</b> çeyrekte mahsuplaşır 📅', 'Gelir vergisinde çeyreğin <b>3 ay öngörüsü toplanır</b>, gerçeğiyle kıyaslanır; fark ortaklara öngörü paylarına göre dağılır.'], kural: 'Tahakkuk farkından kimse <b>ekstra pay almaz</b> — mahsup yalnız fazla/eksik ayrılan vergiyi düzeltir.' },
-    ipuc: 'Devir ≠ mahsup: 📅 <b>devir</b> = geçen aydan alacağın, ⚖️ <b>mahsup</b> = verginin düzeltmesi. Ayrı satırlar 😉' },
+  { em: '🎉', emc: 'b4', nk: 'Büyük gün! 🥁 · sonuç', t: 'Ortaklar — sonuç: sana kalan!', img: 'ortaklar',
+    hikaye: '<span class="who">💬 Ve sonuç! 🎉</span> Kartın en altındaki yeşil kutu bu ayın cevabı: <b>Sana kalan (devir dahil)</b>. Ay içinde sana verilen para düşülmüş, kalan da elden verilecek olan 💚',
+    adimlar: ['<b>Bu ayki hakediş</b> → yukarıdaki bütün adımların toplamı', '<b>+ / − devir</b> → geçen aydan gelen', '<b>− Ödenen</b> → ay içinde sana <b>Kâr Dağıtımı</b> ya da <b>Nakit Avans</b> olarak verilenler', '<b>= Sana kalan</b> → ödenmezse gelecek aya <b>devreder</b> 🔁'],
+    ipuc: '<span class="tus">Detaylı</span>’ya basınca aynı ayın <b>Kâr-Zarar Kontrolü</b> açılır 📒 Ortak yalnız <b>kendini</b> görür; Kullanıcı rolü buraya <b>hiç girmez</b> 🔐' },
 
-  { em: '🎉', emc: 'b4', nk: 'Büyük gün! 🥁 · sonuç', t: 'Ortaklar — sonuç: hakedişin!', img: 'ortaklar',
-    hikaye: '<span class="who">💬 Ve sonuç! 🎉</span> Tüm adımlar toplanınca bu ayki <b>hakedişin</b> çıkar. Ay içinde sana Kâr Dağıtımı olarak ödenenler düşülür; kalan da elden verilecek olan 💚',
-    el: { l: 50, t: 80.5, e: '👇' }, etiket: 'İşte hakedişin! 🎉', etL: 50, etT: 73.5,
-    adimlar: ['<b>= Bu ayki hakediş</b> → tüm adımların toplamı.', '<b>− Şimdiye kadar verilen</b> → sana Kâr Dağıtımı olarak ödenenler.', '<b>= Sana kalan</b> → ödenmezse gelecek aya <b>devreder</b> 🔁'],
-    ipuc: '<span class="tus">DEĞİŞTİR</span> ile başka ortağa bakabilirsin. <span class="tus">Detaylı</span>’ya basınca aynı ayın <b>Kâr-Zarar Kontrolü</b> açılır 📒 Ortak yalnız <b>kendini</b> görür; Kullanıcı rolü buraya <b>hiç girmez</b> 🔐' },
-
-  { em: '🔎', emc: 'b3', nk: 'Merak edince 🔍', t: 'Ortaklar — her satırın dökümü', img: 'ortaklar', toc: 'Gün gün döküm', tocAlt: 'Satıra dokun, tabloyu gör',
-    hikaye: '<span class="who">💬 “Bu 102.723 ₺ gider nereden çıktı? 🤔”</span> Özet’teki her adımın sağında küçük bir <b>›</b> var. Dokun, o kalemin gün gün dökümü tablo olarak açılsın 📋',
-    adimlar: ['<b>💰 Tahsilat</b> → Tarih · Tutar · Kim · Ödeme türü', '<b>🏦 Komisyon</b> → hangi kart tahsilatından ne kadar kesildi', '<b>🏢 Gider</b> → her gider için <b>toplam ödenen</b> ve altında <b>senin payın</b>, kasadan mı bankadan mı', '<b>🧘 Hoca kârı</b> → hoca hoca tahsilat, stüdyoya kalan ve senin payın', '<b>🏛️ Vergi</b> → her banka tahsilatının KDV’si (oranıyla) + gelir vergisi; <b>📅 Devir</b> → geçmiş aylar tek tek'],
-    ipuc: '“Tüm Ortaklar” tahsilatlarında yalnız sana düşen pay görünür, yanında “ortak · 4’te 1” yazar 😉' },
+  { em: '🔎', emc: 'b3', nk: 'Merak edince 🔍', t: 'Satıra dokun — gün gün döküm', img: 'dokum', toc: 'Gün gün döküm', tocAlt: 'Satıra bas, tablo açılsın',
+    hikaye: '<span class="who">💬 “Bu 111.375 ₺ tahsilat nereden çıktı? 🤔”</span> Ortak kartındaki her satırın sağında küçük bir <b>›</b> var. Satıra dokun → o kalemin <b>tablosu</b> açılır: hangi gün, kimden, ne kadar 📋',
+    adimlar: ['<span class="tus">Ortaklar</span> › <span class="tus">Özet</span>’te merak ettiğin satıra dokun 👆', '<b>💰 Tahsilat</b> → Tarih · Tutar · Kim · Ödeme (Kart / Nakit / Havale); en altta toplam ve kaç tahsilat', '<b>🏦 Komisyon</b> → hangi kart tahsilatından ne kadar kesildi', '<b>🏢 Gider</b> → her giderin <b>toplamı</b>, altında <b>senin payın</b>, kasadan mı bankadan mı ödendi', '<b>🧘 Hoca kârı</b> → hoca hoca tahsilat, stüdyoya kalan ve senin payın', '<b>🏛️ Vergi</b> → her banka tahsilatının KDV’si + gelir vergisi; <b>📅 Devir</b> → geçmiş aylar tek tek', 'İşin bitince <span class="tus">Kapat</span> ya da sağ üstteki ✕ ile karta dönersin'],
+    kural: { bas: 'Bir şey yanlışsa', p: 'Tabloda yanlış kişiye yazılmış bir tahsilat görürsen <span class="tus">Gelirler</span>’de o kaydı bulup eğitmenini düzelt — kart ve tablo anında güncellenir 🔧' },
+    ipuc: '“Tüm Ortaklar” tahsilatlarında yalnız sana düşen pay görünür; altında “ortak · 4’te 1” yazar (4 ortak varsa) 😉' },
 
   { em: '🧘', emc: 'b2', nk: 'Yeni oyuncu 🤝', t: 'Hocalar — komisyonla çalışan eğitmen', img: 'hocalar', toc: 'Hocalar', tocAlt: 'Komisyonlu eğitmenler',
     hikaye: '<span class="who">💬 Stüdyona taze bir soluk geldi 🌿</span> Ali Hoca ortak değil ama dersleri tıklım tıklım 🧘‍♂️. Anlaşmanız net: kazandığının bir kısmı ona, kalanı stüdyoya kâr olarak. İşte bunun için <b>Hoca</b> rolü var — ortak gibi kâra girmez, <b>komisyonla</b> çalışır 🤝',
-    adimlar: ['<span class="tus">Ayarlar › Kullanıcılar › ＋ Ekle</span> → rolü <b>Hoca</b> seç 🧘 ve <b>Hakediş Oranı %</b>’sini bir kez yaz (örn. %70) — bir daha sormaz ✨', 'İstersen hocaya <b>giriş</b> tanımla; girdiğinde <b>yalnız Tahsilat Ekle</b> görür, kendi tahsilatlarını listeler 🔐', '<span class="tus">Ortaklar</span> sayfasında üstteki <b>🧘 Hocalar</b> sekmesine geç → hocayı seç, ortaklardaki gibi adım adım hikâyesini gör 📊'],
-    kural: { bas: 'Dikkat — ödemeyi eşleştir', p: 'Hocaya para öderken (banka/nakit) gider kategorisini <b>“Hoca Ödemesi”</b> seç ✅. Seçmezsen ödeme hocanın <b>kalanından düşmez</b> ve normal masrafa karışır — tıpkı ortaktaki <b>Kâr Dağıtımı</b> gibi çalışır 🔗' },
-    perde: { bas: 'komisyon nasıl bölünür?', p: ['<b>Stüdyo kârı (Hoca kârı)</b> = brüt × (1 − hakediş oranı). Bu, hocanın stüdyoya bıraktığı kârdır ve <b>tüm ortaklara eşit</b> dağılır ⚖️ — ortak kartında “Hoca kârı” satırı olarak görünür.', '<b>Hocaya ödenecek</b> = brüt × oran − POS komisyonu 💳 − KDV 🧾. Kart komisyonu ve hocanın bankaya giren tahsilatının KDV’si hocanın kendi payından düşülür.', 'Hocalardan <b>genel gider alınmaz</b> — onlar kirayı, elektriği paylaşmaz; yalnız komisyon mantığı işler.'], kural: 'Hoca kâra ortak olmaz; stüdyoya bıraktığı kâr ortaklara eşit gider, kalan pay hocaya ödenir.' },
-    ipuc: 'Örnek: Ali %70, bu ay <b>10.000 ₺ nakit</b> topladı → stüdyo kârı <b>3.000 ₺</b> (ortaklara), Ali’ye <b>7.000 ₺</b>. 5.000 ₺ ödediysen kalan <b>2.000 ₺</b> 💚 Kartla topladıysa komisyon ve KDV de Ali’nin payından düşer — hepsi kendiliğinden 🪄' },
+    adimlar: ['<span class="tus">Ayarlar › Kullanıcılar › ＋ Ekle</span> → rolü <b>Hoca</b> seç 🧘 ve <b>Hakediş Oranı %</b>’sini bir kez yaz (örn. %70) — bir daha sormaz ✨', 'İstersen hocaya <b>giriş</b> tanımla; girdiğinde <b>yalnız Tahsilat Ekle</b> görür, kendi tahsilatlarını listeler 🔐', '<span class="tus">Ortaklar</span> sayfasında üstteki <b>🧘 Hocalar</b> sekmesine geç; ay oklarıyla ayı seç, <span class="tus">DEĞİŞTİR</span> ile hocayı seç 👤', 'Kart yukarıdan aşağı okunur: <b>📅 devir</b> → <b>💰 tahsilat</b> → <b>🏦 − komisyon</b> → <b>🏢 − stüdyo payı</b> (%30 gibi) → <b>🏛️ − KDV</b> → <b>🤝 − ödenen</b>', 'En alttaki yeşil kutu: <b>Sana kalan (devir dahil)</b> → hocaya daha ne kadar ödeneceği 💚'],
+    kural: { bas: 'Dikkat — ödemeyi hocaya bağla', p: 'Hocaya para öderken (banka satırında ya da Nakit Harcama’da) <b>İlgili Kişi</b>’yi o hoca seç; gider adı olarak <b>“Hoca Ödemesi”</b> seçmek en temizi ✅ İlgili Kişi boş kalırsa ödeme hocanın kalanından <b>düşmez</b> — tıpkı ortaktaki <b>Kâr Dağıtımı</b> gibi 🔗 Kasadan verdiysen Panel’deki <span class="tus">Nakit Avans</span> da olur.' },
+    perde: { bas: 'komisyon nasıl bölünür?', p: ['<b>Stüdyo payı (Hoca kârı)</b> = brüt × (1 − hakediş oranı). Bu, hocanın stüdyoya bıraktığı kârdır ve <b>tüm ortaklara eşit</b> dağılır ⚖️ — ortak kartında “Hoca kârı” satırı olarak görünür.', '<b>Hocaya ödenecek</b> = brüt × oran − POS komisyonu 💳 − KDV 🧾. Kart komisyonu ve hocanın bankaya giren tahsilatının KDV’si hocanın kendi payından düşülür.', 'Hocalardan <b>genel gider alınmaz</b> — onlar kirayı, elektriği paylaşmaz; yalnız komisyon mantığı işler.'], kural: 'Hoca kâra ortak olmaz; stüdyoya bıraktığı kâr ortaklara eşit gider, kalan pay hocaya ödenir.' },
+    ipuc: 'Örnek: Ali %70, bu ay <b>10.000 ₺ nakit</b> topladı → stüdyo payı <b>3.000 ₺</b> (ortaklara), Ali’ye <b>7.000 ₺</b>. 5.000 ₺ ödediysen kalan <b>2.000 ₺</b> 💚 Kartla topladıysa (resimdeki gibi) komisyon ve KDV de Ali’nin payından düşer — hepsi kendiliğinden 🪄' },
 
   { em: '📒', emc: '', nk: 'Ay sonu kontrolü ✅', t: 'Kâr-Zarar Kontrolü — her kuruş nereye gitti?', toc: 'Kâr-Zarar Kontrolü', tocAlt: 'Özet, mizan, uyarılar, PDF',
     hikaye: '<span class="who">💬 Ay kapandı, içini rahatlatmak istiyorsun 😌</span> “Girdiğim her şey doğru yere gitti mi?” sorusunun cevabı burada. Rapor, ayın bütün gelir ve giderlerini ortaklara ve hocalara nasıl dağıldığıyla birlikte gösterir 📒',
@@ -7981,7 +7981,11 @@ const REHBER_BOLUM = [
     kural: { bas: 'Uygulamayı güncel tut', p: 'Ekranda “Uygulama eski sürüm” uyarısı çıkarsa o cihaz buluta yazmaz 🔒 Profil menüsünden <span class="tus">Sayfayı Yenile</span>’ye bas ya da <span class="tus">Ayarlar › Uygulama & Sürüm</span>’den güncelle.' },
     ipuc: 'Ayar sayfaları role göre görünür; hassas ayarlar yalnızca yetkili ellerde kalır 🔐 Yaptığın her değişiklik <b>Hareket Kaydı</b>’nda durur, gerekirse geri alınır ✨' },
 ];
+/* Rehber konuları: içindekiler (toc) olan bölüm yeni konu başlatır, arkasından gelenler o konuya katılır */
+const REHBER_KONU = REHBER_BOLUM.reduce((acc, s, i) => { if (s.toc || !acc.length) acc.push({ bas: s, idx: [i] }); else acc[acc.length - 1].idx.push(i); return acc; }, []);
+let rehberKonu = null;   // null → konu listesi; sayı → o konunun sayfası
 SAYFALAR['ayar-rehber'] = function () {
+  if (!document.getElementById('rhKap')) rehberKonu = null;   // başka sayfadan gelince listeden başla (tazelemede yerinde kal)
   const img = window.REHBER_IMG || {};
   const bol = (s, i) => `
     <div class="reh-bol" id="reh-sec-${i}">
@@ -7994,29 +7998,42 @@ SAYFALAR['ayar-rehber'] = function () {
       ${s.perde ? `<div class="reh-perde"><div class="reh-perde-bas">🧠 Perde arkası${s.perde.bas ? ' — ' + kacar(s.perde.bas) : ''}</div>${(s.perde.p || []).map(x => `<p>${x}</p>`).join('')}${s.perde.kural ? `<div class="reh-kural"><span class="k">⚑ Kural:</span><span>${s.perde.kural}</span></div>` : ''}</div>` : ''}
       ${s.ipuc ? `<div class="reh-ipuc"><span class="ik">💡</span><div>${s.ipuc}</div></div>` : ''}
     </div>`;
-  const tocList = REHBER_BOLUM.map((s, i) => ({ s, i })).filter(x => x.s.toc);
-  const onsoz = `
+  const ustCek = () => { const el = ic(), ana = document.querySelector('.ana'); if (el) el.scrollTop = 0; if (ana) ana.scrollTop = 0; try { window.scrollTo(0, 0); } catch (_) { } };
+  const ac = (k) => { rehberKonu = k; SAYFALAR['ayar-rehber'](); ustCek(); };
+  const N = REHBER_KONU.length;
+  if (rehberKonu == null || !REHBER_KONU[rehberKonu]) {
+    ic().innerHTML = `<div id="rhKap">
+    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="rhGeri">‹ Ayarlar</button></div>
     <div class="reh-onsoz">
       <div class="ro-hero"><div class="ro-em">📖</div><h2>Hoş geldin! 👋</h2>
-        <p>Bu rehber, stüdyonu <b>baştan sona</b> yönetmeyi bir ay hikâyesiyle anlatır. İster baştan başla, ister merak ettiğin adıma atla 🚀</p></div>
-      <button type="button" class="btn btn-ana ro-basla" data-jump="0">▶ Baştan başla</button>
-      <div class="ro-lbl">🧭 Ya da bir adıma atla</div>
-      <div class="ro-liste">${tocList.map((x, n) => `<button type="button" class="ro-row" data-jump="${x.i}">
-        <span class="ro-no">${n + 1}</span><span class="ro-em2 ${x.s.emc || ''}">${x.s.em}</span>
-        <span class="ro-t"><span class="ro-ad">${kacar(x.s.toc)}</span><span class="ro-alt">${kacar(x.s.tocAlt || '')}</span></span>
+        <p>Bu rehber stüdyonu bir ay boyunca nasıl yöneteceğini anlatır. Bir konuya dokun, oku, sonra <b>‹ Konular</b> ile buraya dön ya da sıradakine geç 🚀</p></div>
+      <button type="button" class="btn btn-ana ro-basla" data-konu="0">▶ Baştan başla</button>
+      <div class="ro-lbl">🧭 Konular</div>
+      <div class="ro-liste">${REHBER_KONU.map((k, n) => `<button type="button" class="ro-row" data-konu="${n}">
+        <span class="ro-no">${n + 1}</span><span class="ro-em2 ${k.bas.emc || ''}">${k.bas.em}</span>
+        <span class="ro-t"><span class="ro-ad">${kacar(k.bas.toc || k.bas.t)}</span><span class="ro-alt">${kacar(k.bas.tocAlt || '')}</span></span>
         <span class="ro-ok">›</span></button>`).join('')}</div>
-    </div>`;
-  ic().innerHTML = `
-    <div class="tnm-scr-ust"><button type="button" class="tnm-geri" id="rhGeri">‹ Ayarlar</button></div>
-    ${onsoz}
-    ${REHBER_BOLUM.map(bol).join('')}
+    </div>
     <div class="reh-perde reh-ozet">
       <div class="reh-perde-bas">🧠 Tek bakışta muhasebe mantığı</div>
-      <p>Tahsilatı yaz → bankayla eşleştirip <b>gerçekleştir</b> → giderleri <b>İlgili Kişi</b>’siyle gir (Kâr Dağıtımı, Nakit Avans, Nakit Çekim dahil) → ay sonu gerçek vergiyi (KDV aylık, Gelir Vergisi çeyrekte) <b>tahakkuk et</b> → uygulama öngörü ile gerçeği kıyaslayıp farkı ortaklara <b>mahsuplaştırsın</b> → <b>Kâr-Zarar Kontrolü</b>’nde uyarı kalmadığını gör → <b>Ödeme Planı</b>’na bakıp kalanı kasadan / bankadan öde, ödenmeyen devretsin. 🔁</p>
-    </div>
-    <div class="reh-son">Hepsi bu! 🎉 Artık ay başından ay sonuna hem <b>nasıl</b> hem <b>neden</b>i biliyorsun.<br>Takıldığın yerde <b>Ayarlar › 📖 Kullanım Rehberi</b>’nden buraya dön.</div>`;
-  $('#rhGeri').onclick = () => git('ayar-tanimlama');
-  $$('[data-jump]').forEach(b => b.onclick = () => { const el = document.getElementById('reh-sec-' + b.dataset.jump); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      <p>Tahsilatı yaz → bankayla eşleştirip <b>gerçekleştir</b> → giderleri <b>İlgili Kişi</b>’siyle gir (Kâr Dağıtımı, Nakit Avans, Nakit Çekim dahil) → ay sonu gerçek vergiyi (KDV aylık, Gelir Vergisi çeyrekte) <b>tahakkuk et</b> → uygulama tahmin ile gerçeği kıyaslayıp farkı ortaklara <b>düzeltsin</b> → <b>Kâr-Zarar Kontrolü</b>’nde uyarı kalmadığını gör → <b>Ödeme Planı</b>’na bakıp kalanı kasadan / bankadan öde, ödenmeyen devretsin. 🔁</p>
+    </div></div>`;
+    $('#rhGeri').onclick = () => git('ayar-tanimlama');
+  } else {
+    const k = REHBER_KONU[rehberKonu], onc = REHBER_KONU[rehberKonu - 1], snr = REHBER_KONU[rehberKonu + 1];
+    const ad = (x) => kacar(x.bas.toc || x.bas.t);
+    ic().innerHTML = `<div id="rhKap">
+    <div class="tnm-scr-ust reh-ust"><button type="button" class="tnm-geri" id="rhListe">‹ Konular</button><span class="reh-say">${rehberKonu + 1} / ${N}</span></div>
+    ${k.idx.map(i => bol(REHBER_BOLUM[i], i)).join('')}
+    <div class="reh-nav">
+      ${onc ? `<button type="button" class="reh-nav-b" data-konu="${rehberKonu - 1}"><small>‹ Önceki</small><b>${onc.bas.em} ${ad(onc)}</b></button>` : '<span></span>'}
+      ${snr ? `<button type="button" class="reh-nav-b sag ana" data-konu="${rehberKonu + 1}"><small>Sonraki ›</small><b>${snr.bas.em} ${ad(snr)}</b></button>`
+        : `<button type="button" class="reh-nav-b sag ana" id="rhBitti"><small>Hepsi bu! 🎉</small><b>‹ Konulara dön</b></button>`}
+    </div></div>`;
+    $('#rhListe').onclick = () => ac(null);
+    { const b = $('#rhBitti'); if (b) b.onclick = () => ac(null); }
+  }
+  $$('#rhKap [data-konu]').forEach(b => b.onclick = () => ac(Number(b.dataset.konu)));
 };
 /* -------- Hesap Açılış Bakiyeleri -------- */
 SAYFALAR['ayar-acilis'] = function () {

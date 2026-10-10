@@ -4064,6 +4064,16 @@ body:not(.tema-neon) .ro-hero{background:linear-gradient(180deg,#f3f6ef,#eef2e6)
 .ro-ad{font-weight:800;font-size:14px}
 .ro-alt{font-size:11px;color:var(--metin-soluk);margin-top:2px}
 .ro-ok{color:var(--metin-soluk);font-size:16px;flex:none}
+/* Rehber konu sayfası: üstte Konular + sayaç, altta Önceki / Sonraki */
+.reh-say{font-size:12px;font-weight:800;color:var(--metin-soluk);background:var(--gri);border:1px solid var(--kenar);border-radius:999px;padding:5px 11px}
+.reh-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 8px}
+.reh-nav-b{display:flex;flex-direction:column;gap:3px;min-width:0;background:var(--gri);border:1px solid var(--kenar);border-radius:13px;padding:11px 13px;font:inherit;color:var(--metin);text-align:left;cursor:pointer}
+.reh-nav-b small{font-size:11px;font-weight:800;color:var(--metin-soluk)}
+.reh-nav-b b{font-size:13.5px;font-weight:800;line-height:1.3;overflow-wrap:anywhere}
+.reh-nav-b.sag{text-align:right;align-items:flex-end}
+.reh-nav-b.ana{background:rgba(180,232,58,.12);border-color:rgba(180,232,58,.35)}
+.reh-nav-b.ana small{color:var(--neon)}
+.reh-nav-b:active{transform:scale(.99)}
 
 /* Hareket Kaydı (ayar-hareket) — v309 */
 .hk-seg{display:flex;gap:7px;overflow-x:auto;padding:0 0 12px;-webkit-overflow-scrolling:touch}
